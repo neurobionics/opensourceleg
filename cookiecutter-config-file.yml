@@ -1,0 +1,13 @@
+# This file contains values from Cookiecutter
+
+default_context:
+  project_name: "opensourceleg"
+  project_description: "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prosthesis."
+  organization: "Neurobionics Laboratory"
+  license: "GNU GPL v3.0"
+  minimal_python_version: 3.9
+  github_name: "imsenthur"
+  email: "imsenthur@gmail.com"
+  version: "0.1.0"
+  line_length: "88"
+  create_example_template: "none"
