@@ -3,18 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Open-Source Leg's documentation!
-===========================================
+Open-Source Leg
+===============
+An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prosthesis.
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
-   :caption: Contents:
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
