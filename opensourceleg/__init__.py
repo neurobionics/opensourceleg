@@ -1,8 +1,10 @@
-# type: ignore[attr-defined]
 """An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prosthesis."""
 
 import sys
 from importlib import metadata as importlib_metadata
+
+from .statemachine import *
+from .utilities import *
 
 
 def get_version() -> str:
