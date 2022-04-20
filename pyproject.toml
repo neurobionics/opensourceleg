@@ -31,6 +31,7 @@ classifiers = [  #! Update me
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pyserial = "^3.5"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
