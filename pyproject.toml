@@ -30,8 +30,11 @@ classifiers = [  #! Update me
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.11"
 pyserial = "^3.5"
+scipy = "^1.8.0"
+numpy = "^1.22.3"
+flexsea = "^7.2.6"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
