@@ -15,7 +15,7 @@ Utilities
    :members:
    :show-inheritance:
 
-statemachine
+Statemachine
 ------------
 
 .. automodule:: opensourceleg.statemachine
