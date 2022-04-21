@@ -15,3 +15,4 @@ setuptools-scm==6.4.2; python_version >= "3.7"
 six==1.16.0; python_version >= "3.7" and python_full_version < "3.0.0" or python_full_version >= "3.3.0" and python_version >= "3.7"
 tomli==2.0.1; python_version >= "3.7"
 tornado==6.1; python_version >= "3.7"
+sphinxcontrib-napoleon==0.7
