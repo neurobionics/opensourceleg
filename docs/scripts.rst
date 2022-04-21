@@ -1,10 +1,10 @@
 Scripts
 =======
 
-opensourceleg
+Hardware
 -------------
 
-.. automodule:: opensourceleg.opensourceleg
+.. automodule:: opensourceleg.hardware
    :members:
    :show-inheritance:
 

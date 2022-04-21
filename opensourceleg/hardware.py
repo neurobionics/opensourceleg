@@ -18,8 +18,9 @@ class ActpackData:
     """A class that contains and works with all the sensor data from a Dephy Actpack.
 
     Attributes:
-        motor_angle {double} -- Motor angle
-        motor_velocity {double} -- Motor velocity
+        motor_angle (double) : Motor angle
+        motor_velocity (double : Motor velocity
+
     """
 
     def __init__(self) -> None:
@@ -35,6 +36,13 @@ class ActpackData:
         self.fz: np.double
 
     def update(self, motor, joint, loadcell):
+        """_summary_
+
+        Args:
+            motor (_type_): _description_
+            joint (_type_): _description_
+            loadcell (_type_): _description_
+        """
         self.motor_angle = motor[0]
         self.motor_velocity = motor[1]
         self.motor_acceleration = motor[2]

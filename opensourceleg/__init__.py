@@ -3,8 +3,7 @@
 import sys
 from importlib import metadata as importlib_metadata
 
-from opensourceleg import *
-
+from .hardware import *
 from .statemachine import *
 from .utilities import *
 
