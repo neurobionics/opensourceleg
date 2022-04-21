@@ -14,9 +14,12 @@ from flexsea import fxUtils as fxu
 from opensourceleg.statemachine import *
 
 
-class Data:
-    """
-    OSL Data class
+class ActpackData:
+    """A class that contains and works with all the sensor data from a Dephy Actpack.
+
+    Attributes:
+        motor_angle {double} -- Motor angle
+        motor_velocity {double} -- Motor velocity
     """
 
     def __init__(self) -> None:
@@ -64,12 +67,10 @@ class Joint:
         self._bit_2_g = 1 / 8192
 
         # Sensor data
-        self.data = Data()
+        self.data = ActpackData()
 
     def home(self, save=True):
-        """
-        Homing function
-        """
+
         print("*** Initiating Homing Routine ***")
 
         minpos_motor, minpos_joint, min_output = self._homing_routine(direction=1.0)
@@ -347,12 +348,12 @@ class OSL:
         self.fxs.close(self.dev_id)
 
     def initialize_loadcell(self, amp_gain=125.0, exc=5.0, loadcell_matrix=None):
-        """
-        Initializes Loadcell Matrix
+        """_summary_
 
-        Parameters:
-        -----------
-
+        Args:
+            amp_gain (float, optional): _description_. Defaults to 125.0.
+            exc (float, optional): _description_. Defaults to 5.0.
+            loadcell_matrix (_type_, optional): _description_. Defaults to None.
         """
         self.amp_gain = amp_gain
         self.exc = exc
