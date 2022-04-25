@@ -276,9 +276,6 @@ class SaturatingRamp:
         Args:
             loop_frequency (int, optional): Rate in Hz (default 100 Hz). Defaults to 100.
             ramp_time (float, optional): Time to complete the ramp. Defaults to 1.0.
-
-        Returns:
-            value (float): Scalar between 0 and 1.
         """
         self.delta_per_update = 1.0 / (loop_frequency * ramp_time)
         self.value = 0.0
@@ -291,6 +288,12 @@ class SaturatingRamp:
 
         Example usage:
             torque = torque * ramp.update(enable_ramp)
+
+        Args:
+            enable_ramp (bool, optional): If enable_ramp is true, ramp value increases. Defaults to False.
+
+        Returns:
+            value (float): Scalar between 0 and 1.
         """
         if enable_ramp:
             delta = self.delta_per_update
