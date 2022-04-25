@@ -1,7 +1,6 @@
 import csv
 import glob
 import sys
-from time import time
 
 import numpy as np
 import scipy
@@ -137,15 +136,6 @@ class SoftRealtimeLoop:
                 ):
                     self.stop()
             self.t1 += dt
-        print("Soft realtime loop has ended successfully.")
-
-    def run(self, function_in_loop, dt=None):
-        if dt is None:
-            dt = self.dt
-        for t in self:
-            ret = function_in_loop()
-            if ret == 0:
-                self.stop()
         print("Soft realtime loop has ended successfully.")
 
     def stop(self):

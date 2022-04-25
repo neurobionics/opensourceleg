@@ -226,7 +226,7 @@ tornado = ">=6.0.0,<7.0.0"
 
 [[package]]
 name = "fonttools"
-version = "4.33.0"
+version = "4.33.2"
 description = "Tools to manipulate font files"
 category = "main"
 optional = false
@@ -945,8 +945,8 @@ flexsea = [
     {file = "flexsea-7.2.6-py3-none-any.whl", hash = "sha256:236c32df927c0041d417ec09709f4f11d683829295181397cc2835583596b1b6"},
 ]
 fonttools = [
-    {file = "fonttools-4.33.0-py3-none-any.whl", hash = "sha256:14b94aab22439b9bd46c8f44b057b1d2f4b7ebe86556f9b15a1b25694bb12519"},
-    {file = "fonttools-4.33.0.zip", hash = "sha256:65d14ab1fe70cbd2f18fca538d98bd45d73e9b065defb843da71dc3c454deb45"},
+    {file = "fonttools-4.33.2-py3-none-any.whl", hash = "sha256:b4da40696829845ea8c1cb33ce51c552179754cbee7ab4e8b96a6bcf421f437a"},
+    {file = "fonttools-4.33.2.zip", hash = "sha256:696fe922a271584c3ec8325ba31d4001a4fd6c4953b22900b767f1cb53ce1044"},
 ]
 gitdb = [
     {file = "gitdb-4.0.9-py3-none-any.whl", hash = "sha256:8033ad4e853066ba6ca92050b9df2f89301b8fc8bf7e9324d412a63f8bf1a8fd"},
