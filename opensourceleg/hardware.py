@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 from typing import Any, Callable, List, Optional
 
-import json
 import threading
 import time
 
@@ -10,8 +9,6 @@ import scipy.signal
 from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
-
-from opensourceleg.statemachine import *
 
 
 class ActpackData:
@@ -151,7 +148,6 @@ class Joint:
         """
         Saves encoder_map: [Joint angle, Motor count] to a text file
         """
-        # Saving reversed array because of our joint's zero position
         np.savetxt(self._filename, data, fmt="%.5f")
 
     def load_encoder_map(self):
@@ -215,122 +211,12 @@ class OSL:
         self.loadcell_matrix = None
         self.loadcell_zero = None
 
-        # State Machine Variables
-        self._states: list[State] = []
-        self._events: list[Event] = []
-        self._transitions: list[Transition] = []
-        self._initial_state: State
-        self._current_state: State
-        self._exit_callback: Optional[Callable[[Idle, Any], None]] = None
-        self._exit_state = Idle()
-        self.add_state(self._exit_state)
-        self._exited = True
-
-        self.state_to_be_tuned: Optional[State] = None
-
-        # State Machine Transition Variables
-        # Verify sign convention for loadcell data
-        self.load_lstance = -1.0 * self.body_weight * 0.3 * 4.4
-        self.load_eswing = -1.0 * self.body_weight * 0.2 * 4.4
-
-        self.theta_dot_eswing_lswing = abs(3 * self.knee._deg2count / 1000)
-        self.load_estance = -1.0 * self.body_weight * 0.3 * 4.4
-
-        self.loadcell_zero = np.zeros((1, 6), dtype=np.double)
-
-    def start(self, data: Any = None):
-        if not self._initial_state:
-            raise ValueError("Initial state hasn't been set.")
-
-        self._current_state = self._initial_state
-        self.state_to_be_tuned = self._initial_state
-        self._exited = False
-        self._current_state.start(data)
-
-    def stop(self, data: Any = None):
-        if not (self._initial_state or self._current_state):
-            raise ValueError("OSL isn't active.")
-
-        self._current_state.stop(data)
-        self._current_state = self._exit_state
-        self._exited = True
-
-    def on_event(self, data: Any = None):
-        validity = False
-
-        if not (self._initial_state or self._current_state):
-            raise ValueError("OSL isn't active.")
-
-        for transition in self._transitions:
-            if transition.source_state == self._current_state:
-                self._current_state = transition(data)
-
-                if isinstance(self._current_state, Idle) and not self._exited:
-                    self._exited = True
-
-                    if self._exit_callback:
-                        self._exit_callback(self._current_state, data)
-
-                validity = True
-                break
-
-        if not validity:
-            print("Event isn't valid at ", self._current_state)
-
-    def is_running(self) -> bool:
-        if self._current_state and self._current_state != self._exit_state:
-            return True
-        else:
-            return False
-
-    def on_exit(self, callback):
-        self._exit_callback = callback
-
-    def add_state(self, state: State, initial_state: bool = False):
-        if state in self._states:
-            raise ValueError("State already exists.")
-
-        self._states.append(state)
-
-        if not self._initial_state and initial_state:
-            self._initial_state = state
-
-    def add_event(self, event: Event):
-        self._events.append(event)
-
-    def add_transition(
-        self,
-        source: State,
-        destination: State,
-        event: Event,
-        callback: Callable[[Any], bool] = None,
-    ) -> Optional[Transition]:
-        transition = None
-
-        if (
-            source in self._states
-            and destination in self._states
-            and event in self._events
-        ):
-            transition = FromToTransition(event, source, destination, callback)
-            self._transitions.append(transition)
-
-        return transition
-
-    def save_state_variables(self):
-        jstr = ""
-        with open("state_variables.json", "w") as f:
-            for state in self._states:
-                jstr = jstr + json.dumps(state.__dict__) + "\n"
-
-            json.dump(jstr, f)
-
     def _start_streaming_data(self, frequency=500, log_en=False):
-        """
-        Starts the actuator
+        """_summary_
 
-        Parameters:
-        -----------
+        Args:
+            frequency (int, optional): _description_. Defaults to 500.
+            log_en (bool, optional): _description_. Defaults to False.
         """
 
         # If loadcell hasn't been initialized, assign default values.
@@ -485,61 +371,6 @@ class OSL:
         time.sleep(1)
         self._stop_streaming_data()
 
-    def estance_lstance(self, data):
-        # print(self.knee.data.fz, self.load_lstance)
-
-        if self.knee.data.fz < self.load_lstance:
-            return True
-        else:
-            return False
-
-    def lstance_eswing(self, data):
-        # print(self.knee.data.fz, self.load_eswing)
-
-        if self.knee.data.fz > self.load_eswing:
-            return True
-        else:
-            return False
-
-    def eswing_lswing(self, data):
-        if (
-            self.knee.data.motor_angle > self.theta_eswing_lswing
-            and (self.knee.data.motor_velocity * self.knee._count2deg)
-            < self.theta_dot_eswing_lswing
-        ):
-            return True
-        else:
-            return False
-
-    def eswing_estance(self, data):
-        if self.knee.data.fz < self.load_estance:
-            return True
-        else:
-            False
-
-    def tswing_estance(self, data):
-        print(
-            self.knee.data.fz,
-            self.load_estance,
-            self.knee.data.motor_angle,
-            self.theta_lswing_estance,
-        )
-        print(self.knee.data.fz < self.load_estance)
-        print(self.knee.data.motor_angle < self.theta_lswing_estance)
-        if (
-            self.knee.data.fz < self.load_estance
-            and self.knee.data.motor_angle < self.theta_lswing_estance
-        ):
-            return True
-        else:
-            return False
-
-    def lswing_tswing(self, data):
-        if self.knee.data.motor_angle < self.theta_lswing_estance:
-            return True
-        else:
-            return False
-
     def walk(self, duration=15, time_step=0.001):
         """
         Walks for 'n' number of seconds.
@@ -552,70 +383,11 @@ class OSL:
         ki_I = 400
         k_FF = 128
 
-        self.theta_eswing_lswing = self.knee.joint_angle_2_motor_count(60)
-        self.theta_lswing_estance = self.knee.joint_angle_2_motor_count(30)
-
         self.fxs.set_gains(self.dev_id, kp_I, ki_I, 0, 0, 0, k_FF)
         time.sleep(0.5)
 
         try:
             now = then = time.time()
-
-            # Create states
-            early_stance = State(
-                "EStance", self.knee.joint_angle_2_motor_count(0.1), 130.0, 0.0
-            )
-            late_stance = State(
-                "LStance", self.knee.joint_angle_2_motor_count(0.1), 175.0, 0.0
-            )
-            early_swing = State(
-                "ESwing", self.knee.joint_angle_2_motor_count(62), 40.0, 40.0
-            )
-            late_swing = State(
-                "LSwing", self.knee.joint_angle_2_motor_count(30), 30.0, 120.0
-            )
-            terminal_swing = State(
-                "TSwing", self.knee.joint_angle_2_motor_count(20), 10.0, 360.0
-            )
-
-            # Create events
-            foot_flat = Event("foot_flat")
-            heel_off = Event("heel_off")
-            toe_off = Event("toe_off")
-            pre_heel_strike = Event("pre_heel_strike")
-            heel_strike = Event("heel_strike")
-            misc = Event("misc")
-
-            self.add_state(early_stance, initial_state=True)
-            self.add_state(late_stance)
-            self.add_state(early_swing)
-            self.add_state(late_swing)
-            self.add_state(terminal_swing)
-
-            self.add_event(foot_flat)
-            self.add_event(heel_off)
-            self.add_event(toe_off)
-            self.add_event(pre_heel_strike)
-            self.add_event(heel_strike)
-            self.add_event(misc)
-
-            self.add_transition(
-                early_stance, late_stance, foot_flat, self.estance_lstance
-            )
-            self.add_transition(late_stance, early_swing, heel_off, self.lstance_eswing)
-            self.add_transition(early_swing, late_swing, toe_off, self.eswing_lswing)
-            self.add_transition(early_swing, early_stance, misc, self.eswing_estance)
-            self.add_transition(
-                late_swing, terminal_swing, pre_heel_strike, self.lswing_tswing
-            )
-            self.add_transition(
-                terminal_swing, early_stance, heel_strike, self.tswing_estance
-            )
-
-            self.start()
-
-            print("Starting OSL with state: ", self.current_state.name)
-
             for i in range(number_of_iterations):
                 now = time.time()
                 dt = now - then
@@ -626,55 +398,31 @@ class OSL:
                 self._get_sensor_data(i, dt)
                 np.set_printoptions(suppress=True)
 
-                # Create a data structure for events
-                self.on_event([i, dt])
-
-                print(
-                    "Theta: {}, Stiffness: {}, Damping: {}".format(
-                        self.current_state.equilibrium_angle,
-                        self.current_state.stiffness,
-                        self.current_state.damping,
-                    )
-                )
-
                 self.fxs.send_motor_command(
                     self.dev_id,
                     fxe.FX_IMPEDANCE,
-                    self.current_state.equilibrium_angle,
+                    0.0,
                 )
                 self.fxs.set_gains(
                     self.dev_id,
                     kp_I,
                     ki_I,
-                    0,
-                    int(self.current_state.stiffness),
-                    int(self.current_state.damping),
+                    int(self.knee.joint_angle_2_motor_count(30)),
+                    int(30.0),
+                    int(120.0),
                     k_FF,
                 )
-                print(f"State that's being tuned: {self.state_to_be_tuned.name}")
-                print(f"*** Current State: {self.current_state.name} ***")
 
                 then = now
 
-            print("Stopping SM and exiting the program.")
-            self.save_state_variables()
-            # self.stop()
+            print("Exiting the program.")
             time.sleep(1)
             self._stop_streaming_data()
 
         except KeyboardInterrupt:
             print("Keyboard Interrupt detected, exiting the program.")
-            self.save_state_variables()
             time.sleep(1)
             self._stop_streaming_data()
-
-    @property
-    def exit_state(self):
-        return self._exit_state
-
-    @property
-    def current_state(self):
-        return self._current_state
 
 
 if __name__ == "__main__":
@@ -682,9 +430,7 @@ if __name__ == "__main__":
 
     osl = OSL(port="/dev/ttyACM0", baud_rate=230400)
     walking_thread = threading.Thread(target=osl.walk, args=(45,))
-
-    if input("Start walking? (y/n) ") == "y":
-        walking_thread.start()
+    walking_thread.start()
 
     finish = time.perf_counter()
     print(f"Script ended at {finish-start:0.4f}")
