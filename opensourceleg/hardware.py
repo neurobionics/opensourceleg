@@ -1,17 +1,22 @@
 #!/usr/bin/python3
-from typing import Any, Callable, List, Optional
+from typing import Any, List
 
-import threading
+import logging
+import sys
 import time
+from enum import Enum
+from logging.handlers import RotatingFileHandler
+from math import isfinite
 
 import numpy as np
 import scipy.signal
 from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
-from flexsea import fxUtils as fxu
+
+# TODO: Support for TMotor driver with similar structure
 
 
-class ActpackData:
+class Actpack:
     """A class that contains and works with all the sensor data from a Dephy Actpack.
 
     Attributes:
@@ -20,72 +25,304 @@ class ActpackData:
 
     """
 
-    def __init__(self) -> None:
-        self.motor_angle: np.double
-        self.motor_velocity: np.double
-        self.motor_acceleration: np.double
-
-        self.joint_angle: np.double
-        self.joint_velocity: np.double
-
-        self.fx: np.double
-        self.fy: np.double
-        self.fz: np.double
-
-    def update(self, motor, joint, loadcell):
-        """_summary_
+    def __init__(
+        self, fxs, port, baud_rate, logger: logging.Logger = None, debug_level=0
+    ) -> None:
+        """
+        Initializes the Actpack class
 
         Args:
-            motor (_type_): _description_
-            joint (_type_): _description_
-            loadcell (_type_): _description_
+            fxs (Fle): _description_
+            port (_type_): _description_
+            baud_rate (_type_): _description_
+            has_loadcell (bool, optional): _description_. Defaults to False.
+            debug_level (int, optional): _description_. Defaults to 0.
         """
-        self.motor_angle = motor[0]
-        self.motor_velocity = motor[1]
-        self.motor_acceleration = motor[2]
 
-        self.joint_angle = joint[0]
-        self.joint_velocity = joint[1]
+        self._fxs = fxs
+        self._dev_id = None
+        self._app_type = None
 
-        self.fx = loadcell[0]
-        self.fy = loadcell[1]
-        self.fz = loadcell[2]
+        self._port = port
+        self._baud_rate = baud_rate
+        self._debug_level = debug_level
+
+        self._streaming = False
+        self._data = None
+
+        self._ON = False
+        self.log = logger
+        self._start()
+
+    def update(self) -> None:
+        """
+        Updates/Reads data from the Actpack
+        """
+        if self.is_streaming:
+            self._data = self._fxs.read_device(self._dev_id)
+
+    def _start(self):
+        try:
+            self._dev_id = self._fxs.open(
+                self._port, self._baud_rate, self._debug_level
+            )
+            self._app_type = self._fxs.get_app_type(self._dev_id)
+            self._ON = True
+
+        except OSError:
+            self._ON = False
+            self.log.error("Actpack is not powered ON.")
+
+    def _start_streaming_data(self, frequency=500, log_en=False):
+        """Starts streaming data
+
+        Args:
+            frequency (int, optional): _description_. Defaults to 500.
+            log_en (bool, optional): _description_. Defaults to False.
+        """
+
+        if self.is_on:
+            self._fxs.start_streaming(self._dev_id, freq=frequency, log_en=log_en)
+            self._streaming = True
+            time.sleep(2)
+
+    def _stop_streaming_data(self):
+        """
+        Stops streaming data
+        """
+        if self.is_streaming:
+            self._fxs.stop_streaming(self._dev_id)
+            self._streaming = False
+            time.sleep(2)
+
+    def _shutdown(self):
+        """
+        Shuts down the Actpack
+        """
+        self._stop_streaming_data()
+        self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, 0)
+        time.sleep(1)
+        self._fxs.close(self._dev_id)
+
+    def _set_position_gains(self, kp: int = 100, ki: int = 0, kd: int = 0):
+        """Sets Position Gains
+
+        Args:
+            kp (int, optional): _description_. Defaults to 200.
+            ki (int, optional): _description_. Defaults to 50.
+            kd (int, optional): _description_. Defaults to 0.
+        """
+        assert isfinite(kp) and kp >= 0 and kp <= 1000
+        assert isfinite(ki) and ki >= 0 and ki <= 1000
+        assert isfinite(kd) and kd >= 0 and kd <= 1000
+
+        self._fxs.set_gains(self._dev_id, kp, ki, kd, 0, 0, 0)
+        # self._set_motor_angle(self.motor_angle)
+
+    def _set_current_gains(self, kp: int = 40, ki: int = 400, ff: int = 128):
+        """Sets Current Gains
+
+        Args:
+            kp (int, optional): _description_. Defaults to 40.
+            ki (int, optional): _description_. Defaults to 400.
+            ff (int, optional): _description_. Defaults to 128.
+        """
+        assert isfinite(kp) and kp >= 0 and kp <= 80
+        assert isfinite(ki) and ki >= 0 and ki <= 800
+        assert isfinite(ff) and ff >= 0 and ff <= 128
+
+        self._fxs.set_gains(self._dev_id, kp, ki, 0, 0, 0, ff)
+
+    def _set_impedance_gains(
+        self, K: int = 300, B: int = 1600, kp: int = 40, ki: int = 400, ff: int = 128
+    ):
+        """Sets Impedance Gains
+
+        Args:
+            kp (int, optional): _description_. Defaults to 40.
+            ki (int, optional): _description_. Defaults to 400.
+            K (int, optional): _description_. Defaults to 300.
+            B (int, optional): _description_. Defaults to 1600.
+            ff (int, optional): _description_. Defaults to 128.
+        """
+        assert isfinite(kp) and kp >= 0 and kp <= 80
+        assert isfinite(ki) and ki >= 0 and ki <= 800
+        assert isfinite(ff) and ff >= 0 and ff <= 128
+        assert isfinite(K) and K >= 0
+        assert isfinite(B) and B >= 0
+
+        self._fxs.set_gains(self._dev_id, kp, ki, 0, K, B, ff)
+
+    def _set_motor_angle(self, position: int = 0):
+        """Sets Motor Angle
+
+        Args:
+            position (int, optional): Angular position in motor counts. Defaults to 0.
+        """
+        assert isfinite(position)
+        self._fxs.send_motor_command(self._dev_id, fxe.FX_POSITION, position)
+
+    def _set_equilibrium_angle(self, theta: int = 0):
+        assert isfinite(theta)
+        self._fxs.send_motor_command(self._dev_id, fxe.FX_IMPEDANCE, theta)
+
+    def _set_voltage(self, volt: int = 0):
+        """Sets Q-Axis Voltage
+
+        Args:
+            volt (int, optional): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
+        """
+        assert isfinite(volt) and abs(volt) <= 36000
+        self._fxs.send_motor_command(self._dev_id, fxe.FX_VOLTAGE, volt)
+
+    def _set_qaxis_voltage(self, volt: int = 0):
+        """Sets Q-Axis Voltage
+
+        Args:
+            volt (int, optional): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
+        """
+        assert isfinite(volt) and abs(volt) <= 36000
+        self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, volt)
+
+    def _set_qaxis_current(self, current: int = 0):
+        """Sets Q-Axis Current
+
+        Args:
+            current (int, optional): Current in mA. Defaults to 0. Maximum limit is set to 22A.
+        """
+        assert isfinite(current) and abs(current) <= 22000
+        self._fxs.send_motor_command(self._dev_id, fxe.FX_CURRENT, current)
+
+    @property
+    def fxs(self):
+        return self._fxs
+
+    @property
+    def port(self):
+        return self._port
+
+    @property
+    def baud_rate(self):
+        return self._baud_rate
+
+    @property
+    def is_on(self):
+        return self._ON
+
+    @property
+    def is_streaming(self):
+        return self._streaming
+
+    @property
+    def state_time(self):
+        return self._data.state_time
+
+    @property
+    def motor_angle(self):
+        return self._data.mot_ang
+
+    @property
+    def motor_velocity(self):
+        return self._data.mot_vel
+
+    @property
+    def motor_acceleration(self):
+        return self._data.mot_acc
+
+    @property
+    def joint_angle(self):
+        return self._data.ank_ang
+
+    @property
+    def joint_velocity(self):
+        return self._data.ank_vel
+
+    @property
+    def acceleration_x(self):
+        return self._data.accelx
+
+    @property
+    def acceleration_y(self):
+        return self._data.accely
+
+    @property
+    def acceleration_z(self):
+        return self._data.accelz
+
+    @property
+    def gyro_x(self):
+        return self._data.gyro_x
+
+    @property
+    def gyro_y(self):
+        return self._data.gyro_y
+
+    @property
+    def gyro_z(self):
+        return self._data.gyro_z
+
+    @property
+    def genvars(self):
+        return np.array(
+            [
+                self._data.genvar_0,
+                self._data.genvar_1,
+                self._data.genvar_2,
+                self._data.genvar_3,
+                self._data.genvar_4,
+                self._data.genvar_5,
+            ]
+        )
 
 
-class Joint:
-    def __init__(
-        self, name, fxs, dev_id, homing_voltage=2500, homing_rate=0.001
-    ) -> None:
+class JointState(Enum):
+    NEUTRAL = 0
+    VOLTAGE = 1
+    POSITION = 2
+    CURRENT = 3
+    IMPEDANCE = 4
+
+
+class Joint(Actpack):
+    def __init__(self, name, fxs, port, baud_rate, logger, debug_level=0) -> None:
+        super().__init__(fxs, port, baud_rate, logger, debug_level)
+
         self._name = name
         self._filename = "./encoder_map_" + self._name + ".txt"
 
-        self._fxs = fxs
-        self._dev_id = dev_id
-
-        self._homing_voltage = homing_voltage
-        self._homing_rate = homing_rate
-
         self._count2deg = 360 / 2**14
-        self._deg2count = 2**14 / 360
+        self._joint_angle_array = None
+        self._motor_count_array = None
 
-        self._bit_2_degree_per_sec = 1 / 32.8
-        self._bit_2_g = 1 / 8192
+        self._state = JointState.NEUTRAL
 
-        # Sensor data
-        self.data = ActpackData()
+        self._k: int = 0
+        self._b: int = 0
+        self._theta: int = 0
 
-    def home(self, save=True):
+    def start(self):
+        pass
 
-        print("*** Initiating Homing Routine ***")
+    def shutdown(self):
+        pass
 
-        minpos_motor, minpos_joint, min_output = self._homing_routine(direction=1.0)
-        print(
-            f"\nMinimum Motor angle: {minpos_motor}, Minimum Joint angle: {minpos_joint}"
+    def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
+
+        # TODO Logging module
+        self.log.info(f"[{self._name}] Initiating Homing Routine.")
+
+        minpos_motor, minpos_joint, min_output = self._homing_routine(
+            direction=1.0, hvolt=homing_voltage, hrate=homing_rate
+        )
+        self.log.info(
+            f"[{self._name}] Minimum Motor angle: {minpos_motor}, Minimum Joint angle: {minpos_joint}"
         )
         time.sleep(0.5)
-        maxpos_motor, maxpos_joint, max_output = self._homing_routine(direction=-1.0)
-        print(
-            f"\nMaximum Motor angle: {maxpos_motor}, Maximum Joint angle: {maxpos_joint}"
+        maxpos_motor, maxpos_joint, max_output = self._homing_routine(
+            direction=-1.0, hvolt=homing_voltage, hrate=homing_rate
+        )
+        self.log.info(
+            f"[{self.name}] Maximum Motor angle: {maxpos_motor}, Maximum Joint angle: {maxpos_joint}"
         )
 
         max_output = np.array(max_output).reshape((len(max_output), 2))
@@ -94,63 +331,108 @@ class Joint:
         _, ids = np.unique(output_motor_count, return_index=True)
 
         if save:
-            self.save_encoder_map(data=max_output[ids])
+            self._save_encoder_map(data=max_output[ids])
 
-        print("*** Homing Successfull ***")
+        self.log.info(f"[{self.name}] Homing Successfull.")
 
-    def _homing_routine(self, direction):
-        """
-        Private function to aid homing process
+    def _homing_routine(self, direction, hvolt=2500, hrate=0.001):
+        """Homing Routine
+
+        Args:
+            direction (_type_): _description_
+            hvolt (int, optional): _description_. Defaults to 2500.
+            hrate (float, optional): _description_. Defaults to 0.001.
+
+        Returns:
+            _type_: _description_
         """
         output = []
         velocity_threshold = 0
         go_on = True
 
-        data = self._fxs.read_device(self._dev_id)
-        current_motor_position = data.mot_ang
-        current_joint_position = data.ank_ang
+        self.update()
+        current_motor_position = self.motor_angle
+        current_joint_position = self.joint_angle
 
-        try:
-            self._fxs.send_motor_command(
-                self._dev_id, fxe.FX_VOLTAGE, direction * self._homing_voltage
-            )
-            time.sleep(0.05)
+        self.switch_state(JointState.VOLTAGE)
+        self.set_voltage(direction * hvolt)
+        time.sleep(0.05)
+        self.update()
+        cpos_motor = self.motor_angle
+        initial_velocity = self.joint_velocity
+        output.append([self.joint_angle * self._count2deg] + [cpos_motor])
+        velocity_threshold = abs(initial_velocity / 2.0)
 
-            data = self._fxs.read_device(self._dev_id)
-            cpos_motor = data.mot_ang
-            initial_velocity = data.ank_vel
-            output.append([data.ank_ang * self._count2deg] + [cpos_motor])
+        while go_on:
+            time.sleep(hrate)
+            self.update()
+            cpos_motor = self.motor_angle
+            cvel_joint = self.joint_velocity
+            output.append([self.joint_angle * self._count2deg] + [cpos_motor])
 
-            velocity_threshold = abs(initial_velocity / 2.0)
+            if abs(cvel_joint) <= velocity_threshold:
+                self.set_voltage(0)
+                current_motor_position = self.motor_angle
+                current_joint_position = self.joint_angle
 
-            while go_on:
-                time.sleep(self._homing_rate)
-                data = self._fxs.read_device(self._dev_id)
-                cpos_motor = data.mot_ang
-                cvel_joint = data.ank_vel
-
-                output.append([data.ank_ang * self._count2deg] + [cpos_motor])
-
-                if abs(cvel_joint) <= velocity_threshold:
-                    self._fxs.send_motor_command(self._dev_id, fxe.FX_VOLTAGE, 0)
-                    current_motor_position = data.mot_ang
-                    current_joint_position = data.ank_ang
-
-                    go_on = False
-
-        except KeyboardInterrupt:
-            print("Stopping homing routine!")
-            self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, 0)
+                go_on = False
 
         return current_motor_position, current_joint_position, output
 
-    def save_encoder_map(self, data):
+    def get_motor_count(self, desired_joint_angle):
+        """Returns Motor Count corresponding to the passed Joint angle value
+
+        Args:
+            desired_joint_angle (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        if self._joint_angle_array is None:
+            self._load_encoder_map()
+
+        desired_motor_count = np.interp(
+            np.array(desired_joint_angle),
+            self._joint_angle_array,
+            self._motor_count_array,
+        )
+        return desired_motor_count
+
+    def switch_state(self, to_state: JointState = JointState.NEUTRAL):
+        self._state = to_state
+
+    def set_voltage(self, volt):
+        if self.state == JointState.VOLTAGE:
+            self._set_voltage(volt)
+
+    def set_current(self, current):
+        if self.state == JointState.CURRENT:
+            self._set_current_gains()
+            self._set_qaxis_current(current)
+        else:
+            self.log.warning("Joint State is incorrect.")
+
+    def set_position(self, position):
+        if self.state == JointState.POSITION:
+            self._set_position_gains()
+            self._set_motor_angle(position)
+
+    def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
+        self._k = k
+        self._b = b
+        self._theta = theta
+
+        if self.state == JointState.IMPEDANCE:
+            self._set_impedance_gains(K=k, B=b)
+            self._set_equilibrium_angle(theta=theta)
+
+    def _save_encoder_map(self, data):
         """
         Saves encoder_map: [Joint angle, Motor count] to a text file
         """
         np.savetxt(self._filename, data, fmt="%.5f")
 
-    def load_encoder_map(self):
+    def _load_encoder_map(self):
         """
         Loads Joint angle array, Motor count array, Min Joint angle, and Max Joint angle
         """
@@ -171,89 +453,42 @@ class Joint:
             self._motor_count_array, kernel_size=3
         )
 
-    def joint_angle_2_motor_count(self, desired_joint_angle):
-        desired_joint_angle_array = np.array(desired_joint_angle)
-        desired_motor_count = np.interp(
-            desired_joint_angle_array, self._joint_angle_array, self._motor_count_array
-        )
-        return desired_motor_count
-
-    def get_orientation(self, raw_acc, raw_g):
-        acc = raw_acc * self._bit_2_g
-        gyro = raw_g * self._bit_2_degree_per_sec
-        return acc, gyro
-
     @property
     def name(self):
         return self._name
 
+    @property
+    def state(self):
+        return self._state
 
-class OSL:
-    """
-    The OSL class
-    """
+    @property
+    def stiffness(self):
+        return self._k
 
-    def __init__(self, port, baud_rate, debug_level=0) -> None:
+    @property
+    def damping(self):
+        return self._b
 
-        self.port = port
-        self.baud_rate = baud_rate
+    @property
+    def equilibrium_angle(self):
+        return self._theta
 
-        # Actuator Variables
-        self.fxs = flex.FlexSEA()
-        self.dev_id = self.fxs.open(self.port, self.baud_rate, debug_level)
-        self.app_type = self.fxs.get_app_type(self.dev_id)
 
-        # Joint Variables
-        self.knee = Joint(name="knee", fxs=self.fxs, dev_id=self.dev_id)
-
-        # Loadcell Variables
-        self.body_weight = 155
-        self.loadcell_matrix = None
-        self.loadcell_zero = None
-
-    def _start_streaming_data(self, frequency=500, log_en=False):
-        """_summary_
-
-        Args:
-            frequency (int, optional): _description_. Defaults to 500.
-            log_en (bool, optional): _description_. Defaults to False.
-        """
-
-        # If loadcell hasn't been initialized, assign default values.
-        if not self.loadcell_matrix:
-            self.initialize_loadcell()
-
-        self.fxs.start_streaming(self.dev_id, freq=frequency, log_en=log_en)
-        time.sleep(2)
-
-        if input("Do you want to initiate homing process? (y/n) ") == "y":
-            self.knee.home()
-
-        self.knee.load_encoder_map()
-
-    def _stop_streaming_data(self):
-        """
-        Shuts down the actuator
-        """
-        self.fxs.send_motor_command(self.dev_id, fxe.FX_NONE, 0)
-        time.sleep(1)
-        self.fxs.stop_streaming(self.dev_id)
-        time.sleep(1)
-        self.fxs.close(self.dev_id)
-
-    def initialize_loadcell(self, amp_gain=125.0, exc=5.0, loadcell_matrix=None):
-        """_summary_
-
-        Args:
-            amp_gain (float, optional): _description_. Defaults to 125.0.
-            exc (float, optional): _description_. Defaults to 5.0.
-            loadcell_matrix (_type_, optional): _description_. Defaults to None.
-        """
-        self.amp_gain = amp_gain
-        self.exc = exc
+class Loadcell:
+    def __init__(
+        self,
+        joint: Joint,
+        amp_gain: float = 125.0,
+        exc: float = 5.0,
+        loadcell_matrix=None,
+        logger: logging.Logger = None,
+    ) -> None:
+        self._joint = joint
+        self._amp_gain = 125.0
+        self._exc = 5.0
 
         if not loadcell_matrix:
-            self.loadcell_matrix = np.array(
+            self._loadcell_matrix = np.array(
                 [
                     (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
                     (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
@@ -271,166 +506,226 @@ class OSL:
                 ]
             )
         else:
-            self.loadcell_matrix = loadcell_matrix
+            self._loadcell_matrix = loadcell_matrix
 
-    def _get_loadcell_data(self, loadcell_raw, loadcell_zero):
+        self._loadcell_data = None
+        self._loadcell_zero = np.zeros((1, 6), dtype=np.double)
+        self._zeroed = False
+        self.log = logger
+
+    def reset(self):
+        self._zeroed = False
+        self._loadcell_zero = np.zeros((1, 6), dtype=np.double)
+
+    def update(self, loadcell_zero=None):
         """
         Computes Loadcell data
 
         """
-        loadcell_signed = (loadcell_raw - 2048) / 4095 * self.exc
-        loadcell_coupled = loadcell_signed * 1000 / (self.exc * self.amp_gain)
+        loadcell_signed = (self._joint.genvars - 2048) / 4095 * self._exc
+        loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
-        return (
-            np.transpose(self.loadcell_matrix.dot(np.transpose(loadcell_coupled)))
-            - loadcell_zero
-        )
+        if loadcell_zero is None:
+            self._loadcell_data = (
+                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+                - self._loadcell_zero
+            )
+        else:
+            self._loadcell_data = (
+                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+                - loadcell_zero
+            )
 
-    def _get_loadcell_zero(self, loadcell_raw, number_of_iterations=2000):
+    def initialize(self, number_of_iterations: int = 2000):
         """
         Obtains the initial loadcell reading (aka) loadcell_zero
         """
-        initial_loadcell_zero = np.zeros((1, 6), dtype=np.double)
-        loadcell_zero = loadcell_offset = self._get_loadcell_data(
-            loadcell_raw, initial_loadcell_zero
+        ideal_loadcell_zero = np.zeros((1, 6), dtype=np.double)
+        if not self._zeroed:
+            if self._joint.is_streaming:
+                self._joint.update()
+                self.update()
+                self._loadcell_zero = self._loadcell_data
+
+                for _ in range(number_of_iterations):
+                    self.update(ideal_loadcell_zero)
+                    loadcell_offset = self._loadcell_data
+                    self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
+
+        elif input("Do you want to re-initialize loadcell? (Y/N)") == "Y":
+            self.reset()
+            self.initialize()
+
+    @property
+    def is_zeroed(self):
+        return self._zeroed
+
+    @property
+    def fx(self):
+        return self._loadcell_data[0][0]
+
+    @property
+    def fy(self):
+        return self._loadcell_data[0][1]
+
+    @property
+    def fz(self):
+        return self._loadcell_data[0][2]
+
+    @property
+    def mx(self):
+        return self._loadcell_data[0][3]
+
+    @property
+    def my(self):
+        return self._loadcell_data[0][4]
+
+    @property
+    def mz(self):
+        return self._loadcell_data[0][5]
+
+
+class OSLV2:
+    """
+    The OSL class
+    """
+
+    def __init__(self, frequency: int = 200, log_data=False) -> None:
+
+        self._fxs = flex.FlexSEA()
+        self._loadcell = None
+
+        self.joints: list[Joint] = []
+
+        self._knee_id = None
+        self._ankle_id = None
+
+        self._frequency = frequency
+
+        # --------------------------------------------
+
+        self._log_data = log_data
+        self._log_filename = "osl.log"
+        self.log = logging.getLogger(__name__)
+
+        if log_data:
+            self.log.setLevel(logging.DEBUG)
+        else:
+            self.log.setLevel(logging.INFO)
+
+        self._std_formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s: %(message)s"
         )
 
-        for i in range(number_of_iterations):
-            loadcell_offset = self._get_loadcell_data(
-                loadcell_raw, initial_loadcell_zero
+        self._file_handler = RotatingFileHandler(
+            self._log_filename, mode="w", maxBytes=2000, backupCount=10
+        )
+        self._file_handler.setLevel(logging.DEBUG)
+        self._file_handler.setFormatter(self._std_formatter)
+
+        self._stream_handler = logging.StreamHandler()
+        self._stream_handler.setLevel(logging.INFO)
+        self._stream_handler.setFormatter(self._std_formatter)
+
+        self.log.addHandler(self._stream_handler)
+        self.log.addHandler(self._file_handler)
+
+        # ----------------------------------------------
+
+    def __enter__(self):
+        for joint in self.joints:
+            joint._start_streaming_data(frequency=self._frequency)
+
+        if self.loadcell is not None:
+            self.loadcell.initialize()
+
+    def __exit__(self, type, value, tb):
+        for joint in self.joints:
+            joint.switch_state()
+            joint._shutdown()
+
+    def add_joint(self, name: str, port, baud_rate, debug_level=0):
+
+        if "knee" in name.lower():
+            self._knee_id = len(self.joints)
+        elif "ankle" in name.lower():
+            self._ankle_id = len(self.joints)
+        else:
+            sys.exit("Joint can't be identified, kindly check the given name.")
+
+        self.joints.append(
+            Joint(
+                name=name,
+                fxs=self._fxs,
+                port=port,
+                baud_rate=baud_rate,
+                logger=self.log,
+                debug_level=debug_level,
             )
-            loadcell_zero = (loadcell_offset + loadcell_zero) / 2.0
-
-        return loadcell_zero
-
-    def _get_sensor_data(self, i, dt):
-        """
-        Streams data from the actuator.
-
-        Parameters:
-        -----------
-
-        Returns:
-        --------
-        acc:
-        gyro:
-        loadcell_raw:
-
-        """
-        data = self.fxs.read_device(self.dev_id)
-
-        motor = np.array([data.mot_ang, data.mot_vel, data.mot_acc])
-        joint = np.array([data.ank_ang, data.ank_vel])
-        loadcell_raw = np.array(
-            [
-                data.genvar_0,
-                data.genvar_1,
-                data.genvar_2,
-                data.genvar_3,
-                data.genvar_4,
-                data.genvar_5,
-            ]
         )
 
-        if i == 0:
-            self.loadcell_zero = self._get_loadcell_zero(loadcell_raw)
+    def add_loadcell(
+        self,
+        joint: Joint,
+        amp_gain: float = 125.0,
+        exc: float = 5.0,
+        loadcell_matrix=None,
+    ):
+        self._loadcell = Loadcell(
+            joint=joint,
+            amp_gain=amp_gain,
+            exc=exc,
+            loadcell_matrix=loadcell_matrix,
+            logger=self.log,
+        )
 
-        loadcell = self._get_loadcell_data(loadcell_raw, self.loadcell_zero)
+    def update(self):
+        for joint in self.joints:
+            joint.update()
 
-        self.knee.data.update(motor, joint, loadcell[0])
+        if self.loadcell is not None:
+            self.loadcell.update()
 
-    def read(self, duration=15, time_step=0.01):
-        """
-        Reads data from the actuator for 'n' number of seconds.
-        """
-        number_of_iterations = int(duration / time_step)
+    def home(self):
+        for joint in self.joints:
+            joint.home()
 
-        self._start_streaming_data()
-
-        now = then = time.time()
-
-        for i in range(number_of_iterations):
-            now = time.time()
-            dt = now - then
-
-            time.sleep(time_step)
-            fxu.clear_terminal()
-
-            motor, joint, acc, gyro, loadcell_raw = self._get_sensor_data()
-
-            if i == 0:
-                print("*** Obtaining initial value of loadcell ***")
-                loadcell_zero = self._get_loadcell_zero(loadcell_raw)
-
-            loadcell = self._get_loadcell_data(loadcell_raw, loadcell_zero)
-            np.set_printoptions(suppress=True)
-            print(self.knee.get_orientation(acc, gyro))
-
-            then = now
-
-        time.sleep(1)
+    def _shutdown(self):
         self._stop_streaming_data()
 
-    def walk(self, duration=15, time_step=0.001):
-        """
-        Walks for 'n' number of seconds.
-        """
-        number_of_iterations = int(duration / time_step)
+    @property
+    def loadcell(self):
+        if self._loadcell is not None:
+            return self._loadcell
+        else:
+            sys.exit("Loadcell not connected.")
 
-        self._start_streaming_data()
+    @property
+    def knee(self):
+        if self._knee_id is not None:
+            return self.joints[self._knee_id]
+        else:
+            sys.exit("Knee is not connected.")
 
-        kp_I = 40
-        ki_I = 400
-        k_FF = 128
-
-        self.fxs.set_gains(self.dev_id, kp_I, ki_I, 0, 0, 0, k_FF)
-        time.sleep(0.5)
-
-        try:
-            now = then = time.time()
-            for i in range(number_of_iterations):
-                now = time.time()
-                dt = now - then
-
-                time.sleep(time_step)
-                fxu.clear_terminal()
-
-                self._get_sensor_data(i, dt)
-                np.set_printoptions(suppress=True)
-
-                self.fxs.send_motor_command(
-                    self.dev_id,
-                    fxe.FX_IMPEDANCE,
-                    0.0,
-                )
-                self.fxs.set_gains(
-                    self.dev_id,
-                    kp_I,
-                    ki_I,
-                    int(self.knee.joint_angle_2_motor_count(30)),
-                    int(30.0),
-                    int(120.0),
-                    k_FF,
-                )
-
-                then = now
-
-            print("Exiting the program.")
-            time.sleep(1)
-            self._stop_streaming_data()
-
-        except KeyboardInterrupt:
-            print("Keyboard Interrupt detected, exiting the program.")
-            time.sleep(1)
-            self._stop_streaming_data()
+    @property
+    def ankle(self):
+        if self._ankle_id is not None:
+            return self.joints[self._ankle_id]
+        else:
+            sys.exit("Ankle is not connected.")
 
 
 if __name__ == "__main__":
     start = time.perf_counter()
 
-    osl = OSL(port="/dev/ttyACM0", baud_rate=230400)
-    walking_thread = threading.Thread(target=osl.walk, args=(45,))
-    walking_thread.start()
+    osl = OSLV2(log_data=False)
+    osl.add_joint(name="Knee", port="/dev/ttyACM1", baud_rate=230400)
+    osl.add_joint(name="Ankle", port="/dev/ttyACM0", baud_rate=230400)
+    osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
+
+    with osl:
+        osl.loadcell.initialize()
+        osl.home()
 
     finish = time.perf_counter()
-    print(f"Script ended at {finish-start:0.4f}")
+    osl.log.info(f"Script ended at {finish-start:0.4f}")

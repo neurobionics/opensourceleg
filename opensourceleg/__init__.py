@@ -4,7 +4,6 @@ import sys
 from importlib import metadata as importlib_metadata
 
 from .hardware import *
-from .statemachine import *
 from .utilities import *
 
 
