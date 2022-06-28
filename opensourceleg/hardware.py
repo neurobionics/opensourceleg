@@ -1,17 +1,24 @@
 #!/usr/bin/python3
-from typing import Any, List
+from typing import Any, Callable, Dict, List, Optional
 
 import logging
+import os
 import sys
+import threading
 import time
+import traceback
 from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
+from ntpath import join
+from socket import setdefaulttimeout
+from time import strftime
 
 import numpy as np
 import scipy.signal
 from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
+from flexsea import fxUtils as fxu
 
 # TODO: Support for TMotor driver with similar structure
 
@@ -25,8 +32,24 @@ class Actpack:
 
     """
 
+    MOTOR_COUNT_PER_REV = 16384
+    NM_PER_AMP = 0.146
+    RAD_PER_COUNT = 2 * np.pi / MOTOR_COUNT_PER_REV
+    RAD_PER_DEG = np.pi / 180
+    MOTOR_COUNT_TO_RADIANS = lambda x: x * (np.pi / 180.0 / 45.5111)
+    RADIANS_TO_MOTOR_COUNTS = lambda q: q * (180 * 45.5111 / np.pi)
+
+    RAD_PER_SEC_GYROLSB = np.pi / 180 / 32.8
+    G_PER_ACCLSB = 1.0 / 8192
+
     def __init__(
-        self, fxs, port, baud_rate, logger: logging.Logger = None, debug_level=0
+        self,
+        fxs,
+        port,
+        baud_rate,
+        frequency,
+        logger: logging.Logger = None,
+        debug_level=0,
     ) -> None:
         """
         Initializes the Actpack class
@@ -47,10 +70,11 @@ class Actpack:
         self._baud_rate = baud_rate
         self._debug_level = debug_level
 
+        self._frequency = frequency
+
         self._streaming = False
         self._data = None
 
-        self._ON = False
         self.log = logger
         self._start()
 
@@ -67,24 +91,22 @@ class Actpack:
                 self._port, self._baud_rate, self._debug_level
             )
             self._app_type = self._fxs.get_app_type(self._dev_id)
-            self._ON = True
 
         except OSError:
-            self._ON = False
             self.log.error("Actpack is not powered ON.")
+            sys.exit()
 
-    def _start_streaming_data(self, frequency=500, log_en=False):
-        """Starts streaming data
+    def _start_streaming_data(self, log_en=False):
+        """Starts streaming dataa
 
         Args:
             frequency (int, optional): _description_. Defaults to 500.
             log_en (bool, optional): _description_. Defaults to False.
         """
 
-        if self.is_on:
-            self._fxs.start_streaming(self._dev_id, freq=frequency, log_en=log_en)
-            self._streaming = True
-            time.sleep(2)
+        self._fxs.start_streaming(self._dev_id, freq=self._frequency, log_en=log_en)
+        self._streaming = True
+        time.sleep(1 / self._frequency)
 
     def _stop_streaming_data(self):
         """
@@ -93,7 +115,7 @@ class Actpack:
         if self.is_streaming:
             self._fxs.stop_streaming(self._dev_id)
             self._streaming = False
-            time.sleep(2)
+            time.sleep(1 / self._frequency)
 
     def _shutdown(self):
         """
@@ -101,8 +123,9 @@ class Actpack:
         """
         self._stop_streaming_data()
         self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, 0)
-        time.sleep(1)
+        time.sleep(1 / self._frequency)
         self._fxs.close(self._dev_id)
+        time.sleep(1 / self._frequency)
 
     def _set_position_gains(self, kp: int = 100, ki: int = 0, kd: int = 0):
         """Sets Position Gains
@@ -116,8 +139,9 @@ class Actpack:
         assert isfinite(ki) and ki >= 0 and ki <= 1000
         assert isfinite(kd) and kd >= 0 and kd <= 1000
 
+        self._set_qaxis_voltage(0)
         self._fxs.set_gains(self._dev_id, kp, ki, kd, 0, 0, 0)
-        # self._set_motor_angle(self.motor_angle)
+        self._set_motor_angle_counts(self.motor_angle)
 
     def _set_current_gains(self, kp: int = 40, ki: int = 400, ff: int = 128):
         """Sets Current Gains
@@ -132,6 +156,7 @@ class Actpack:
         assert isfinite(ff) and ff >= 0 and ff <= 128
 
         self._fxs.set_gains(self._dev_id, kp, ki, 0, 0, 0, ff)
+        time.sleep(1 / self._frequency)
 
     def _set_impedance_gains(
         self, K: int = 300, B: int = 1600, kp: int = 40, ki: int = 400, ff: int = 128
@@ -151,9 +176,11 @@ class Actpack:
         assert isfinite(K) and K >= 0
         assert isfinite(B) and B >= 0
 
+        self._set_qaxis_voltage(0)
         self._fxs.set_gains(self._dev_id, kp, ki, 0, K, B, ff)
+        self._set_motor_angle_counts(self.motor_angle)
 
-    def _set_motor_angle(self, position: int = 0):
+    def _set_motor_angle_counts(self, position: int = 0):
         """Sets Motor Angle
 
         Args:
@@ -161,6 +188,12 @@ class Actpack:
         """
         assert isfinite(position)
         self._fxs.send_motor_command(self._dev_id, fxe.FX_POSITION, position)
+
+    def _set_motor_angle_radians(self, theta: float = 0.0):
+        assert isfinite(theta)
+        self._fxs.send_motor_command(
+            self._dev_id, fxe.FX_POSITION, int(theta / self.RAD_PER_COUNT)
+        )
 
     def _set_equilibrium_angle(self, theta: int = 0):
         assert isfinite(theta)
@@ -193,6 +226,9 @@ class Actpack:
         assert isfinite(current) and abs(current) <= 22000
         self._fxs.send_motor_command(self._dev_id, fxe.FX_CURRENT, current)
 
+    def _set_motor_torque(self, torque: float = 0.0):
+        self._set_qaxis_current(torque / self.NM_PER_AMP)
+
     @property
     def fxs(self):
         return self._fxs
@@ -206,10 +242,6 @@ class Actpack:
         return self._baud_rate
 
     @property
-    def is_on(self):
-        return self._ON
-
-    @property
     def is_streaming(self):
         return self._streaming
 
@@ -218,12 +250,36 @@ class Actpack:
         return self._data.state_time
 
     @property
-    def motor_angle(self):
+    def battery_current(self):
+        return self._data.batt_curr
+
+    @property
+    def battery_voltage(self):
+        return self._data.batt_volt
+
+    @property
+    def motor_temperature(self):
+        return self._data.temp
+
+    @property
+    def motor_current(self):
+        return self._data.mot_cur
+
+    @property
+    def motor_angle_counts(self):
         return self._data.mot_ang
 
     @property
+    def motor_angle(self):
+        return self._data.mot_ang * self.RAD_PER_COUNT
+
+    @property
     def motor_velocity(self):
-        return self._data.mot_vel
+        return self._data.mot_vel * self.RAD_PER_DEG
+
+    @property
+    def motor_torque(self):
+        return self.motor_current * 1e-3 * self.NM_PER_AMP
 
     @property
     def motor_acceleration(self):
@@ -239,27 +295,41 @@ class Actpack:
 
     @property
     def acceleration_x(self):
-        return self._data.accelx
+        return self._data.accelx * self.G_PER_ACCLSB
 
     @property
     def acceleration_y(self):
-        return self._data.accely
+        return self._data.accely * self.G_PER_ACCLSB
 
     @property
     def acceleration_z(self):
-        return self._data.accelz
+        return self._data.accelz * self.G_PER_ACCLSB
 
     @property
     def gyro_x(self):
-        return self._data.gyro_x
+        return self._data.gyro_x * self.RAD_PER_SEC_GYROLSB
 
     @property
     def gyro_y(self):
-        return self._data.gyro_y
+        return self._data.gyro_y * self.RAD_PER_SEC_GYROLSB
 
     @property
     def gyro_z(self):
-        return self._data.gyro_z
+        return self._data.gyro_z * self.RAD_PER_SEC_GYROLSB
+
+    @property
+    def gyroscope_vector(self):
+        return (
+            np.array([self._data.gyro_x, self._data.gyro_y, self._data.gyro_z]).T
+            * self.RAD_PER_SEC_GYROLSB
+        )
+
+    @property
+    def accelerometer_vector(self):
+        return (
+            np.array([self._data.accelx, self._data.accely, self._data.accelz]).T
+            * self.G_PER_ACCLSB
+        )
 
     @property
     def genvars(self):
@@ -284,8 +354,10 @@ class JointState(Enum):
 
 
 class Joint(Actpack):
-    def __init__(self, name, fxs, port, baud_rate, logger, debug_level=0) -> None:
-        super().__init__(fxs, port, baud_rate, logger, debug_level)
+    def __init__(
+        self, name, fxs, port, baud_rate, frequency, logger, debug_level=0
+    ) -> None:
+        super().__init__(fxs, port, baud_rate, frequency, logger, debug_level)
 
         self._name = name
         self._filename = "./encoder_map_" + self._name + ".txt"
@@ -299,12 +371,6 @@ class Joint(Actpack):
         self._k: int = 0
         self._b: int = 0
         self._theta: int = 0
-
-    def start(self):
-        pass
-
-    def shutdown(self):
-        pass
 
     def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
 
@@ -415,7 +481,7 @@ class Joint(Actpack):
     def set_position(self, position):
         if self.state == JointState.POSITION:
             self._set_position_gains()
-            self._set_motor_angle(position)
+            self._set_motor_angle_counts(position)
 
     def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
         self._k = k
@@ -574,15 +640,15 @@ class Loadcell:
 
     @property
     def mx(self):
-        return self._loadcell_data[0][3]
+        return self._loadcell_data[3]
 
     @property
     def my(self):
-        return self._loadcell_data[0][4]
+        return self._loadcell_data[4]
 
     @property
     def mz(self):
-        return self._loadcell_data[0][5]
+        return self._loadcell_data[5]
 
 
 class OSLV2:
@@ -634,7 +700,7 @@ class OSLV2:
 
     def __enter__(self):
         for joint in self.joints:
-            joint._start_streaming_data(frequency=self._frequency)
+            joint._start_streaming_data()
 
         if self.loadcell is not None:
             self.loadcell.initialize()
@@ -659,6 +725,7 @@ class OSLV2:
                 fxs=self._fxs,
                 port=port,
                 baud_rate=baud_rate,
+                frequency=self._frequency,
                 logger=self.log,
                 debug_level=debug_level,
             )
@@ -690,9 +757,6 @@ class OSLV2:
         for joint in self.joints:
             joint.home()
 
-    def _shutdown(self):
-        self._stop_streaming_data()
-
     @property
     def loadcell(self):
         if self._loadcell is not None:
@@ -719,13 +783,14 @@ if __name__ == "__main__":
     start = time.perf_counter()
 
     osl = OSLV2(log_data=False)
-    osl.add_joint(name="Knee", port="/dev/ttyACM1", baud_rate=230400)
-    osl.add_joint(name="Ankle", port="/dev/ttyACM0", baud_rate=230400)
+    osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
     osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
 
     with osl:
         osl.loadcell.initialize()
-        osl.home()
+        osl.update()
+        osl.knee.home()
+        osl.log.info(f"{osl.knee.motor_angle}")
 
     finish = time.perf_counter()
     osl.log.info(f"Script ended at {finish-start:0.4f}")
