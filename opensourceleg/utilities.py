@@ -9,6 +9,8 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
+from smbus2 import SMBus
+
 # ---------------------------------------------------------------------------
 # Gray C. Thomas, Ph.D's Soft Real Time Loop
 # This library will soon be hosted as a PIP module and added as a python dependency.
@@ -328,3 +330,56 @@ def get_active_ports():
             pass
 
     return serial_ports
+
+# could add more functionality/specific protocols to this, but really just need a nice
+# way to create the I2C bus in the other interfaces
+class I2CManager:
+    """
+    A singleton wrapper for the SMBus I2C bus, so that we can instantiate it only once.
+    """
+    # Note, defining singletons in this way means that you cannot inherit
+    # from this class, as apparently __init__ for the subclass will be called twice
+    _instance = None
+    """
+    Used to keep track of one instantation of the class to make a singleton object
+    """
+    
+    def __new__(cls, bus):
+        """
+        Makes a singleton object to manage a socketcan_native CAN bus.
+        """
+        if not cls._instance:
+            cls._instance = super(I2CManager, cls).__new__(cls)
+            print("Initializing I2C Manager")
+            cls._instance.bus = SMBus(bus)
+            # create a python-can notifier object, which motors can later subscribe to
+            print("Connected on: " + str(cls._instance.bus))
+
+        return cls._instance
+
+    def __init__(self, bus):
+        """
+        ALl initialization happens in __new__
+        """
+        pass
+        
+    def __del__(self):
+        """
+        # shut down the bus when the object is deleted
+        # This may not ever get called, so keep a reference and explicitly delete if this is important.
+        """
+        self.bus.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,7 @@
 from smbus2 import SMBus
 import time
 import numpy as np
+import I2CManager
 # a class to eventually put into the hardware.py file
 
 
@@ -10,7 +11,6 @@ class StrainAmp:
     """
     A class to directly manage the 6ch strain gauge amplifier over I2C
     """
-
     # register numbers for the "ezi2c" interface on the strainamp
     # found in source code here: https://github.com/JFDuval/flexsea-strain/tree/dev
     MEM_R_CH1_H=8
@@ -28,15 +28,17 @@ class StrainAmp:
 
     def __init__(self, bus, I2C_addr=0x66) -> None:
         """Create a strainamp object, to talk over I2C"""
+        self._I2CMan = I2CManager(bus)
         self.bus = bus
         self.addr = I2C_addr
-        self.data = np.zeros(6)
+        self.genvars = np.zeros(6)
+        self.is_streaming = True
 
     def read_uncompressed_strain(self):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         data = []
         for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L+1):
-            data.append(self.bus.read_byte_data(self.addr, i))
+            data.append(self._I2CMan.bus.read_byte_data(self.addr, i))
 
         return self.unpack_uncompressed_strain(data)
 
@@ -45,15 +47,15 @@ class StrainAmp:
         data = []
         # read all 9 data registers of compressed data
         for i in range(self.MEM_R_CH1_H, self.MEM_R_CH1_H+9):
-            data.append(self.bus.read_byte_data(self.addr, i))
+            data.append(self._I2CMan.bus.read_byte_data(self.addr, i))
 
         # unpack them and return as nparray
         return self.unpack_compressed_strain(data)
 
     def update(self):
         """Called to update data of strain amp. Also returns data."""
-        self.data = self.read_compressed_strain()
-        return self.data
+        self.genvars = self.read_compressed_strain()
+        return self.genvars
         
     @staticmethod
     def unpack_uncompressed_strain(data):
@@ -78,14 +80,14 @@ class StrainAmp:
         return np.array([ch1, ch2, ch3, ch4, ch5, ch6])
 
     @staticmethod
-    def strain_V_to_wrench(unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125):
+    def strain_data_to_wrench(unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125):
         """Converts strain values between 0 and 4095 to a wrench in N and Nm"""
         loadcell_signed = (unpacked_strain - 2048) / 4095 * exc
         loadcell_coupled = loadcell_signed * 1000 / (exc * gain)
         return np.reshape(np.transpose(loadcell_matrix.dot(np.transpose(loadcell_coupled))) - loadcell_zero, (6,))
 
     @staticmethod
-    def wrench_to_strain_V(measurement, loadcell_matrix, exc=5, gain=125):
+    def wrench_to_strain_data(measurement, loadcell_matrix, exc=5, gain=125):
         """Wrench in N and Nm to the strain values that would give that wrench"""
         loadcell_coupled = (np.linalg.inv(loadcell_matrix)).dot(measurement)
         loadcell_signed = loadcell_coupled * (exc * gain) / 1000

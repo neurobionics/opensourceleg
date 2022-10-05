@@ -20,6 +20,9 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
+from utilities import I2CManager
+from typing import Union
+
 # TODO: Support for TMotor driver with similar structure
 
 
@@ -352,7 +355,6 @@ class JointState(Enum):
     CURRENT = 3
     IMPEDANCE = 4
 
-
 class Joint(Actpack):
     def __init__(
         self, name, fxs, port, baud_rate, frequency, logger, debug_level=0
@@ -539,11 +541,98 @@ class Joint(Actpack):
     def equilibrium_angle(self):
         return self._theta
 
+class StrainAmp:
+    """
+    A class to directly manage the 6ch strain gauge amplifier over I2C
+    """
+
+    # register numbers for the "ezi2c" interface on the strainamp
+    # found in source code here: https://github.com/JFDuval/flexsea-strain/tree/dev
+    MEM_R_CH1_H=8
+    MEM_R_CH1_L=9
+    MEM_R_CH2_H=10
+    MEM_R_CH2_L=11
+    MEM_R_CH3_H=12
+    MEM_R_CH3_L=13
+    MEM_R_CH4_H=14
+    MEM_R_CH4_L=15
+    MEM_R_CH5_H=16
+    MEM_R_CH5_L=17
+    MEM_R_CH6_H=18
+    MEM_R_CH6_L=19
+
+    def __init__(self, bus, I2C_addr=0x66) -> None:
+        """Create a strainamp object, to talk over I2C"""
+        self._I2CMan = I2CManager(bus)
+        self.bus = bus
+        self.addr = I2C_addr
+        self.genvars = np.zeros(6)
+        self.is_streaming = True
+
+    def read_uncompressed_strain(self):
+        """Used for an older version of the strain amp firmware (at least pre-2017)"""
+        data = []
+        for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L+1):
+            data.append(self._I2CMan.bus.read_byte_data(self.addr, i))
+
+        return self.unpack_uncompressed_strain(data)
+
+    def read_compressed_strain(self):
+        """Used for more recent versions of strain amp firmware"""
+        data = []
+        # read all 9 data registers of compressed data
+        for i in range(self.MEM_R_CH1_H, self.MEM_R_CH1_H+9):
+            data.append(self._I2CMan.bus.read_byte_data(self.addr, i))
+
+        # unpack them and return as nparray
+        return self.unpack_compressed_strain(data)
+
+    def update(self):
+        """Called to update data of strain amp. Also returns data."""
+        self.genvars = self.read_compressed_strain()
+        return self.genvars
+        
+    @staticmethod
+    def unpack_uncompressed_strain(data):
+        """Used for an older version of the strain amp firmware (at least pre-2017)"""
+        ch1 = (data[0] << 8) | data[1]
+        ch2 = (data[2] << 8) | data[3]
+        ch3 = (data[4] << 8) | data[5]
+        ch4 = (data[6] << 8) | data[7]
+        ch5 = (data[8] << 8) | data[9]
+        ch6 = (data[10] << 8) | data[11]
+        return np.array([ch1, ch2, ch3, ch4, ch5, ch6])
+
+    @staticmethod
+    def unpack_compressed_strain(data):
+        """Used for more recent versions of strainamp firmware"""
+        ch1 = (data[0] << 4) | ( (data[1] >> 4) & 0x0F)
+        ch2 = ( (data[1] << 8) & 0x0F00) | data[2]
+        ch3 = (data[3] << 4) | ( (data[4] >> 4) & 0x0F)
+        ch4 = ( (data[4] << 8) & 0x0F00) | data[5]
+        ch5 = (data[6] << 4) | ( (data[7] >> 4) & 0x0F)
+        ch6 = ( (data[7] << 8) & 0x0F00) | data[8]
+        return np.array([ch1, ch2, ch3, ch4, ch5, ch6])
+
+    @staticmethod
+    def strain_data_to_wrench(unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125):
+        """Converts strain values between 0 and 4095 to a wrench in N and Nm"""
+        loadcell_signed = (unpacked_strain - 2048) / 4095 * exc
+        loadcell_coupled = loadcell_signed * 1000 / (exc * gain)
+        return np.reshape(np.transpose(loadcell_matrix.dot(np.transpose(loadcell_coupled))) - loadcell_zero, (6,))
+
+    @staticmethod
+    def wrench_to_strain_data(measurement, loadcell_matrix, exc=5, gain=125):
+        """Wrench in N and Nm to the strain values that would give that wrench"""
+        loadcell_coupled = (np.linalg.inv(loadcell_matrix)).dot(measurement)
+        loadcell_signed = loadcell_coupled * (exc * gain) / 1000
+        return ((loadcell_signed/exc)*4095 + 2048).round(0).astype(int)
+
 
 class Loadcell:
     def __init__(
         self,
-        joint: Joint,
+        joint: Union[Joint,StrainAmp], # could either be an actpack joint, or the standalone strainamp over I2C
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
@@ -733,7 +822,7 @@ class OSLV2:
 
     def add_loadcell(
         self,
-        joint: Joint,
+        joint: Union[Joint,StrainAmp], # could either be an actpack joint, or the standalone strainamp over I2C
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
