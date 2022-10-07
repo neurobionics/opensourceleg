@@ -632,7 +632,7 @@ class StrainAmp:
 class Loadcell:
     def __init__(
         self,
-        joint: Union[Joint,StrainAmp], # could either be an actpack joint, or the standalone strainamp over I2C
+        joint: Union[Joint, StrainAmp], # could either be an actpack joint, or the standalone strainamp over I2C
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
@@ -872,14 +872,15 @@ if __name__ == "__main__":
     start = time.perf_counter()
 
     osl = OSLV2(log_data=False)
-    osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
-    osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
+    amp = StrainAmp(1, 0x66)
+    # osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
+    osl.add_loadcell(amp, amp_gain=125, exc=5)
 
     with osl:
         osl.loadcell.initialize()
         osl.update()
-        osl.knee.home()
-        osl.log.info(f"{osl.knee.motor_angle}")
+        # osl.knee.home()
+        osl.log.info(f"({osl.loadcell.fx},{osl.loadcell.fy},{osl.loadcell.fz},{osl.loadcell.mx},{osl.loadcell.my},{osl.loadcell.mz})")
 
     finish = time.perf_counter()
     osl.log.info(f"Script ended at {finish-start:0.4f}")
