@@ -20,7 +20,7 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
-from utilities import I2CManager
+from utilities import I2CManager, SoftRealtimeLoop
 from typing import Union
 
 # TODO: Support for TMotor driver with similar structure
@@ -628,11 +628,85 @@ class StrainAmp:
         loadcell_signed = loadcell_coupled * (exc * gain) / 1000
         return ((loadcell_signed/exc)*4095 + 2048).round(0).astype(int)
 
+class Joint_TMotor(StrainAmp):
+    def __init__(
+        self, name, bus, strain_addr
+    ) -> None:
+        super().__init__(bus, strain_addr)
+
+        self._name = name
+        self._filename = "./encoder_map_" + self._name + ".txt"
+
+        self._count2deg = 360 / 2**14
+        self._joint_angle_array = None
+        self._motor_count_array = None
+
+        self._state = JointState.NEUTRAL
+
+        self._k: int = 0
+        self._b: int = 0
+        self._theta: int = 0
+
+    def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
+        pass
+
+    def _homing_routine(self, direction, hvolt=2500, hrate=0.001):
+        pass
+
+    def get_motor_count(self, desired_joint_angle):
+        pass
+
+    def switch_state(self, to_state: JointState = JointState.NEUTRAL):
+        self._state = to_state
+
+    def set_voltage(self, volt):
+        pass
+
+    def set_current(self, current):
+        pass
+
+    def set_position(self, position):
+        pass
+
+    def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
+        self._k = k
+        self._b = b
+        self._theta = theta
+        pass
+
+    def _save_encoder_map(self, data):
+        pass
+
+    def _load_encoder_map(self):
+        pass
+
+    def _start_streaming_data(self):
+        pass
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def stiffness(self):
+        return self._k
+
+    @property
+    def damping(self):
+        return self._b
+
+    @property
+    def equilibrium_angle(self):
+        return self._theta
 
 class Loadcell:
     def __init__(
         self,
-        joint: Union[Joint, StrainAmp], # could either be an actpack joint, or the standalone strainamp over I2C
+        joint: Union[Joint, Joint_TMotor], # could either be an actpack joint, or the standalone strainamp over I2C
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
@@ -729,15 +803,16 @@ class Loadcell:
 
     @property
     def mx(self):
-        return self._loadcell_data[3]
+        return self._loadcell_data[0][3]# return self._loadcell_data[3]
 
     @property
     def my(self):
-        return self._loadcell_data[4]
+        return self._loadcell_data[0][4] # return self._loadcell_data[4]
 
     @property
     def mz(self):
-        return self._loadcell_data[5]
+        return self._loadcell_data[0][5] # return self._loadcell_data[5]
+
 
 
 class OSLV2:
@@ -807,7 +882,7 @@ class OSLV2:
             self._ankle_id = len(self.joints)
         else:
             sys.exit("Joint can't be identified, kindly check the given name.")
-
+        
         self.joints.append(
             Joint(
                 name=name,
@@ -819,10 +894,26 @@ class OSLV2:
                 debug_level=debug_level,
             )
         )
+    
+    def add_tmotor_joint(self, name: str, bus, strain_addr=0x66):
+        if "knee" in name.lower():
+            self._knee_id = len(self.joints)
+        elif "ankle" in name.lower():
+            self._ankle_id = len(self.joints)
+        else:
+            sys.exit("Joint can't be identified, kindly check the given name.")
+        
+        self.joints.append(
+            Joint_TMotor(
+                name=name,
+                bus = bus,
+                strain_addr= strain_addr
+            )
+        )
 
     def add_loadcell(
         self,
-        joint: Union[Joint,StrainAmp], # could either be an actpack joint, or the standalone strainamp over I2C
+        joint: Union[Joint,Joint_TMotor], # could either be an actpack joint, or the standalone strainamp over I2C
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
@@ -872,15 +963,20 @@ if __name__ == "__main__":
     start = time.perf_counter()
 
     osl = OSLV2(log_data=False)
-    amp = StrainAmp(1, 0x66)
+    osl.add_tmotor_joint(name='Knee', bus=1, strain_addr=0x66)
+    # amp = StrainAmp(1, 0x66)
     # osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
-    osl.add_loadcell(amp, amp_gain=125, exc=5)
+    osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
+    osl.loadcell.initialize()
 
     with osl:
         osl.loadcell.initialize()
         osl.update()
         # osl.knee.home()
-        osl.log.info(f"({osl.loadcell.fx},{osl.loadcell.fy},{osl.loadcell.fz},{osl.loadcell.mx},{osl.loadcell.my},{osl.loadcell.mz})")
+        loop = SoftRealtimeLoop(dt = 0.01, report=True)
+        for t in loop:
+            osl.update()
+            print(f"\r({round(osl.loadcell.fx)},{round(osl.loadcell.fy)},{round(osl.loadcell.fz)},{round(osl.loadcell.mx)},{round(osl.loadcell.my)},{round(osl.loadcell.mz)})          ",end='')
 
     finish = time.perf_counter()
     osl.log.info(f"Script ended at {finish-start:0.4f}")
