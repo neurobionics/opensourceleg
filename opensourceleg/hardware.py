@@ -20,8 +20,13 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
-from utilities import I2CManager, SoftRealtimeLoop
+from TMotorCANControl.servo_serial import TMotorManager_servo_serial
+from smbus2 import SMBus
+
+from utilities import SoftRealtimeLoop
 from typing import Union
+
+from mscl import mscl as ms
 
 # TODO: Support for TMotor driver with similar structure
 
@@ -543,7 +548,7 @@ class Joint(Actpack):
 
 class StrainAmp:
     """
-    A class to directly manage the 6ch strain gauge amplifier over I2C
+    A class to directly manage the 6ch strain gauge amplifier over I2C. GIVE MITRY CREDIT
     """
 
     # register numbers for the "ezi2c" interface on the strainamp
@@ -563,8 +568,9 @@ class StrainAmp:
 
     def __init__(self, bus, I2C_addr=0x66) -> None:
         """Create a strainamp object, to talk over I2C"""
-        self._I2CMan = I2CManager(bus)
-        self.bus = bus
+        # self._I2CMan = I2CManager(bus)
+        self._SMBus = bus
+        time.sleep(1)
         self.addr = I2C_addr
         self.genvars = np.zeros(6)
         self.is_streaming = True
@@ -573,25 +579,26 @@ class StrainAmp:
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         data = []
         for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L+1):
-            data.append(self._I2CMan.bus.read_byte_data(self.addr, i))
+            data.append(self._SMBus.read_byte_data(self.addr, i))
 
         return self.unpack_uncompressed_strain(data)
 
     def read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
-        data = []
-        # read all 9 data registers of compressed data
-        for i in range(self.MEM_R_CH1_H, self.MEM_R_CH1_H+9):
-            data.append(self._I2CMan.bus.read_byte_data(self.addr, i))
+        data=self._SMBus.read_i2c_block_data(self.addr,self.MEM_R_CH1_H, 10)
 
         # unpack them and return as nparray
         return self.unpack_compressed_strain(data)
 
+    # @SSProfile("updateLC").decorate    
     def update(self):
         """Called to update data of strain amp. Also returns data."""
-        self.genvars = self.read_compressed_strain()
+        # self.genvars = self.read_compressed_strain()
+        # return self.genvars
+        # data = self._SMBus.read_i2c_block_data(self.addr,self.MEM_R_CH1_H, 10)
+        self.genvars = self.unpack_compressed_strain(self._SMBus.read_i2c_block_data(self.addr,self.MEM_R_CH1_H, 10))
         return self.genvars
-        
+
     @staticmethod
     def unpack_uncompressed_strain(data):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
@@ -603,16 +610,18 @@ class StrainAmp:
         ch6 = (data[10] << 8) | data[11]
         return np.array([ch1, ch2, ch3, ch4, ch5, ch6])
 
+    # @SSProfile("unpack data").decorate 
     @staticmethod
     def unpack_compressed_strain(data):
         """Used for more recent versions of strainamp firmware"""
-        ch1 = (data[0] << 4) | ( (data[1] >> 4) & 0x0F)
-        ch2 = ( (data[1] << 8) & 0x0F00) | data[2]
-        ch3 = (data[3] << 4) | ( (data[4] >> 4) & 0x0F)
-        ch4 = ( (data[4] << 8) & 0x0F00) | data[5]
-        ch5 = (data[6] << 4) | ( (data[7] >> 4) & 0x0F)
-        ch6 = ( (data[7] << 8) & 0x0F00) | data[8]
-        return np.array([ch1, ch2, ch3, ch4, ch5, ch6])
+        # ch1 = (data[0] << 4) | ( (data[1] >> 4) & 0x0F)
+        # ch2 = ( (data[1] << 8) & 0x0F00) | data[2]
+        # ch3 = (data[3] << 4) | ( (data[4] >> 4) & 0x0F)
+        # ch4 = ( (data[4] << 8) & 0x0F00) | data[5]
+        # ch5 = (data[6] << 4) | ( (data[7] >> 4) & 0x0F)
+        # ch6 = ( (data[7] << 8) & 0x0F00) | data[8]
+        # moved into one line to save 0.02ms -- maybe pointless but eh
+        return np.array([(data[0] << 4) | ( (data[1] >> 4) & 0x0F), ( (data[1] << 8) & 0x0F00) | data[2], (data[3] << 4) | ( (data[4] >> 4) & 0x0F), ( (data[4] << 8) & 0x0F00) | data[5], (data[6] << 4) | ( (data[7] >> 4) & 0x0F), ( (data[7] << 8) & 0x0F00) | data[8] ])
 
     @staticmethod
     def strain_data_to_wrench(unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125):
@@ -628,11 +637,44 @@ class StrainAmp:
         loadcell_signed = loadcell_coupled * (exc * gain) / 1000
         return ((loadcell_signed/exc)*4095 + 2048).round(0).astype(int)
 
-class Joint_TMotor(StrainAmp):
+# TODO actually test this out
+class AS5048A_encoder():
+    def __init__(self, bus, I2C_addr):
+        self._SMBus = bus
+        time.sleep(1)
+        self.addr = I2C_addr
+        self.joint_angle = 0 # in encoder counts
+        self.joint_velocity = 0 # in encoder counts/sec
+        self.last_update_time = time.time()
+
+        self.max_encoder_counts = 2**14 # 14 bit encoder, so 14 bits!
+
+        # manual: https://www.mouser.com/datasheet/2/588/AS5048_DS000298_4_00-2324531.pdf
+        self.I2C_SLAVE_ADDRESS = 0x15 # lsb=1, then these 5 bits, the hardware setting of A1 and A2 makes 8 bit address
+        self.OTP_ZERO_POSITION_HIGH = 0x16 # bit 13 through 6
+        self.OTP_ZERO_POSITION_LOW = 0x17 # bit 5 through 0 (2 msbs of this aren't used)
+        self.AUTOMATIC_GAIN_CONTROL = 0xFA # 0 = high mag field, 255 = low mag field, 8 bit
+        self.DIAGNOSTICS = 0xFB # flags: 3 = comp high, 2 = comp low, 1 = COF, 0 = OCF
+        self.MAGNITUDE_HIGH = 0xFC # bit 13 through 6
+        self.MAGNITUDE_LOW = 0xFD # bit 5 through 0 (2 msbs of this aren't used)
+        self.ANGLE_HIGH = 0xFE # bit 13 through 6
+        self.ANGLE_LOW = 0xFF # bit 5 through 0 (2 msbs of this aren't used)
+
+    def update(self):
+        data = self._SMBus.read_i2c_block_data(self.addr, self.ANGLE_HIGH, 2)
+        ang = np.int16((data[0] << 5) | data[1])
+        now = time.time()
+        self.joint_velocity = (ang - self.joint_angle)/(now - self.last_update_time)
+        self.joint_angle = ang
+        self.last_update_time = now
+
+
+class Joint_TMotor(TMotorManager_servo_serial, AS5048A_encoder):
     def __init__(
-        self, name, bus, strain_addr
+        self, name, motor_port, motor_baud, motor_params, encoder_bus, encoder_addr
     ) -> None:
-        super().__init__(bus, strain_addr)
+        super(TMotorManager_servo_serial).__init__(motor_port, motor_baud, motor_params)
+        super(AS5048A_encoder).__init__(encoder_bus, encoder_addr)
 
         self._name = name
         self._filename = "./encoder_map_" + self._name + ".txt"
@@ -640,48 +682,130 @@ class Joint_TMotor(StrainAmp):
         self._count2deg = 360 / 2**14
         self._joint_angle_array = None
         self._motor_count_array = None
+        self.transmission_ratio = 5 # 5:1 OSL transmission after the 9:1 tmotor gearbox?
 
-        self._state = JointState.NEUTRAL
+    def update(self):
+        """Update all parent classes"""
+        TMotorManager_servo_serial.update(self)
+        AS5048A_encoder.update(self)
 
-        self._k: int = 0
-        self._b: int = 0
-        self._theta: int = 0
+    def home(self, save=True, homing_duty_cycle=0.1, homing_rate=0.001):
+        # TODO Logging module
+        # self.log.info(f"[{self._name}] Initiating Homing Routine.")
 
-    def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
-        pass
+        minpos_motor, minpos_joint, min_output = self._homing_routine(
+            direction=1.0, hduty=homing_duty_cycle, hrate=homing_rate
+        )
+        # self.log.info(
+        #     f"[{self._name}] Minimum Motor angle: {minpos_motor}, Minimum Joint angle: {minpos_joint}"
+        # )
+        time.sleep(0.5)
+        maxpos_motor, maxpos_joint, max_output = self._homing_routine(
+            direction=-1.0, hduty=homing_duty_cycle, hrate=homing_rate
+        )
+        # self.log.info(
+        #     f"[{self.name}] Maximum Motor angle: {maxpos_motor}, Maximum Joint angle: {maxpos_joint}"
+        # )
 
-    def _homing_routine(self, direction, hvolt=2500, hrate=0.001):
-        pass
+        max_output = np.array(max_output).reshape((len(max_output), 2))
+        output_motor_count = max_output[:, 1]
+
+        _, ids = np.unique(output_motor_count, return_index=True)
+
+        if save:
+            self._save_encoder_map(data=max_output[ids])
+
+        # self.log.info(f"[{self.name}] Homing Successfull.")
+
+    def _homing_routine(self, direction, hduty=0.1, hrate=0.001):
+        """Homing Routine
+
+        Args:
+            direction (_type_): _description_
+            hvolt (int, optional): _description_. Defaults to 2500.
+            hrate (float, optional): _description_. Defaults to 0.001.
+
+        Returns:
+            _type_: _description_
+        """
+        output = []
+        velocity_threshold = 0
+        go_on = True
+
+        self.update()
+        current_motor_position = self.motor_position
+        current_joint_position = self.joint_angle
+
+        self.enter_duty_cycle_control()
+        self.set_duty_cycle_percent(direction * hduty)
+        time.sleep(0.05)
+        self.update()
+        cpos_motor = self.motor_angle
+        initial_velocity = self.joint_velocity
+        output.append([self.joint_angle * self._count2deg] + [cpos_motor])
+        velocity_threshold = abs(initial_velocity / 2.0)
+
+        while go_on:
+            time.sleep(hrate)
+            self.update()
+            cpos_motor = self.motor_angle
+            cvel_joint = self.joint_velocity
+            output.append([self.joint_angle * self._count2deg] + [cpos_motor])
+
+            if abs(cvel_joint) <= velocity_threshold:
+                self.set_duty_cycle_percent(0)
+                current_motor_position = self.motor_angle
+                current_joint_position = self.joint_angle
+
+                go_on = False
+
+        return current_motor_position, current_joint_position, output
 
     def get_motor_count(self, desired_joint_angle):
-        pass
+        """Returns Motor Count corresponding to the passed Joint angle value
 
-    def switch_state(self, to_state: JointState = JointState.NEUTRAL):
-        self._state = to_state
+        Args:
+            desired_joint_angle (_type_): _description_
 
-    def set_voltage(self, volt):
-        pass
+        Returns:
+            _type_: _description_
+        """
+        if self._joint_angle_array is None:
+            self._load_encoder_map()
 
-    def set_current(self, current):
-        pass
-
-    def set_position(self, position):
-        pass
-
-    def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
-        self._k = k
-        self._b = b
-        self._theta = theta
-        pass
+        desired_motor_count = np.interp(
+            np.array(desired_joint_angle),
+            self._joint_angle_array,
+            self._motor_count_array,
+        )
+        return desired_motor_count
 
     def _save_encoder_map(self, data):
-        pass
+        """
+        Saves encoder_map: [Joint angle, Motor count] to a text file
+        """
+        np.savetxt(self._filename, data, fmt="%.5f")
 
     def _load_encoder_map(self):
-        pass
+        """
+        Loads Joint angle array, Motor count array, Min Joint angle, and Max Joint angle
+        """
+        data = np.loadtxt(self._filename, dtype=np.float64)
+        self._joint_angle_array = data[:, 0]
+        self._motor_count_array = np.array(data[:, 1], dtype=np.int32)
 
-    def _start_streaming_data(self):
-        pass
+        self._min_joint_angle = np.min(self._joint_angle_array)
+        self._max_joint_angle = np.max(self._joint_angle_array)
+
+        self._joint_angle_array = self._max_joint_angle - self._joint_angle_array
+
+        # Applying a median filter with a kernel size of 3
+        self._joint_angle_array = scipy.signal.medfilt(
+            self._joint_angle_array, kernel_size=3
+        )
+        self._motor_count_array = scipy.signal.medfilt(
+            self._motor_count_array, kernel_size=3
+        )
 
     @property
     def name(self):
@@ -689,24 +813,34 @@ class Joint_TMotor(StrainAmp):
 
     @property
     def state(self):
-        return self._state
+        return self._control_state
 
     @property
-    def stiffness(self):
-        return self._k
+    def motor_angle(self):
+        return self.get_output_angle_radians()
 
     @property
-    def damping(self):
-        return self._b
+    def motor_velocity(self):
+        return self.get_output_velocity_radians_per_second()
 
     @property
-    def equilibrium_angle(self):
-        return self._theta
+    def motor_acceleration(self):
+        return self.get_output_acceleration_radians_per_second_squared()
+
+    @property
+    def motor_torque(self):
+        return self.get_output_torque_newton_meters()
+
+    @property
+    def joint_torque(self):
+        return self.transmission_ratio * self.get_output_torque_newton_meters()
+
+    # many other properties are defined in the TMotorManager_servo_serial class!
 
 class Loadcell:
     def __init__(
         self,
-        joint: Union[Joint, Joint_TMotor], # could either be an actpack joint, or the standalone strainamp over I2C
+        joint: Union(Joint, StrainAmp), # could either be an actpack joint, or the standalone strainamp over I2C
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
@@ -813,6 +947,72 @@ class Loadcell:
     def mz(self):
         return self._loadcell_data[0][5] # return self._loadcell_data[5]
 
+# ---------------------------------------------------------------------------
+# based on Kevin Best's LordIMU communication class
+@dataclass
+class IMUdataClass:
+    angleX: float = 0
+    angleY: float = 0
+    angleZ: float = 0
+    velocityX:  float = 0  
+    velocityY: float = 0
+    velocityZ: float = 0
+    accelX: float = 0
+    accelY: float = 0
+    accelZ: float = 0
+    IMUTimeSta: float = 0
+    IMUFilterGPSTimeWeekNum: float = 0
+    thighAngle_Sagi: float = 0
+    thighAngle_Coro: float = 0
+    thighAngle_Trans: float = 0
+
+class IMU_LordMicrostrain:
+    def __init__(self, IMU_PORT = r'/dev/ttyUSB0', BAUD = 921600, TIMEOUT = 500, sampleRate = 100):
+        self.PORT = IMU_PORT
+        self.BAUD = BAUD
+        self.connection = ms.Connection.Serial(os.path.realpath(self.PORT), self.BAUD)
+        self.IMU = ms.InertialNode(self.connection)
+        self.TIMEOUT  = TIMEOUT                  #Timeout in (ms) to read the IMU
+        time.sleep(0.5)
+
+        # Configure data channels
+        channels = ms.MipChannels()
+        channels.append(ms.MipChannel(ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER, ms.SampleRate.Hertz(sampleRate)))
+        channels.append(ms.MipChannel(ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE, ms.SampleRate.Hertz(sampleRate)))
+        channels.append(ms.MipChannel(ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL, ms.SampleRate.Hertz(sampleRate)))
+        channels.append(ms.MipChannel(ms.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP, ms.SampleRate.Hertz(sampleRate)))
+        self.IMU.setActiveChannelFields(ms.MipTypes.CLASS_ESTFILTER, channels)
+        self.IMU.enableDataStream(ms.MipTypes.CLASS_ESTFILTER)
+        self.IMU.setToIdle()
+        packets = self.IMU.getDataPackets(TIMEOUT)       # Clean the internal circular buffer.
+        self.IMUdata = IMUdataClass()
+
+    def startDataStream(self):
+        self.IMU.resume()
+
+    def stopDataStream(self):
+        self.IMU.setToIdle()
+
+    def getData(self):
+        IMUPackets = self.IMU.getDataPackets(self.TIMEOUT)
+        if(len(IMUPackets)):
+            # Read all the information from the first packet as float.
+            rawIMUData = {dataPoint.channelName(): dataPoint.as_float() for dataPoint in IMUPackets[-1].data()}
+            self.IMUdata.angleX = rawIMUData['estRoll']
+            self.IMUdata.angleY = rawIMUData['estPitch']
+            self.IMUdata.angleZ = rawIMUData['estYaw']
+            self.IMUdata.velocityX = rawIMUData['estAngularRateX']
+            self.IMUdata.velocityY = rawIMUData['estAngularRateY']
+            self.IMUdata.velocityZ = rawIMUData['estAngularRateZ']
+            self.IMUdata.accelX = rawIMUData['estLinearAccelX']
+            self.IMUdata.accelY = rawIMUData['estLinearAccelY']
+            self.IMUdata.accelZ = rawIMUData['estLinearAccelZ']
+            self.IMUdata.IMUTimeSta = rawIMUData['estFilterGpsTimeTow']
+            self.IMUdata.IMUFilterGPSTimeWeekNum = rawIMUData['estFilterGpsTimeWeekNum']
+            self.IMUdata.thighAngle_Sagi = self.IMUdata.angleX + np.deg2rad( 39.38 )
+            self.IMUdata.thighAngle_Coro = self.IMUdata.angleY
+            self.IMUdata.thighAngle_Trans = self.IMUdata.angleZ
+        return self.IMUdata
 
 
 class OSLV2:
@@ -895,7 +1095,125 @@ class OSLV2:
             )
         )
     
-    def add_tmotor_joint(self, name: str, bus, strain_addr=0x66):
+    def add_tmotor_joint(self, name: str, port: str, motor_params:dict, encoder_bus:SMBus, encoder_addr:int):
+        if "knee" in name.lower():
+            self._knee_id = len(self.joints)
+        elif "ankle" in name.lower():
+            self._ankle_id = len(self.joints)
+        else:
+            sys.exit("Joint can't be identified, kindly check the given name.")
+        
+        self.joints.append(
+            Joint_TMotor(name=name, motor_port=port, motor_params=motor_params,encoder_bus=encoder_bus, encoder_addr=encoder_addr)
+        )
+
+    def add_loadcell(
+        self,
+        joint: Union[Joint,Joint_TMotor], # could either be an actpack joint, or the standalone strainamp over I2C
+        amp_gain: float = 125.0,
+        exc: float = 5.0,
+        loadcell_matrix=None,
+    ):
+        self._loadcell = Loadcell(
+            joint=joint,
+            amp_gain=amp_gain,
+            exc=exc,
+            loadcell_matrix=loadcell_matrix,
+            logger=self.log,
+        )
+
+    def update(self):
+        for joint in self.joints:
+            joint.update()
+
+        if self.loadcell is not None:
+            self.loadcell.update()
+
+    def home(self):
+        for joint in self.joints:
+            joint.home()
+
+    @property
+    def loadcell(self):
+        if self._loadcell is not None:
+            return self._loadcell
+        else:
+            sys.exit("Loadcell not connected.")
+
+    @property
+    def knee(self):
+        if self._knee_id is not None:
+            return self.joints[self._knee_id]
+        else:
+            sys.exit("Knee is not connected.")
+
+    @property
+    def ankle(self):
+        if self._ankle_id is not None:
+            return self.joints[self._ankle_id]
+        else:
+            sys.exit("Ankle is not connected.")
+
+
+class OSLV2_TMotor:
+    """
+    The OSL class
+    """
+
+    def __init__(self, frequency: int = 200, log_data=False) -> None:
+
+        self._loadcell = None
+
+        self.joints: list[Joint_TMotor] = []
+
+        self._knee_id = None
+        self._ankle_id = None
+
+        self._frequency = frequency
+
+        # --------------------------------------------
+
+        self._log_data = log_data
+        self._log_filename = "osl.log"
+        self.log = logging.getLogger(__name__)
+
+        if log_data:
+            self.log.setLevel(logging.DEBUG)
+        else:
+            self.log.setLevel(logging.INFO)
+
+        self._std_formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s: %(message)s"
+        )
+
+        self._file_handler = RotatingFileHandler(
+            self._log_filename, mode="w", maxBytes=2000, backupCount=10
+        )
+        self._file_handler.setLevel(logging.DEBUG)
+        self._file_handler.setFormatter(self._std_formatter)
+
+        self._stream_handler = logging.StreamHandler()
+        self._stream_handler.setLevel(logging.INFO)
+        self._stream_handler.setFormatter(self._std_formatter)
+
+        self.log.addHandler(self._stream_handler)
+        self.log.addHandler(self._file_handler)
+
+        # ----------------------------------------------
+
+    def __enter__(self):
+        for joint in self.joints:
+            joint.__enter__()
+
+        if self.loadcell is not None:
+            self.loadcell.initialize()
+
+    def __exit__(self, type, value, tb):
+        for joint in self.joints:
+            joint.enter_idle_mode()
+            joint.__exit__()
+
+    def add_joint(self, name: str, port: str, motor_params:dict, encoder_bus:SMBus, encoder_addr:int):
         if "knee" in name.lower():
             self._knee_id = len(self.joints)
         elif "ankle" in name.lower():
@@ -905,9 +1223,11 @@ class OSLV2:
         
         self.joints.append(
             Joint_TMotor(
-                name=name,
-                bus = bus,
-                strain_addr= strain_addr
+                name=name, 
+                motor_port=port, 
+                motor_params=motor_params,
+                encoder_bus=encoder_bus, 
+                encoder_addr=encoder_addr
             )
         )
 
@@ -963,7 +1283,6 @@ if __name__ == "__main__":
     start = time.perf_counter()
 
     osl = OSLV2(log_data=False)
-    osl.add_tmotor_joint(name='Knee', bus=1, strain_addr=0x66)
     # amp = StrainAmp(1, 0x66)
     # osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
     osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
