@@ -20,7 +20,7 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
-from TMotorCANControl.servo_serial import TMotorManager_servo_serial
+from TMotorCANControl.servo_can import TMotorManager_servo_can
 from smbus2 import SMBus
 
 from utilities import SoftRealtimeLoop
@@ -669,13 +669,13 @@ class AS5048A_encoder():
         self.last_update_time = now
 
 
-class Joint_TMotor(TMotorManager_servo_serial, AS5048A_encoder):
+class Joint_TMotor(TMotorManager_servo_can, AS5048A_encoder):
     def __init__(
-        self, name, motor_port, motor_baud, motor_params, encoder_bus, encoder_addr
+        self, name:str, motor_type:str, motor_ID:int, encoder_bus:SMBus, encoder_addr:int
     ) -> None:
-        super(TMotorManager_servo_serial).__init__(motor_port, motor_baud, motor_params)
+        super(TMotorManager_servo_can).__init__(motor_type, motor_ID)
         super(AS5048A_encoder).__init__(encoder_bus, encoder_addr)
-
+        
         self._name = name
         self._filename = "./encoder_map_" + self._name + ".txt"
 
@@ -686,7 +686,7 @@ class Joint_TMotor(TMotorManager_servo_serial, AS5048A_encoder):
 
     def update(self):
         """Update all parent classes"""
-        TMotorManager_servo_serial.update(self)
+        TMotorManager_servo_can.update(self)
         AS5048A_encoder.update(self)
 
     def home(self, save=True, homing_duty_cycle=0.1, homing_rate=0.001):
@@ -1094,18 +1094,6 @@ class OSLV2:
                 debug_level=debug_level,
             )
         )
-    
-    def add_tmotor_joint(self, name: str, port: str, motor_params:dict, encoder_bus:SMBus, encoder_addr:int):
-        if "knee" in name.lower():
-            self._knee_id = len(self.joints)
-        elif "ankle" in name.lower():
-            self._ankle_id = len(self.joints)
-        else:
-            sys.exit("Joint can't be identified, kindly check the given name.")
-        
-        self.joints.append(
-            Joint_TMotor(name=name, motor_port=port, motor_params=motor_params,encoder_bus=encoder_bus, encoder_addr=encoder_addr)
-        )
 
     def add_loadcell(
         self,
@@ -1213,7 +1201,7 @@ class OSLV2_TMotor:
             joint.enter_idle_mode()
             joint.__exit__()
 
-    def add_joint(self, name: str, port: str, motor_params:dict, encoder_bus:SMBus, encoder_addr:int):
+    def add_joint(self, name: str, motor_type: str, motor_CAN_ID: int, encoder_bus:SMBus, encoder_addr:int):
         if "knee" in name.lower():
             self._knee_id = len(self.joints)
         elif "ankle" in name.lower():
@@ -1224,8 +1212,8 @@ class OSLV2_TMotor:
         self.joints.append(
             Joint_TMotor(
                 name=name, 
-                motor_port=port, 
-                motor_params=motor_params,
+                motor_type=motor_type, 
+                motor_ID=motor_CAN_ID,
                 encoder_bus=encoder_bus, 
                 encoder_addr=encoder_addr
             )
