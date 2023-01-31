@@ -2,6 +2,7 @@
 from typing import Any, Callable, Dict, List, Optional
 
 import logging
+import collections
 import os
 import sys
 import threading
@@ -10,9 +11,6 @@ import traceback
 from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
-from ntpath import join
-from socket import setdefaulttimeout
-from time import strftime
 
 import numpy as np
 import scipy.signal
@@ -20,8 +18,70 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
+from utilities import SoftRealtimeLoop
+
 # TODO: Support for TMotor driver with similar structure
 
+# Global Units Dictionary
+ALL_UNITS = {
+    "force": {
+        "N": 1.0,
+        "lbf": 4.4482216152605,
+        "kgf": 9.80665,
+    },
+    "torque": {
+        "N-m": 1.0,
+        "lbf-in": 0.1129848290276167,
+        "lbf-ft": 1.3558179483314004,
+        "kgf-cm": 0.0980665,
+        "kgf-m": 0.980665,
+    },
+    "stiffness": {
+        "N/rad": 1.0,
+        "N/deg": 0.017453292519943295,
+        "lbf/rad": 0.224809,
+        "lbf/deg": 0.003490659,
+        "kgf/rad": 1.8518518518518519,
+        "kgf/deg": 0.031746031746031744,
+    },
+    "damping": {
+        "N/(rad/s)": 1.0,
+        "N/(deg/s)": 0.017453292519943295,
+        "lbf/(rad/s)": 0.224809,
+        "lbf/(deg/s)": 0.003490659,
+        "kgf/(rad/s)": 1.8518518518518519,
+        "kgf/(deg/s)": 0.031746031746031744,
+    },
+    "length": {
+        "m": 1.0,
+        "cm": 0.01,
+        "in": 0.0254,
+        "ft": 0.3048,
+    },
+    "angle": {
+        "rad": 1.0,
+        "deg": 0.017453292519943295,
+    },
+    "mass": {
+        "kg": 1.0,
+        "g": 0.001,
+        "lb": 0.45359237,
+    },
+    "velocity": {
+        "rad/s": 1.0,
+        "deg/s": 0.017453292519943295,
+        "rpm": 0.10471975511965977,
+    },
+    "acceleration": {
+        "rad/s^2": 1.0,
+        "deg/s^2": 0.017453292519943295,
+    },
+    "time": {
+        "s": 1.0,
+        "ms": 0.001,
+        "us": 0.000001,
+    },
+}
 
 class Actpack:
     """A class that contains and works with all the sensor data from a Dephy Actpack.
@@ -117,7 +177,7 @@ class Actpack:
             self._streaming = False
             time.sleep(1 / self._frequency)
 
-    def _shutdown(self):
+    def shutdown(self):
         """
         Shuts down the Actpack
         """
@@ -344,14 +404,12 @@ class Actpack:
             ]
         )
 
-
 class JointState(Enum):
     NEUTRAL = 0
     VOLTAGE = 1
     POSITION = 2
     CURRENT = 3
     IMPEDANCE = 4
-
 
 class Joint(Actpack):
     def __init__(
@@ -539,7 +597,6 @@ class Joint(Actpack):
     def equilibrium_angle(self):
         return self._theta
 
-
 class Loadcell:
     def __init__(
         self,
@@ -651,12 +708,80 @@ class Loadcell:
         return self._loadcell_data[5]
 
 
-class OSLV2:
+    # convert a value from one unit to another
+    def convert(self, value: float, from_unit: str, to_unit: str) -> float:
+        return value * self._units[from_unit][to_unit]
+
+    # get a list of units for a given type
+    def get_units(self, unit_type: str) -> list[str]:
+        return list(self._units[unit_type].keys())
+
+    # set default units for a given type
+    def set_default_units(self, unit_type: str, default_unit: str) -> None:
+        self._units[unit_type]["default"] = default_unit
+
+    # get default units for a given type
+    def get_default_units(self, unit_type: str) -> str:
+        return self._units[unit_type]["default"]
+
+
+# create an units dictionary with set and get methods that checks if the keys are valid
+class UnitsDefinition(dict):
     """
-    The OSL class
+    UnitsDefinition class is a dictionary with set and get methods that checks if the keys are valid
+
+    Methods:
+        __setitem__(key: str, value: dict) -> None
+        __getitem__(key: str) -> dict
     """
 
-    def __init__(self, frequency: int = 200, log_data=False) -> None:
+    def __setitem__(self, key: str, value: dict) -> None:
+        if key not in self:
+            raise KeyError(f"Invalid key: {key}")
+
+        if value not in ALL_UNITS[key].keys():
+            raise ValueError(f"Invalid unit: {value}")
+
+        super().__setitem__(key, value)
+
+    def __getitem__(self, key: str) -> dict:
+        if key not in self:
+            raise KeyError(f"Invalid key: {key}")
+        return super().__getitem__(key)
+
+    def convert(self, value: float, attribute: str) -> None:
+        """
+        convert a value from one unit to the default unit
+
+        Args:
+            value (float): Value to be converted
+            attribute (str): Attribute to be converted
+
+        Returns:
+            float: Converted value in the default unit
+        """
+        return value * ALL_UNITS[attribute][self[attribute]]
+
+class OSL:
+    """
+    OSL class: This class is the main class for the Open Source Leg project. It
+    contains all the necessary functions to control the leg.
+
+    Returns:
+        none: none
+    """
+
+    # This is a singleton class
+    _instance = None
+    @staticmethod
+    def get_instance():
+        if OSL._instance is None:
+            OSL()
+        return OSL._instance
+
+    def __init__(self, frequency: int = 200, log_data: bool = False, file_name: str = 'osl.log') -> None:
+
+        super().__init__()
 
         self._fxs = flex.FlexSEA()
         self._loadcell = None
@@ -667,48 +792,36 @@ class OSLV2:
         self._ankle_id = None
 
         self._frequency = frequency
+        self._initialize_logger(log_data=log_data, filename=file_name)
 
-        # --------------------------------------------
+        self.loop = SoftRealtimeLoop(dt = 1.0/self._frequency,
+                                              report = False,
+                                              fade = 0.1)
 
-        self._log_data = log_data
-        self._log_filename = "osl.log"
-        self.log = logging.getLogger(__name__)
-
-        if log_data:
-            self.log.setLevel(logging.DEBUG)
-        else:
-            self.log.setLevel(logging.INFO)
-
-        self._std_formatter = logging.Formatter(
-            "[%(asctime)s] %(levelname)s: %(message)s"
-        )
-
-        self._file_handler = RotatingFileHandler(
-            self._log_filename, mode="w", maxBytes=2000, backupCount=10
-        )
-        self._file_handler.setLevel(logging.DEBUG)
-        self._file_handler.setFormatter(self._std_formatter)
-
-        self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(logging.INFO)
-        self._stream_handler.setFormatter(self._std_formatter)
-
-        self.log.addHandler(self._stream_handler)
-        self.log.addHandler(self._file_handler)
-
-        # ----------------------------------------------
+        self._units = UnitsDefinition({
+            "force": "N",
+            "torque": "N-m",
+            "stiffness": "N/rad",
+            "damping": "N/(rad/s)",
+            "length": "m",
+            "angle": "rad",
+            "mass": "kg",
+            "velocity": "rad/s",
+            "acceleration": "rad/s^2",
+            "time": "s"
+        })
 
     def __enter__(self):
         for joint in self.joints:
             joint._start_streaming_data()
 
-        if self.loadcell is not None:
-            self.loadcell.initialize()
+        if self._loadcell is not None:
+            self._loadcell.initialize()
 
     def __exit__(self, type, value, tb):
         for joint in self.joints:
             joint.switch_state()
-            joint._shutdown()
+            joint.shutdown()
 
     def add_joint(self, name: str, port, baud_rate, debug_level=0):
 
@@ -746,12 +859,41 @@ class OSLV2:
             logger=self.log,
         )
 
+    def _initialize_logger(self, log_data: bool = False, filename: str = "osl.log"):
+
+        self._log_data = log_data
+        self._log_filename = filename
+        self.log = logging.getLogger(__name__)
+
+        if log_data:
+            self.log.setLevel(logging.DEBUG)
+        else:
+            self.log.setLevel(logging.INFO)
+
+        self._std_formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s: %(message)s"
+        )
+
+        self._file_handler = RotatingFileHandler(
+            self._log_filename, mode="w", maxBytes=0, backupCount=10,
+        )
+        self._file_handler.setLevel(logging.DEBUG)
+        self._file_handler.setFormatter(self._std_formatter)
+
+        self._stream_handler = logging.StreamHandler()
+        self._stream_handler.setLevel(logging.INFO)
+        self._stream_handler.setFormatter(self._std_formatter)
+
+        self.log.addHandler(self._stream_handler)
+        self.log.addHandler(self._file_handler)
+
     def update(self):
         for joint in self.joints:
             joint.update()
 
-        if self.loadcell is not None:
-            self.loadcell.update()
+        if self._loadcell is not None:
+            print("hello")
+            self._loadcell.update()
 
     def home(self):
         for joint in self.joints:
@@ -778,19 +920,26 @@ class OSLV2:
         else:
             sys.exit("Ankle is not connected.")
 
+    @property
+    def units(self):
+        return self._units
 
 if __name__ == "__main__":
-    start = time.perf_counter()
 
-    osl = OSLV2(log_data=False)
-    osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
-    osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
+    osl = OSL(log_data=True)
+    # osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
+    # osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
 
-    with osl:
-        osl.loadcell.initialize()
-        osl.update()
-        osl.knee.home()
-        osl.log.info(f"{osl.knee.motor_angle}")
+    # with osl:
+    #     for t in osl.loop:
+    #         osl.log.debug(f"{t}")
+    #         # osl.log.info(f"{osl.knee.motor_angle}")
+    #     # osl.loadcell.initialize()
+    #     # osl.update()
+    #     # osl.knee.home()
+    #     # osl.log.info(f"{osl.knee.motor_angle}")
 
-    finish = time.perf_counter()
-    osl.log.info(f"Script ended at {finish-start:0.4f}")
+    osl.units['angle'] = 'rad'
+    print(osl.units.convert(3, "angle"))
+    osl.log.info(f"{osl.units}")
+

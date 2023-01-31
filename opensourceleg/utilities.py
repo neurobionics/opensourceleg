@@ -9,38 +9,33 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
-# ---------------------------------------------------------------------------
-# Gray C. Thomas, Ph.D's Soft Real Time Loop
-# This library will soon be hosted as a PIP module and added as a python dependency.
-# https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
-
-"""
-Soft Realtime Loop---a class designed to allow clean exits from infinite loops
-with the potential for post-loop cleanup operations executing.
-
-The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI)
-when it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
-Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
-
-the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
-A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
-See the 'ifmain' for two examples.
-
-Author: Gray C. Thomas, Ph.D
-https://github.com/GrayThomas, https://graythomas.github.io
-"""
-
 import signal
 import time
 from math import sqrt
 
 PRECISION_OF_SLEEP = 0.0001
 
-# Version of the SoftRealtimeLoop library
-__version__ = "1.0.0"
-
-
 class LoopKiller:
+
+    """
+    Soft Realtime Loop---a class designed to allow clean exits from infinite loops
+    with the potential for post-loop cleanup operations executing.
+
+    The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI)
+    when it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
+    Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
+
+    the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
+    A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
+    See the 'ifmain' for two examples.
+
+    # This library will soon be hosted as a PIP module and added as a python dependency.
+    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py  
+
+    Author: Gray C. Thomas, Ph.D
+    https://github.com/GrayThomas, https://graythomas.github.io
+  
+    """    
     def __init__(self, fade_time=0.0):
         signal.signal(signal.SIGTERM, self.handle_signal)
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -89,8 +84,26 @@ class LoopKiller:
             self._kill_soon = False
             self._soft_kill_time = None
 
-
 class SoftRealtimeLoop:
+    """
+    Soft Realtime Loop---a class designed to allow clean exits from infinite loops
+    with the potential for post-loop cleanup operations executing.
+
+    The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI)
+    when it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
+    Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
+
+    the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
+    A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
+    See the 'ifmain' for two examples.
+
+    # This library will soon be hosted as a PIP module and added as a python dependency.
+    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py  
+
+    Author: Gray C. Thomas, Ph.D
+    https://github.com/GrayThomas, https://graythomas.github.io
+  
+    """    
     def __init__(self, dt=0.001, report=False, fade=0.0):
         self.t0 = self.t1 = time.time()
         self.killer = LoopKiller(fade_time=fade)
@@ -136,7 +149,6 @@ class SoftRealtimeLoop:
                 ):
                     self.stop()
             self.t1 += dt
-        print("Soft realtime loop has ended successfully.")
 
     def stop(self):
         self.killer.kill_now = True
@@ -165,8 +177,12 @@ class SoftRealtimeLoop:
             self.sleep_t_agg += time.time() - t_pre_sleep
 
         while time.time() < self.t1 and not self.killer.kill_now:
-            if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
-                self.stop()
+            try:
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
+                    self.stop()
+            except AttributeError:
+                pass
+
         if self.killer.kill_now:
             raise StopIteration
         self.t1 += self.dt
@@ -181,10 +197,6 @@ class SoftRealtimeLoop:
         self.n += 1
         self.ttarg += self.dt
         return self.t1 - self.t0
-
-
-# ---------------------------------------------------------------------------
-
 
 class CSVLog:
     """
