@@ -12,13 +12,13 @@ from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
 
+import flexsea as flex
 import numpy as np
 import scipy.signal
-from flexsea import flexsea as flex
-from flexsea import fxEnums as fxe
-from flexsea import fxUtils as fxu
+from flexsea import fx_enums as fxe
+from flexsea import fx_utils as fxu
 
-from .utilities import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
 # TODO: Support for gRPC servers

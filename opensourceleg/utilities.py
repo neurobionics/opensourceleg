@@ -5,12 +5,12 @@ import sys
 import time
 from math import sqrt
 
+import flexsea as flex
 import numpy as np
 import scipy
 import serial
-from flexsea import flexsea as flex
-from flexsea import fxEnums as fxe
-from flexsea import fxUtils as fxu
+from flexsea import fx_enums as fxe
+from flexsea import fx_utils as fxu
 
 PRECISION_OF_SLEEP = 0.0001
 
