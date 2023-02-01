@@ -17,7 +17,8 @@ import scipy.signal
 from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
-from utilities import SoftRealtimeLoop
+
+from .utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
 # TODO: Support for gRPC servers
