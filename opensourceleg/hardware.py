@@ -120,7 +120,8 @@ class Actpack:
             fxs (Fle): _description_
             port (_type_): _description_
             baud_rate (_type_): _description_
-            has_loadcell (bool, optional): _description_. Defaults to False.
+            frequency (_type_): _description_
+            logger (_type_): _description_
             debug_level (int, optional): _description_. Defaults to 0.
         """
 
@@ -162,7 +163,6 @@ class Actpack:
         """Starts streaming dataa
 
         Args:
-            frequency (int, optional): _description_. Defaults to 500.
             log_en (bool, optional): _description_. Defaults to False.
         """
 
@@ -193,9 +193,9 @@ class Actpack:
         """Sets Position Gains
 
         Args:
-            kp (int, optional): _description_. Defaults to 200.
-            ki (int, optional): _description_. Defaults to 50.
-            kd (int, optional): _description_. Defaults to 0.
+            kp (int): _description_. Defaults to 200.
+            ki (int): _description_. Defaults to 50.
+            kd (int): _description_. Defaults to 0.
         """
         assert isfinite(kp) and kp >= 0 and kp <= 1000
         assert isfinite(ki) and ki >= 0 and ki <= 1000
@@ -209,9 +209,9 @@ class Actpack:
         """Sets Current Gains
 
         Args:
-            kp (int, optional): _description_. Defaults to 40.
-            ki (int, optional): _description_. Defaults to 400.
-            ff (int, optional): _description_. Defaults to 128.
+            kp (int): _description_. Defaults to 40.
+            ki (int): _description_. Defaults to 400.
+            ff (int): _description_. Defaults to 128.
         """
         assert isfinite(kp) and kp >= 0 and kp <= 80
         assert isfinite(ki) and ki >= 0 and ki <= 800
@@ -226,11 +226,11 @@ class Actpack:
         """Sets Impedance Gains
 
         Args:
-            kp (int, optional): _description_. Defaults to 40.
-            ki (int, optional): _description_. Defaults to 400.
-            K (int, optional): _description_. Defaults to 300.
-            B (int, optional): _description_. Defaults to 1600.
-            ff (int, optional): _description_. Defaults to 128.
+            kp (int): _description_. Defaults to 40.
+            ki (int): _description_. Defaults to 400.
+            K (int): _description_. Defaults to 300.
+            B (int): _description_. Defaults to 1600.
+            ff (int): _description_. Defaults to 128.
         """
         assert isfinite(kp) and kp >= 0 and kp <= 80
         assert isfinite(ki) and ki >= 0 and ki <= 800
@@ -246,7 +246,7 @@ class Actpack:
         """Sets Motor Angle
 
         Args:
-            position (int, optional): Angular position in motor counts. Defaults to 0.
+            position (int): Angular position in motor counts. Defaults to 0.
         """
         assert isfinite(position)
         self._fxs.send_motor_command(self._dev_id, fxe.FX_POSITION, position)
@@ -265,7 +265,7 @@ class Actpack:
         """Sets Q-Axis Voltage
 
         Args:
-            volt (int, optional): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
+            volt (int): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
         """
         assert isfinite(volt) and abs(volt) <= 36000
         self._fxs.send_motor_command(self._dev_id, fxe.FX_VOLTAGE, volt)
@@ -274,7 +274,7 @@ class Actpack:
         """Sets Q-Axis Voltage
 
         Args:
-            volt (int, optional): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
+            volt (int): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
         """
         assert isfinite(volt) and abs(volt) <= 36000
         self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, volt)
@@ -283,7 +283,7 @@ class Actpack:
         """Sets Q-Axis Current
 
         Args:
-            current (int, optional): Current in mA. Defaults to 0. Maximum limit is set to 22A.
+            current (int): Current in mA. Defaults to 0. Maximum limit is set to 22A.
         """
         assert isfinite(current) and abs(current) <= 22000
         self._fxs.send_motor_command(self._dev_id, fxe.FX_CURRENT, current)
