@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 from typing import Any, Callable, Dict, List, Optional
 
-import logging
 import collections
+import logging
 import os
 import sys
 import threading
@@ -17,7 +17,6 @@ import scipy.signal
 from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
-
 from utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
@@ -84,6 +83,7 @@ ALL_UNITS = {
         "us": 0.000001,
     },
 }
+
 
 class Actpack:
     """A class that contains and works with all the sensor data from a Dephy Actpack.
@@ -406,12 +406,14 @@ class Actpack:
             ]
         )
 
+
 class JointState(Enum):
     NEUTRAL = 0
     VOLTAGE = 1
     POSITION = 2
     CURRENT = 3
     IMPEDANCE = 4
+
 
 class Joint(Actpack):
     def __init__(
@@ -599,6 +601,7 @@ class Joint(Actpack):
     def equilibrium_angle(self):
         return self._theta
 
+
 class Loadcell:
     def __init__(
         self,
@@ -709,7 +712,6 @@ class Loadcell:
     def mz(self):
         return self._loadcell_data[5]
 
-
     # convert a value from one unit to another
     def convert(self, value: float, from_unit: str, to_unit: str) -> float:
         return value * self._units[from_unit][to_unit]
@@ -725,6 +727,7 @@ class Loadcell:
     # get default units for a given type
     def get_default_units(self, unit_type: str) -> str:
         return self._units[unit_type]["default"]
+
 
 # create an units dictionary with set and get methods that checks if the keys are valid
 class UnitsDefinition(dict):
@@ -763,6 +766,7 @@ class UnitsDefinition(dict):
         """
         return value * ALL_UNITS[attribute][self[attribute]]
 
+
 # create an event handler class
 class EventHandler:
     """
@@ -792,13 +796,16 @@ class OSL:
 
     # This is a singleton class
     _instance = None
+
     @staticmethod
     def get_instance():
         if OSL._instance is None:
             OSL()
         return OSL._instance
 
-    def __init__(self, frequency: int = 200, log_data: bool = False, file_name: str = 'osl.log') -> None:
+    def __init__(
+        self, frequency: int = 200, log_data: bool = False, file_name: str = "osl.log"
+    ) -> None:
 
         super().__init__()
 
@@ -813,22 +820,22 @@ class OSL:
         self._frequency = frequency
         self._initialize_logger(log_data=log_data, filename=file_name)
 
-        self.loop = SoftRealtimeLoop(dt = 1.0/self._frequency,
-                                              report = False,
-                                              fade = 0.1)
+        self.loop = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
 
-        self._units = UnitsDefinition({
-            "force": "N",
-            "torque": "N-m",
-            "stiffness": "N/rad",
-            "damping": "N/(rad/s)",
-            "length": "m",
-            "angle": "rad",
-            "mass": "kg",
-            "velocity": "rad/s",
-            "acceleration": "rad/s^2",
-            "time": "s"
-        })
+        self._units = UnitsDefinition(
+            {
+                "force": "N",
+                "torque": "N-m",
+                "stiffness": "N/rad",
+                "damping": "N/(rad/s)",
+                "length": "m",
+                "angle": "rad",
+                "mass": "kg",
+                "velocity": "rad/s",
+                "acceleration": "rad/s^2",
+                "time": "s",
+            }
+        )
 
     def __enter__(self):
         for joint in self.joints:
@@ -894,7 +901,10 @@ class OSL:
         )
 
         self._file_handler = RotatingFileHandler(
-            self._log_filename, mode="w", maxBytes=0, backupCount=10,
+            self._log_filename,
+            mode="w",
+            maxBytes=0,
+            backupCount=10,
         )
         self._file_handler.setLevel(logging.DEBUG)
         self._file_handler.setFormatter(self._std_formatter)
@@ -943,6 +953,7 @@ class OSL:
     def units(self):
         return self._units
 
+
 if __name__ == "__main__":
 
     osl = OSL(log_data=True)
@@ -958,10 +969,6 @@ if __name__ == "__main__":
     #     # osl.knee.home()
     #     # osl.log.info(f"{osl.knee.motor_angle}")
 
-    osl.units['angle'] = 'rad'
+    osl.units["angle"] = "rad"
     print(osl.units.convert(3, "angle"))
     osl.log.debug(f"{osl.units}")
-
-
-
-

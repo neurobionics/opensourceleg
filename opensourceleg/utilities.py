@@ -1,6 +1,9 @@
 import csv
 import glob
+import signal
 import sys
+import time
+from math import sqrt
 
 import numpy as np
 import scipy
@@ -9,11 +12,8 @@ from flexsea import flexsea as flex
 from flexsea import fxEnums as fxe
 from flexsea import fxUtils as fxu
 
-import signal
-import time
-from math import sqrt
-
 PRECISION_OF_SLEEP = 0.0001
+
 
 class LoopKiller:
 
@@ -30,12 +30,13 @@ class LoopKiller:
     See the 'ifmain' for two examples.
 
     # This library will soon be hosted as a PIP module and added as a python dependency.
-    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py  
+    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
 
     Author: Gray C. Thomas, Ph.D
     https://github.com/GrayThomas, https://graythomas.github.io
-  
-    """    
+
+    """
+
     def __init__(self, fade_time=0.0):
         signal.signal(signal.SIGTERM, self.handle_signal)
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -84,6 +85,7 @@ class LoopKiller:
             self._kill_soon = False
             self._soft_kill_time = None
 
+
 class SoftRealtimeLoop:
     """
     Soft Realtime Loop---a class designed to allow clean exits from infinite loops
@@ -98,12 +100,13 @@ class SoftRealtimeLoop:
     See the 'ifmain' for two examples.
 
     # This library will soon be hosted as a PIP module and added as a python dependency.
-    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py  
+    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
 
     Author: Gray C. Thomas, Ph.D
     https://github.com/GrayThomas, https://graythomas.github.io
-  
-    """    
+
+    """
+
     def __init__(self, dt=0.001, report=False, fade=0.0):
         self.t0 = self.t1 = time.time()
         self.killer = LoopKiller(fade_time=fade)
@@ -178,7 +181,9 @@ class SoftRealtimeLoop:
 
         while time.time() < self.t1 and not self.killer.kill_now:
             try:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
+                if signal.sigtimedwait(
+                    [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
+                ):
                     self.stop()
             except AttributeError:
                 pass
@@ -197,6 +202,7 @@ class SoftRealtimeLoop:
         self.n += 1
         self.ttarg += self.dt
         return self.t1 - self.t0
+
 
 class CSVLog:
     """
@@ -243,6 +249,7 @@ class CSVLog:
             writer = csv.writer(csv_file)
             writer.writerow(val_list)
 
+
 class EdgeDetector:
     """
     Used to calculate rising and falling edges of a digital signal in real time.
@@ -262,6 +269,7 @@ class EdgeDetector:
         self.rising_edge = bool_in and not self.cur_state
         self.falling_edge = not bool_in and self.cur_state
         self.cur_state = bool_in
+
 
 class SaturatingRamp:
     """
@@ -313,6 +321,7 @@ class SaturatingRamp:
 
         self.value = min(max(self.value, 0), 1)
         return self.value
+
 
 def get_active_ports():
     """
