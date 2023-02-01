@@ -243,7 +243,6 @@ class CSVLog:
             writer = csv.writer(csv_file)
             writer.writerow(val_list)
 
-
 class EdgeDetector:
     """
     Used to calculate rising and falling edges of a digital signal in real time.
@@ -263,7 +262,6 @@ class EdgeDetector:
         self.rising_edge = bool_in and not self.cur_state
         self.falling_edge = not bool_in and self.cur_state
         self.cur_state = bool_in
-
 
 class SaturatingRamp:
     """
@@ -315,7 +313,6 @@ class SaturatingRamp:
 
         self.value = min(max(self.value, 0), 1)
         return self.value
-
 
 def get_active_ports():
     """

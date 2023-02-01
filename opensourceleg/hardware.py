@@ -21,6 +21,8 @@ from flexsea import fxUtils as fxu
 from utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
+# TODO: Support for gRPC servers
+# TODO: Event-handler
 
 # Global Units Dictionary
 ALL_UNITS = {
@@ -724,7 +726,6 @@ class Loadcell:
     def get_default_units(self, unit_type: str) -> str:
         return self._units[unit_type]["default"]
 
-
 # create an units dictionary with set and get methods that checks if the keys are valid
 class UnitsDefinition(dict):
     """
@@ -761,6 +762,24 @@ class UnitsDefinition(dict):
             float: Converted value in the default unit
         """
         return value * ALL_UNITS[attribute][self[attribute]]
+
+# create an event handler class
+class EventHandler:
+    """
+    EventHandler class is a class that handles events
+
+    Methods:
+        __init__(self, event: str, callback: Callable) -> None
+        __call__(self, *args, **kwargs) -> None
+    """
+
+    def __init__(self, event: str, callback: Callable) -> None:
+        self.event = event
+        self.callback = callback
+
+    def __call__(self, *args, **kwargs) -> None:
+        self.callback(*args, **kwargs)
+
 
 class OSL:
     """
@@ -941,5 +960,8 @@ if __name__ == "__main__":
 
     osl.units['angle'] = 'rad'
     print(osl.units.convert(3, "angle"))
-    osl.log.info(f"{osl.units}")
+    osl.log.debug(f"{osl.units}")
+
+
+
 
