@@ -2,6 +2,7 @@
 from typing import Any, Callable, Dict, List, Optional
 
 import collections
+import csv
 import logging
 import os
 import sys
@@ -738,6 +739,7 @@ class UnitsDefinition(dict):
     Methods:
         __setitem__(key: str, value: dict) -> None
         __getitem__(key: str) -> dict
+        convert(value: float, attribute: str) -> None
     """
 
     def __setitem__(self, key: str, value: dict) -> None:
@@ -754,7 +756,7 @@ class UnitsDefinition(dict):
             raise KeyError(f"Invalid key: {key}")
         return super().__getitem__(key)
 
-    def convert(self, value: float, attribute: str) -> None:
+    def convert_to_default_units(self, value: float, attribute: str) -> None:
         """
         convert a value from one unit to the default unit
 
@@ -767,23 +769,107 @@ class UnitsDefinition(dict):
         """
         return value * ALL_UNITS[attribute][self[attribute]]
 
+    def convert_from_default_units(self, value: float, attribute: str) -> None:
+        """
+        convert a value from the default unit to another unit
 
-# create an event handler class
-class EventHandler:
+        Args:
+            value (float): Value to be converted
+            attribute (str): Attribute to be converted
+
+        Returns:
+            float: Converted value in the default unit
+        """
+        return value / ALL_UNITS[attribute][self[attribute]]
+
+
+class Logger(logging.Logger):
     """
-    EventHandler class is a class that handles events
+    Logger class is a class that logs attributes from a class to a csv file
 
     Methods:
-        __init__(self, event: str, callback: Callable) -> None
-        __call__(self, *args, **kwargs) -> None
+        __init__(self, class_instance: object, file_path: str, logger: logging.Logger = None) -> None
+        log(self) -> None
     """
 
-    def __init__(self, event: str, callback: Callable) -> None:
-        self.event = event
-        self.callback = callback
+    def __init__(
+        self,
+        file_path: str,
+        log_format: str = "[%(asctime)s] %(levelname)s: %(message)s",
+    ) -> None:
 
-    def __call__(self, *args, **kwargs) -> None:
-        self.callback(*args, **kwargs)
+        self._file_path = file_path
+
+        self._class_instances = []
+        self._attributes = []
+
+        self._file = open(self._file_path + ".csv", "w")
+        self._writer = csv.writer(self._file)
+        self._writer.writerow(self._attributes)
+
+        super().__init__(__name__)
+        self.setLevel(logging.DEBUG)
+
+        self._std_formatter = logging.Formatter(log_format)
+
+        self._file_handler = RotatingFileHandler(
+            self._file_path,
+            mode="w",
+            maxBytes=0,
+            backupCount=10,
+        )
+        self._file_handler.setLevel(logging.DEBUG)
+        self._file_handler.setFormatter(self._std_formatter)
+
+        self._stream_handler = logging.StreamHandler()
+        self._stream_handler.setLevel(logging.INFO)
+        self._stream_handler.setFormatter(self._std_formatter)
+
+        self.addHandler(self._stream_handler)
+        self.addHandler(self._file_handler)
+
+        self._is_logging = False
+
+    def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
+        """
+        Configures the logger to log the attributes of a class
+
+        Args:
+            class_instance (object): Class instance to log the attributes of
+            attributes (list[str]): List of attributes to log
+        """
+        self._class_instances.append(class_instance)
+        self._attributes.append(attributes_str)
+
+    def data(self) -> None:
+        """
+        Logs the attributes of the class instance to the csv file
+        """
+
+        if not self._is_logging:
+            for class_instance, attributes in zip(
+                self._class_instances, self._attributes
+            ):
+                self._writer.writerow(
+                    [
+                        f"{class_instance.__class__.__name__}: {attribute}"
+                        for attribute in attributes
+                    ]
+                )
+            self._is_logging = True
+
+        for class_instance, attributes in zip(self._class_instances, self._attributes):
+            self._writer.writerow(
+                [getattr(class_instance, attribute) for attribute in attributes]
+            )
+
+        self._file.flush()
+
+    def close(self) -> None:
+        """
+        Closes the csv file
+        """
+        self._file.close()
 
 
 class OSL:
@@ -805,12 +891,12 @@ class OSL:
         return OSL._instance
 
     def __init__(
-        self, frequency: int = 200, log_data: bool = False, file_name: str = "osl.log"
+        self, frequency: int = 200, log_data: bool = False, file_name: str = "./osl.log"
     ) -> None:
 
         super().__init__()
 
-        self._fxs = flex.FlexSEA()
+        self._fxs = None
         self._loadcell = None
 
         self.joints: list[Joint] = []
@@ -819,7 +905,11 @@ class OSL:
         self._ankle_id = None
 
         self._frequency = frequency
-        self._initialize_logger(log_data=log_data, filename=file_name)
+        self.log = Logger(
+            file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
+        )
+
+        # self._initialize_logger(log_data=log_data, filename=file_name)
 
         self.loop = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
 
@@ -849,6 +939,9 @@ class OSL:
         for joint in self.joints:
             joint.switch_state()
             joint.shutdown()
+
+    def __repr__(self) -> str:
+        return f"OSL object with {len(self.joints)} joints"
 
     def add_joint(self, name: str, port, baud_rate, debug_level=0):
 
@@ -954,22 +1047,24 @@ class OSL:
     def units(self):
         return self._units
 
+    @property
+    def test(self):
+        return 5
+
+    @property
+    def ttest(self):
+        return 15
+
+    @property
+    def tttest(self):
+        return 25
+
 
 if __name__ == "__main__":
 
     osl = OSL(log_data=True)
-    # osl.add_joint(name="Knee", port="/dev/ttyACM0", baud_rate=230400)
-    # osl.add_loadcell(osl.knee, amp_gain=125, exc=5)
+    print(getattr(osl, "test"))
+    osl.log.add_attributes(osl, ["test", "ttest", "tttest"])
 
-    # with osl:
-    #     for t in osl.loop:
-    #         osl.log.debug(f"{t}")
-    #         # osl.log.info(f"{osl.knee.motor_angle}")
-    #     # osl.loadcell.initialize()
-    #     # osl.update()
-    #     # osl.knee.home()
-    #     # osl.log.info(f"{osl.knee.motor_angle}")
-
-    osl.units["angle"] = "rad"
-    print(osl.units.convert(3, "angle"))
-    osl.log.debug(f"{osl.units}")
+    for _ in range(2):
+        osl.log.data()

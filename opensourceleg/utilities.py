@@ -5,12 +5,7 @@ import sys
 import time
 from math import sqrt
 
-import flexsea as flex
-import numpy as np
-import scipy
 import serial
-from flexsea import fx_enums as fxe
-from flexsea import fx_utils as fxu
 
 PRECISION_OF_SLEEP = 0.0001
 
@@ -99,11 +94,11 @@ class SoftRealtimeLoop:
     A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
     See the 'ifmain' for two examples.
 
-    # This library will soon be hosted as a PIP module and added as a python dependency.
-    # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
+    This library will soon be hosted as a PIP module and added as a python dependency.
+    https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
 
-    Author: Gray C. Thomas, Ph.D
-    https://github.com/GrayThomas, https://graythomas.github.io
+    # Author: Gray C. Thomas, Ph.D
+    # https://github.com/GrayThomas, https://graythomas.github.io
 
     """
 
