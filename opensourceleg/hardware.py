@@ -17,13 +17,25 @@ import flexsea as flex
 import numpy as np
 import scipy.signal
 from flexsea import fx_enums as fxe
-from flexsea import fx_utils as fxu
+from flexsea.dev_spec import AllDevices as fxd
+from flexsea.device import Device
 
 from opensourceleg.utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
 # TODO: Support for gRPC servers
 # TODO: Event-handler
+
+MOTOR_COUNT_PER_REV = 16384
+NM_PER_AMP = 0.1133
+RAD_PER_COUNT = 2 * np.pi / MOTOR_COUNT_PER_REV
+RAD_PER_DEG = np.pi / 180
+MOTOR_COUNT_TO_RADIANS = lambda x: x * (np.pi / 180.0 / 45.5111)
+RADIANS_TO_MOTOR_COUNTS = lambda q: q * (180 * 45.5111 / np.pi)
+
+RAD_PER_SEC_GYROLSB = np.pi / 180 / 32.8
+G_PER_ACCLSB = 1.0 / 8192
+
 
 # Global Units Dictionary
 ALL_UNITS = {
@@ -84,7 +96,226 @@ ALL_UNITS = {
         "ms": 0.001,
         "us": 0.000001,
     },
+    "current": {
+        "A": 1.0,
+        "mA": 0.001,
+    },
+    "voltage": {
+        "V": 1.0,
+        "mV": 0.001,
+    },
 }
+
+
+class ActpackStates(Enum):
+    VOLTAGE = fxe.FX_VOLTAGE
+    CURRENT = fxe.FX_CURRENT
+    POSITION = fxe.FX_POSITION
+    IMPEDANCE = fxe.FX_IMPEDANCE
+
+
+class UnitsDefinition(dict):
+    """
+    UnitsDefinition class is a dictionary with set and get methods that checks if the keys are valid
+
+    Methods:
+        __setitem__(key: str, value: dict) -> None
+        __getitem__(key: str) -> dict
+        convert(value: float, attribute: str) -> None
+    """
+
+    def __setitem__(self, key: str, value: dict) -> None:
+        if key not in self:
+            raise KeyError(f"Invalid key: {key}")
+
+        if value not in ALL_UNITS[key].keys():
+            raise ValueError(f"Invalid unit: {value}")
+
+        super().__setitem__(key, value)
+
+    def __getitem__(self, key: str) -> dict:
+        if key not in self:
+            raise KeyError(f"Invalid key: {key}")
+        return super().__getitem__(key)
+
+    def convert_to_default_units(self, value: float, attribute: str) -> None:
+        """
+        convert a value from one unit to the default unit
+
+        Args:
+            value (float): Value to be converted
+            attribute (str): Attribute to be converted
+
+        Returns:
+            float: Converted value in the default unit
+        """
+        return value * ALL_UNITS[attribute][self[attribute]]
+
+    def convert_from_default_units(self, value: float, attribute: str) -> None:
+        """
+        convert a value from the default unit to another unit
+
+        Args:
+            value (float): Value to be converted
+            attribute (str): Attribute to be converted
+
+        Returns:
+            float: Converted value in the default unit
+        """
+        return value / ALL_UNITS[attribute][self[attribute]]
+
+
+DEFAULT_UNITS = UnitsDefinition(
+    {
+        "force": "N",
+        "torque": "N-m",
+        "stiffness": "N/rad",
+        "damping": "N/(rad/s)",
+        "length": "m",
+        "angle": "rad",
+        "mass": "kg",
+        "velocity": "rad/s",
+        "acceleration": "rad/s^2",
+        "time": "s",
+        "current": "A",
+        "voltage": "V",
+    }
+)
+
+
+class DephyActpack(Device):
+    """Class for the Dephy Actpack
+
+    Args:
+        Device (_type_): _description_
+
+    Raises:
+        KeyError: _description_
+        ValueError: _description_
+        KeyError: _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    def __init__(
+        self,
+        port: str = "/dev/ttyACM0",
+        baud_rate: int = 230400,
+        frequency: int = 500,
+        gear_ratio: float = 1.0,
+        logger: logging.Logger = None,
+        units: UnitsDefinition = None,
+        debug_level: int = 0,
+        dephy_log: bool = False,
+    ) -> None:
+        """
+        Initializes the Actpack class
+
+        Args:
+            port (_type_): _description_
+            baud_rate (_type_): _description_. Defaults to 230400.
+            frequency (_type_): _description_. Defaults to 500.
+            gear_ratio (_type_): _description_. Defaults to 1.0.
+            logger (_type_): _description_
+            units (_type_): _description_
+            debug_level (int, optional): _description_. Defaults to 0.
+        """
+        super().__init__(os.path.realpath(port), baud_rate, debug_level)
+        self._debug_level = debug_level
+        self._dephy_log = dephy_log
+        self._frequency = frequency
+        self._data = fxd.ActPackState()
+        self.log = logger
+        self._gear_ratio = gear_ratio
+        self._state = ActpackStates.VOLTAGE
+        self._units = units if units else DEFAULT_UNITS
+
+    def start(self):
+        self.open(self._debug_level, log_enabled=self._dephy_log)
+        self.start_streaming(self._frequency)
+
+    def stop(self):
+        self.close()
+
+    def update(self):
+        self._data = self.read()
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, state: ActpackStates):
+        self._state = state
+
+    # Read only properties from the actpack
+    @property
+    def battery_voltage(self):
+        return self._units.convert_from_default_units(
+            self._data.batt_volt * 1e-3,
+            "voltage",
+        )
+
+    @property
+    def batter_current(self):
+        return self._units.convert_from_default_units(
+            self._data.batt_curr * 1e-3,
+            "current",
+        )
+
+    @property
+    def q_axis_voltage(self):
+        return self._units.convert_from_default_units(
+            self._data.mot_volt * 1e-3,
+            "voltage",
+        )
+
+    # TODO: set q_axis_voltage method
+
+    @property
+    def q_axis_current(self):
+        return self._units.convert_from_default_units(
+            self._data.mot_cur * 1e-3,
+            "current",
+        )
+
+    # TODO: set q_axis_current method
+
+    @property
+    def motor_angle(self):
+        return self._units.convert_from_default_units(
+            int(self._data.mot_ang) * RAD_PER_COUNT,
+            "angle",
+        )
+
+    @property
+    def motor_velocity(self):
+        return self._units.convert_from_default_units(
+            self._data.mot_vel * RAD_PER_DEG,
+            "velocity",
+        )
+
+    @property
+    def motor_acceleration(self):
+        return self._units.convert_from_default_units(
+            self._data.mot_acc,
+            "acceleration",
+        )
+
+    @property
+    def motor_torque(self):
+        return self._units.convert_from_default_units(
+            self.q_axis_current * NM_PER_AMP,
+            "torque",
+        )
+
+    @property
+    def joint_angle(self):
+        return self._units.convert_from_default_units(
+            self._data.ank_ang,
+            "angle",
+        )
 
 
 class Actpack:
@@ -97,7 +328,7 @@ class Actpack:
     """
 
     MOTOR_COUNT_PER_REV = 16384
-    NM_PER_AMP = 0.146
+    NM_PER_AMP = 0.1133
     RAD_PER_COUNT = 2 * np.pi / MOTOR_COUNT_PER_REV
     RAD_PER_DEG = np.pi / 180
     MOTOR_COUNT_TO_RADIANS = lambda x: x * (np.pi / 180.0 / 45.5111)
@@ -108,11 +339,12 @@ class Actpack:
 
     def __init__(
         self,
-        fxs,
-        port,
-        baud_rate,
-        frequency,
+        port: str = "/dev/ttyACM0",
+        baud_rate: int = 230400,
+        frequency: int = 500,
+        gear_ratio: float = 1.0,
         logger: logging.Logger = None,
+        units: UnitsDefinition = None,
         debug_level=0,
     ) -> None:
         """
@@ -126,13 +358,7 @@ class Actpack:
             logger (_type_): _description_
             debug_level (int, optional): _description_. Defaults to 0.
         """
-
-        self._fxs = fxs
-        self._dev_id = None
-        self._app_type = None
-
-        self._port = port
-        self._baud_rate = baud_rate
+        self.device = Device(port, baud_rate, debug_level)
         self._debug_level = debug_level
 
         self._frequency = frequency
@@ -714,74 +940,6 @@ class Loadcell:
     def mz(self):
         return self._loadcell_data[5]
 
-    # convert a value from one unit to another
-    def convert(self, value: float, from_unit: str, to_unit: str) -> float:
-        return value * self._units[from_unit][to_unit]
-
-    # get a list of units for a given type
-    def get_units(self, unit_type: str) -> list[str]:
-        return list(self._units[unit_type].keys())
-
-    # set default units for a given type
-    def set_default_units(self, unit_type: str, default_unit: str) -> None:
-        self._units[unit_type]["default"] = default_unit
-
-    # get default units for a given type
-    def get_default_units(self, unit_type: str) -> str:
-        return self._units[unit_type]["default"]
-
-
-# create an units dictionary with set and get methods that checks if the keys are valid
-class UnitsDefinition(dict):
-    """
-    UnitsDefinition class is a dictionary with set and get methods that checks if the keys are valid
-
-    Methods:
-        __setitem__(key: str, value: dict) -> None
-        __getitem__(key: str) -> dict
-        convert(value: float, attribute: str) -> None
-    """
-
-    def __setitem__(self, key: str, value: dict) -> None:
-        if key not in self:
-            raise KeyError(f"Invalid key: {key}")
-
-        if value not in ALL_UNITS[key].keys():
-            raise ValueError(f"Invalid unit: {value}")
-
-        super().__setitem__(key, value)
-
-    def __getitem__(self, key: str) -> dict:
-        if key not in self:
-            raise KeyError(f"Invalid key: {key}")
-        return super().__getitem__(key)
-
-    def convert_to_default_units(self, value: float, attribute: str) -> None:
-        """
-        convert a value from one unit to the default unit
-
-        Args:
-            value (float): Value to be converted
-            attribute (str): Attribute to be converted
-
-        Returns:
-            float: Converted value in the default unit
-        """
-        return value * ALL_UNITS[attribute][self[attribute]]
-
-    def convert_from_default_units(self, value: float, attribute: str) -> None:
-        """
-        convert a value from the default unit to another unit
-
-        Args:
-            value (float): Value to be converted
-            attribute (str): Attribute to be converted
-
-        Returns:
-            float: Converted value in the default unit
-        """
-        return value / ALL_UNITS[attribute][self[attribute]]
-
 
 class Logger(logging.Logger):
     """
@@ -913,20 +1071,7 @@ class OSL:
 
         self.loop = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
 
-        self._units = UnitsDefinition(
-            {
-                "force": "N",
-                "torque": "N-m",
-                "stiffness": "N/rad",
-                "damping": "N/(rad/s)",
-                "length": "m",
-                "angle": "rad",
-                "mass": "kg",
-                "velocity": "rad/s",
-                "acceleration": "rad/s^2",
-                "time": "s",
-            }
-        )
+        self._units = DEFAULT_UNITS
 
     def __enter__(self):
         for joint in self.joints:
@@ -1047,24 +1192,10 @@ class OSL:
     def units(self):
         return self._units
 
-    @property
-    def test(self):
-        return 5
-
-    @property
-    def ttest(self):
-        return 15
-
-    @property
-    def tttest(self):
-        return 25
-
 
 if __name__ == "__main__":
 
     osl = OSL(log_data=True)
-    print(getattr(osl, "test"))
-    osl.log.add_attributes(osl, ["test", "ttest", "tttest"])
 
     for _ in range(2):
         osl.log.data()
