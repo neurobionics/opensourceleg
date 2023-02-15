@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import collections
 import csv
+import ctypes as c
 import logging
 import os
 import sys
@@ -13,7 +14,6 @@ from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
 
-import flexsea as flex
 import numpy as np
 import scipy.signal
 from flexsea import fx_enums as fxe
@@ -34,7 +34,7 @@ MOTOR_COUNT_TO_RADIANS = lambda x: x * (np.pi / 180.0 / 45.5111)
 RADIANS_TO_MOTOR_COUNTS = lambda q: q * (180 * 45.5111 / np.pi)
 
 RAD_PER_SEC_GYROLSB = np.pi / 180 / 32.8
-G_PER_ACCLSB = 1.0 / 8192
+M_PER_SEC_SQUARED_ACCLSB = 9.80665 / 8192
 
 
 # Global Units Dictionary
@@ -104,14 +104,98 @@ ALL_UNITS = {
         "V": 1.0,
         "mV": 0.001,
     },
+    "gravity": {
+        "m/s^2": 1.0,
+        "g": 9.80665,
+    },
 }
 
 
-class ActpackStates(Enum):
-    VOLTAGE = fxe.FX_VOLTAGE
-    CURRENT = fxe.FX_CURRENT
-    POSITION = fxe.FX_POSITION
-    IMPEDANCE = fxe.FX_IMPEDANCE
+class ActpackMode:
+    def __init__(self, control_mode: c.c_int):
+        self._control_mode = control_mode
+        self._entry_callback: callable = lambda: None
+        self._exit_callback: callable = lambda: None
+
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, ActpackMode):
+            return self._control_mode == __o._control_mode
+        return False
+
+    def __str__(self) -> str:
+        return str(self._control_mode)
+
+    def __call__(self) -> c.c_int:
+        return self._control_mode
+
+    def on_entry(self):
+        self._entry_callback()
+
+    def on_exit(self):
+        self._exit_callback()
+
+    def transition(self, to_state: "ActpackMode"):
+        self.on_exit()
+        to_state.on_entry()
+
+
+class VoltageMode(ActpackMode):
+    def __init__(self):
+        super().__init__(fxe.FX_VOLTAGE)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        print("Entering VOLTAGE mode")
+
+    def _exit(self):
+        print("Exiting VOLTAGE mode")
+
+
+class PositionMode(ActpackMode):
+    def __init__(self):
+        super().__init__(fxe.FX_POSITION)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        print("Entering POSITION mode")
+
+    def _exit(self):
+        print("Exiting POSITION mode")
+
+
+class CurrentMode(ActpackMode):
+    def __init__(self):
+        super().__init__(fxe.FX_CURRENT)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        print("Entering CURRENT mode")
+
+    def _exit(self):
+        print("Exiting CURRENT mode")
+
+
+class ImpedanceMode(ActpackMode):
+    def __init__(self):
+        super().__init__(fxe.FX_IMPEDANCE)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        print("Entering IMPEDANCE mode")
+
+    def _exit(self):
+        print("Exiting IMPEDANCE mode")
+
+
+class ActpackModes(Enum):
+    VOLTAGE = VoltageMode()
+    POSITION = PositionMode()
+    CURRENT = CurrentMode()
+    IMPEDANCE = ImpedanceMode()
 
 
 class UnitsDefinition(dict):
@@ -179,6 +263,7 @@ DEFAULT_UNITS = UnitsDefinition(
         "time": "s",
         "current": "A",
         "voltage": "V",
+        "gravity": "m/s^2",
     }
 )
 
@@ -228,7 +313,7 @@ class DephyActpack(Device):
         self._data = fxd.ActPackState()
         self.log = logger
         self._gear_ratio = gear_ratio
-        self._state = ActpackStates.VOLTAGE
+        self._state = VOLTAGE()
         self._units = units if units else DEFAULT_UNITS
 
     def start(self):
@@ -245,11 +330,12 @@ class DephyActpack(Device):
     def state(self):
         return self._state
 
-    @state.setter
-    def state(self, state: ActpackStates):
-        self._state = state
+    # TODO: set q_axis_current method
+
+    # TODO: set q_axis_voltage method
 
     # Read only properties from the actpack
+
     @property
     def battery_voltage(self):
         return self._units.convert_from_default_units(
@@ -271,16 +357,12 @@ class DephyActpack(Device):
             "voltage",
         )
 
-    # TODO: set q_axis_voltage method
-
     @property
     def q_axis_current(self):
         return self._units.convert_from_default_units(
             self._data.mot_cur * 1e-3,
             "current",
         )
-
-    # TODO: set q_axis_current method
 
     @property
     def motor_angle(self):
@@ -313,8 +395,70 @@ class DephyActpack(Device):
     @property
     def joint_angle(self):
         return self._units.convert_from_default_units(
-            self._data.ank_ang,
+            self._data.ank_ang * RAD_PER_COUNT,
             "angle",
+        )
+
+    @property
+    def joint_velocity(self):
+        return self._units.convert_from_default_units(
+            self._data.ank_vel * RAD_PER_COUNT,
+            "velocity",
+        )
+
+    @property
+    def genvars(self):
+        return np.array(
+            [
+                self._data.genvar_0,
+                self._data.genvar_1,
+                self._data.genvar_2,
+                self._data.genvar_3,
+                self._data.genvar_4,
+                self._data.genvar_5,
+            ]
+        )
+
+    @property
+    def acc_x(self):
+        return self._units.convert_from_default_units(
+            self._data.accelx * M_PER_SEC_SQUARED_ACCLSB,
+            "gravity",
+        )
+
+    @property
+    def acc_y(self):
+        return self._units.convert_from_default_units(
+            self._data.accely * M_PER_SEC_SQUARED_ACCLSB,
+            "gravity",
+        )
+
+    @property
+    def acc_z(self):
+        return self._units.convert_from_default_units(
+            self._data.accelz * M_PER_SEC_SQUARED_ACCLSB,
+            "gravity",
+        )
+
+    @property
+    def gyro_x(self):
+        return self._units.convert_from_default_units(
+            self._data.gyrox * RAD_PER_SEC_GYROLSB,
+            "velocity",
+        )
+
+    @property
+    def gyro_y(self):
+        return self._units.convert_from_default_units(
+            self._data.gyroy * RAD_PER_SEC_GYROLSB,
+            "velocity",
+        )
+
+    @property
+    def gyro_z(self):
+        return self._units.convert_from_default_units(
+            self._data.gyroz * RAD_PER_SEC_GYROLSB,
+            "velocity",
         )
 
 
@@ -1194,8 +1338,6 @@ class OSL:
 
 
 if __name__ == "__main__":
-
-    osl = OSL(log_data=True)
-
-    for _ in range(2):
-        osl.log.data()
+    v = VOLTAGE()
+    v.on_entry()
+    print(v())
