@@ -28,6 +28,7 @@ from opensourceleg.utilities import SoftRealtimeLoop
 
 MOTOR_COUNT_PER_REV = 16384
 NM_PER_AMP = 0.1133
+NM_PER_MILLIAMP = NM_PER_AMP / 1000
 RAD_PER_COUNT = 2 * np.pi / MOTOR_COUNT_PER_REV
 RAD_PER_DEG = np.pi / 180
 MOTOR_COUNT_TO_RADIANS = lambda x: x * (np.pi / 180.0 / 45.5111)
@@ -97,105 +98,18 @@ ALL_UNITS = {
         "us": 0.000001,
     },
     "current": {
-        "A": 1.0,
-        "mA": 0.001,
+        "mA": 1,
+        "A": 1000,
     },
     "voltage": {
-        "V": 1.0,
-        "mV": 0.001,
+        "mV": 1,
+        "V": 1000,
     },
     "gravity": {
         "m/s^2": 1.0,
         "g": 9.80665,
     },
 }
-
-
-class ActpackMode:
-    def __init__(self, control_mode: c.c_int):
-        self._control_mode = control_mode
-        self._entry_callback: callable = lambda: None
-        self._exit_callback: callable = lambda: None
-
-    def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, ActpackMode):
-            return self._control_mode == __o._control_mode
-        return False
-
-    def __str__(self) -> str:
-        return str(self._control_mode)
-
-    def __call__(self) -> c.c_int:
-        return self._control_mode
-
-    def on_entry(self):
-        self._entry_callback()
-
-    def on_exit(self):
-        self._exit_callback()
-
-    def transition(self, to_state: "ActpackMode"):
-        self.on_exit()
-        to_state.on_entry()
-
-
-class VoltageMode(ActpackMode):
-    def __init__(self):
-        super().__init__(fxe.FX_VOLTAGE)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-
-    def _entry(self):
-        print("Entering VOLTAGE mode")
-
-    def _exit(self):
-        print("Exiting VOLTAGE mode")
-
-
-class PositionMode(ActpackMode):
-    def __init__(self):
-        super().__init__(fxe.FX_POSITION)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-
-    def _entry(self):
-        print("Entering POSITION mode")
-
-    def _exit(self):
-        print("Exiting POSITION mode")
-
-
-class CurrentMode(ActpackMode):
-    def __init__(self):
-        super().__init__(fxe.FX_CURRENT)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-
-    def _entry(self):
-        print("Entering CURRENT mode")
-
-    def _exit(self):
-        print("Exiting CURRENT mode")
-
-
-class ImpedanceMode(ActpackMode):
-    def __init__(self):
-        super().__init__(fxe.FX_IMPEDANCE)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-
-    def _entry(self):
-        print("Entering IMPEDANCE mode")
-
-    def _exit(self):
-        print("Exiting IMPEDANCE mode")
-
-
-class ActpackModes(Enum):
-    VOLTAGE = VoltageMode()
-    POSITION = PositionMode()
-    CURRENT = CurrentMode()
-    IMPEDANCE = ImpedanceMode()
 
 
 class UnitsDefinition(dict):
@@ -261,11 +175,218 @@ DEFAULT_UNITS = UnitsDefinition(
         "velocity": "rad/s",
         "acceleration": "rad/s^2",
         "time": "s",
-        "current": "A",
-        "voltage": "V",
+        "current": "mA",
+        "voltage": "mV",
         "gravity": "m/s^2",
     }
 )
+
+
+class Gains:
+    def __init__(
+        self, kp: int = 0, ki: int = 0, kd: int = 0, K: int = 0, B: int = 0, ff: int = 0
+    ) -> None:
+
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.K = K
+        self.B = B
+        self.ff = ff
+
+    def __str__(self) -> str:
+        return f"kp: {self.kp}, ki: {self.ki}, kd: {self.kd}, K: {self.K}, B: {self.B}, ff: {self.ff}"
+
+
+DEFAULT_POSITION_GAINS = Gains(kp=200, ki=50, kd=0, K=0, B=0, ff=0)
+
+DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
+
+DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=300, B=1600, ff=128)
+
+
+class ActpackMode:
+    def __init__(self, control_mode: c.c_int, device: "DephyActpack"):
+        self._control_mode = control_mode
+        self._device = device
+        self._entry_callback: callable = lambda: None
+        self._exit_callback: callable = lambda: None
+
+        self._has_gains = False
+
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, ActpackMode):
+            return self._control_mode == __o._control_mode
+        return False
+
+    def __str__(self) -> str:
+        return str(self._control_mode)
+
+    @property
+    def mode(self) -> c.c_int:
+        return self._control_mode
+
+    @property
+    def has_gains(self) -> bool:
+        return self._has_gains
+
+    def enter(self):
+        self._entry_callback()
+
+    def exit(self):
+        self._exit_callback()
+
+    def transition(self, to_state: "ActpackMode"):
+        self.exit()
+        to_state.enter()
+
+
+class VoltageMode(ActpackMode):
+    def __init__(self, device: "DephyActpack"):
+        super().__init__(fxe.FX_VOLTAGE, device)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        print("Entering VOLTAGE mode")
+
+    def _exit(self):
+        self._set_qaxis_voltage(0)
+        print("Exiting VOLTAGE mode")
+
+    def _set_qaxis_voltage(self, voltage: int):
+        self._device.send_motor_command(
+            self.mode,
+            voltage,
+        )
+
+
+class CurrentMode(ActpackMode):
+    def __init__(self, device: "DephyActpack"):
+        super().__init__(fxe.FX_CURRENT, device)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        if not self.has_gains:
+            self._set_gains()
+
+        self._set_qaxis_current(0)
+
+    def _exit(self):
+        self._device.send_motor_command(fxe.FX_VOLTAGE, 0)
+
+    def _set_gains(
+        self,
+        kp: int = DEFAULT_CURRENT_GAINS.kp,
+        ki: int = DEFAULT_CURRENT_GAINS.ki,
+        ff: int = DEFAULT_CURRENT_GAINS.ff,
+    ):
+
+        assert 0 <= kp <= 80, "kp must be between 0 and 80"
+        assert 0 <= ki <= 800, "ki must be between 0 and 800"
+        assert 0 <= ff <= 128, "ff must be between 0 and 128"
+
+        self._device.set_gains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff)
+        self._has_gains = True
+
+    def _set_qaxis_current(self, current: int):
+        self._device.send_motor_command(
+            self.mode,
+            current,
+        )
+
+
+class PositionMode(ActpackMode):
+    def __init__(self, device: "DephyActpack"):
+        super().__init__(fxe.FX_POSITION, device)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        if not self.has_gains:
+            self._set_gains()
+
+        self._set_motor_angle(
+            int(
+                self._device._units.convert_to_default_units(
+                    self._device.motor_angle, "angle"
+                )
+                / RAD_PER_COUNT
+            )
+        )
+
+    def _exit(self):
+        self._device.send_motor_command(fxe.FX_VOLTAGE, 0)
+        print("Exiting POSITION mode")
+
+    def _set_gains(
+        self,
+        kp: int = DEFAULT_POSITION_GAINS.kp,
+        ki: int = DEFAULT_POSITION_GAINS.ki,
+        kd: int = DEFAULT_POSITION_GAINS.kd,
+    ):
+
+        assert 0 <= kp <= 1000, "kp must be between 0 and 1000"
+        assert 0 <= ki <= 1000, "ki must be between 0 and 1000"
+        assert 0 <= kd <= 1000, "kd must be between 0 and 1000"
+
+        self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=0)
+        self._has_gains = True
+
+    def _set_motor_angle(self, counts: int):
+        self._device.send_motor_command(
+            self.mode,
+            counts,
+        )
+
+
+class ImpedanceMode(ActpackMode):
+    def __init__(self, device: "DephyActpack"):
+        super().__init__(fxe.FX_IMPEDANCE, device)
+        self._entry_callback = self._entry
+        self._exit_callback = self._exit
+
+    def _entry(self):
+        if not self.has_gains:
+            self._set_gains()
+
+        self._set_motor_angle(
+            int(
+                self._device._units.convert_to_default_units(
+                    self._device.motor_angle, "angle"
+                )
+                / RAD_PER_COUNT
+            )
+        )
+
+    def _exit(self):
+        self._device.send_motor_command(fxe.FX_VOLTAGE, 0)
+        print("Exiting IMPEDANCE mode")
+
+    def _set_motor_angle(self, counts: int):
+        self._device.send_motor_command(
+            self.mode,
+            counts,
+        )
+
+    def _set_gains(
+        self,
+        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
+        K: int = DEFAULT_IMPEDANCE_GAINS.K,
+        B: int = DEFAULT_IMPEDANCE_GAINS.B,
+        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+    ):
+
+        assert 0 <= kp <= 80, "kp must be between 0 and 80"
+        assert 0 <= ki <= 800, "ki must be between 0 and 800"
+        assert 0 <= ff <= 128, "ff must be between 0 and 128"
+        assert 0 <= K, "K must be greater than 0"
+        assert 0 <= B, "B must be greater than 0"
+
+        self._device.set_gains(kp=kp, ki=ki, kd=0, k=K, b=B, ff=ff)
+        self._has_gains = True
 
 
 class DephyActpack(Device):
@@ -288,7 +409,6 @@ class DephyActpack(Device):
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
-        gear_ratio: float = 1.0,
         logger: logging.Logger = None,
         units: UnitsDefinition = None,
         debug_level: int = 0,
@@ -298,13 +418,13 @@ class DephyActpack(Device):
         Initializes the Actpack class
 
         Args:
-            port (_type_): _description_
-            baud_rate (_type_): _description_. Defaults to 230400.
-            frequency (_type_): _description_. Defaults to 500.
-            gear_ratio (_type_): _description_. Defaults to 1.0.
-            logger (_type_): _description_
-            units (_type_): _description_
-            debug_level (int, optional): _description_. Defaults to 0.
+            port (str): _description_
+            baud_rate (int): _description_. Defaults to 230400.
+            frequency (int): _description_. Defaults to 500.
+            logger (logging.Logger): _description_
+            units (UnitsDefinition): _description_
+            debug_level (int): _description_. Defaults to 0.
+            dephy_log (bool): _description_. Defaults to False.
         """
         super().__init__(os.path.realpath(port), baud_rate, debug_level)
         self._debug_level = debug_level
@@ -312,13 +432,23 @@ class DephyActpack(Device):
         self._frequency = frequency
         self._data = fxd.ActPackState()
         self.log = logger
-        self._gear_ratio = gear_ratio
-        self._state = VOLTAGE()
+        self._state = None
         self._units = units if units else DEFAULT_UNITS
+
+        self._modes: dict[str, ActpackMode] = {
+            "VOLTAGE": VoltageMode(self),
+            "POSITION": PositionMode(self),
+            "CURRENT": CurrentMode(self),
+            "IMPEDANCE": ImpedanceMode(self),
+        }
+
+        self._mode: ActpackMode = self._modes["VOLTAGE"]
 
     def start(self):
         self.open(self._debug_level, log_enabled=self._dephy_log)
         self.start_streaming(self._frequency)
+        time.sleep(0.1)
+        self._mode.enter()
 
     def stop(self):
         self.close()
@@ -326,42 +456,199 @@ class DephyActpack(Device):
     def update(self):
         self._data = self.read()
 
-    @property
-    def state(self):
-        return self._state
+    def set_position_gains(self, kp: int, ki: int, kd: int, force: bool = True):
+        """
+        Sets the position gains
 
-    # TODO: set q_axis_current method
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            kd (int): The derivative gain
+            force (bool): Force the mode transition. Defaults to False.
 
-    # TODO: set q_axis_voltage method
+        Raises:
+            ValueError: If the mode is not POSITION and force is False
+        """
+        if self._mode != self._modes["POSITION"]:
+            if force:
+                self._mode.transition(self._modes["POSITION"])
+            else:
+                raise ValueError(f"Cannot set position gains in mode {self._mode}")
+
+        self._mode._set_gains(kp=kp, ki=ki, kd=kd)
+
+    def set_current_gains(self, kp: int, ki: int, ff: int, force: bool = True):
+        """
+        Sets the current gains
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            ff (int): The feedforward gain
+            force (bool): Force the mode transition. Defaults to False.
+
+        Raises:
+            ValueError: If the mode is not CURRENT and force is False
+        """
+        if self._mode != self._modes["CURRENT"]:
+            if force:
+                self._mode.transition(self._modes["CURRENT"])
+            else:
+                raise ValueError(f"Cannot set current gains in mode {self._mode}")
+
+        self._mode._set_gains(kp=kp, ki=ki, ff=ff)
+
+    def set_impedance_gains(
+        self, kp: int, ki: int, K: int, B: int, ff: int, force: bool = True
+    ):
+        """
+        Sets the impedance gains
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            K (int): The spring constant
+            B (int): The damping constant
+            ff (int): The feedforward gain
+            force (bool): Force the mode transition. Defaults to False.
+
+        Raises:
+            ValueError: If the mode is not IMPEDANCE and force is False
+        """
+        if self._mode != self._modes["IMPEDANCE"]:
+            if force:
+                self._mode.transition(self._modes["IMPEDANCE"])
+            else:
+                raise ValueError(f"Cannot set impedance gains in mode {self._mode}")
+
+        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)
+
+    def set_q_axis_voltage(self, value: float, force: bool = False):
+        """
+        Sets the q axis voltage
+
+        Args:
+            value (float): The voltage to set
+            force (bool): Force the mode transition. Defaults to False.
+
+        Raises:
+            ValueError: If the mode is not VOLTAGE and force is False
+
+        """
+        if self._mode != self._modes["VOLTAGE"]:
+            if force:
+                self._mode.transition(self._modes["VOLTAGE"])
+            else:
+                raise ValueError(f"Cannot set q_axis_voltage in mode {self._mode}")
+
+        self._mode._set_qaxis_voltage(
+            int(self._units.convert_to_default_units(value, "voltage")),
+        )
+
+    def set_q_axis_current(self, value: float, force: bool = False):
+        """
+        Sets the q axis current
+
+        Args:
+            value (float): The current to set
+            force (bool): Force the mode transition. Defaults to False.
+
+        Raises:
+            ValueError: If the mode is not CURRENT and force is False
+        """
+        if self._mode != self._modes["CURRENT"]:
+            if force:
+                self._mode.transition(self._modes["CURRENT"])
+            else:
+                raise ValueError(f"Cannot set q_axis_current in mode {self._mode}")
+
+        self._mode._set_qaxis_current(
+            int(self._units.convert_to_default_units(value, "current")),
+        )
+
+    def set_motor_torque(self, torque: float, force: bool = False):
+        """
+        Sets the motor torque
+
+        Args:
+            torque (float): The torque to set
+            force (bool): Force the mode transition. Defaults to False.
+
+        Raises:
+            ValueError: If the mode is not CURRENT and force is False
+        """
+        if self._mode != self._modes["CURRENT"]:
+            if force:
+                self._mode.transition(self._modes["CURRENT"])
+            else:
+                raise ValueError(f"Cannot set motor_torque in mode {self._mode}")
+
+        self._mode._set_qaxis_current(
+            int(
+                self._units.convert_to_default_units(torque, "torque") / NM_PER_MILLIAMP
+            ),
+        )
+
+    def set_motor_angle(self, angle: float):
+        """
+        Sets the motor angle
+
+        Args:
+            angle (float): The angle to set
+
+        Raises:
+            ValueError: If the mode is not POSITION or IMPEDANCE
+        """
+        if self._mode not in [self._modes["POSITION"], self._modes["IMPEDANCE"]]:
+            raise ValueError(f"Cannot set motor angle in mode {self._mode}")
+
+        self._mode._set_motor_angle(
+            int(self._units.convert_to_default_units(angle, "angle") / RAD_PER_COUNT),
+        )
 
     # Read only properties from the actpack
 
     @property
+    def units(self):
+        return self._units
+
+    @property
+    def mode(self):
+        return self._mode()
+
+    @property
     def battery_voltage(self):
         return self._units.convert_from_default_units(
-            self._data.batt_volt * 1e-3,
+            self._data.batt_volt,
             "voltage",
         )
 
     @property
     def batter_current(self):
         return self._units.convert_from_default_units(
-            self._data.batt_curr * 1e-3,
+            self._data.batt_curr,
             "current",
         )
 
     @property
     def q_axis_voltage(self):
         return self._units.convert_from_default_units(
-            self._data.mot_volt * 1e-3,
+            self._data.mot_volt,
             "voltage",
         )
 
     @property
     def q_axis_current(self):
         return self._units.convert_from_default_units(
-            self._data.mot_cur * 1e-3,
+            self._data.mot_cur,
             "current",
+        )
+
+    @property
+    def motor_torque(self):
+        return self._units.convert_from_default_units(
+            self._data.mot_cur * NM_PER_MILLIAMP,
+            "torque",
         )
 
     @property
@@ -462,528 +749,203 @@ class DephyActpack(Device):
         )
 
 
-class Actpack:
-    """A class that contains and works with all the sensor data from a Dephy Actpack.
-
-    Attributes:
-        motor_angle (double) : Motor angle
-        motor_velocity (double : Motor velocity
-
-    """
-
-    MOTOR_COUNT_PER_REV = 16384
-    NM_PER_AMP = 0.1133
-    RAD_PER_COUNT = 2 * np.pi / MOTOR_COUNT_PER_REV
-    RAD_PER_DEG = np.pi / 180
-    MOTOR_COUNT_TO_RADIANS = lambda x: x * (np.pi / 180.0 / 45.5111)
-    RADIANS_TO_MOTOR_COUNTS = lambda q: q * (180 * 45.5111 / np.pi)
-
-    RAD_PER_SEC_GYROLSB = np.pi / 180 / 32.8
-    G_PER_ACCLSB = 1.0 / 8192
-
-    def __init__(
-        self,
-        port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
-        frequency: int = 500,
-        gear_ratio: float = 1.0,
-        logger: logging.Logger = None,
-        units: UnitsDefinition = None,
-        debug_level=0,
-    ) -> None:
-        """
-        Initializes the Actpack class
-
-        Args:
-            fxs (Fle): _description_
-            port (_type_): _description_
-            baud_rate (_type_): _description_
-            frequency (_type_): _description_
-            logger (_type_): _description_
-            debug_level (int, optional): _description_. Defaults to 0.
-        """
-        self.device = Device(port, baud_rate, debug_level)
-        self._debug_level = debug_level
-
-        self._frequency = frequency
-
-        self._streaming = False
-        self._data = None
-
-        self.log = logger
-        self._start()
-
-    def update(self) -> None:
-        """
-        Updates/Reads data from the Actpack
-        """
-        if self.is_streaming:
-            self._data = self._fxs.read_device(self._dev_id)
-
-    def _start(self):
-        try:
-            self._dev_id = self._fxs.open(
-                self._port, self._baud_rate, self._debug_level
-            )
-            self._app_type = self._fxs.get_app_type(self._dev_id)
-
-        except OSError:
-            self.log.error("Actpack is not powered ON.")
-            sys.exit()
-
-    def _start_streaming_data(self, log_en=False):
-        """Starts streaming dataa
-
-        Args:
-            log_en (bool, optional): _description_. Defaults to False.
-        """
-
-        self._fxs.start_streaming(self._dev_id, freq=self._frequency, log_en=log_en)
-        self._streaming = True
-        time.sleep(1 / self._frequency)
-
-    def _stop_streaming_data(self):
-        """
-        Stops streaming data
-        """
-        if self.is_streaming:
-            self._fxs.stop_streaming(self._dev_id)
-            self._streaming = False
-            time.sleep(1 / self._frequency)
-
-    def shutdown(self):
-        """
-        Shuts down the Actpack
-        """
-        self._stop_streaming_data()
-        self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, 0)
-        time.sleep(1 / self._frequency)
-        self._fxs.close(self._dev_id)
-        time.sleep(1 / self._frequency)
-
-    def _set_position_gains(self, kp: int = 100, ki: int = 0, kd: int = 0):
-        """Sets Position Gains
-
-        Args:
-            kp (int): _description_. Defaults to 200.
-            ki (int): _description_. Defaults to 50.
-            kd (int): _description_. Defaults to 0.
-        """
-        assert isfinite(kp) and kp >= 0 and kp <= 1000
-        assert isfinite(ki) and ki >= 0 and ki <= 1000
-        assert isfinite(kd) and kd >= 0 and kd <= 1000
-
-        self._set_qaxis_voltage(0)
-        self._fxs.set_gains(self._dev_id, kp, ki, kd, 0, 0, 0)
-        self._set_motor_angle_counts(self.motor_angle)
-
-    def _set_current_gains(self, kp: int = 40, ki: int = 400, ff: int = 128):
-        """Sets Current Gains
-
-        Args:
-            kp (int): _description_. Defaults to 40.
-            ki (int): _description_. Defaults to 400.
-            ff (int): _description_. Defaults to 128.
-        """
-        assert isfinite(kp) and kp >= 0 and kp <= 80
-        assert isfinite(ki) and ki >= 0 and ki <= 800
-        assert isfinite(ff) and ff >= 0 and ff <= 128
-
-        self._fxs.set_gains(self._dev_id, kp, ki, 0, 0, 0, ff)
-        time.sleep(1 / self._frequency)
-
-    def _set_impedance_gains(
-        self, K: int = 300, B: int = 1600, kp: int = 40, ki: int = 400, ff: int = 128
-    ):
-        """Sets Impedance Gains
-
-        Args:
-            kp (int): _description_. Defaults to 40.
-            ki (int): _description_. Defaults to 400.
-            K (int): _description_. Defaults to 300.
-            B (int): _description_. Defaults to 1600.
-            ff (int): _description_. Defaults to 128.
-        """
-        assert isfinite(kp) and kp >= 0 and kp <= 80
-        assert isfinite(ki) and ki >= 0 and ki <= 800
-        assert isfinite(ff) and ff >= 0 and ff <= 128
-        assert isfinite(K) and K >= 0
-        assert isfinite(B) and B >= 0
-
-        self._set_qaxis_voltage(0)
-        self._fxs.set_gains(self._dev_id, kp, ki, 0, K, B, ff)
-        self._set_motor_angle_counts(self.motor_angle)
-
-    def _set_motor_angle_counts(self, position: int = 0):
-        """Sets Motor Angle
-
-        Args:
-            position (int): Angular position in motor counts. Defaults to 0.
-        """
-        assert isfinite(position)
-        self._fxs.send_motor_command(self._dev_id, fxe.FX_POSITION, position)
-
-    def _set_motor_angle_radians(self, theta: float = 0.0):
-        assert isfinite(theta)
-        self._fxs.send_motor_command(
-            self._dev_id, fxe.FX_POSITION, int(theta / self.RAD_PER_COUNT)
-        )
-
-    def _set_equilibrium_angle(self, theta: int = 0):
-        assert isfinite(theta)
-        self._fxs.send_motor_command(self._dev_id, fxe.FX_IMPEDANCE, theta)
-
-    def _set_voltage(self, volt: int = 0):
-        """Sets Q-Axis Voltage
-
-        Args:
-            volt (int): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
-        """
-        assert isfinite(volt) and abs(volt) <= 36000
-        self._fxs.send_motor_command(self._dev_id, fxe.FX_VOLTAGE, volt)
-
-    def _set_qaxis_voltage(self, volt: int = 0):
-        """Sets Q-Axis Voltage
-
-        Args:
-            volt (int): Voltage in mV. Defaults to 0. Maximum limit is set to 36V.
-        """
-        assert isfinite(volt) and abs(volt) <= 36000
-        self._fxs.send_motor_command(self._dev_id, fxe.FX_NONE, volt)
-
-    def _set_qaxis_current(self, current: int = 0):
-        """Sets Q-Axis Current
-
-        Args:
-            current (int): Current in mA. Defaults to 0. Maximum limit is set to 22A.
-        """
-        assert isfinite(current) and abs(current) <= 22000
-        self._fxs.send_motor_command(self._dev_id, fxe.FX_CURRENT, current)
-
-    def _set_motor_torque(self, torque: float = 0.0):
-        self._set_qaxis_current(torque / self.NM_PER_AMP)
-
-    @property
-    def fxs(self):
-        return self._fxs
-
-    @property
-    def port(self):
-        return self._port
-
-    @property
-    def baud_rate(self):
-        return self._baud_rate
-
-    @property
-    def is_streaming(self):
-        return self._streaming
-
-    @property
-    def state_time(self):
-        return self._data.state_time
-
-    @property
-    def battery_current(self):
-        return self._data.batt_curr
-
-    @property
-    def battery_voltage(self):
-        return self._data.batt_volt
-
-    @property
-    def motor_temperature(self):
-        return self._data.temp
-
-    @property
-    def motor_current(self):
-        return self._data.mot_cur
-
-    @property
-    def motor_angle_counts(self):
-        return self._data.mot_ang
-
-    @property
-    def motor_angle(self):
-        return self._data.mot_ang * self.RAD_PER_COUNT
-
-    @property
-    def motor_velocity(self):
-        return self._data.mot_vel * self.RAD_PER_DEG
-
-    @property
-    def motor_torque(self):
-        return self.motor_current * 1e-3 * self.NM_PER_AMP
-
-    @property
-    def motor_acceleration(self):
-        return self._data.mot_acc
-
-    @property
-    def joint_angle(self):
-        return self._data.ank_ang
-
-    @property
-    def joint_velocity(self):
-        return self._data.ank_vel
-
-    @property
-    def acceleration_x(self):
-        return self._data.accelx * self.G_PER_ACCLSB
-
-    @property
-    def acceleration_y(self):
-        return self._data.accely * self.G_PER_ACCLSB
-
-    @property
-    def acceleration_z(self):
-        return self._data.accelz * self.G_PER_ACCLSB
-
-    @property
-    def gyro_x(self):
-        return self._data.gyro_x * self.RAD_PER_SEC_GYROLSB
-
-    @property
-    def gyro_y(self):
-        return self._data.gyro_y * self.RAD_PER_SEC_GYROLSB
-
-    @property
-    def gyro_z(self):
-        return self._data.gyro_z * self.RAD_PER_SEC_GYROLSB
-
-    @property
-    def gyroscope_vector(self):
-        return (
-            np.array([self._data.gyro_x, self._data.gyro_y, self._data.gyro_z]).T
-            * self.RAD_PER_SEC_GYROLSB
-        )
-
-    @property
-    def accelerometer_vector(self):
-        return (
-            np.array([self._data.accelx, self._data.accely, self._data.accelz]).T
-            * self.G_PER_ACCLSB
-        )
-
-    @property
-    def genvars(self):
-        return np.array(
-            [
-                self._data.genvar_0,
-                self._data.genvar_1,
-                self._data.genvar_2,
-                self._data.genvar_3,
-                self._data.genvar_4,
-                self._data.genvar_5,
-            ]
-        )
-
-
-class JointState(Enum):
-    NEUTRAL = 0
-    VOLTAGE = 1
-    POSITION = 2
-    CURRENT = 3
-    IMPEDANCE = 4
-
-
-class Joint(Actpack):
-    def __init__(
-        self, name, fxs, port, baud_rate, frequency, logger, debug_level=0
-    ) -> None:
-        super().__init__(fxs, port, baud_rate, frequency, logger, debug_level)
-
-        self._name = name
-        self._filename = "./encoder_map_" + self._name + ".txt"
-
-        self._count2deg = 360 / 2**14
-        self._joint_angle_array = None
-        self._motor_count_array = None
-
-        self._state = JointState.NEUTRAL
-
-        self._k: int = 0
-        self._b: int = 0
-        self._theta: int = 0
-
-    def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
-
-        # TODO Logging module
-        self.log.info(f"[{self._name}] Initiating Homing Routine.")
-
-        minpos_motor, minpos_joint, min_output = self._homing_routine(
-            direction=1.0, hvolt=homing_voltage, hrate=homing_rate
-        )
-        self.log.info(
-            f"[{self._name}] Minimum Motor angle: {minpos_motor}, Minimum Joint angle: {minpos_joint}"
-        )
-        time.sleep(0.5)
-        maxpos_motor, maxpos_joint, max_output = self._homing_routine(
-            direction=-1.0, hvolt=homing_voltage, hrate=homing_rate
-        )
-        self.log.info(
-            f"[{self.name}] Maximum Motor angle: {maxpos_motor}, Maximum Joint angle: {maxpos_joint}"
-        )
-
-        max_output = np.array(max_output).reshape((len(max_output), 2))
-        output_motor_count = max_output[:, 1]
-
-        _, ids = np.unique(output_motor_count, return_index=True)
-
-        if save:
-            self._save_encoder_map(data=max_output[ids])
-
-        self.log.info(f"[{self.name}] Homing Successfull.")
-
-    def _homing_routine(self, direction, hvolt=2500, hrate=0.001):
-        """Homing Routine
-
-        Args:
-            direction (_type_): _description_
-            hvolt (int, optional): _description_. Defaults to 2500.
-            hrate (float, optional): _description_. Defaults to 0.001.
-
-        Returns:
-            _type_: _description_
-        """
-        output = []
-        velocity_threshold = 0
-        go_on = True
-
-        self.update()
-        current_motor_position = self.motor_angle
-        current_joint_position = self.joint_angle
-
-        self.switch_state(JointState.VOLTAGE)
-        self.set_voltage(direction * hvolt)
-        time.sleep(0.05)
-        self.update()
-        cpos_motor = self.motor_angle
-        initial_velocity = self.joint_velocity
-        output.append([self.joint_angle * self._count2deg] + [cpos_motor])
-        velocity_threshold = abs(initial_velocity / 2.0)
-
-        while go_on:
-            time.sleep(hrate)
-            self.update()
-            cpos_motor = self.motor_angle
-            cvel_joint = self.joint_velocity
-            output.append([self.joint_angle * self._count2deg] + [cpos_motor])
-
-            if abs(cvel_joint) <= velocity_threshold:
-                self.set_voltage(0)
-                current_motor_position = self.motor_angle
-                current_joint_position = self.joint_angle
-
-                go_on = False
-
-        return current_motor_position, current_joint_position, output
-
-    def get_motor_count(self, desired_joint_angle):
-        """Returns Motor Count corresponding to the passed Joint angle value
-
-        Args:
-            desired_joint_angle (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        if self._joint_angle_array is None:
-            self._load_encoder_map()
-
-        desired_motor_count = np.interp(
-            np.array(desired_joint_angle),
-            self._joint_angle_array,
-            self._motor_count_array,
-        )
-        return desired_motor_count
-
-    def switch_state(self, to_state: JointState = JointState.NEUTRAL):
-        self._state = to_state
-
-    def set_voltage(self, volt):
-        if self.state == JointState.VOLTAGE:
-            self._set_voltage(volt)
-
-    def set_current(self, current):
-        if self.state == JointState.CURRENT:
-            self._set_current_gains()
-            self._set_qaxis_current(current)
-        else:
-            self.log.warning("Joint State is incorrect.")
-
-    def set_position(self, position):
-        if self.state == JointState.POSITION:
-            self._set_position_gains()
-            self._set_motor_angle_counts(position)
-
-    def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
-        self._k = k
-        self._b = b
-        self._theta = theta
-
-        if self.state == JointState.IMPEDANCE:
-            self._set_impedance_gains(K=k, B=b)
-            self._set_equilibrium_angle(theta=theta)
-
-    def _save_encoder_map(self, data):
-        """
-        Saves encoder_map: [Joint angle, Motor count] to a text file
-        """
-        np.savetxt(self._filename, data, fmt="%.5f")
-
-    def _load_encoder_map(self):
-        """
-        Loads Joint angle array, Motor count array, Min Joint angle, and Max Joint angle
-        """
-        data = np.loadtxt(self._filename, dtype=np.float64)
-        self._joint_angle_array = data[:, 0]
-        self._motor_count_array = np.array(data[:, 1], dtype=np.int32)
-
-        self._min_joint_angle = np.min(self._joint_angle_array)
-        self._max_joint_angle = np.max(self._joint_angle_array)
-
-        self._joint_angle_array = self._max_joint_angle - self._joint_angle_array
-
-        # Applying a median filter with a kernel size of 3
-        self._joint_angle_array = scipy.signal.medfilt(
-            self._joint_angle_array, kernel_size=3
-        )
-        self._motor_count_array = scipy.signal.medfilt(
-            self._motor_count_array, kernel_size=3
-        )
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def state(self):
-        return self._state
-
-    @property
-    def stiffness(self):
-        return self._k
-
-    @property
-    def damping(self):
-        return self._b
-
-    @property
-    def equilibrium_angle(self):
-        return self._theta
+# class Joint(Actpack):
+#     def __init__(
+#         self, name, fxs, port, baud_rate, frequency, logger, debug_level=0
+#     ) -> None:
+#         super().__init__(fxs, port, baud_rate, frequency, logger, debug_level)
+
+#         self._name = name
+#         self._filename = "./encoder_map_" + self._name + ".txt"
+
+#         self._count2deg = 360 / 2**14
+#         self._joint_angle_array = None
+#         self._motor_count_array = None
+
+#         self._state = JointState.NEUTRAL
+
+#         self._k: int = 0
+#         self._b: int = 0
+#         self._theta: int = 0
+
+#     def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
+
+#         # TODO Logging module
+#         self.log.info(f"[{self._name}] Initiating Homing Routine.")
+
+#         minpos_motor, minpos_joint, min_output = self._homing_routine(
+#             direction=1.0, hvolt=homing_voltage, hrate=homing_rate
+#         )
+#         self.log.info(
+#             f"[{self._name}] Minimum Motor angle: {minpos_motor}, Minimum Joint angle: {minpos_joint}"
+#         )
+#         time.sleep(0.5)
+#         maxpos_motor, maxpos_joint, max_output = self._homing_routine(
+#             direction=-1.0, hvolt=homing_voltage, hrate=homing_rate
+#         )
+#         self.log.info(
+#             f"[{self.name}] Maximum Motor angle: {maxpos_motor}, Maximum Joint angle: {maxpos_joint}"
+#         )
+
+#         max_output = np.array(max_output).reshape((len(max_output), 2))
+#         output_motor_count = max_output[:, 1]
+
+#         _, ids = np.unique(output_motor_count, return_index=True)
+
+#         if save:
+#             self._save_encoder_map(data=max_output[ids])
+
+#         self.log.info(f"[{self.name}] Homing Successfull.")
+
+#     def _homing_routine(self, direction, hvolt=2500, hrate=0.001):
+#         """Homing Routine
+
+#         Args:
+#             direction (_type_): _description_
+#             hvolt (int, optional): _description_. Defaults to 2500.
+#             hrate (float, optional): _description_. Defaults to 0.001.
+
+#         Returns:
+#             _type_: _description_
+#         """
+#         output = []
+#         velocity_threshold = 0
+#         go_on = True
+
+#         self.update()
+#         current_motor_position = self.motor_angle
+#         current_joint_position = self.joint_angle
+
+#         self.switch_state(JointState.VOLTAGE)
+#         self.set_voltage(direction * hvolt)
+#         time.sleep(0.05)
+#         self.update()
+#         cpos_motor = self.motor_angle
+#         initial_velocity = self.joint_velocity
+#         output.append([self.joint_angle * self._count2deg] + [cpos_motor])
+#         velocity_threshold = abs(initial_velocity / 2.0)
+
+#         while go_on:
+#             time.sleep(hrate)
+#             self.update()
+#             cpos_motor = self.motor_angle
+#             cvel_joint = self.joint_velocity
+#             output.append([self.joint_angle * self._count2deg] + [cpos_motor])
+
+#             if abs(cvel_joint) <= velocity_threshold:
+#                 self.set_voltage(0)
+#                 current_motor_position = self.motor_angle
+#                 current_joint_position = self.joint_angle
+
+#                 go_on = False
+
+#         return current_motor_position, current_joint_position, output
+
+#     def get_motor_count(self, desired_joint_angle):
+#         """Returns Motor Count corresponding to the passed Joint angle value
+
+#         Args:
+#             desired_joint_angle (_type_): _description_
+
+#         Returns:
+#             _type_: _description_
+#         """
+#         if self._joint_angle_array is None:
+#             self._load_encoder_map()
+
+#         desired_motor_count = np.interp(
+#             np.array(desired_joint_angle),
+#             self._joint_angle_array,
+#             self._motor_count_array,
+#         )
+#         return desired_motor_count
+
+#     def switch_state(self, to_state: JointState = JointState.NEUTRAL):
+#         self._state = to_state
+
+#     def set_voltage(self, volt):
+#         if self.state == JointState.VOLTAGE:
+#             self._set_voltage(volt)
+
+#     def set_current(self, current):
+#         if self.state == JointState.CURRENT:
+#             self._set_current_gains()
+#             self._set_qaxis_current(current)
+#         else:
+#             self.log.warning("Joint State is incorrect.")
+
+#     def set_position(self, position):
+#         if self.state == JointState.POSITION:
+#             self._set_position_gains()
+#             self._set_motor_angle_counts(position)
+
+#     def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
+#         self._k = k
+#         self._b = b
+#         self._theta = theta
+
+#         if self.state == JointState.IMPEDANCE:
+#             self._set_impedance_gains(K=k, B=b)
+#             self._set_equilibrium_angle(theta=theta)
+
+#     def _save_encoder_map(self, data):
+#         """
+#         Saves encoder_map: [Joint angle, Motor count] to a text file
+#         """
+#         np.savetxt(self._filename, data, fmt="%.5f")
+
+#     def _load_encoder_map(self):
+#         """
+#         Loads Joint angle array, Motor count array, Min Joint angle, and Max Joint angle
+#         """
+#         data = np.loadtxt(self._filename, dtype=np.float64)
+#         self._joint_angle_array = data[:, 0]
+#         self._motor_count_array = np.array(data[:, 1], dtype=np.int32)
+
+#         self._min_joint_angle = np.min(self._joint_angle_array)
+#         self._max_joint_angle = np.max(self._joint_angle_array)
+
+#         self._joint_angle_array = self._max_joint_angle - self._joint_angle_array
+
+#         # Applying a median filter with a kernel size of 3
+#         self._joint_angle_array = scipy.signal.medfilt(
+#             self._joint_angle_array, kernel_size=3
+#         )
+#         self._motor_count_array = scipy.signal.medfilt(
+#             self._motor_count_array, kernel_size=3
+#         )
+
+#     @property
+#     def name(self):
+#         return self._name
+
+#     @property
+#     def state(self):
+#         return self._state
+
+#     @property
+#     def stiffness(self):
+#         return self._k
+
+#     @property
+#     def damping(self):
+#         return self._b
+
+#     @property
+#     def equilibrium_angle(self):
+#         return self._theta
 
 
 class Loadcell:
     def __init__(
         self,
-        joint: Joint,
+        # joint: Joint,
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
         logger: logging.Logger = None,
     ) -> None:
-        self._joint = joint
+        # self._joint = joint
         self._amp_gain = 125.0
         self._exc = 5.0
 
@@ -1022,19 +984,21 @@ class Loadcell:
         Computes Loadcell data
 
         """
-        loadcell_signed = (self._joint.genvars - 2048) / 4095 * self._exc
-        loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
-        if loadcell_zero is None:
-            self._loadcell_data = (
-                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
-                - self._loadcell_zero
-            )
-        else:
-            self._loadcell_data = (
-                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
-                - loadcell_zero
-            )
+        # loadcell_signed = (self._joint.genvars - 2048) / 4095 * self._exc
+        # loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
+
+        # if loadcell_zero is None:
+        #     self._loadcell_data = (
+        #         np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+        #         - self._loadcell_zero
+        #     )
+        # else:
+        #     self._loadcell_data = (
+        #         np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+        #         - loadcell_zero
+        #     )
+        pass
 
     def initialize(self, number_of_iterations: int = 2000):
         """
@@ -1042,15 +1006,16 @@ class Loadcell:
         """
         ideal_loadcell_zero = np.zeros((1, 6), dtype=np.double)
         if not self._zeroed:
-            if self._joint.is_streaming:
-                self._joint.update()
-                self.update()
-                self._loadcell_zero = self._loadcell_data
+            pass
+            # if self._joint.is_streaming:
+            #     self._joint.update()
+            #     self.update()
+            #     self._loadcell_zero = self._loadcell_data
 
-                for _ in range(number_of_iterations):
-                    self.update(ideal_loadcell_zero)
-                    loadcell_offset = self._loadcell_data
-                    self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
+            #     for _ in range(number_of_iterations):
+            #         self.update(ideal_loadcell_zero)
+            #         loadcell_offset = self._loadcell_data
+            #         self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
         elif input("Do you want to re-initialize loadcell? (Y/N)") == "Y":
             self.reset()
@@ -1138,7 +1103,7 @@ class Logger(logging.Logger):
 
         Args:
             class_instance (object): Class instance to log the attributes of
-            attributes (list[str]): List of attributes to log
+            attributes_str (list[str]): List of attributes to log
         """
         self._class_instances.append(class_instance)
         self._attributes.append(attributes_str)
@@ -1174,7 +1139,7 @@ class Logger(logging.Logger):
         self._file.close()
 
 
-class OSL:
+class OpenSourceLeg:
     """
     OSL class: This class is the main class for the Open Source Leg project. It
     contains all the necessary functions to control the leg.
@@ -1188,9 +1153,9 @@ class OSL:
 
     @staticmethod
     def get_instance():
-        if OSL._instance is None:
-            OSL()
-        return OSL._instance
+        if OpenSourceLeg._instance is None:
+            OpenSourceLeg()
+        return OpenSourceLeg._instance
 
     def __init__(
         self, frequency: int = 200, log_data: bool = False, file_name: str = "./osl.log"
@@ -1201,7 +1166,7 @@ class OSL:
         self._fxs = None
         self._loadcell = None
 
-        self.joints: list[Joint] = []
+        # self.joints: list[Joint] = []
 
         self._knee_id = None
         self._ankle_id = None
@@ -1218,50 +1183,53 @@ class OSL:
         self._units = DEFAULT_UNITS
 
     def __enter__(self):
-        for joint in self.joints:
-            joint._start_streaming_data()
+        # for joint in self.joints:
+        #     joint._start_streaming_data()
 
         if self._loadcell is not None:
             self._loadcell.initialize()
 
     def __exit__(self, type, value, tb):
-        for joint in self.joints:
-            joint.switch_state()
-            joint.shutdown()
+        # for joint in self.joints:
+        #     joint.switch_state()
+        #     joint.shutdown()
+
+        pass
 
     def __repr__(self) -> str:
-        return f"OSL object with {len(self.joints)} joints"
+        # return f"OSL object with {len(self.joints)} joints"
+        return f"OSL object"
 
-    def add_joint(self, name: str, port, baud_rate, debug_level=0):
+    # def add_joint(self, name: str, port, baud_rate, debug_level=0):
 
-        if "knee" in name.lower():
-            self._knee_id = len(self.joints)
-        elif "ankle" in name.lower():
-            self._ankle_id = len(self.joints)
-        else:
-            sys.exit("Joint can't be identified, kindly check the given name.")
+    #     if "knee" in name.lower():
+    #         self._knee_id = len(self.joints)
+    #     elif "ankle" in name.lower():
+    #         self._ankle_id = len(self.joints)
+    #     else:
+    #         sys.exit("Joint can't be identified, kindly check the given name.")
 
-        self.joints.append(
-            Joint(
-                name=name,
-                fxs=self._fxs,
-                port=port,
-                baud_rate=baud_rate,
-                frequency=self._frequency,
-                logger=self.log,
-                debug_level=debug_level,
-            )
-        )
+    #     self.joints.append(
+    #         Joint(
+    #             name=name,
+    #             fxs=self._fxs,
+    #             port=port,
+    #             baud_rate=baud_rate,
+    #             frequency=self._frequency,
+    #             logger=self.log,
+    #             debug_level=debug_level,
+    #         )
+    #     )
 
     def add_loadcell(
         self,
-        joint: Joint,
+        # joint: Joint,
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
     ):
         self._loadcell = Loadcell(
-            joint=joint,
+            # joint=joint,
             amp_gain=amp_gain,
             exc=exc,
             loadcell_matrix=loadcell_matrix,
@@ -1300,16 +1268,16 @@ class OSL:
         self.log.addHandler(self._file_handler)
 
     def update(self):
-        for joint in self.joints:
-            joint.update()
+        # for joint in self.joints:
+        #     joint.update()
 
         if self._loadcell is not None:
             print("hello")
             self._loadcell.update()
 
-    def home(self):
-        for joint in self.joints:
-            joint.home()
+    # def home(self):
+    #     for joint in self.joints:
+    #         joint.home()
 
     @property
     def loadcell(self):
@@ -1318,19 +1286,19 @@ class OSL:
         else:
             sys.exit("Loadcell not connected.")
 
-    @property
-    def knee(self):
-        if self._knee_id is not None:
-            return self.joints[self._knee_id]
-        else:
-            sys.exit("Knee is not connected.")
+    # @property
+    # def knee(self):
+    #     if self._knee_id is not None:
+    #         return self.joints[self._knee_id]
+    #     else:
+    #         sys.exit("Knee is not connected.")
 
-    @property
-    def ankle(self):
-        if self._ankle_id is not None:
-            return self.joints[self._ankle_id]
-        else:
-            sys.exit("Ankle is not connected.")
+    # @property
+    # def ankle(self):
+    #     if self._ankle_id is not None:
+    #         return self.joints[self._ankle_id]
+    #     else:
+    #         sys.exit("Ankle is not connected.")
 
     @property
     def units(self):
@@ -1338,6 +1306,5 @@ class OSL:
 
 
 if __name__ == "__main__":
-    v = VOLTAGE()
-    v.on_entry()
-    print(v())
+    osl = OpenSourceLeg()
+    print(osl.units.convert_to_default_units(1000, "voltage"))
