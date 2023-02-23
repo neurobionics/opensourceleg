@@ -14,10 +14,9 @@ from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
 
+import flexsea.enums as fxe
 import numpy as np
 import scipy.signal
-from flexsea import fx_enums as fxe
-from flexsea.dev_spec import AllDevices as fxd
 from flexsea.device import Device
 
 from opensourceleg.utilities import SoftRealtimeLoop
@@ -206,7 +205,7 @@ DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=300, B=1600, ff=128)
 
 
 class ActpackMode:
-    def __init__(self, control_mode: c.c_int, device: "DephyActpack"):
+    def __init__(self, control_mode: str, device: "DephyActpack"):
         self._control_mode = control_mode
         self._device = device
         self._entry_callback: callable = lambda: None
@@ -223,7 +222,7 @@ class ActpackMode:
         return str(self._control_mode)
 
     @property
-    def mode(self) -> c.c_int:
+    def mode(self) -> str:
         return self._control_mode
 
     @property
@@ -243,27 +242,26 @@ class ActpackMode:
 
 class VoltageMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__(fxe.FX_VOLTAGE, device)
+        super().__init__("voltage", device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
     def _entry(self):
-        print("Entering VOLTAGE mode")
+        print("Entering voltage mode")
 
     def _exit(self):
         self._set_qaxis_voltage(0)
-        print("Exiting VOLTAGE mode")
+        print("Exiting voltage mode")
 
     def _set_qaxis_voltage(self, voltage: int):
-        self._device.send_motor_command(
-            self.mode,
+        self._device.command_motor_voltage(
             voltage,
         )
 
 
 class CurrentMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__(fxe.FX_CURRENT, device)
+        super().__init__("current", device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -274,7 +272,7 @@ class CurrentMode(ActpackMode):
         self._set_qaxis_current(0)
 
     def _exit(self):
-        self._device.send_motor_command(fxe.FX_VOLTAGE, 0)
+        self._device.command_motor_voltage(0)
 
     def _set_gains(
         self,
@@ -291,15 +289,14 @@ class CurrentMode(ActpackMode):
         self._has_gains = True
 
     def _set_qaxis_current(self, current: int):
-        self._device.send_motor_command(
-            self.mode,
+        self._device.command_motor_current(
             current,
         )
 
 
 class PositionMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__(fxe.FX_POSITION, device)
+        super().__init__("position", device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -317,7 +314,7 @@ class PositionMode(ActpackMode):
         )
 
     def _exit(self):
-        self._device.send_motor_command(fxe.FX_VOLTAGE, 0)
+        self._device.command_motor_voltage(0)
         print("Exiting POSITION mode")
 
     def _set_gains(
@@ -335,15 +332,14 @@ class PositionMode(ActpackMode):
         self._has_gains = True
 
     def _set_motor_angle(self, counts: int):
-        self._device.send_motor_command(
-            self.mode,
+        self._device.command_motor_position(
             counts,
         )
 
 
 class ImpedanceMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__(fxe.FX_IMPEDANCE, device)
+        super().__init__("impedance", device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -361,12 +357,11 @@ class ImpedanceMode(ActpackMode):
         )
 
     def _exit(self):
-        self._device.send_motor_command(fxe.FX_VOLTAGE, 0)
+        self._device.command_motor_voltage(0)
         print("Exiting IMPEDANCE mode")
 
     def _set_motor_angle(self, counts: int):
-        self._device.send_motor_command(
-            self.mode,
+        self._device.command_motor_position(
             counts,
         )
 
@@ -430,19 +425,19 @@ class DephyActpack(Device):
         self._debug_level = debug_level
         self._dephy_log = dephy_log
         self._frequency = frequency
-        self._data = fxd.ActPackState()
+        self._data: dict = None
         self.log = logger
         self._state = None
         self._units = units if units else DEFAULT_UNITS
 
         self._modes: dict[str, ActpackMode] = {
-            "VOLTAGE": VoltageMode(self),
-            "POSITION": PositionMode(self),
-            "CURRENT": CurrentMode(self),
-            "IMPEDANCE": ImpedanceMode(self),
+            "voltage": VoltageMode(self),
+            "position": PositionMode(self),
+            "current": CurrentMode(self),
+            "impedance": ImpedanceMode(self),
         }
 
-        self._mode: ActpackMode = self._modes["VOLTAGE"]
+        self._mode: ActpackMode = self._modes["voltage"]
 
     def start(self):
         self.open(self._debug_level, log_enabled=self._dephy_log)
@@ -469,9 +464,9 @@ class DephyActpack(Device):
         Raises:
             ValueError: If the mode is not POSITION and force is False
         """
-        if self._mode != self._modes["POSITION"]:
+        if self._mode != self._modes["position"]:
             if force:
-                self._mode.transition(self._modes["POSITION"])
+                self._mode.transition(self._modes["position"])
             else:
                 raise ValueError(f"Cannot set position gains in mode {self._mode}")
 
@@ -490,9 +485,9 @@ class DephyActpack(Device):
         Raises:
             ValueError: If the mode is not CURRENT and force is False
         """
-        if self._mode != self._modes["CURRENT"]:
+        if self._mode != self._modes["current"]:
             if force:
-                self._mode.transition(self._modes["CURRENT"])
+                self._mode.transition(self._modes["current"])
             else:
                 raise ValueError(f"Cannot set current gains in mode {self._mode}")
 
@@ -515,9 +510,9 @@ class DephyActpack(Device):
         Raises:
             ValueError: If the mode is not IMPEDANCE and force is False
         """
-        if self._mode != self._modes["IMPEDANCE"]:
+        if self._mode != self._modes["impedance"]:
             if force:
-                self._mode.transition(self._modes["IMPEDANCE"])
+                self._mode.transition(self._modes["impedance"])
             else:
                 raise ValueError(f"Cannot set impedance gains in mode {self._mode}")
 
@@ -535,9 +530,9 @@ class DephyActpack(Device):
             ValueError: If the mode is not VOLTAGE and force is False
 
         """
-        if self._mode != self._modes["VOLTAGE"]:
+        if self._mode != self._modes["voltage"]:
             if force:
-                self._mode.transition(self._modes["VOLTAGE"])
+                self._mode.transition(self._modes["voltage"])
             else:
                 raise ValueError(f"Cannot set q_axis_voltage in mode {self._mode}")
 
@@ -556,9 +551,9 @@ class DephyActpack(Device):
         Raises:
             ValueError: If the mode is not CURRENT and force is False
         """
-        if self._mode != self._modes["CURRENT"]:
+        if self._mode != self._modes["current"]:
             if force:
-                self._mode.transition(self._modes["CURRENT"])
+                self._mode.transition(self._modes["current"])
             else:
                 raise ValueError(f"Cannot set q_axis_current in mode {self._mode}")
 
@@ -577,9 +572,9 @@ class DephyActpack(Device):
         Raises:
             ValueError: If the mode is not CURRENT and force is False
         """
-        if self._mode != self._modes["CURRENT"]:
+        if self._mode != self._modes["current"]:
             if force:
-                self._mode.transition(self._modes["CURRENT"])
+                self._mode.transition(self._modes["current"])
             else:
                 raise ValueError(f"Cannot set motor_torque in mode {self._mode}")
 
@@ -599,7 +594,7 @@ class DephyActpack(Device):
         Raises:
             ValueError: If the mode is not POSITION or IMPEDANCE
         """
-        if self._mode not in [self._modes["POSITION"], self._modes["IMPEDANCE"]]:
+        if self._mode not in [self._modes["position"], self._modes["impedance"]]:
             raise ValueError(f"Cannot set motor angle in mode {self._mode}")
 
         self._mode._set_motor_angle(

@@ -8,10 +8,10 @@ name = "opensourceleg"
 version = "0.1.1-alpha.0"
 description = "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prosthesis."
 readme = "README.md"
-authors = ["Neurobionics Laboratory <imsenthur@gmail.com>"]
+authors = ["Open-source Leg <opensourceleg@gmail.com>"]
 license = "GNU GPL v3.0"
-repository = "https://github.com/imsenthur/opensourceleg"
-homepage = "https://github.com/imsenthur/opensourceleg"
+repository = "https://github.com/neurobionics/opensourceleg"
+homepage = "https://github.com/neurobionics/opensourceleg"
 
 # Keywords description https://python-poetry.org/docs/pyproject/#keywords
 keywords = []  #! Update me
@@ -24,17 +24,19 @@ classifiers = [  #! Update me
   "Topic :: Software Development :: Libraries :: Python Modules",
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.11",
 ]
 
+[virtualenvs]
+in-project = true
 
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.11,<4.0.0"
 pyserial = "^3.5"
 scipy = "^1.8.0"
 numpy = "^1.22.3"
-flexsea = "^9.1.1"
+flexsea = ">=10.0.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
