@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import traceback
+from dataclasses import dataclass
 from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
@@ -36,6 +37,11 @@ RADIANS_TO_MOTOR_COUNTS = lambda q: q * (180 * 45.5111 / np.pi)
 RAD_PER_SEC_GYROLSB = np.pi / 180 / 32.8
 M_PER_SEC_SQUARED_ACCLSB = 9.80665 / 8192
 
+IMPEDANCE_A = 0.00028444
+IMPEDANCE_C = 0.0007812
+
+NM_PER_RAD_TO_K = RAD_PER_COUNT / IMPEDANCE_C * 1e3 / NM_PER_AMP
+NM_S_PER_RAD_TO_B = RAD_PER_DEG / IMPEDANCE_A * 1e3 / NM_PER_AMP
 
 # Global Units Dictionary
 ALL_UNITS = {
@@ -181,20 +187,29 @@ DEFAULT_UNITS = UnitsDefinition(
 )
 
 
+@dataclass
 class Gains:
-    def __init__(
-        self, kp: int = 0, ki: int = 0, kd: int = 0, K: int = 0, B: int = 0, ff: int = 0
-    ) -> None:
+    """
+    Dataclass for controller gains
 
-        self.kp = kp
-        self.ki = ki
-        self.kd = kd
-        self.K = K
-        self.B = B
-        self.ff = ff
+    Attributes:
+        kp (int): Proportional gain
+        ki (int): Integral gain
+        kd (int): Derivative gain
+        K (int): Stiffness of the impedance controller
+        B (int): Damping of the impedance controller
+        ff (int): Feedforward gain
+    """
 
-    def __str__(self) -> str:
-        return f"kp: {self.kp}, ki: {self.ki}, kd: {self.kd}, K: {self.K}, B: {self.B}, ff: {self.ff}"
+    kp: int = 0
+    ki: int = 0
+    kd: int = 0
+    K: int = 0
+    B: int = 0
+    ff: int = 0
+
+    def __repr__(self) -> str:
+        return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, K={self.K}, B={self.B}, ff={self.ff}"
 
 
 DEFAULT_POSITION_GAINS = Gains(kp=200, ki=50, kd=0, K=0, B=0, ff=0)
@@ -202,6 +217,95 @@ DEFAULT_POSITION_GAINS = Gains(kp=200, ki=50, kd=0, K=0, B=0, ff=0)
 DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
 DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=300, B=1600, ff=128)
+
+
+class Logger(logging.Logger):
+    """
+    Logger class is a class that logs attributes from a class to a csv file
+
+    Methods:
+        __init__(self, class_instance: object, file_path: str, logger: logging.Logger = None) -> None
+        log(self) -> None
+    """
+
+    def __init__(
+        self,
+        file_path: str,
+        log_format: str = "[%(asctime)s] %(levelname)s: %(message)s",
+    ) -> None:
+
+        self._file_path = file_path
+
+        self._class_instances = []
+        self._attributes = []
+
+        self._file = open(self._file_path + ".csv", "w")
+        self._writer = csv.writer(self._file)
+        self._writer.writerow(self._attributes)
+
+        super().__init__(__name__)
+        self.setLevel(logging.DEBUG)
+
+        self._std_formatter = logging.Formatter(log_format)
+
+        self._file_handler = RotatingFileHandler(
+            self._file_path,
+            mode="w",
+            maxBytes=0,
+            backupCount=10,
+        )
+        self._file_handler.setLevel(logging.DEBUG)
+        self._file_handler.setFormatter(self._std_formatter)
+
+        self._stream_handler = logging.StreamHandler()
+        self._stream_handler.setLevel(logging.INFO)
+        self._stream_handler.setFormatter(self._std_formatter)
+
+        self.addHandler(self._stream_handler)
+        self.addHandler(self._file_handler)
+
+        self._is_logging = False
+
+    def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
+        """
+        Configures the logger to log the attributes of a class
+
+        Args:
+            class_instance (object): Class instance to log the attributes of
+            attributes_str (list[str]): List of attributes to log
+        """
+        self._class_instances.append(class_instance)
+        self._attributes.append(attributes_str)
+
+    def data(self) -> None:
+        """
+        Logs the attributes of the class instance to the csv file
+        """
+
+        if not self._is_logging:
+            for class_instance, attributes in zip(
+                self._class_instances, self._attributes
+            ):
+                self._writer.writerow(
+                    [
+                        f"{class_instance.__class__.__name__}: {attribute}"
+                        for attribute in attributes
+                    ]
+                )
+            self._is_logging = True
+
+        for class_instance, attributes in zip(self._class_instances, self._attributes):
+            self._writer.writerow(
+                [getattr(class_instance, attribute) for attribute in attributes]
+            )
+
+        self._file.flush()
+
+    def close(self) -> None:
+        """
+        Closes the csv file
+        """
+        self._file.close()
 
 
 class ActpackMode:
@@ -250,10 +354,10 @@ class VoltageMode(ActpackMode):
         print("Entering voltage mode")
 
     def _exit(self):
-        self._set_qaxis_voltage(0)
+        self._set_voltage(0)
         print("Exiting voltage mode")
 
-    def _set_qaxis_voltage(self, voltage: int):
+    def _set_voltage(self, voltage: int):
         self._device.command_motor_voltage(
             voltage,
         )
@@ -269,7 +373,7 @@ class CurrentMode(ActpackMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_qaxis_current(0)
+        self._set_current(0)
 
     def _exit(self):
         self._device.command_motor_voltage(0)
@@ -288,7 +392,12 @@ class CurrentMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff)
         self._has_gains = True
 
-    def _set_qaxis_current(self, current: int):
+    def _set_current(self, current: int):
+        """Sets the Q-axis current of the motor
+
+        Args:
+            current (int): _description_
+        """
         self._device.command_motor_current(
             current,
         )
@@ -332,6 +441,11 @@ class PositionMode(ActpackMode):
         self._has_gains = True
 
     def _set_motor_angle(self, counts: int):
+        """Sets the motor angle
+
+        Args:
+            counts (int): Angle in counts
+        """
         self._device.command_motor_position(
             counts,
         )
@@ -361,6 +475,11 @@ class ImpedanceMode(ActpackMode):
         print("Exiting IMPEDANCE mode")
 
     def _set_motor_angle(self, counts: int):
+        """Sets the motor angle
+
+        Args:
+            counts (int): Angle in counts
+        """
         self._device.command_motor_position(
             counts,
         )
@@ -404,8 +523,8 @@ class DephyActpack(Device):
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
-        logger: logging.Logger = None,
-        units: UnitsDefinition = None,
+        logger: Logger = None,
+        units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -426,7 +545,7 @@ class DephyActpack(Device):
         self._dephy_log = dephy_log
         self._frequency = frequency
         self._data: dict = None
-        self.log = logger
+        self._log = logger
         self._state = None
         self._units = units if units else DEFAULT_UNITS
 
@@ -451,7 +570,14 @@ class DephyActpack(Device):
     def update(self):
         self._data = self.read()
 
-    def set_position_gains(self, kp: int, ki: int, kd: int, force: bool = True):
+    def set_position_gains(
+        self,
+        kp: int = DEFAULT_POSITION_GAINS.kp,
+        ki: int = DEFAULT_POSITION_GAINS.ki,
+        kd: int = DEFAULT_POSITION_GAINS.kd,
+        force: bool = True,
+    ):
+
         """
         Sets the position gains
 
@@ -472,7 +598,14 @@ class DephyActpack(Device):
 
         self._mode._set_gains(kp=kp, ki=ki, kd=kd)
 
-    def set_current_gains(self, kp: int, ki: int, ff: int, force: bool = True):
+    def set_current_gains(
+        self,
+        kp: int = DEFAULT_CURRENT_GAINS.kp,
+        ki: int = DEFAULT_CURRENT_GAINS.ki,
+        ff: int = DEFAULT_CURRENT_GAINS.ff,
+        force: bool = True,
+    ):
+
         """
         Sets the current gains
 
@@ -494,7 +627,13 @@ class DephyActpack(Device):
         self._mode._set_gains(kp=kp, ki=ki, ff=ff)
 
     def set_impedance_gains(
-        self, kp: int, ki: int, K: int, B: int, ff: int, force: bool = True
+        self,
+        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
+        K: int = DEFAULT_IMPEDANCE_GAINS.K,
+        B: int = DEFAULT_IMPEDANCE_GAINS.B,
+        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+        force: bool = True,
     ):
         """
         Sets the impedance gains
@@ -518,7 +657,7 @@ class DephyActpack(Device):
 
         self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)
 
-    def set_q_axis_voltage(self, value: float, force: bool = False):
+    def set_voltage(self, value: float, force: bool = False):
         """
         Sets the q axis voltage
 
@@ -536,11 +675,11 @@ class DephyActpack(Device):
             else:
                 raise ValueError(f"Cannot set q_axis_voltage in mode {self._mode}")
 
-        self._mode._set_qaxis_voltage(
+        self._mode._set_voltage(
             int(self._units.convert_to_default_units(value, "voltage")),
         )
 
-    def set_q_axis_current(self, value: float, force: bool = False):
+    def set_current(self, value: float, force: bool = False):
         """
         Sets the q axis current
 
@@ -557,7 +696,7 @@ class DephyActpack(Device):
             else:
                 raise ValueError(f"Cannot set q_axis_current in mode {self._mode}")
 
-        self._mode._set_qaxis_current(
+        self._mode._set_current(
             int(self._units.convert_to_default_units(value, "current")),
         )
 
@@ -578,7 +717,7 @@ class DephyActpack(Device):
             else:
                 raise ValueError(f"Cannot set motor_torque in mode {self._mode}")
 
-        self._mode._set_qaxis_current(
+        self._mode._set_current(
             int(
                 self._units.convert_to_default_units(torque, "torque") / NM_PER_MILLIAMP
             ),
@@ -606,6 +745,10 @@ class DephyActpack(Device):
     @property
     def units(self):
         return self._units
+
+    @property
+    def frequency(self):
+        return self._frequency
 
     @property
     def mode(self):
@@ -744,191 +887,275 @@ class DephyActpack(Device):
         )
 
 
-# class Joint(Actpack):
-#     def __init__(
-#         self, name, fxs, port, baud_rate, frequency, logger, debug_level=0
-#     ) -> None:
-#         super().__init__(fxs, port, baud_rate, frequency, logger, debug_level)
+class Joint(DephyActpack):
+    def __init__(
+        self,
+        name: str = "knee",
+        port: str = "/dev/ttyACM0",
+        baud_rate: int = 115200,
+        frequency: int = 1000,
+        gear_ratio: float = 1.0,
+        has_loadcell: bool = False,
+        logger: Logger = None,
+        units: UnitsDefinition = DEFAULT_UNITS,
+        debug_level: int = 0,
+        dephy_log: bool = False,
+    ) -> None:
 
-#         self._name = name
-#         self._filename = "./encoder_map_" + self._name + ".txt"
+        super().__init__(
+            port=port,
+            baud_rate=baud_rate,
+            frequency=frequency,
+            logger=logger,
+            units=units,
+            debug_level=debug_level,
+            dephy_log=dephy_log,
+        )
 
-#         self._count2deg = 360 / 2**14
-#         self._joint_angle_array = None
-#         self._motor_count_array = None
+        self._gear_ratio: float = gear_ratio
+        self._is_homed: bool = False
+        self._has_loadcell: bool = has_loadcell
+        self._encoder_map = None
+        self._zero_pos = 0.0
 
-#         self._state = JointState.NEUTRAL
+        if "knee" in name.lower() or "ankle" in name.lower():
+            self._name = name
+        else:
+            raise ValueError(f"Invalid joint name: {name}")
 
-#         self._k: int = 0
-#         self._b: int = 0
-#         self._theta: int = 0
+        # check if "joint_encoder_map.npy" exists
+        if os.path.isfile(f"./{self._name}_encoder_map.npy"):
+            coefficients = np.load(f"./{self._name}_encoder_map.npy")
+            self._encoder_map = np.polynomial.polynomial.Polynomial(coefficients)
+        else:
+            self._log.info(
+                f"[{self._name}] No encoder map found. Please run the calibration routine."
+            )
 
-#     def home(self, save=True, homing_voltage=2500, homing_rate=0.001):
+    def home(
+        self,
+        homing_voltage: int = 2000,  # mV
+        homing_frequency: int = 100,  # Hz
+    ):
 
-#         # TODO Logging module
-#         self.log.info(f"[{self._name}] Initiating Homing Routine.")
+        is_homing = True
 
-#         minpos_motor, minpos_joint, min_output = self._homing_routine(
-#             direction=1.0, hvolt=homing_voltage, hrate=homing_rate
-#         )
-#         self.log.info(
-#             f"[{self._name}] Minimum Motor angle: {minpos_motor}, Minimum Joint angle: {minpos_joint}"
-#         )
-#         time.sleep(0.5)
-#         maxpos_motor, maxpos_joint, max_output = self._homing_routine(
-#             direction=-1.0, hvolt=homing_voltage, hrate=homing_rate
-#         )
-#         self.log.info(
-#             f"[{self.name}] Maximum Motor angle: {maxpos_motor}, Maximum Joint angle: {maxpos_joint}"
-#         )
+        CURRENT_THRESHOLD = 6000  # mA
+        VELOCITY_THRESHOLD = 0.01  # rad/sec
 
-#         max_output = np.array(max_output).reshape((len(max_output), 2))
-#         output_motor_count = max_output[:, 1]
+        self.set_voltage(-1 * homing_voltage)  # mv, negative for counterclockwise
 
-#         _, ids = np.unique(output_motor_count, return_index=True)
+        _motor_encoder_array = []
+        _joint_encoder_array = []
 
-#         if save:
-#             self._save_encoder_map(data=max_output[ids])
+        time.sleep(0.1)
 
-#         self.log.info(f"[{self.name}] Homing Successfull.")
+        while is_homing:
+            time.sleep(1 / homing_frequency)
 
-#     def _homing_routine(self, direction, hvolt=2500, hrate=0.001):
-#         """Homing Routine
+            _motor_encoder_array.append(self.motor_angle)  # rad
+            _joint_encoder_array.append(self.joint_angle)  # rad
 
-#         Args:
-#             direction (_type_): _description_
-#             hvolt (int, optional): _description_. Defaults to 2500.
-#             hrate (float, optional): _description_. Defaults to 0.001.
+            if (
+                abs(self.output_velocity) <= VELOCITY_THRESHOLD
+                or abs(self.motor_current) >= CURRENT_THRESHOLD
+            ):
+                self.set_voltage(0)
+                is_homing = False
 
-#         Returns:
-#             _type_: _description_
-#         """
-#         output = []
-#         velocity_threshold = 0
-#         go_on = True
+        time.sleep(0.1)
 
-#         self.update()
-#         current_motor_position = self.motor_angle
-#         current_joint_position = self.joint_angle
+        if np.std(_motor_encoder_array) < 1e-6:
+            self._log.warn(
+                f"[{self._name}] Motor encoder not working. Please check the wiring."
+            )
+            return
+        elif np.std(_joint_encoder_array) < 1e-6:
+            self._log.warn(
+                f"[{self._name}] Joint encoder not working. Please check the wiring."
+            )
+            return
 
-#         self.switch_state(JointState.VOLTAGE)
-#         self.set_voltage(direction * hvolt)
-#         time.sleep(0.05)
-#         self.update()
-#         cpos_motor = self.motor_angle
-#         initial_velocity = self.joint_velocity
-#         output.append([self.joint_angle * self._count2deg] + [cpos_motor])
-#         velocity_threshold = abs(initial_velocity / 2.0)
+        if "ankle" in self._name.lower():
+            self._zero_pos = np.deg2rad(30)
 
-#         while go_on:
-#             time.sleep(hrate)
-#             self.update()
-#             cpos_motor = self.motor_angle
-#             cvel_joint = self.joint_velocity
-#             output.append([self.joint_angle * self._count2deg] + [cpos_motor])
+        self._is_homed = True
 
-#             if abs(cvel_joint) <= velocity_threshold:
-#                 self.set_voltage(0)
-#                 current_motor_position = self.motor_angle
-#                 current_joint_position = self.joint_angle
+        if self.encoder_map is None:
+            if (
+                input(f"[{self._name}] Would you like to make an encoder map? (y/n): ")
+                == "y"
+            ):
+                self.make_encoder_map()
 
-#                 go_on = False
+    def make_encoder_map(self):
+        """
+        This method makes a lookup table to calculate the angle measured by the joint encoder.
+        This is necessary because the magnetic output encoders are nonlinear.
+        By making the map while the joint is unloaded, joint angle calculated by motor angle * gear ratio
+        should be the same as the true joint angle.
 
-#         return current_motor_position, current_joint_position, output
+        Output from this function is a file containing a_i values parameterizing the map
 
-#     def get_motor_count(self, desired_joint_angle):
-#         """Returns Motor Count corresponding to the passed Joint angle value
+        Eqn: angle = sum from i=0^5 (a_i*counts^i)
 
-#         Args:
-#             desired_joint_angle (_type_): _description_
+        Author: Kevin Best, PhD
+                U-M Neurobionics Lab
+                Gitub: tkevinbest, https://github.com/tkevinbest
+        """
 
-#         Returns:
-#             _type_: _description_
-#         """
-#         if self._joint_angle_array is None:
-#             self._load_encoder_map()
+        if not self.is_homed:
+            self._log.warn(
+                f"[{self._name}] Please home the joint before making the encoder map."
+            )
+            return
 
-#         desired_motor_count = np.interp(
-#             np.array(desired_joint_angle),
-#             self._joint_angle_array,
-#             self._motor_count_array,
-#         )
-#         return desired_motor_count
+        self.set_current_gains()
+        time.sleep(0.1)
+        self.set_current_gains()
 
-#     def switch_state(self, to_state: JointState = JointState.NEUTRAL):
-#         self._state = to_state
+        self.set_output_torque(0.0)
+        time.sleep(0.1)
+        self.set_output_torque(0.0)
 
-#     def set_voltage(self, volt):
-#         if self.state == JointState.VOLTAGE:
-#             self._set_voltage(volt)
+        _joint_angle_array = []
+        _output_angle_array = []
 
-#     def set_current(self, current):
-#         if self.state == JointState.CURRENT:
-#             self._set_current_gains()
-#             self._set_qaxis_current(current)
-#         else:
-#             self.log.warning("Joint State is incorrect.")
+        self._log.info(
+            f"[{self._name}] Please manually move the joint numerous times \
+                through its full range of motion for 10 seconds.\
+                   \n Press any key to continue."
+        )
 
-#     def set_position(self, position):
-#         if self.state == JointState.POSITION:
-#             self._set_position_gains()
-#             self._set_motor_angle_counts(position)
+        input()
+        _start_time = time.time()
 
-#     def set_impedance(self, k: int = 300, b: int = 1600, theta: int = None):
-#         self._k = k
-#         self._b = b
-#         self._theta = theta
+        while time.time() - _start_time < 10:
+            self.update()
+            _joint_angle_array.append(self.joint_angle)
+            _output_angle_array.append(self.output_angle)
 
-#         if self.state == JointState.IMPEDANCE:
-#             self._set_impedance_gains(K=k, B=b)
-#             self._set_equilibrium_angle(theta=theta)
+            time.sleep(1 / self.frequency)
 
-#     def _save_encoder_map(self, data):
-#         """
-#         Saves encoder_map: [Joint angle, Motor count] to a text file
-#         """
-#         np.savetxt(self._filename, data, fmt="%.5f")
+        self._log.info(f"[{self._name}] You may now stop moving the joint.")
 
-#     def _load_encoder_map(self):
-#         """
-#         Loads Joint angle array, Motor count array, Min Joint angle, and Max Joint angle
-#         """
-#         data = np.loadtxt(self._filename, dtype=np.float64)
-#         self._joint_angle_array = data[:, 0]
-#         self._motor_count_array = np.array(data[:, 1], dtype=np.int32)
+        _power = np.arange(4.0)
+        _a_mat = np.array(_joint_angle_array).reshape(-1, 1) ** _power
+        _beta = np.linalg.lstsq(_a_mat, _output_angle_array, rcond=None)[0]
+        _coeffs = _beta[0]
 
-#         self._min_joint_angle = np.min(self._joint_angle_array)
-#         self._max_joint_angle = np.max(self._joint_angle_array)
+        self._encoder_map = np.polynomial.polynomial.Polynomial(_coeffs)
 
-#         self._joint_angle_array = self._max_joint_angle - self._joint_angle_array
+        np.save(f"./{self._name}_encoder_map.npy", _coeffs)
+        self._log.info(f"[{self._name}] Encoder map saved.")
 
-#         # Applying a median filter with a kernel size of 3
-#         self._joint_angle_array = scipy.signal.medfilt(
-#             self._joint_angle_array, kernel_size=3
-#         )
-#         self._motor_count_array = scipy.signal.medfilt(
-#             self._motor_count_array, kernel_size=3
-#         )
+    def set_output_torque(self, torque: float):
+        """
+        Set the output torque of the joint.
+        This is the torque that is applied to the joint, not the motor.
 
-#     @property
-#     def name(self):
-#         return self._name
+        Args:
+            torque (float): torque in user-defined units
+        """
+        self.set_motor_torque(torque / self.gear_ratio)
 
-#     @property
-#     def state(self):
-#         return self._state
+    def set_output_angle(self, angle: float):
+        """
+        Set the output angle of the joint.
+        This is the desired angle of the joint, not the motor.
 
-#     @property
-#     def stiffness(self):
-#         return self._k
+        Args:
+            angle (float): angle in user-defined units
+        """
+        self.set_motor_angle(angle * self.gear_ratio)
 
-#     @property
-#     def damping(self):
-#         return self._b
+    def set_motor_impedance(
+        self,
+        kp: int = 40,
+        ki: int = 400,
+        K: float = 0.08922,
+        B: float = 0.0038070,
+        ff: int = 128,
+    ):
+        """
+        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
 
-#     @property
-#     def equilibrium_angle(self):
-#         return self._theta
+        Args:
+            kp (int): Proportional gain. Defaults to 40.
+            ki (int): Integral gain. Defaults to 400.
+            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (int): Feedforward gain. Defaults to 128.
+        """
+        self.set_impedance_gains(
+            kp=kp,
+            ki=ki,
+            K=int(K * NM_PER_RAD_TO_K),
+            B=int(B * NM_S_PER_RAD_TO_B),
+            ff=ff,
+        )
+
+    def set_joint_impedance(
+        self,
+        kp: int = 40,
+        ki: int = 400,
+        K: float = 0.08922,
+        B: float = 0.0038070,
+        ff: int = 128,
+    ):
+        """
+        Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
+
+        Conversion:
+            K_motor = K_joint / (gear_ratio ** 2)
+            B_motor = B_joint / (gear_ratio ** 2)
+
+        Args:
+            kp (int): Proportional gain. Defaults to 40.
+            ki (int): Integral gain. Defaults to 400.
+            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (int): Feedforward gain. Defaults to 128.
+        """
+        self.set_motor_impedance(
+            kp=kp,
+            ki=ki,
+            K=K / (self.gear_ratio**2),
+            B=B / (self.gear_ratio**2),
+            ff=ff,
+        )
+
+    @property
+    def zero_position(self):
+        return self._zero_pos
+
+    @zero_position.setter
+    def zero_position(self, value):
+        self._zero_pos = value
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def gear_ratio(self):
+        return self._gear_ratio
+
+    @property
+    def is_homed(self):
+        return self._is_homed
+
+    @property
+    def encoder_map(self):
+        return self._encoder_map
+
+    @property
+    def output_angle(self):
+        return self.motor_angle / self.gear_ratio
+
+    @property
+    def output_velocity(self):
+        return self.motor_velocity / self.gear_ratio
 
 
 class Loadcell:
@@ -938,7 +1165,7 @@ class Loadcell:
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
-        logger: logging.Logger = None,
+        logger: "Logger" = None,
     ) -> None:
         # self._joint = joint
         self._amp_gain = 125.0
@@ -1043,95 +1270,6 @@ class Loadcell:
     @property
     def mz(self):
         return self._loadcell_data[5]
-
-
-class Logger(logging.Logger):
-    """
-    Logger class is a class that logs attributes from a class to a csv file
-
-    Methods:
-        __init__(self, class_instance: object, file_path: str, logger: logging.Logger = None) -> None
-        log(self) -> None
-    """
-
-    def __init__(
-        self,
-        file_path: str,
-        log_format: str = "[%(asctime)s] %(levelname)s: %(message)s",
-    ) -> None:
-
-        self._file_path = file_path
-
-        self._class_instances = []
-        self._attributes = []
-
-        self._file = open(self._file_path + ".csv", "w")
-        self._writer = csv.writer(self._file)
-        self._writer.writerow(self._attributes)
-
-        super().__init__(__name__)
-        self.setLevel(logging.DEBUG)
-
-        self._std_formatter = logging.Formatter(log_format)
-
-        self._file_handler = RotatingFileHandler(
-            self._file_path,
-            mode="w",
-            maxBytes=0,
-            backupCount=10,
-        )
-        self._file_handler.setLevel(logging.DEBUG)
-        self._file_handler.setFormatter(self._std_formatter)
-
-        self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(logging.INFO)
-        self._stream_handler.setFormatter(self._std_formatter)
-
-        self.addHandler(self._stream_handler)
-        self.addHandler(self._file_handler)
-
-        self._is_logging = False
-
-    def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
-        """
-        Configures the logger to log the attributes of a class
-
-        Args:
-            class_instance (object): Class instance to log the attributes of
-            attributes_str (list[str]): List of attributes to log
-        """
-        self._class_instances.append(class_instance)
-        self._attributes.append(attributes_str)
-
-    def data(self) -> None:
-        """
-        Logs the attributes of the class instance to the csv file
-        """
-
-        if not self._is_logging:
-            for class_instance, attributes in zip(
-                self._class_instances, self._attributes
-            ):
-                self._writer.writerow(
-                    [
-                        f"{class_instance.__class__.__name__}: {attribute}"
-                        for attribute in attributes
-                    ]
-                )
-            self._is_logging = True
-
-        for class_instance, attributes in zip(self._class_instances, self._attributes):
-            self._writer.writerow(
-                [getattr(class_instance, attribute) for attribute in attributes]
-            )
-
-        self._file.flush()
-
-    def close(self) -> None:
-        """
-        Closes the csv file
-        """
-        self._file.close()
 
 
 class OpenSourceLeg:
