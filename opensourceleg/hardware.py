@@ -535,7 +535,7 @@ class DephyActpack(Device):
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
-            logger (logging.Logger): _description_
+            logger (Logger): _description_
             units (UnitsDefinition): _description_
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
@@ -673,7 +673,7 @@ class DephyActpack(Device):
             if force:
                 self._mode.transition(self._modes["voltage"])
             else:
-                raise ValueError(f"Cannot set q_axis_voltage in mode {self._mode}")
+                raise ValueError(f"Cannot set voltage in mode {self._mode}")
 
         self._mode._set_voltage(
             int(self._units.convert_to_default_units(value, "voltage")),
@@ -694,7 +694,7 @@ class DephyActpack(Device):
             if force:
                 self._mode.transition(self._modes["current"])
             else:
-                raise ValueError(f"Cannot set q_axis_current in mode {self._mode}")
+                raise ValueError(f"Cannot set current in mode {self._mode}")
 
         self._mode._set_current(
             int(self._units.convert_to_default_units(value, "current")),
@@ -769,14 +769,14 @@ class DephyActpack(Device):
         )
 
     @property
-    def q_axis_voltage(self):
+    def voltage(self):
         return self._units.convert_from_default_units(
             self._data.mot_volt,
             "voltage",
         )
 
     @property
-    def q_axis_current(self):
+    def current(self):
         return self._units.convert_from_default_units(
             self._data.mot_cur,
             "current",
@@ -813,7 +813,7 @@ class DephyActpack(Device):
     @property
     def motor_torque(self):
         return self._units.convert_from_default_units(
-            self.q_axis_current * NM_PER_AMP,
+            self.current * NM_PER_AMP,
             "torque",
         )
 
@@ -923,7 +923,6 @@ class Joint(DephyActpack):
         else:
             raise ValueError(f"Invalid joint name: {name}")
 
-        # check if "joint_encoder_map.npy" exists
         if os.path.isfile(f"./{self._name}_encoder_map.npy"):
             coefficients = np.load(f"./{self._name}_encoder_map.npy")
             self._encoder_map = np.polynomial.polynomial.Polynomial(coefficients)
@@ -934,16 +933,16 @@ class Joint(DephyActpack):
 
     def home(
         self,
-        homing_voltage: int = 2000,  # mV
-        homing_frequency: int = 100,  # Hz
+        homing_voltage: int = 2000,
+        homing_frequency: int = 100,
     ):
 
         is_homing = True
 
-        CURRENT_THRESHOLD = 6000  # mA
-        VELOCITY_THRESHOLD = 0.01  # rad/sec
+        CURRENT_THRESHOLD = 6000
+        VELOCITY_THRESHOLD = 0.01
 
-        self.set_voltage(-1 * homing_voltage)  # mv, negative for counterclockwise
+        self.set_voltage(-1 * homing_voltage)  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
         _joint_encoder_array = []
@@ -953,12 +952,12 @@ class Joint(DephyActpack):
         while is_homing:
             time.sleep(1 / homing_frequency)
 
-            _motor_encoder_array.append(self.motor_angle)  # rad
-            _joint_encoder_array.append(self.joint_angle)  # rad
+            _motor_encoder_array.append(self.motor_angle)
+            _joint_encoder_array.append(self.joint_angle)
 
             if (
                 abs(self.output_velocity) <= VELOCITY_THRESHOLD
-                or abs(self.motor_current) >= CURRENT_THRESHOLD
+                or abs(self.current) >= CURRENT_THRESHOLD
             ):
                 self.set_voltage(0)
                 is_homing = False
@@ -1161,15 +1160,15 @@ class Joint(DephyActpack):
 class Loadcell:
     def __init__(
         self,
-        # joint: Joint,
+        joint: Joint,
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix=None,
+        loadcell_matrix: np.array = None,
         logger: "Logger" = None,
     ) -> None:
-        # self._joint = joint
-        self._amp_gain = 125.0
-        self._exc = 5.0
+        self._joint = joint
+        self._amp_gain = amp_gain
+        self._exc = exc
 
         if not loadcell_matrix:
             self._loadcell_matrix = np.array(
@@ -1195,7 +1194,7 @@ class Loadcell:
         self._loadcell_data = None
         self._loadcell_zero = np.zeros((1, 6), dtype=np.double)
         self._zeroed = False
-        self.log = logger
+        self._log = logger
 
     def reset(self):
         self._zeroed = False
@@ -1207,39 +1206,47 @@ class Loadcell:
 
         """
 
-        # loadcell_signed = (self._joint.genvars - 2048) / 4095 * self._exc
-        # loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
+        loadcell_signed = (self._joint.genvars - 2048) / 4095 * self._exc
+        loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
-        # if loadcell_zero is None:
-        #     self._loadcell_data = (
-        #         np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
-        #         - self._loadcell_zero
-        #     )
-        # else:
-        #     self._loadcell_data = (
-        #         np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
-        #         - loadcell_zero
-        #     )
-        pass
+        if loadcell_zero is None:
+            self._loadcell_data = (
+                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+                - self._loadcell_zero
+            )
+        else:
+            self._loadcell_data = (
+                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+                - loadcell_zero
+            )
 
     def initialize(self, number_of_iterations: int = 2000):
         """
         Obtains the initial loadcell reading (aka) loadcell_zero
         """
         ideal_loadcell_zero = np.zeros((1, 6), dtype=np.double)
+
         if not self._zeroed:
-            pass
-            # if self._joint.is_streaming:
-            #     self._joint.update()
-            #     self.update()
-            #     self._loadcell_zero = self._loadcell_data
+            if self._joint.isStreaming:
+                self._joint.update()
+                self.update()
+                self._loadcell_zero = self._loadcell_data
 
-            #     for _ in range(number_of_iterations):
-            #         self.update(ideal_loadcell_zero)
-            #         loadcell_offset = self._loadcell_data
-            #         self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
+                for _ in range(number_of_iterations):
+                    self.update(ideal_loadcell_zero)
+                    loadcell_offset = self._loadcell_data
+                    self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
-        elif input("Do you want to re-initialize loadcell? (Y/N)") == "Y":
+            else:
+                self._log.warn(
+                    "[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
+                )
+                return
+
+        elif (
+            input(f"[Loadcell] Would you like to re-initialize loadcell? (y/n): ")
+            == "y"
+        ):
             self.reset()
             self.initialize()
 
@@ -1290,154 +1297,154 @@ class OpenSourceLeg:
             OpenSourceLeg()
         return OpenSourceLeg._instance
 
-    def __init__(
-        self, frequency: int = 200, log_data: bool = False, file_name: str = "./osl.log"
-    ) -> None:
+    def __init__(self, frequency: int = 200, file_name: str = "./osl.log") -> None:
 
-        super().__init__()
+        self._frequency: int = frequency
 
-        self._fxs = None
-        self._loadcell = None
+        self._has_knee: bool = False
+        self._has_ankle: bool = False
+        self._has_loadcell: bool = False
 
-        # self.joints: list[Joint] = []
+        self._knee: Joint = None
+        self._ankle: Joint = None
+        self._loadcell: Loadcell = None
 
-        self._knee_id = None
-        self._ankle_id = None
-
-        self._frequency = frequency
         self.log = Logger(
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
         )
 
-        # self._initialize_logger(log_data=log_data, filename=file_name)
-
         self.loop = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
 
-        self._units = DEFAULT_UNITS
+        self._units: UnitsDefinition = DEFAULT_UNITS
 
     def __enter__(self):
-        # for joint in self.joints:
-        #     joint._start_streaming_data()
 
-        if self._loadcell is not None:
+        if self.has_knee:
+            self._knee.start()
+
+        if self.has_ankle:
+            self._ankle.start()
+
+        if self.has_loadcell:
             self._loadcell.initialize()
 
     def __exit__(self, type, value, tb):
-        # for joint in self.joints:
-        #     joint.switch_state()
-        #     joint.shutdown()
+        if self.has_knee:
+            self._knee.stop()
 
-        pass
+        if self.has_ankle:
+            self._ankle.stop()
 
     def __repr__(self) -> str:
-        # return f"OSL object with {len(self.joints)} joints"
-        return f"OSL object"
+        return f"OSL object with 0 joints"
 
-    # def add_joint(self, name: str, port, baud_rate, debug_level=0):
+    def add_joint(
+        self,
+        name: str = "knee",
+        port: str = "/dev/ttyACM0",
+        baud_rate: int = 115200,
+        gear_ratio: float = 1.0,
+        has_loadcell: bool = False,
+        debug_level: int = 0,
+        dephy_log: bool = False,
+    ):
 
-    #     if "knee" in name.lower():
-    #         self._knee_id = len(self.joints)
-    #     elif "ankle" in name.lower():
-    #         self._ankle_id = len(self.joints)
-    #     else:
-    #         sys.exit("Joint can't be identified, kindly check the given name.")
+        if "knee" in name.lower():
+            self._has_knee = True
+            self._knee = Joint(
+                name=name,
+                port=port,
+                baud_rate=baud_rate,
+                frequency=self._frequency,
+                gear_ratio=gear_ratio,
+                has_loadcell=has_loadcell,
+                logger=self.log,
+                units=self.units,
+                debug_level=debug_level,
+                dephy_log=dephy_log,
+            )
 
-    #     self.joints.append(
-    #         Joint(
-    #             name=name,
-    #             fxs=self._fxs,
-    #             port=port,
-    #             baud_rate=baud_rate,
-    #             frequency=self._frequency,
-    #             logger=self.log,
-    #             debug_level=debug_level,
-    #         )
-    #     )
+        elif "ankle" in name.lower():
+            self._has_ankle = True
+            self._ankle = Joint(
+                name=name,
+                port=port,
+                baud_rate=baud_rate,
+                frequency=self._frequency,
+                gear_ratio=gear_ratio,
+                has_loadcell=has_loadcell,
+                logger=self.log,
+                units=self.units,
+                debug_level=debug_level,
+                dephy_log=dephy_log,
+            )
+        else:
+            self.log.warn("[OSL] Joint name is not recognized.")
 
     def add_loadcell(
         self,
-        # joint: Joint,
+        joint: Joint,
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
     ):
+        self._has_loadcell = True
         self._loadcell = Loadcell(
-            # joint=joint,
+            joint=joint,
             amp_gain=amp_gain,
             exc=exc,
             loadcell_matrix=loadcell_matrix,
             logger=self.log,
         )
 
-    def _initialize_logger(self, log_data: bool = False, filename: str = "osl.log"):
-
-        self._log_data = log_data
-        self._log_filename = filename
-        self.log = logging.getLogger(__name__)
-
-        if log_data:
-            self.log.setLevel(logging.DEBUG)
-        else:
-            self.log.setLevel(logging.INFO)
-
-        self._std_formatter = logging.Formatter(
-            "[%(asctime)s] %(levelname)s: %(message)s"
-        )
-
-        self._file_handler = RotatingFileHandler(
-            self._log_filename,
-            mode="w",
-            maxBytes=0,
-            backupCount=10,
-        )
-        self._file_handler.setLevel(logging.DEBUG)
-        self._file_handler.setFormatter(self._std_formatter)
-
-        self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(logging.INFO)
-        self._stream_handler.setFormatter(self._std_formatter)
-
-        self.log.addHandler(self._stream_handler)
-        self.log.addHandler(self._file_handler)
-
     def update(self):
-        # for joint in self.joints:
-        #     joint.update()
+        if self.has_knee:
+            self._knee.update()
 
-        if self._loadcell is not None:
-            print("hello")
+        if self.has_ankle:
+            self._ankle.update()
+
+        if self.has_loadcell:
             self._loadcell.update()
 
-    # def home(self):
-    #     for joint in self.joints:
-    #         joint.home()
+    @property
+    def knee(self):
+        if self.has_knee:
+            return self._knee
+        else:
+            self.log.warn("[OSL] Knee is not connected.")
+
+    @property
+    def ankle(self):
+        if self.has_ankle:
+            return self._ankle
+        else:
+            self.log.warn("[OSL] Ankle is not connected.")
 
     @property
     def loadcell(self):
-        if self._loadcell is not None:
+        if self.has_loadcell:
             return self._loadcell
         else:
-            sys.exit("Loadcell not connected.")
-
-    # @property
-    # def knee(self):
-    #     if self._knee_id is not None:
-    #         return self.joints[self._knee_id]
-    #     else:
-    #         sys.exit("Knee is not connected.")
-
-    # @property
-    # def ankle(self):
-    #     if self._ankle_id is not None:
-    #         return self.joints[self._ankle_id]
-    #     else:
-    #         sys.exit("Ankle is not connected.")
+            self.log.warn("[OSL] Loadcell is not connected.")
 
     @property
     def units(self):
         return self._units
 
+    @property
+    def has_knee(self):
+        return self._has_knee
+
+    @property
+    def has_ankle(self):
+        return self._has_ankle
+
+    @property
+    def has_loadcell(self):
+        return self._has_loadcell
+
 
 if __name__ == "__main__":
     osl = OpenSourceLeg()
-    print(osl.units.convert_to_default_units(1000, "voltage"))
+    print(osl.units)
