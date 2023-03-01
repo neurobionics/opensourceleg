@@ -1,8 +1,5 @@
-Scripts
-=======
-
 Hardware
--------------
+---------
 
 .. automodule:: opensourceleg.hardware
    :members:
