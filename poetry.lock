@@ -1036,6 +1036,18 @@ files = [
 cp2110 = ["hidapi"]
 
 [[package]]
+name = "pytermtk"
+version = "0.22.0a4"
+description = "Python Terminal Toolkit"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyTermTk-0.22.0a4-py3-none-any.whl", hash = "sha256:4454d2742fbb443a124621d5b7fc79476ddbb88c6127381094a194310090c692"},
+    {file = "pyTermTk-0.22.0a4.tar.gz", hash = "sha256:41743e11d47d4b64bbb107cf07807510ef3f984b2566a476c7aa8149054bf421"},
+]
+
+[[package]]
 name = "pytest"
 version = "6.2.5"
 description = "pytest: simple powerful testing with Python"
@@ -1666,4 +1678,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<4.0.0"
-content-hash = "05bdc3931e03f8d57f8bd84db237453d3802a3dd9faee6bee686c52186e3ce1f"
+content-hash = "0da6692bd09192d29bb9309f3cf60cd0d62ba517735d7c41180fd5747db9da48"
