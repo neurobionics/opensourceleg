@@ -20,6 +20,7 @@ import numpy as np
 import scipy.signal
 from flexsea.device import Device
 
+from opensourceleg.tui import TUI
 from opensourceleg.utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
@@ -1305,6 +1306,8 @@ class OpenSourceLeg:
         self._has_ankle: bool = False
         self._has_loadcell: bool = False
 
+        self.tui = TUI(default_cfg=True)
+
         self._knee: Joint = None
         self._ankle: Joint = None
         self._loadcell: Loadcell = None
@@ -1447,4 +1450,4 @@ class OpenSourceLeg:
 
 if __name__ == "__main__":
     osl = OpenSourceLeg()
-    print(osl.units)
+    osl.tui.run()

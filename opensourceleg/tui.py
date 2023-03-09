@@ -1,3 +1,5 @@
+from typing import Callable
+
 import random
 
 import numpy as np
@@ -16,312 +18,1001 @@ class Colors:
     magenta: str = "#ff00ff"
     white: str = "#ffffff"
     black: str = "#000000"
+    turquoise: str = "#00dddd"
+    orange: str = "#ff8800"
+    grey: str = "#888888"
+    mblue: str = "#00274C"
+    maize: str = "#FBEC5D"
 
 
-class TUI:
+# create a tree data structure class
+class Group:
+    def __init__(self, name: str, parent: "Group" = None):
+        self._name = name
+        self._parent = parent
+        self._children = []
+
+    def add_child(self, child: "Group" = None):
+        self._children.append(child)
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def is_root(self):
+        return self.parent is None
+
+    @property
+    def is_leaf(self):
+        return len(self.children) == 0
+
+    def __str__(self):
+        return f"{self.name} -> {self.children}"
+
+
+COLORS = Colors()
+
+
+class TUI(Colors):
     """
     A class used to represent a TUI
     """
 
-    def __init__(self, title: str = "Open-source Leg", frequency: int = 30):
-        self.colors = Colors()
-        self.root = ttk.TTk()
+    def __init__(
+        self,
+        title: str = " Open-source Leg ",
+        frequency: int = 30,
+        layout: str = "horizontal",
+        default_cfg: bool = False,
+    ):
+        self.root_ttk = ttk.TTk()
         self.timer = ttk.TTkTimer()
         self.dt = 1.0 / frequency
-        self.layout = ttk.TTkGridLayout(columnMinHeight=1, columnMinWidth=1)
 
-        self.root.setLayout(self.layout)
+        self._default_cfg = default_cfg
+
+        self._layouts = {
+            "horizontal": ttk.TTkHBoxLayout,
+            "vertical": ttk.TTkVBoxLayout,
+            "grid": ttk.TTkGridLayout,
+        }
+
+        self.root_ttk.setLayout(self._layouts["grid"]())
+        self._groups = {}
+
+        self._buttons = {}
+        self._radio_buttons = {}
+        self._checkboxes = {}
+        self._checkbox_categories = {}
+        self._dropdowns = {}
+        self._values = {}
+        self._texts = {}
 
         self.frame = ttk.TTkFrame(
-            parent=self.root,
+            parent=self.root_ttk,
             border=True,
             title=title,
-            titleColor=ttk.TTkColor.BOLD + ttk.TTkColor.fg("#00FFFF"),
+            titleColor=ttk.TTkColor.BOLD + ttk.TTkColor.fg(COLORS.maize),
         )
-        self.frame.setLayout(ttk.TTkHBoxLayout())
+        self.frame.setLayout(self._layouts[layout]())
+        self._groups["root"] = self.frame
 
-        self.left_frame = ttk.TTkFrame(
-            parent=self.frame, border=True, borderColor=ttk.TTkColor.fg("#00FFFF")
-        )
-        self.left_frame.setLayout(ttk.TTkVBoxLayout())
-        self.right_frame = ttk.TTkFrame(parent=self.frame, border=True)
-        self.right_frame.setLayout(ttk.TTkVBoxLayout())
+        self._plot_parent: ttk.TTkFrame = None
+        self._plot: ttk.TTkGraph = None
+        self._pvalue: float = 0.0
+        self._pcounter: int = 0
 
-        self.status_frame = ttk.TTkFrame(
-            border=True, title="Status", titleColor=ttk.TTkColor.fg("#00ff00")
-        )
-        self.buttons_frame = ttk.TTkFrame(border=False)
-        self.attributes_frame = ttk.TTkFrame(border=False)
-        self.graph_frame = ttk.TTkFrame(
-            border=True, titleColor=ttk.TTkColor.fg("#ffffff")
-        )
+        self._active_attribute: str = "motor_position"
 
-        self.status_frame.setLayout(
-            ttk.TTkGridLayout(columnMinHeight=2, columnMinWidth=2)
-        )
-        self.buttons_frame.setLayout(
-            ttk.TTkGridLayout(columnMinHeight=2, columnMinWidth=2)
-        )
-        self.attributes_frame.setLayout(
-            ttk.TTkGridLayout(columnMinHeight=2, columnMinWidth=2)
-        )
-        self.graph_frame.setLayout(
-            ttk.TTkGridLayout(columnMinHeight=2, columnMinWidth=2)
-        )
+        self._update_callbacks: list[callable] = []
 
-        self._buttons_row = 0
-        self._buttons_col = 0
-        self._buttons_max_row = 3
-        self._buttons_max_col = 3
-
-        self._button_groups = {}
-        self._button_group_rows = {}
-        self._button_group_cols = {}
-
-        self._attributes_row = 0
-        self._attributes_col = 0
-        self._attributes_max_row = 3
-        self._attributes_max_col = 3
-
-        self._active_attribute: str = "[Motor] Position"
-
-        self._attribute_groups = {}
-        self._attribute_group_rows = {}
-        self._attribute_group_cols = {}
-
-        self._status_row = 0
-        self._status_col = 0
-        self._status_max_row = 3
-        self._status_max_col = 3
-
-        self._status_group_rows = {}
-        self._status_group_cols = {}
-
-        self.graph = ttk.TTkGraph(
-            color=ttk.TTkColor.fg(
-                "#00dddd", modifier=ttk.TTkColorGradient(increment=25)
-            )
-        )
-        self._graph_value = 0.0
-        self._graph_counter = 0
-
-        self.left_frame.layout().addWidget(self.graph_frame)
-        self.left_frame.layout().addWidget(self.attributes_frame)
-        self.right_frame.layout().addWidget(self.status_frame)
-        self.right_frame.layout().addWidget(self.buttons_frame)
-
-        self.graph_frame.addWidget(self.graph)
         self.timer.timeout.connect(self.update)
         self.timer.start(1)
 
+        if self._default_cfg:
+            self.load_default_cfg()
+
     @ttk.pyTTkSlot()
     def update(self):
-        self._graph_value = [np.sin(self._graph_counter * np.pi / 40)]
-        self.graph.addValue(self._graph_value)
-        self.graph_frame.setTitle(
-            ttk.TTkString(f"{self._active_attribute}: {self._graph_value[0]:0.3f}")
-        )
+        if self._plot is not None:
+            self._pvalue = [np.sin(self._pcounter * np.pi / 40)]
+            self._plot.addValue(self._pvalue)
 
-        self._graph_counter += 1
+            self._pcounter += 1
+
+        for callback in self._update_callbacks:
+            callback()
+
         self.timer.start(self.dt)
 
-    def run(self):
-        self.root.mainloop()
+    def add_update_callback(self, callback: callable):
+        self._update_callbacks.append(callback)
 
-    def set_max_columns(self, buttons: int = 3, attributes: int = 3, status: int = 3):
-        self._buttons_max_col = buttons
-        self._attributes_max_col = attributes
-        self._status_max_col = status
+    def run(self):
+        self.root_ttk.mainloop()
+
+    def add_group(
+        self,
+        name: str = "Group",
+        parent: str = "root",
+        layout: str = "horizontal",
+        title_color: str = COLORS.white,
+        border_color: str = COLORS.white,
+        border: bool = True,
+        show_title: bool = False,
+        row: int = 0,
+        col: int = 0,
+    ):
+        """
+        Adds a group or frame to the TUI
+
+        Args:
+            name (str): Name of the group. Defaults to "Group".
+            parent (str): Parent of the group. Defaults to "Groups".
+            layout (str): Layout of the group. Defaults to "horizontal".
+            color (str): Title color of the group . Defaults to COLORS.white.
+            border_color (str): Border color of the group. Defaults to COLORS.white.
+            border (bool): Boolean flag to show or hide the border. Defaults to True.
+            show_title (bool): Boolean flag to show or hide the title. Defaults to False.
+        """
+        self._groups[name] = ttk.TTkFrame(
+            border=border,
+            titleColor=ttk.TTkColor.fg(title_color),
+            borderColor=ttk.TTkColor.fg(border_color),
+        )
+
+        _name = " ".join(name.split("_")).title()
+
+        if show_title:
+            self._groups[name].setTitle(ttk.TTkString(" " + _name + " "))
+
+        self._groups[name].setLayout(self._layouts[layout]())
+
+        if parent in self._groups:
+
+            if (
+                self._groups[parent].layout().__class__.__name__
+                == ttk.TTkGridLayout.__name__
+            ):
+                self._groups[parent].layout().addWidget(
+                    self._groups[name],
+                    row,
+                    col,
+                )
+
+            else:
+                self._groups[parent].layout().addWidget(self._groups[name])
+        else:
+            raise ValueError(f"Parent group: {parent} does not exist.")
+
+    def add_plot(
+        self,
+        parent: str = "root",
+        color: str = COLORS.white,
+        row: int = 0,
+        col: int = 0,
+    ):
+        self._plot = ttk.TTkGraph(
+            color=ttk.TTkColor.fg(
+                color,
+            )
+        )
+
+        self._plot_parent = self._groups[parent]
+
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                self._plot,
+                row,
+                col,
+            )
+
+        else:
+            self._groups[parent].layout().addWidget(self._plot)
+
+    def add_dropdown(
+        self,
+        name: str = "dropdown",
+        parent: str = "root",
+        color: str = COLORS.white,
+        options: list[str] = [],
+        row: int = 0,
+        col: int = 0,
+    ):
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                _dropdown := ttk.TTkComboBox(
+                    list=options,
+                ),
+                row,
+                col,
+            )
+
+        else:
+            self._groups[parent].layout().addWidget(
+                _dropdown := ttk.TTkComboBox(
+                    list=options,
+                )
+            )
+
+        self._dropdowns[parent + name] = _dropdown
+
+    def add_text(
+        self,
+        name: str = "text",
+        parent: str = "root",
+        color: str = COLORS.white,
+        row: int = 0,
+        col: int = 0,
+    ):
+
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                ttk.TTkLabel(text=name, color=ttk.TTkColor.fg(color)),
+                row,
+                col,
+            )
+
+        else:
+            self._groups[parent].layout().addWidget(
+                ttk.TTkLabel(text=name, color=ttk.TTkColor.fg(color)),
+            )
+
+    def add_value(
+        self,
+        name: str = "value",
+        parent: str = "root",
+        default: int = 0,
+        color: str = COLORS.white,
+        row: int = 0,
+        col: int = 0,
+    ):
+
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                _value := ttk.TTkLineEdit(
+                    text=str(default), inputType=ttk.TTkK.Input_Number
+                ),
+                row,
+                col,
+            )
+
+        else:
+            self._groups[parent].layout().addWidget(
+                _value := ttk.TTkLineEdit(
+                    text=str(default), inputType=ttk.TTkK.Input_Number
+                ),
+            )
+
+        self._values[parent + "_" + name] = _value
 
     def add_button(
         self,
-        name: str = "Button",
-        group: str = "Buttons",
-        color: str = "#ffffff",
+        name: str = "button",
+        parent: str = "root",
+        color: str = COLORS.white,
         border: bool = True,
-        show_group: bool = False,
+        row: int = 0,
+        col: int = 0,
     ):
+        _name = " ".join(name.split("_")).title()
 
-        if group not in self._button_groups:
-            self._button_groups[group] = ttk.TTkFrame(
-                border=True,
-                titleColor=ttk.TTkColor.BOLD,
-                borderColor=ttk.TTkColor.fg(color),
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                _button := ttk.TTkButton(
+                    text=_name,
+                    color=ttk.TTkColor.BOLD + ttk.TTkColor.bg(color),
+                    border=border,
+                ),
+                row,
+                col,
             )
 
-            if show_group:
-                self._button_groups[group].setTitle(ttk.TTkString(group))
-
-            self._button_groups[group].setLayout(
-                ttk.TTkGridLayout(columnMinHeight=2, columnMinWidth=2)
+        else:
+            self._groups[parent].layout().addWidget(
+                _button := ttk.TTkButton(
+                    text=_name, color=ttk.TTkColor.fg(color), border=border
+                )
             )
 
-            self._button_group_rows[group] = 0
-            self._button_group_cols[group] = 0
+        self._buttons[parent + "_" + _name] = _button
 
-            self.buttons_frame.layout().addWidget(
-                self._button_groups[group],
-                self._buttons_row,
-                self._buttons_col,
-            )
-
-            self._buttons_row += 1
-
-            if self._buttons_row >= self._buttons_max_row:
-                self._buttons_row = 0
-                self._buttons_col += 1
-
-        self._button_groups[group].layout().addWidget(
-            a := ttk.TTkButton(
-                text=name, color=ttk.TTkColor.fg(self.colors.white), border=border
-            ),
-            self._button_group_rows[group],
-            self._button_group_cols[group],
-        )
-
-        self._button_group_cols[group] += 1
-
-        if self._button_group_cols[group] >= self._buttons_max_col:
-            self._button_group_cols[group] = 0
-            self._button_group_rows[group] += 1
-
-    def add_attribute(
+    def add_radio_button(
         self,
-        name: str = "Attribute",
-        group: str = "Attributes",
+        name: str = "radio_button",
+        category: str = "attributes",
+        parent: str = "root",
+        color: str = COLORS.white,
         is_checked: bool = False,
+        row: int = 0,
+        col: int = 0,
+    ):
+        """
+        Adds a radio button to the TUI
+
+        Args:
+            name (str): Name of the radio button. Defaults to "radio_button".
+            category (str): Category of the radio button; only one radio button can be checked in a category.
+                            Defaults to "Attributes".
+            parent (str): Parent of the radio button. Defaults to "root".
+            color (str): Color of the radio button. Defaults to COLORS.white.
+            is_checked (bool): Is the radio button checked? Defaults to False.
+        """
+
+        _name = " ".join(name.split("_")).title()
+
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                _radio_button := ttk.TTkRadioButton(
+                    text=" " + _name,
+                    name=category,
+                    color=ttk.TTkColor.fg(color),
+                    checked=is_checked,
+                ),
+                row,
+                col,
+            )
+
+        else:
+            self._groups[parent].layout().addWidget(
+                _radio_button := ttk.TTkRadioButton(
+                    text=" " + _name,
+                    name=category,
+                    color=ttk.TTkColor.fg(color),
+                    checked=is_checked,
+                )
+            )
+
+        self._radio_buttons[parent + "_" + name] = _radio_button
+
+        if self._default_cfg and category == "attributes":
+            self.default_radio_button_connection(name, parent)
+
+    def add_checkbox(
+        self,
+        name: str = "Checkbox",
+        parent: str = "root",
+        color: str = COLORS.white,
+        is_checked: bool = False,
+        row: int = 0,
+        col: int = 0,
+    ):
+        _name = " ".join(name.split("_")).title()
+
+        if (
+            self._groups[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._groups[parent].layout().addWidget(
+                _checkbox := ttk.TTkCheckbox(
+                    text=_name,
+                    color=ttk.TTkColor.fg(color),
+                    checked=is_checked,
+                ),
+                row,
+                col,
+            )
+
+        else:
+            self._groups[parent].layout().addWidget(
+                _checkbox := ttk.TTkCheckbox(
+                    text=_name,
+                    color=ttk.TTkColor.fg(color),
+                    checked=is_checked,
+                )
+            )
+
+        self._checkboxes[parent + "_" + _name] = _checkbox
+
+    def update_active_attribute(self, name: str):
+        self._active_attribute = name
+
+        _plot_name = self._active_attribute.replace("_", " ").title()
+
+        self._plot_parent.setTitle(
+            ttk.TTkString(f"{_plot_name}: {self._pvalue[0]:0.3f}")
+        )
+
+    def default_radio_button_connection(
+        self,
+        name: str,
+        parent: str,
     ):
 
-        if group not in self._attribute_groups:
-            self._attribute_groups[group] = ttk.TTkFrame(
-                border=True, title=group, titleColor=ttk.TTkColor.BOLD
-            )
-            self._attribute_groups[group].setLayout(
-                ttk.TTkGridLayout(columnMinHeight=1, columnMinWidth=1)
-            )
-
-            self._attribute_group_rows[group] = 0
-            self._attribute_group_cols[group] = 0
-
-            self.attributes_frame.layout().addWidget(
-                self._attribute_groups[group],
-                self._attributes_row,
-                self._attributes_col,
-            )
-
-            self._attributes_row += 1
-
-            if self._attributes_row >= self._attributes_max_row:
-                self._attributes_row = 0
-                self._attributes_col += 1
-
-        self._attribute_groups[group].layout().addWidget(
-            ttk.TTkRadioButton(text=" " + name, name=group, checked=is_checked),
-            self._attribute_group_rows[group],
-            self._attribute_group_cols[group],
+        self._radio_buttons[parent + "_" + name].clicked.connect(
+            lambda: self.update_active_attribute(name=name)
         )
 
-        self._attribute_group_cols[group] += 1
+    def connect_button(self):
+        pass
 
-        if self._attribute_group_cols[group] >= self._attributes_max_col:
-            self._attribute_group_cols[group] = 0
-            self._attribute_group_rows[group] += 1
+    def load_default_cfg(self):
 
-    def add_status(self, name: str = "Status", is_checked: bool = False):
-        self.status_frame.layout().addWidget(
-            ttk.TTkCheckbox(text=" " + name, checked=is_checked),
-            self._status_row,
-            self._status_col,
+        self.add_group(
+            name="left",
+            parent="root",
+            layout="vertical",
+            border=True,
         )
 
-        self._status_col += 1
+        self.add_group(
+            name="control_panel",
+            parent="root",
+            layout="vertical",
+            border=False,
+            show_title=False,
+        )
 
-        if self._status_col >= self._status_max_col:
-            self._status_col = 0
-            self._status_row += 1
+        self.add_group(
+            name="plot",
+            parent="left",
+            layout="vertical",
+            border=True,
+            show_title=True,
+        )
 
+        self.add_group(
+            name="plot_attributes",
+            parent="left",
+            layout="vertical",
+            border=False,
+            show_title=False,
+        )
 
-def add_attributes(tui):
+        self.add_plot(
+            parent="plot",
+            color=COLORS.white,
+        )
 
-    tui.add_attribute(
-        name="Knee",
-        group="Joint",
-        is_checked=True,
-    )
+        self.add_group(
+            name="joint",
+            parent="plot_attributes",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
 
-    tui.add_attribute(
-        name="Ankle",
-        group="Joint",
-        is_checked=False,
-    )
+        self.add_group(
+            name="attributes",
+            parent="plot_attributes",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
 
-    tui.add_attribute(
-        name="[Motor] Position",
-        group="Attributes",
-        is_checked=True,
-    )
+        self.add_radio_button(
+            name="knee",
+            category="joint",
+            parent="joint",
+            color=COLORS.white,
+            is_checked=True,
+            row=0,
+            col=0,
+        )
 
-    tui.add_attribute(
-        name="[Motor] Velocity",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="ankle",
+            category="joint",
+            parent="joint",
+            color=COLORS.white,
+            is_checked=False,
+            row=0,
+            col=1,
+        )
 
-    tui.add_attribute(
-        name="[Motor] Current",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="motor_position",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=True,
+            row=0,
+            col=0,
+        )
 
-    tui.add_attribute(
-        name="[Joint] Position",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="motor_velocity",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=0,
+            col=1,
+        )
 
-    tui.add_attribute(
-        name="[Joint] Velocity",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="motor_current",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=0,
+            col=2,
+        )
 
-    tui.add_attribute(
-        name="[Joint] Torque",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="joint_position",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=1,
+            col=0,
+        )
 
-    tui.add_attribute(
-        name="[Loadcell] Fx",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="joint_velocity",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=1,
+            col=1,
+        )
 
-    tui.add_attribute(
-        name="[Loadcell] Fy",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="joint_torque",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=1,
+            col=2,
+        )
 
-    tui.add_attribute(
-        name="[Loadcell] Fz",
-        group="Attributes",
-        is_checked=False,
-    )
+        self.add_radio_button(
+            name="loadcell_Fx",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=2,
+            col=0,
+        )
+
+        self.add_radio_button(
+            name="loadcell_fy",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=2,
+            col=1,
+        )
+
+        self.add_radio_button(
+            name="loadcell_fz",
+            category="attributes",
+            parent="attributes",
+            color=COLORS.white,
+            is_checked=False,
+            row=2,
+            col=2,
+        )
+
+        self.add_group(
+            name="joint_control",
+            parent="control_panel",
+            layout="horizontal",
+            border=False,
+            show_title=False,
+        )
+
+        self.add_group(
+            name="knee",
+            parent="joint_control",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
+
+        self.add_group(
+            name="ankle",
+            parent="joint_control",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
+
+        self.add_group(
+            name="utility",
+            parent="control_panel",
+            layout="grid",
+            border=False,
+            show_title=False,
+        )
+
+        self.add_group(
+            name="estop",
+            parent="control_panel",
+            layout="grid",
+            border=False,
+            show_title=False,
+        )
+
+        self.add_button(
+            name="emergency_stop",
+            parent="estop",
+            color=COLORS.maize,
+            border=True,
+        )
+
+        self.add_button(
+            name="safety_reset",
+            parent="utility",
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.add_group(
+            name="calibrate",
+            parent="utility",
+            layout="grid",
+            border=True,
+            show_title=True,
+            row=0,
+            col=1,
+        )
+
+        self.add_button(
+            name="encoders",
+            parent="calibrate",
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.add_button(
+            name="loadcell",
+            parent="calibrate",
+            color=COLORS.white,
+            row=1,
+            col=0,
+        )
+
+        self.add_button(
+            name="home",
+            parent="knee",
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.add_group(
+            name="kdata",
+            parent="knee",
+            layout="grid",
+            border=True,
+            show_title=False,
+            row=1,
+            col=0,
+        )
+
+        self.add_text(
+            name="Voltage (mV): ",
+            parent="kdata",
+            row=0,
+            col=0,
+        )
+
+        self.add_value(
+            name="voltage",
+            parent="kdata",
+            default=0,
+            row=0,
+            col=1,
+        )
+
+        self.add_text(
+            name="Position (deg): ",
+            parent="kdata",
+            row=1,
+            col=0,
+        )
+
+        self.add_value(
+            name="position",
+            parent="kdata",
+            default=0,
+            row=1,
+            col=1,
+        )
+
+        self.add_text(
+            name="Current (mA): ",
+            parent="kdata",
+            row=2,
+            col=0,
+        )
+
+        self.add_value(
+            name="current",
+            parent="kdata",
+            default=0,
+            row=2,
+            col=1,
+        )
+
+        self.add_text(
+            name=" ",
+            parent="kdata",
+            row=3,
+            col=0,
+        )
+
+        self.add_text(
+            name="Stiffness (N/rad): ",
+            parent="kdata",
+            row=4,
+            col=0,
+        )
+
+        self.add_value(
+            name="stiffness",
+            parent="kdata",
+            default=0,
+            row=4,
+            col=1,
+        )
+
+        self.add_text(
+            name="Damping (N/(rad/s)): ",
+            parent="kdata",
+            row=5,
+            col=0,
+        )
+
+        self.add_value(
+            name="damping",
+            parent="kdata",
+            default=0,
+            row=5,
+            col=1,
+        )
+
+        self.add_text(
+            name="Equilibrium Angle (deg): ",
+            parent="kdata",
+            row=6,
+            col=0,
+        )
+
+        self.add_value(
+            name="equilibrium_angle",
+            parent="kdata",
+            default=0,
+            row=6,
+            col=1,
+        )
+
+        self.add_group(
+            name="mode",
+            parent="knee",
+            layout="grid",
+            border=True,
+            show_title=True,
+            row=2,
+            col=0,
+        )
+
+        self.add_group(
+            name="knee_updater",
+            parent="knee",
+            layout="grid",
+            border=False,
+            show_title=False,
+            row=3,
+            col=0,
+        )
+
+        self.add_button(
+            name="stop",
+            parent="knee_updater",
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.add_button(
+            name="update",
+            parent="knee_updater",
+            color=COLORS.white,
+            row=0,
+            col=1,
+        )
+
+        self.add_dropdown(
+            name="knee",
+            parent="mode",
+            options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
+        )
+
+        self.add_button(
+            name="home",
+            parent="ankle",
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.add_group(
+            name="adata",
+            parent="ankle",
+            layout="grid",
+            border=True,
+            show_title=False,
+            row=1,
+            col=0,
+        )
+
+        self.add_text(
+            name="Voltage (mV): ",
+            parent="adata",
+            row=0,
+            col=0,
+        )
+
+        self.add_value(
+            name="voltage",
+            parent="adata",
+            default=0,
+            row=0,
+            col=1,
+        )
+
+        self.add_text(
+            name="Position (deg): ",
+            parent="adata",
+            row=1,
+            col=0,
+        )
+
+        self.add_value(
+            name="position",
+            parent="adata",
+            default=0,
+            row=1,
+            col=1,
+        )
+
+        self.add_text(
+            name="Current (mA): ",
+            parent="adata",
+            row=2,
+            col=0,
+        )
+
+        self.add_value(
+            name="current",
+            parent="adata",
+            default=0,
+            row=2,
+            col=1,
+        )
+
+        self.add_text(
+            name=" ",
+            parent="adata",
+            row=3,
+            col=0,
+        )
+
+        self.add_text(
+            name="Stiffness (N/rad): ",
+            parent="adata",
+            row=4,
+            col=0,
+        )
+
+        self.add_value(
+            name="stiffness",
+            parent="adata",
+            default=0,
+            row=4,
+            col=1,
+        )
+
+        self.add_text(
+            name="Damping (N/(rad/s)): ",
+            parent="adata",
+            row=5,
+            col=0,
+        )
+
+        self.add_value(
+            name="damping",
+            parent="adata",
+            default=0,
+            row=5,
+            col=1,
+        )
+
+        self.add_text(
+            name="Equilibrium Angle (deg): ",
+            parent="adata",
+            row=6,
+            col=0,
+        )
+
+        self.add_value(
+            name="equilibrium_angle",
+            parent="adata",
+            default=0,
+            row=6,
+            col=1,
+        )
+
+        self.add_group(
+            name="mode",
+            parent="ankle",
+            layout="grid",
+            border=True,
+            show_title=True,
+            row=2,
+            col=0,
+        )
+
+        self.add_group(
+            name="aupdater",
+            parent="ankle",
+            layout="grid",
+            border=False,
+            show_title=False,
+            row=3,
+            col=0,
+        )
+
+        self.add_button(
+            name="stop",
+            parent="aupdater",
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.add_button(
+            name="update",
+            parent="aupdater",
+            color=COLORS.white,
+            row=0,
+            col=1,
+        )
+
+        self.add_dropdown(
+            name="ankle",
+            parent="mode",
+            options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
+        )
 
 
 if __name__ == "__main__":
-    tui = TUI()
-
-    add_attributes(tui)
-
-    tui.add_button("Disable Knee", group="Utility", show_group=False)
-    tui.add_button("Disable Ankle", group="Utility")
-    tui.add_button("Safety Reset", group="Utility")
-    tui.add_button("Home Knee", group="Utility")
-    tui.add_button("Home Ankle", group="Utility")
-    tui.add_button("Encoders", group="Calibrate", show_group=True)
-    tui.add_button("Loadcell", group="Calibrate")
-    tui.add_button("E-STOP", group="E-STOP", color=tui.colors.red)
-
+    tui = TUI(default_cfg=True)
     tui.run()
