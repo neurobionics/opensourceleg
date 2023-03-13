@@ -86,15 +86,27 @@ class TUI(Colors):
             "grid": ttk.TTkGridLayout,
         }
 
+        self._modes = {
+            0: "voltage",
+            1: "position",
+            2: "current",
+            3: "impedance",
+        }
+
         self.root_ttk.setLayout(self._layouts["grid"]())
         self._groups = {}
 
         self._buttons = {}
         self._radio_buttons = {}
         self._checkboxes = {}
-        self._checkbox_categories = {}
+        self._categories = {}
         self._dropdowns = {}
         self._values = {}
+
+        self._knee_values = {}
+        self._ankle_values = {}
+        self._other_values = {}
+
         self._texts = {}
 
         self.frame = ttk.TTkFrame(
@@ -111,7 +123,10 @@ class TUI(Colors):
         self._pvalue: float = 0.0
         self._pcounter: int = 0
 
-        self._active_attribute: str = "motor_position"
+        self._kmode: int = 0
+        self._amode: int = 0
+
+        self._plot_title: str = "Plot"
 
         self._update_callbacks: list[callable] = []
 
@@ -127,6 +142,15 @@ class TUI(Colors):
             self._pvalue = [np.sin(self._pcounter * np.pi / 40)]
             self._plot.addValue(self._pvalue)
 
+            if "attributes" in self._categories:
+                _plot_name = self._categories["attributes"].replace("_", " ").title()
+
+            else:
+                _plot_name = self._plot_title
+
+            self._plot_parent.setTitle(
+                ttk.TTkString(f"{_plot_name}: {self._pvalue[0]:0.3f}")
+            )
             self._pcounter += 1
 
         for callback in self._update_callbacks:
@@ -226,8 +250,9 @@ class TUI(Colors):
         self,
         name: str = "dropdown",
         parent: str = "root",
-        color: str = COLORS.white,
         options: list[str] = [],
+        callback: callable = None,
+        callback_args: list = [],
         row: int = 0,
         col: int = 0,
     ):
@@ -250,7 +275,15 @@ class TUI(Colors):
                 )
             )
 
-        self._dropdowns[parent + name] = _dropdown
+        self._dropdowns[parent + "_" + name] = _dropdown
+
+        if callback is not None:
+            self.connect_dropdown(
+                name=name,
+                parent=parent,
+                callback=callback,
+                callback_args=callback_args,
+            )
 
     def add_text(
         self,
@@ -280,7 +313,9 @@ class TUI(Colors):
         self,
         name: str = "value",
         parent: str = "root",
-        default: int = 0,
+        default: str = "20",
+        callback: callable = None,
+        callback_args: list = [],
         color: str = COLORS.white,
         row: int = 0,
         col: int = 0,
@@ -291,9 +326,7 @@ class TUI(Colors):
             == ttk.TTkGridLayout.__name__
         ):
             self._groups[parent].layout().addWidget(
-                _value := ttk.TTkLineEdit(
-                    text=str(default), inputType=ttk.TTkK.Input_Number
-                ),
+                _value := ttk.TTkLineEdit(text="20", inputType=ttk.TTkK.Input_Number),
                 row,
                 col,
             )
@@ -301,11 +334,19 @@ class TUI(Colors):
         else:
             self._groups[parent].layout().addWidget(
                 _value := ttk.TTkLineEdit(
-                    text=str(default), inputType=ttk.TTkK.Input_Number
+                    text=default, inputType=ttk.TTkK.Input_Number
                 ),
             )
 
         self._values[parent + "_" + name] = _value
+
+        if callback is not None:
+            self.connect_value(
+                name=name,
+                parent=parent,
+                callback=callback,
+                callback_args=callback_args,
+            )
 
     def add_button(
         self,
@@ -313,6 +354,8 @@ class TUI(Colors):
         parent: str = "root",
         color: str = COLORS.white,
         border: bool = True,
+        callback: Callable = None,
+        callback_args: list = [],
         row: int = 0,
         col: int = 0,
     ):
@@ -339,13 +382,18 @@ class TUI(Colors):
                 )
             )
 
-        self._buttons[parent + "_" + _name] = _button
+        self._buttons[parent + "_" + name] = _button
+
+        if callback is not None:
+            pass
 
     def add_radio_button(
         self,
         name: str = "radio_button",
         category: str = "attributes",
         parent: str = "root",
+        callback: Callable = None,
+        callback_args: list = [],
         color: str = COLORS.white,
         is_checked: bool = False,
         row: int = 0,
@@ -392,13 +440,23 @@ class TUI(Colors):
 
         self._radio_buttons[parent + "_" + name] = _radio_button
 
-        if self._default_cfg and category == "attributes":
-            self.default_radio_button_connection(name, parent)
+        if is_checked:
+            self._categories[category] = name
+
+        if callback is not None:
+            pass
+
+        elif self._default_cfg:
+            self.connect_radio_button(
+                name=name, parent=parent, category=category, callback=self.set_category
+            )
 
     def add_checkbox(
         self,
         name: str = "Checkbox",
         parent: str = "root",
+        callback: Callable = None,
+        callback_args: list = [],
         color: str = COLORS.white,
         is_checked: bool = False,
         row: int = 0,
@@ -431,27 +489,99 @@ class TUI(Colors):
 
         self._checkboxes[parent + "_" + _name] = _checkbox
 
-    def update_active_attribute(self, name: str):
-        self._active_attribute = name
+        if callback is not None:
+            pass
 
-        _plot_name = self._active_attribute.replace("_", " ").title()
-
-        self._plot_parent.setTitle(
-            ttk.TTkString(f"{_plot_name}: {self._pvalue[0]:0.3f}")
-        )
-
-    def default_radio_button_connection(
+    def connect_button(
         self,
         name: str,
         parent: str,
+        callback: Callable = None,
+        callback_args: list = [],
     ):
-
-        self._radio_buttons[parent + "_" + name].clicked.connect(
-            lambda: self.update_active_attribute(name=name)
+        self._buttons[parent + "_" + name].clicked.connect(
+            lambda: callback(name=name, parent=parent, args=callback_args)
         )
 
-    def connect_button(self):
-        pass
+    def connect_radio_button(
+        self,
+        name: str,
+        parent: str,
+        category: str = "attributes",
+        callback: Callable = None,
+        callback_args: list = [],
+    ):
+        callback_args.insert(0, category)
+
+        self._radio_buttons[parent + "_" + name].clicked.connect(
+            lambda x: callback(name=name, parent=parent, args=callback_args)
+        )
+
+    def connect_value(
+        self,
+        name: str,
+        parent: str,
+        callback: Callable = None,
+        callback_args: list = [],
+    ):
+
+        # ttk.TTkLineEdit()
+        callback_args.insert(0, self._values[parent + "_" + name].inputType())
+
+        self._values[parent + "_" + name].returnPressed.connect(
+            lambda: callback(name=name, parent=parent, args=callback_args)
+        )
+
+    def connect_dropdown(
+        self,
+        name: str,
+        parent: str,
+        callback: Callable = None,
+        callback_args: list = [],
+    ):
+        callback_args.insert(0, self._dropdowns[parent + "_" + name].currentIndex())
+
+        self._dropdowns[parent + "_" + name].currentIndexChanged.connect(
+            lambda x: callback(name=name, parent=parent, args=callback_args)
+        )
+
+    def set_joint_mode(self, **kwargs):
+        name = kwargs["name"]
+
+        if "knee" in name.lower():
+            self._kmode = id
+        elif "ankle" in name.lower():
+            self._amode = id
+
+    def set_category(
+        self,
+        **kwargs,
+    ):
+        name = kwargs["name"]
+        args = kwargs["args"]
+        category = args[0]
+
+        self._categories[category] = name
+
+    def set_value(
+        self,
+        **kwargs,
+    ):
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        value = kwargs["args"][0]
+
+        _name = parent + name
+
+        print(_name, value)
+
+        if "knee" in _name.lower():
+            self._knee_values[name] = value
+        elif "ankle" in _name.lower():
+            self._ankle_values[name] = value
+        else:
+            self._other_values[name] = value
 
     def load_default_cfg(self):
 
@@ -813,6 +943,12 @@ class TUI(Colors):
             col=1,
         )
 
+        self.connect_value(
+            name="equilibrium_angle",
+            parent="kdata",
+            callback=self.set_value,
+        )
+
         self.add_group(
             name="mode",
             parent="knee",
@@ -854,6 +990,8 @@ class TUI(Colors):
             parent="mode",
             options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
         )
+
+        self.connect_dropdown(name="knee", parent="mode", callback=self.set_joint_mode)
 
         self.add_button(
             name="home",
@@ -1012,7 +1150,10 @@ class TUI(Colors):
             options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
         )
 
+        self.connect_dropdown(name="ankle", parent="mode", callback=self.set_joint_mode)
+
 
 if __name__ == "__main__":
     tui = TUI(default_cfg=True)
+
     tui.run()
