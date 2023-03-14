@@ -17,7 +17,6 @@ from math import isfinite
 
 import flexsea.enums as fxe
 import numpy as np
-import scipy.signal
 from flexsea.device import Device
 
 from opensourceleg.tui import TUI
@@ -25,7 +24,6 @@ from opensourceleg.utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
 # TODO: Support for gRPC servers
-# TODO: Event-handler
 
 MOTOR_COUNT_PER_REV = 16384
 NM_PER_AMP = 0.1133

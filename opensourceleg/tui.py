@@ -316,7 +316,6 @@ class TUI(Colors):
         default: int = 0,
         callback: callable = None,
         callback_args: list = [],
-        color: str = COLORS.white,
         row: int = 0,
         col: int = 0,
     ):
@@ -354,10 +353,10 @@ class TUI(Colors):
         self,
         name: str = "button",
         parent: str = "root",
-        color: str = COLORS.white,
-        border: bool = True,
         callback: Callable = None,
         callback_args: list = [],
+        color: str = COLORS.white,
+        border: bool = True,
         row: int = 0,
         col: int = 0,
     ):
@@ -387,7 +386,12 @@ class TUI(Colors):
         self._buttons[parent + "_" + name] = _button
 
         if callback is not None:
-            pass
+            self.connect_button(
+                name=name,
+                parent=parent,
+                callback=callback,
+                callback_args=callback_args,
+            )
 
     def add_radio_button(
         self,
@@ -446,11 +450,12 @@ class TUI(Colors):
             self._categories[category] = name
 
         if callback is not None:
-            pass
-
-        elif self._default_cfg:
             self.connect_radio_button(
-                name=name, parent=parent, category=category, callback=self.set_category
+                name=name,
+                parent=parent,
+                category=category,
+                callback=callback,
+                callback_args=callback_args,
             )
 
     def add_checkbox(
@@ -492,6 +497,7 @@ class TUI(Colors):
         self._checkboxes[parent + "_" + _name] = _checkbox
 
         if callback is not None:
+            # TODO: Implement a connect checkbox function
             pass
 
     def connect_button(
@@ -516,7 +522,7 @@ class TUI(Colors):
         callback_args.insert(0, category)
 
         self._radio_buttons[parent + "_" + name].clicked.connect(
-            lambda x: callback(name=name, parent=parent, args=callback_args)
+            lambda: callback(name=name, parent=parent, args=callback_args)
         )
 
     def connect_value(
@@ -548,11 +554,13 @@ class TUI(Colors):
 
     def set_joint_mode(self, **kwargs):
         name = kwargs["name"]
+        parent = kwargs["parent"]
+        mode_id = int(self._dropdowns[parent + "_" + name].currentIndex())
 
         if "knee" in name.lower():
-            self._kmode = id
+            self._kmode = mode_id
         elif "ankle" in name.lower():
-            self._amode = id
+            self._amode = mode_id
 
     def set_category(
         self,
@@ -581,6 +589,16 @@ class TUI(Colors):
             self._ankle_values[name] = value
         else:
             self._other_values[name] = value
+
+    def test_button(
+        self,
+        **kwargs,
+    ):
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        args = kwargs["args"]
+
+        print(f"Button {name} in group {parent} was clicked.")
 
     def load_default_cfg(self):
 
@@ -636,10 +654,13 @@ class TUI(Colors):
             show_title=True,
         )
 
+        # ------------ RADIO BUTTONS ------------ #
+
         self.add_radio_button(
             name="knee",
             category="joint",
             parent="joint",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=True,
             row=0,
@@ -650,6 +671,7 @@ class TUI(Colors):
             name="ankle",
             category="joint",
             parent="joint",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=0,
@@ -660,6 +682,7 @@ class TUI(Colors):
             name="motor_position",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=True,
             row=0,
@@ -670,6 +693,7 @@ class TUI(Colors):
             name="motor_velocity",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=0,
@@ -680,6 +704,7 @@ class TUI(Colors):
             name="motor_current",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=0,
@@ -690,6 +715,7 @@ class TUI(Colors):
             name="joint_position",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=1,
@@ -700,6 +726,7 @@ class TUI(Colors):
             name="joint_velocity",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=1,
@@ -710,6 +737,7 @@ class TUI(Colors):
             name="joint_torque",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=1,
@@ -720,6 +748,7 @@ class TUI(Colors):
             name="loadcell_Fx",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=2,
@@ -730,6 +759,7 @@ class TUI(Colors):
             name="loadcell_fy",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=2,
@@ -740,11 +770,14 @@ class TUI(Colors):
             name="loadcell_fz",
             category="attributes",
             parent="attributes",
+            callback=self.set_category,
             color=COLORS.white,
             is_checked=False,
             row=2,
             col=2,
         )
+
+        # ------------ CONTROL PANEL ------------ #
 
         self.add_group(
             name="joint_control",
@@ -786,9 +819,12 @@ class TUI(Colors):
             show_title=False,
         )
 
+        # ------------ UTILITY BUTTONS ------------ #
+
         self.add_button(
             name="emergency_stop",
             parent="estop",
+            callback=self.test_button,
             color=COLORS.maize,
             border=True,
         )
@@ -796,6 +832,7 @@ class TUI(Colors):
         self.add_button(
             name="safety_reset",
             parent="utility",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=0,
@@ -814,6 +851,7 @@ class TUI(Colors):
         self.add_button(
             name="encoders",
             parent="calibrate",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=0,
@@ -822,14 +860,18 @@ class TUI(Colors):
         self.add_button(
             name="loadcell",
             parent="calibrate",
+            callback=self.test_button,
             color=COLORS.white,
             row=1,
             col=0,
         )
 
+        # ------------ KNEE BUTTONS ------------ #
+
         self.add_button(
             name="home",
             parent="knee",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=0,
@@ -845,6 +887,8 @@ class TUI(Colors):
             col=0,
         )
 
+        # ------------ KNEE VALUES ------------ #
+
         self.add_text(
             name="Voltage (mV): ",
             parent="kdata",
@@ -856,6 +900,7 @@ class TUI(Colors):
             name="voltage",
             parent="kdata",
             default=0,
+            callback=self.set_value,
             row=0,
             col=1,
         )
@@ -871,6 +916,7 @@ class TUI(Colors):
             name="position",
             parent="kdata",
             default=0,
+            callback=self.set_value,
             row=1,
             col=1,
         )
@@ -886,6 +932,7 @@ class TUI(Colors):
             name="current",
             parent="kdata",
             default=0,
+            callback=self.set_value,
             row=2,
             col=1,
         )
@@ -908,6 +955,7 @@ class TUI(Colors):
             name="stiffness",
             parent="kdata",
             default=0,
+            callback=self.set_value,
             row=4,
             col=1,
         )
@@ -923,6 +971,7 @@ class TUI(Colors):
             name="damping",
             parent="kdata",
             default=0,
+            callback=self.set_value,
             row=5,
             col=1,
         )
@@ -938,14 +987,9 @@ class TUI(Colors):
             name="equilibrium_angle",
             parent="kdata",
             default=0,
+            callback=self.set_value,
             row=6,
             col=1,
-        )
-
-        self.connect_value(
-            name="equilibrium_angle",
-            parent="kdata",
-            callback=self.set_value,
         )
 
         self.add_group(
@@ -959,7 +1003,7 @@ class TUI(Colors):
         )
 
         self.add_group(
-            name="knee_updater",
+            name="kupdater",
             parent="knee",
             layout="grid",
             border=False,
@@ -970,7 +1014,8 @@ class TUI(Colors):
 
         self.add_button(
             name="stop",
-            parent="knee_updater",
+            parent="kupdater",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=0,
@@ -978,23 +1023,28 @@ class TUI(Colors):
 
         self.add_button(
             name="update",
-            parent="knee_updater",
+            parent="kupdater",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=1,
         )
 
+        # ------------ KNEE DROPDOWN ------------ #
+
         self.add_dropdown(
             name="knee",
             parent="mode",
             options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
+            callback=self.set_joint_mode,
         )
 
-        self.connect_dropdown(name="knee", parent="mode", callback=self.set_joint_mode)
+        # ------------ ANKLE BUTTONS ------------ #
 
         self.add_button(
             name="home",
             parent="ankle",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=0,
@@ -1010,6 +1060,8 @@ class TUI(Colors):
             col=0,
         )
 
+        # ------------ ANKLE VALUES ------------ #
+
         self.add_text(
             name="Voltage (mV): ",
             parent="adata",
@@ -1021,6 +1073,7 @@ class TUI(Colors):
             name="voltage",
             parent="adata",
             default=0,
+            callback=self.set_value,
             row=0,
             col=1,
         )
@@ -1036,6 +1089,7 @@ class TUI(Colors):
             name="position",
             parent="adata",
             default=0,
+            callback=self.set_value,
             row=1,
             col=1,
         )
@@ -1051,6 +1105,7 @@ class TUI(Colors):
             name="current",
             parent="adata",
             default=0,
+            callback=self.set_value,
             row=2,
             col=1,
         )
@@ -1073,6 +1128,7 @@ class TUI(Colors):
             name="stiffness",
             parent="adata",
             default=0,
+            callback=self.set_value,
             row=4,
             col=1,
         )
@@ -1088,6 +1144,7 @@ class TUI(Colors):
             name="damping",
             parent="adata",
             default=0,
+            callback=self.set_value,
             row=5,
             col=1,
         )
@@ -1103,6 +1160,7 @@ class TUI(Colors):
             name="equilibrium_angle",
             parent="adata",
             default=0,
+            callback=self.set_value,
             row=6,
             col=1,
         )
@@ -1130,6 +1188,7 @@ class TUI(Colors):
         self.add_button(
             name="stop",
             parent="aupdater",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=0,
@@ -1138,18 +1197,20 @@ class TUI(Colors):
         self.add_button(
             name="update",
             parent="aupdater",
+            callback=self.test_button,
             color=COLORS.white,
             row=0,
             col=1,
         )
 
+        # ------------ ANKLE DROPDOWN ------------ #
+
         self.add_dropdown(
             name="ankle",
             parent="mode",
             options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
+            callback=self.set_joint_mode,
         )
-
-        self.connect_dropdown(name="ankle", parent="mode", callback=self.set_joint_mode)
 
 
 if __name__ == "__main__":
