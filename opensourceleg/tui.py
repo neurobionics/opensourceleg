@@ -313,7 +313,7 @@ class TUI(Colors):
         self,
         name: str = "value",
         parent: str = "root",
-        default: str = "20",
+        default: int = 0,
         callback: callable = None,
         callback_args: list = [],
         color: str = COLORS.white,
@@ -326,7 +326,9 @@ class TUI(Colors):
             == ttk.TTkGridLayout.__name__
         ):
             self._groups[parent].layout().addWidget(
-                _value := ttk.TTkLineEdit(text="20", inputType=ttk.TTkK.Input_Number),
+                _value := ttk.TTkLineEdit(
+                    text=default, inputType=ttk.TTkK.Input_Number
+                ),
                 row,
                 col,
             )
@@ -525,8 +527,7 @@ class TUI(Colors):
         callback_args: list = [],
     ):
 
-        # ttk.TTkLineEdit()
-        callback_args.insert(0, self._values[parent + "_" + name].inputType())
+        callback_args.insert(0, self._values[parent + "_" + name].text())
 
         self._values[parent + "_" + name].returnPressed.connect(
             lambda: callback(name=name, parent=parent, args=callback_args)
@@ -570,11 +571,9 @@ class TUI(Colors):
 
         name = kwargs["name"]
         parent = kwargs["parent"]
-        value = kwargs["args"][0]
+        value = int(self._values[parent + "_" + name].text())
 
         _name = parent + name
-
-        print(_name, value)
 
         if "knee" in _name.lower():
             self._knee_values[name] = value
