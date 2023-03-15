@@ -34,7 +34,6 @@ in-project = true
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0.0"
 pyserial = "^3.5"
-scipy = "^1.8.0"
 numpy = "^1.22.3"
 flexsea = "^9.1.1"
 sphinx = "^6.1.3"
