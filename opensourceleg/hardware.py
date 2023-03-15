@@ -15,7 +15,7 @@ from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
 
-import flexsea.enums as fxe
+import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
