@@ -19,7 +19,7 @@ import flexsea.enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.tui import TUI
+from opensourceleg.tui import COLORS, TUI
 from opensourceleg.utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
@@ -78,7 +78,7 @@ ALL_UNITS = {
         "in": 0.0254,
         "ft": 0.3048,
     },
-    "angle": {
+    "position": {
         "rad": 1.0,
         "deg": 0.017453292519943295,
     },
@@ -174,7 +174,7 @@ DEFAULT_UNITS = UnitsDefinition(
         "stiffness": "N/rad",
         "damping": "N/(rad/s)",
         "length": "m",
-        "angle": "rad",
+        "position": "rad",
         "mass": "kg",
         "velocity": "rad/s",
         "acceleration": "rad/s^2",
@@ -412,10 +412,10 @@ class PositionMode(ActpackMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_motor_angle(
+        self._set_motor_position(
             int(
                 self._device._units.convert_to_default_units(
-                    self._device.motor_angle, "angle"
+                    self._device.motor_position, "position"
                 )
                 / RAD_PER_COUNT
             )
@@ -439,11 +439,11 @@ class PositionMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=0)
         self._has_gains = True
 
-    def _set_motor_angle(self, counts: int):
-        """Sets the motor angle
+    def _set_motor_position(self, counts: int):
+        """Sets the motor position
 
         Args:
-            counts (int): Angle in counts
+            counts (int): position in counts
         """
         self._device.command_motor_position(
             counts,
@@ -460,10 +460,10 @@ class ImpedanceMode(ActpackMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_motor_angle(
+        self._set_motor_position(
             int(
                 self._device._units.convert_to_default_units(
-                    self._device.motor_angle, "angle"
+                    self._device.motor_position, "position"
                 )
                 / RAD_PER_COUNT
             )
@@ -473,11 +473,11 @@ class ImpedanceMode(ActpackMode):
         self._device.command_motor_voltage(0)
         print("Exiting IMPEDANCE mode")
 
-    def _set_motor_angle(self, counts: int):
-        """Sets the motor angle
+    def _set_motor_position(self, counts: int):
+        """Sets the motor position
 
         Args:
-            counts (int): Angle in counts
+            counts (int): position in counts
         """
         self._device.command_motor_position(
             counts,
@@ -722,21 +722,24 @@ class DephyActpack(Device):
             ),
         )
 
-    def set_motor_angle(self, angle: float):
+    def set_motor_position(self, position: float):
         """
-        Sets the motor angle
+        Sets the motor position
 
         Args:
-            angle (float): The angle to set
+            position (float): The position to set
 
         Raises:
             ValueError: If the mode is not POSITION or IMPEDANCE
         """
         if self._mode not in [self._modes["position"], self._modes["impedance"]]:
-            raise ValueError(f"Cannot set motor angle in mode {self._mode}")
+            raise ValueError(f"Cannot set motor position in mode {self._mode}")
 
-        self._mode._set_motor_angle(
-            int(self._units.convert_to_default_units(angle, "angle") / RAD_PER_COUNT),
+        self._mode._set_motor_position(
+            int(
+                self._units.convert_to_default_units(position, "position")
+                / RAD_PER_COUNT
+            ),
         )
 
     # Read only properties from the actpack
@@ -789,10 +792,10 @@ class DephyActpack(Device):
         )
 
     @property
-    def motor_angle(self):
+    def motor_position(self):
         return self._units.convert_from_default_units(
             int(self._data.mot_ang) * RAD_PER_COUNT,
-            "angle",
+            "position",
         )
 
     @property
@@ -817,10 +820,10 @@ class DephyActpack(Device):
         )
 
     @property
-    def joint_angle(self):
+    def joint_position(self):
         return self._units.convert_from_default_units(
             self._data.ank_ang * RAD_PER_COUNT,
-            "angle",
+            "position",
         )
 
     @property
@@ -951,8 +954,8 @@ class Joint(DephyActpack):
         while is_homing:
             time.sleep(1 / homing_frequency)
 
-            _motor_encoder_array.append(self.motor_angle)
-            _joint_encoder_array.append(self.joint_angle)
+            _motor_encoder_array.append(self.motor_position)
+            _joint_encoder_array.append(self.joint_position)
 
             if (
                 abs(self.output_velocity) <= VELOCITY_THRESHOLD
@@ -988,14 +991,14 @@ class Joint(DephyActpack):
 
     def make_encoder_map(self):
         """
-        This method makes a lookup table to calculate the angle measured by the joint encoder.
+        This method makes a lookup table to calculate the position measured by the joint encoder.
         This is necessary because the magnetic output encoders are nonlinear.
-        By making the map while the joint is unloaded, joint angle calculated by motor angle * gear ratio
-        should be the same as the true joint angle.
+        By making the map while the joint is unloaded, joint position calculated by motor position * gear ratio
+        should be the same as the true joint position.
 
         Output from this function is a file containing a_i values parameterizing the map
 
-        Eqn: angle = sum from i=0^5 (a_i*counts^i)
+        Eqn: position = sum from i=0^5 (a_i*counts^i)
 
         Author: Kevin Best, PhD
                 U-M Neurobionics Lab
@@ -1016,8 +1019,8 @@ class Joint(DephyActpack):
         time.sleep(0.1)
         self.set_output_torque(0.0)
 
-        _joint_angle_array = []
-        _output_angle_array = []
+        _joint_position_array = []
+        _output_position_array = []
 
         self._log.info(
             f"[{self._name}] Please manually move the joint numerous times \
@@ -1030,16 +1033,16 @@ class Joint(DephyActpack):
 
         while time.time() - _start_time < 10:
             self.update()
-            _joint_angle_array.append(self.joint_angle)
-            _output_angle_array.append(self.output_angle)
+            _joint_position_array.append(self.joint_position)
+            _output_position_array.append(self.output_position)
 
             time.sleep(1 / self.frequency)
 
         self._log.info(f"[{self._name}] You may now stop moving the joint.")
 
         _power = np.arange(4.0)
-        _a_mat = np.array(_joint_angle_array).reshape(-1, 1) ** _power
-        _beta = np.linalg.lstsq(_a_mat, _output_angle_array, rcond=None)[0]
+        _a_mat = np.array(_joint_position_array).reshape(-1, 1) ** _power
+        _beta = np.linalg.lstsq(_a_mat, _output_position_array, rcond=None)[0]
         _coeffs = _beta[0]
 
         self._encoder_map = np.polynomial.polynomial.Polynomial(_coeffs)
@@ -1057,15 +1060,15 @@ class Joint(DephyActpack):
         """
         self.set_motor_torque(torque / self.gear_ratio)
 
-    def set_output_angle(self, angle: float):
+    def set_output_position(self, position: float):
         """
-        Set the output angle of the joint.
-        This is the desired angle of the joint, not the motor.
+        Set the output position of the joint.
+        This is the desired position of the joint, not the motor.
 
         Args:
-            angle (float): angle in user-defined units
+            position (float): position in user-defined units
         """
-        self.set_motor_angle(angle * self.gear_ratio)
+        self.set_motor_position(position * self.gear_ratio)
 
     def set_motor_impedance(
         self,
@@ -1148,8 +1151,8 @@ class Joint(DephyActpack):
         return self._encoder_map
 
     @property
-    def output_angle(self):
-        return self.motor_angle / self.gear_ratio
+    def output_position(self):
+        return self.motor_position / self.gear_ratio
 
     @property
     def output_velocity(self):
@@ -1304,7 +1307,8 @@ class OpenSourceLeg:
         self._has_ankle: bool = False
         self._has_loadcell: bool = False
 
-        self.tui = TUI(default_cfg=True)
+        self.tui = TUI()
+        self.initialize_tui()
 
         self._knee: Joint = None
         self._ankle: Joint = None
@@ -1407,6 +1411,668 @@ class OpenSourceLeg:
 
         if self.has_loadcell:
             self._loadcell.update()
+
+    def initialize_tui(self):
+
+        self.tui.add_group(
+            name="left",
+            parent="root",
+            layout="vertical",
+            border=True,
+        )
+
+        self.tui.add_group(
+            name="control_panel",
+            parent="root",
+            layout="vertical",
+            border=False,
+            show_title=False,
+        )
+
+        self.tui.add_group(
+            name="plot",
+            parent="left",
+            layout="vertical",
+            border=True,
+            show_title=True,
+        )
+
+        self.tui.add_group(
+            name="plot_attributes",
+            parent="left",
+            layout="vertical",
+            border=False,
+            show_title=False,
+        )
+
+        self.tui.add_plot(
+            parent="plot",
+            color=COLORS.white,
+        )
+
+        self.tui.add_group(
+            name="joint",
+            parent="plot_attributes",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
+
+        self.tui.add_group(
+            name="attributes",
+            parent="plot_attributes",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
+
+        # ------------ RADIO BUTTONS ------------ #
+
+        self.tui.add_radio_button(
+            name="knee",
+            category="joint",
+            parent="joint",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=True,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_radio_button(
+            name="ankle",
+            category="joint",
+            parent="joint",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=0,
+            col=1,
+        )
+
+        self.tui.add_radio_button(
+            name="motor_position",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=True,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_radio_button(
+            name="motor_velocity",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=0,
+            col=1,
+        )
+
+        self.tui.add_radio_button(
+            name="motor_current",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=0,
+            col=2,
+        )
+
+        self.tui.add_radio_button(
+            name="joint_position",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=1,
+            col=0,
+        )
+
+        self.tui.add_radio_button(
+            name="joint_velocity",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=1,
+            col=1,
+        )
+
+        self.tui.add_radio_button(
+            name="joint_torque",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=1,
+            col=2,
+        )
+
+        self.tui.add_radio_button(
+            name="loadcell_Fx",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=2,
+            col=0,
+        )
+
+        self.tui.add_radio_button(
+            name="loadcell_fy",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=2,
+            col=1,
+        )
+
+        self.tui.add_radio_button(
+            name="loadcell_fz",
+            category="attributes",
+            parent="attributes",
+            callback=self.tui.set_category,
+            color=COLORS.white,
+            is_checked=False,
+            row=2,
+            col=2,
+        )
+
+        # ------------ CONTROL PANEL ------------ #
+
+        self.tui.add_group(
+            name="joint_control",
+            parent="control_panel",
+            layout="horizontal",
+            border=False,
+            show_title=False,
+        )
+
+        self.tui.add_group(
+            name="knee",
+            parent="joint_control",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
+
+        self.tui.add_group(
+            name="ankle",
+            parent="joint_control",
+            layout="grid",
+            border=True,
+            show_title=True,
+        )
+
+        self.tui.add_group(
+            name="utility",
+            parent="control_panel",
+            layout="grid",
+            border=False,
+            show_title=False,
+        )
+
+        self.tui.add_group(
+            name="estop",
+            parent="control_panel",
+            layout="grid",
+            border=False,
+            show_title=False,
+        )
+
+        # ------------ UTILITY BUTTONS ------------ #
+
+        self.tui.add_button(
+            name="emergency_stop",
+            parent="estop",
+            callback=self.estop,
+            color=COLORS.maize,
+            border=True,
+        )
+
+        self.tui.add_button(
+            name="safety_reset",
+            parent="utility",
+            callback=self.reset,
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_group(
+            name="calibrate",
+            parent="utility",
+            layout="grid",
+            border=True,
+            show_title=True,
+            row=0,
+            col=1,
+        )
+
+        self.tui.add_button(
+            name="encoders",
+            parent="calibrate",
+            callback=self.tui.test_button,
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_button(
+            name="loadcell",
+            parent="calibrate",
+            callback=self.tui.test_button,
+            color=COLORS.white,
+            row=1,
+            col=0,
+        )
+
+        # ------------ KNEE BUTTONS ------------ #
+
+        self.tui.add_button(
+            name="home",
+            parent="knee",
+            callback=self.home,
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_group(
+            name="kdata",
+            parent="knee",
+            layout="grid",
+            border=True,
+            show_title=False,
+            row=1,
+            col=0,
+        )
+
+        # ------------ KNEE VALUES ------------ #
+
+        self.tui.add_text(
+            name="Voltage (mV): ",
+            parent="kdata",
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="voltage",
+            parent="kdata",
+            default=0,
+            callback=self.tui.set_value,
+            row=0,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Position (deg): ",
+            parent="kdata",
+            row=1,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="position",
+            parent="kdata",
+            default=0,
+            callback=self.tui.set_value,
+            row=1,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Current (mA): ",
+            parent="kdata",
+            row=2,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="current",
+            parent="kdata",
+            default=0,
+            callback=self.tui.set_value,
+            row=2,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name=" ",
+            parent="kdata",
+            row=3,
+            col=0,
+        )
+
+        self.tui.add_text(
+            name="Stiffness (N/rad): ",
+            parent="kdata",
+            row=4,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="stiffness",
+            parent="kdata",
+            default=0,
+            callback=self.tui.set_value,
+            row=4,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Damping (N/(rad/s)): ",
+            parent="kdata",
+            row=5,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="damping",
+            parent="kdata",
+            default=0,
+            callback=self.tui.set_value,
+            row=5,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Equilibrium Position (deg): ",
+            parent="kdata",
+            row=6,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="equilibrium_position",
+            parent="kdata",
+            default=0,
+            callback=self.tui.set_value,
+            row=6,
+            col=1,
+        )
+
+        self.tui.add_group(
+            name="mode",
+            parent="knee",
+            layout="grid",
+            border=True,
+            show_title=True,
+            row=2,
+            col=0,
+        )
+
+        self.tui.add_group(
+            name="kupdater",
+            parent="knee",
+            layout="grid",
+            border=False,
+            show_title=False,
+            row=3,
+            col=0,
+        )
+
+        self.tui.add_button(
+            name="stop",
+            parent="kupdater",
+            callback=self.stop_joint,
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_button(
+            name="update",
+            parent="kupdater",
+            callback=self.tui.test_button,
+            color=COLORS.white,
+            row=0,
+            col=1,
+        )
+
+        # ------------ KNEE DROPDOWN ------------ #
+
+        self.tui.add_dropdown(
+            name="knee",
+            parent="mode",
+            options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
+            callback=self.tui.set_joint_mode,
+        )
+
+        # ------------ ANKLE BUTTONS ------------ #
+
+        self.tui.add_button(
+            name="home",
+            parent="ankle",
+            callback=self.home,
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_group(
+            name="adata",
+            parent="ankle",
+            layout="grid",
+            border=True,
+            show_title=False,
+            row=1,
+            col=0,
+        )
+
+        # ------------ ANKLE VALUES ------------ #
+
+        self.tui.add_text(
+            name="Voltage (mV): ",
+            parent="adata",
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="voltage",
+            parent="adata",
+            default=0,
+            callback=self.tui.set_value,
+            row=0,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Position (deg): ",
+            parent="adata",
+            row=1,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="position",
+            parent="adata",
+            default=0,
+            callback=self.tui.set_value,
+            row=1,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Current (mA): ",
+            parent="adata",
+            row=2,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="current",
+            parent="adata",
+            default=0,
+            callback=self.tui.set_value,
+            row=2,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name=" ",
+            parent="adata",
+            row=3,
+            col=0,
+        )
+
+        self.tui.add_text(
+            name="Stiffness (N/rad): ",
+            parent="adata",
+            row=4,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="stiffness",
+            parent="adata",
+            default=0,
+            callback=self.tui.set_value,
+            row=4,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Damping (N/(rad/s)): ",
+            parent="adata",
+            row=5,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="damping",
+            parent="adata",
+            default=0,
+            callback=self.tui.set_value,
+            row=5,
+            col=1,
+        )
+
+        self.tui.add_text(
+            name="Equilibrium Position (deg): ",
+            parent="adata",
+            row=6,
+            col=0,
+        )
+
+        self.tui.add_value(
+            name="equilibrium_position",
+            parent="adata",
+            default=0,
+            callback=self.tui.set_value,
+            row=6,
+            col=1,
+        )
+
+        self.tui.add_group(
+            name="mode",
+            parent="ankle",
+            layout="grid",
+            border=True,
+            show_title=True,
+            row=2,
+            col=0,
+        )
+
+        self.tui.add_group(
+            name="aupdater",
+            parent="ankle",
+            layout="grid",
+            border=False,
+            show_title=False,
+            row=3,
+            col=0,
+        )
+
+        self.tui.add_button(
+            name="stop",
+            parent="aupdater",
+            callback=self.stop_joint,
+            color=COLORS.white,
+            row=0,
+            col=0,
+        )
+
+        self.tui.add_button(
+            name="update",
+            parent="aupdater",
+            callback=self.tui.test_button,
+            color=COLORS.white,
+            row=0,
+            col=1,
+        )
+
+        # ------------ ANKLE DROPDOWN ------------ #
+
+        self.tui.add_dropdown(
+            name="ankle",
+            parent="mode",
+            options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
+            callback=self.tui.set_joint_mode,
+        )
+
+    def estop(self, **kwargs):
+        self.log.info("[OSL] Emergency stop activated.")
+
+        if self.has_knee:
+            self.knee.stop()
+
+        if self.has_ankle:
+            self.ankle.stop()
+
+    def home(self, **kwargs):
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+
+        _name = (parent + name).lower()
+
+        if "knee" in _name:
+            self.log.info("[OSL] Homing knee joint.")
+            if self.has_knee:
+                self.knee.home()
+
+        elif "ankle" in _name:
+            self.log.info("[OSL] Homing ankle joint.")
+            if self.has_ankle:
+                self.ankle.home()
+
+    def reset(self, **kwargs):
+        self.log.info("[OSL] Resetting OSL.")
+
+        self.__exit__(None, None, None)
+
+        time.sleep(1)
+
+        self.__enter__()
+
+    def stop_joint(self, **kwargs):
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+
+        _name = (parent + name).lower()
+
+        if "kupdater" in _name:
+            self.log.info("[OSL] Stopping knee joint.")
+            if self.has_knee:
+                self.knee.stop()
+
+        elif "aupdater" in _name:
+            self.log.info("[OSL] Stopping ankle joint.")
+            if self.has_ankle:
+                self.ankle.stop()
 
     @property
     def knee(self):
