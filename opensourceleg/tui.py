@@ -77,6 +77,8 @@ class TUI:
         self.timer = ttk.TTkTimer()
         self.dt = 1.0 / frequency
 
+        self._is_running = False
+
         self._layouts = {
             "horizontal": ttk.TTkHBoxLayout,
             "vertical": ttk.TTkVBoxLayout,
@@ -177,7 +179,12 @@ class TUI:
         self._ankle = ankle
 
     def run(self):
+        self._is_running = True
         self.root_ttk.mainloop()
+
+    def quit(self):
+        self._is_running = False
+        self.root_ttk.quit()
 
     def add_group(
         self,
@@ -650,8 +657,20 @@ class TUI:
         return self._categories
     
     @property
+    def values(self):
+        return self._values
+
+    @property
+    def dropdowns(self):
+        return self._dropdowns
+    
+    @property
     def control_modes(self):
         return self._modes
+    
+    @property
+    def is_running(self):
+        return self._is_running
 
 
 if __name__ == "__main__":

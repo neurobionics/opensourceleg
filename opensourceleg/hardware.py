@@ -564,7 +564,7 @@ class ImpedanceMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=K, b=B, ff=ff)
         self._has_gains = True
 
-        time.sleep(1 / self._device.frequency)
+        time.sleep(1 / self._device.frequency)        
 
 
 class DephyActpack(Device):
@@ -993,6 +993,16 @@ class Joint(DephyActpack):
         self._encoder_map = None
         self._zero_pos = 0.0
 
+        self._motor_voltage_sp = 0.0
+        self._motor_current_sp = 0.0 
+        self._motor_position_sp = 0.0
+
+        self._stiffness_sp: int = 0
+        self._damping_sp: int = 0
+        self._equilibrium_position_sp = 0.0
+
+        self._control_mode_sp: str = "voltage"
+
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name = name
         else:
@@ -1003,7 +1013,7 @@ class Joint(DephyActpack):
             coefficients = np.load(f"./{self._name}_encoder_map.npy")
             self._encoder_map = np.polynomial.polynomial.Polynomial(coefficients)
         else:
-            self._log.info(
+            self._log.debug(
                 f"[{self._name}] No encoder map found. Please run the calibration routine."
             )
 
@@ -1200,6 +1210,9 @@ class Joint(DephyActpack):
             ff=ff,
         )
 
+    def update_set_points(self):
+        self.set_mode(self.control_mode_sp)
+
     @property
     def zero_position(self):
         return self._zero_pos
@@ -1234,7 +1247,35 @@ class Joint(DephyActpack):
     
     @property
     def joint_torque(self):
-        return self.motor_torque * self.gear_ratio        
+        return self.motor_torque * self.gear_ratio
+    
+    @property
+    def motor_current_sp(self):
+        return self._motor_current_sp
+    
+    @property
+    def motor_voltage_sp(self):
+        return self._motor_voltage_sp
+    
+    @property
+    def motor_position_sp(self):
+        return self._motor_position_sp
+    
+    @property
+    def stiffness_sp(self):
+        return self._stiffness_sp
+    
+    @property
+    def damping_sp(self):
+        return self._damping_sp
+    
+    @property
+    def equilibirum_position_sp(self):
+        return self._equilibrium_position_sp
+
+    @property
+    def control_mode_sp(self):
+        return self._control_mode_sp
 
 
 class Loadcell:
@@ -1417,6 +1458,9 @@ class OpenSourceLeg:
 
         if self.has_ankle:
             self._ankle.stop()
+
+        if self.tui.is_running:
+            self.tui.quit()
 
     def __repr__(self) -> str:
         return f"OSL object with 0 joints"
@@ -1788,7 +1832,7 @@ class OpenSourceLeg:
         )
 
         self.tui.add_group(
-            name="kdata",
+            name="knee_data",
             parent="knee",
             layout="grid",
             border=True,
@@ -1801,103 +1845,103 @@ class OpenSourceLeg:
 
         self.tui.add_text(
             name="Voltage (mV): ",
-            parent="kdata",
+            parent="knee_data",
             row=0,
             col=0,
         )
 
         self.tui.add_value(
             name="voltage",
-            parent="kdata",
+            parent="knee_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_motor_voltage_sp,
             row=0,
             col=1,
         )
 
         self.tui.add_text(
             name="Position (deg): ",
-            parent="kdata",
+            parent="knee_data",
             row=1,
             col=0,
         )
 
         self.tui.add_value(
             name="position",
-            parent="kdata",
+            parent="knee_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_motor_position_sp,
             row=1,
             col=1,
         )
 
         self.tui.add_text(
             name="Current (mA): ",
-            parent="kdata",
+            parent="knee_data",
             row=2,
             col=0,
         )
 
         self.tui.add_value(
             name="current",
-            parent="kdata",
+            parent="knee_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_motor_current_sp,
             row=2,
             col=1,
         )
 
         self.tui.add_text(
             name=" ",
-            parent="kdata",
+            parent="knee_data",
             row=3,
             col=0,
         )
 
         self.tui.add_text(
-            name="Stiffness (N/rad): ",
-            parent="kdata",
+            name="Stiffness: ",
+            parent="knee_data",
             row=4,
             col=0,
         )
 
         self.tui.add_value(
             name="stiffness",
-            parent="kdata",
-            default=0,
-            callback=self.tui.set_value,
+            parent="knee_data",
+            default=300,
+            callback=self.set_stiffness_sp,
             row=4,
             col=1,
         )
 
         self.tui.add_text(
-            name="Damping (N/(rad/s)): ",
-            parent="kdata",
+            name="Damping: ",
+            parent="knee_data",
             row=5,
             col=0,
         )
 
         self.tui.add_value(
             name="damping",
-            parent="kdata",
-            default=0,
-            callback=self.tui.set_value,
+            parent="knee_data",
+            default=1600,
+            callback=self.set_damping_sp,
             row=5,
             col=1,
         )
 
         self.tui.add_text(
             name="Equilibrium Position (deg): ",
-            parent="kdata",
+            parent="knee_data",
             row=6,
             col=0,
         )
 
         self.tui.add_value(
             name="equilibrium_position",
-            parent="kdata",
+            parent="knee_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_equilibrium_position_sp,
             row=6,
             col=1,
         )
@@ -1934,7 +1978,7 @@ class OpenSourceLeg:
         self.tui.add_button(
             name="update",
             parent="kupdater",
-            callback=self.tui.test_button,
+            callback=self.update_joint,
             color=COLORS.white,
             row=0,
             col=1,
@@ -1946,7 +1990,7 @@ class OpenSourceLeg:
             name="knee",
             parent="mode",
             options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
-            callback=self.tui.set_joint_mode,
+            callback=self.set_control_mode_sp,
         )
 
         # ------------ ANKLE BUTTONS ------------ #
@@ -1961,7 +2005,7 @@ class OpenSourceLeg:
         )
 
         self.tui.add_group(
-            name="adata",
+            name="ankle_data",
             parent="ankle",
             layout="grid",
             border=True,
@@ -1974,103 +2018,103 @@ class OpenSourceLeg:
 
         self.tui.add_text(
             name="Voltage (mV): ",
-            parent="adata",
+            parent="ankle_data",
             row=0,
             col=0,
         )
 
         self.tui.add_value(
             name="voltage",
-            parent="adata",
+            parent="ankle_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_motor_voltage_sp,
             row=0,
             col=1,
         )
 
         self.tui.add_text(
             name="Position (deg): ",
-            parent="adata",
+            parent="ankle_data",
             row=1,
             col=0,
         )
 
         self.tui.add_value(
             name="position",
-            parent="adata",
+            parent="ankle_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_motor_position_sp,
             row=1,
             col=1,
         )
 
         self.tui.add_text(
             name="Current (mA): ",
-            parent="adata",
+            parent="ankle_data",
             row=2,
             col=0,
         )
 
         self.tui.add_value(
             name="current",
-            parent="adata",
+            parent="ankle_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_motor_current_sp,
             row=2,
             col=1,
         )
 
         self.tui.add_text(
             name=" ",
-            parent="adata",
+            parent="ankle_data",
             row=3,
             col=0,
         )
 
         self.tui.add_text(
-            name="Stiffness (N/rad): ",
-            parent="adata",
+            name="Stiffness: ",
+            parent="ankle_data",
             row=4,
             col=0,
         )
 
         self.tui.add_value(
             name="stiffness",
-            parent="adata",
-            default=0,
-            callback=self.tui.set_value,
+            parent="ankle_data",
+            default=300,
+            callback=self.set_stiffness_sp,
             row=4,
             col=1,
         )
 
         self.tui.add_text(
-            name="Damping (N/(rad/s)): ",
-            parent="adata",
+            name="Damping: ",
+            parent="ankle_data",
             row=5,
             col=0,
         )
 
         self.tui.add_value(
             name="damping",
-            parent="adata",
-            default=0,
-            callback=self.tui.set_value,
+            parent="ankle_data",
+            default=1600,
+            callback=self.set_damping_sp,
             row=5,
             col=1,
         )
 
         self.tui.add_text(
             name="Equilibrium Position (deg): ",
-            parent="adata",
+            parent="ankle_data",
             row=6,
             col=0,
         )
 
         self.tui.add_value(
             name="equilibrium_position",
-            parent="adata",
+            parent="ankle_data",
             default=0,
-            callback=self.tui.set_value,
+            callback=self.set_equilibrium_position_sp,
             row=6,
             col=1,
         )
@@ -2107,7 +2151,7 @@ class OpenSourceLeg:
         self.tui.add_button(
             name="update",
             parent="aupdater",
-            callback=self.tui.test_button,
+            callback=self.update_joint,
             color=COLORS.white,
             row=0,
             col=1,
@@ -2119,17 +2163,127 @@ class OpenSourceLeg:
             name="ankle",
             parent="mode",
             options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
-            callback=self.tui.set_joint_mode,
+            callback=self.set_control_mode_sp,
         )
 
+    def set_motor_current_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting motor current setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        value = int(self.tui.values[parent + "_" + name].text())
+
+        _name = parent + name
+
+        if "knee" in _name and self.has_knee:
+            self.knee._motor_current_sp = value
+            self.log.debug("[OSL] Setting knee motor current setpoint to %s." % value)
+
+        elif "ankle" in name and self.has_ankle:
+            self.ankle._motor_current_sp = value
+
+    def set_motor_position_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting motor position setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        _value = int(self.tui.values[parent + "_" + name].text())
+
+        value = np.deg2rad(_value)
+        _name = parent + name
+
+        if "knee" in _name and self.has_knee:
+            self.knee._motor_position_sp = value
+            self.log.debug("[OSL] Setting knee motor position setpoint to %s." % value)
+
+        elif "ankle" in name and self.has_ankle:
+            self.ankle._motor_position_sp = value
+
+    def set_motor_voltage_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting motor voltage setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        value = int(self.tui.values[parent + "_" + name].text())
+
+        _name = parent + name
+
+        if "knee" in _name and self.has_knee:
+            self.knee._motor_voltage_sp = value
+            self.log.debug("[OSL] Setting knee motor voltage setpoint to %s." % value)
+
+        elif "ankle" in name and self.has_ankle:
+            self.ankle._motor_voltage_sp = value
+
+    def set_stiffness_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting stiffness setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        value = int(self.tui.values[parent + "_" + name].text())
+
+        _name = parent + name
+
+        if "knee" in _name and self.has_knee:
+            self.knee._stiffness_sp = value
+            self.log.debug("[OSL] Setting knee stiffness setpoint to %s." % value)
+
+        elif "ankle" in name and self.has_ankle:
+            self.ankle._stiffness_sp = value
+
+    def set_damping_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting damping setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        value = int(self.tui.values[parent + "_" + name].text())
+
+        _name = parent + name
+
+        if "knee" in _name and self.has_knee:
+            self.knee._damping_sp = value
+            self.log.debug("[OSL] Setting knee damping setpoint to %s." % value)
+
+        elif "ankle" in name and self.has_ankle:
+            self.ankle._damping_sp = value
+
+    def set_equilibrium_position_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting equilibrium position setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        _value = int(self.tui.values[parent + "_" + name].text())
+
+        value = np.deg2rad(_value)
+
+        _name = parent + name
+
+        if "knee" in _name and self.has_knee:
+            self.knee._equilibrium_position_sp = value
+            self.log.debug("[OSL] Setting knee equilibrium position setpoint to %s." % value)
+
+        elif "ankle" in name and self.has_ankle:
+            self.ankle._equilibrium_position_sp = value
+
+    def set_control_mode_sp(self, **kwargs):
+        self.log.debug("[OSL] Setting control mode setpoint.")
+
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+        _mode_id = self.tui.dropdowns[parent + "_" + name].currentIndex()
+        _name = (parent + name).lower()
+
+        if "knee" in _name and self.has_knee:
+            self.knee._control_mode_sp = self.tui.control_modes[_mode_id]
+            self.log.debug("[OSL] Setting knee control mode setpoint to %s." % self.tui.control_modes[_mode_id])
+
+        elif "ankle" in _name and self.has_ankle:
+            self.ankle._control_mode_sp = self.tui.control_modes[_mode_id]
+            self.log.debug("[OSL] Setting ankle control mode setpoint to %s." % self.tui.control_modes[_mode_id])
+
     def estop(self, **kwargs):
-        self.log.info("[OSL] Emergency stop activated.")
-
-        if self.has_knee:
-            self.knee.stop()
-
-        if self.has_ankle:
-            self.ankle.stop()
+        self.log.debug("[OSL] Emergency stop activated.")
+        self.tui.quit()
 
     def set_tui_attribute(self, **kwargs):
         name = kwargs["name"]
@@ -2152,13 +2306,84 @@ class OpenSourceLeg:
                 self.ankle.home()
 
     def reset(self, **kwargs):
-        self.log.info("[OSL] Resetting OSL.")
+        self.log.debug("[OSL] Resetting OSL.")
 
-        self.__exit__(None, None, None)
+        if self.has_knee:
+            self.knee.set_mode("voltage")
+            self.knee.set_voltage(0, force=True)
 
-        time.sleep(1)
+            time.sleep(0.1)  
 
-        self.__enter__()
+        if self.has_ankle:
+            self.ankle.set_mode("voltage")
+            self.ankle.set_voltage(0, force=True)
+
+            time.sleep(0.1)
+                  
+    def update_joint(self, **kwargs):
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+
+        _name = (parent + name).lower()
+
+        if "kupdater" in _name:
+            self.log.debug("[OSL] Updating knee joint.")
+
+            if self.has_knee:
+
+                if self.knee.control_mode_sp == "voltage":
+                    self.knee.set_mode(self.knee.control_mode_sp)
+                    self.knee.set_voltage(self.knee.motor_voltage_sp, force=True)
+
+                elif self.knee.control_mode_sp == "current":
+                    self.knee.set_mode(self.knee.control_mode_sp)
+                    self.knee.set_current_gains()
+                    self.knee.set_current(self.knee.motor_current_sp, force=True)
+
+                elif self.knee.control_mode_sp == "position":
+                    self.knee.set_mode(self.knee.control_mode_sp)
+                    self.knee.set_position_gains()
+                    self.knee.set_output_position(self.knee.motor_position_sp)
+
+                else:
+                    self.knee.set_mode(self.knee.control_mode_sp)
+
+                    self.knee.set_impedance_gains(
+                        K=self.knee.stiffness_sp,
+                        B=self.knee.damping_sp,
+                    )
+
+                    self.knee.set_output_position(self.knee.equilibirum_position_sp)
+
+        elif "aupdater" in _name:
+            self.log.debug("[OSL] Updating ankle joint.")
+
+            if self.has_ankle:
+
+                if self.ankle.control_mode_sp == "voltage":
+                    self.ankle.set_mode(self.ankle.control_mode_sp)
+                    self.ankle.set_voltage(self.ankle.motor_voltage_sp, force=True)
+
+                elif self.ankle.control_mode_sp == "current":
+                    self.ankle.set_mode(self.ankle.control_mode_sp)
+                    self.ankle.set_current_gains()
+                    self.ankle.set_current(self.ankle.motor_current_sp, force=True)
+
+                elif self.ankle.control_mode_sp == "position":
+                    self.ankle.set_mode(self.ankle.control_mode_sp)
+                    self.ankle.set_position_gains()
+                    self.ankle.set_output_position(self.ankle.motor_position_sp, force=True)
+
+                else:
+                    self.ankle.set_mode(self.ankle.control_mode_sp)
+
+                    self.ankle.set_impedance_gains(
+                        K=self.ankle.stiffness_sp,
+                        B=self.ankle.damping_sp,
+                    )
+
+                    self.ankle.set_motor_position(self.ankle.equilibirum_position_sp, force=True)
+
 
     def stop_joint(self, **kwargs):
         name = kwargs["name"]
@@ -2167,14 +2392,20 @@ class OpenSourceLeg:
         _name = (parent + name).lower()
 
         if "kupdater" in _name:
-            self.log.info("[OSL] Stopping knee joint.")
+            self.log.debug("[OSL] Stopping knee joint.")
             if self.has_knee:
-                self.knee.stop()
+                self.knee.set_mode("voltage")
+                self.knee.set_voltage(0, force=True)
+
+                time.sleep(0.1)                
 
         elif "aupdater" in _name:
-            self.log.info("[OSL] Stopping ankle joint.")
+            self.log.debug("[OSL] Stopping ankle joint.")
             if self.has_ankle:
-                self.ankle.stop()
+                self.ankle.set_mode("voltage")
+                self.ankle.set_voltage(0, force=True)
+
+                time.sleep(0.1)
 
     @property
     def knee(self):
