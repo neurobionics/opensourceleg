@@ -2127,5 +2127,8 @@ class OpenSourceLeg:
 
 
 if __name__ == "__main__":
-    osl = OpenSourceLeg()
-    osl.tui.run()
+    # osl = OpenSourceLeg()
+    # osl.tui.run()
+
+    dev = Device(port=r'/dev/ttyACM0', baud_rate=230400)
+    dev.open()
