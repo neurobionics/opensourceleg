@@ -93,6 +93,12 @@ class TUI:
         self.root_ttk.setLayout(self._layouts["grid"]())
         self._groups = {}
 
+        self._knee = None
+        self._ankle = None
+
+        self._joint = None
+        self._attribute = "motor_position"
+
         self._buttons = {}
         self._radio_buttons = {}
         self._checkboxes = {}
@@ -117,7 +123,7 @@ class TUI:
 
         self._plot_parent: ttk.TTkFrame = None
         self._plot: ttk.TTkGraph = None
-        self._pvalue: float = 0.0
+        self._pvalue = [0.0]
         self._pcounter: int = 0
 
         self._kmode: int = 0
@@ -133,17 +139,20 @@ class TUI:
     @ttk.pyTTkSlot()
     def update(self):
         if self._plot is not None:
-            self._pvalue = [np.sin(self._pcounter * np.pi / 40)]
+
+            if self.joint is not None:
+                self.set_plot_value(getattr(self.joint, self._attribute))
+
             self._plot.addValue(self._pvalue)
 
             if "attributes" in self._categories:
-                _plot_name = self._categories["attributes"].replace("_", " ").title()
+                _plot_name = self.attribute.replace("_", " ").title()
 
             else:
                 _plot_name = self._plot_title
 
             self._plot_parent.setTitle(
-                ttk.TTkString(f"{_plot_name}: {self._pvalue[0]:0.3f}")
+                ttk.TTkString(f"{_plot_name}: {self._pvalue[0]:0.2f}")
             )
             self._pcounter += 1
 
@@ -154,6 +163,18 @@ class TUI:
 
     def add_update_callback(self, callback: callable):
         self._update_callbacks.append(callback)
+
+    def set_active_attribute(self, attribute: str):
+        self._attribute = attribute
+
+    def set_plot_value(self, value: float):
+        self._pvalue = [value]
+
+    def add_knee(self, knee):
+        self._knee = knee
+    
+    def add_ankle(self, ankle):
+        self._ankle = ankle
 
     def run(self):
         self.root_ttk.mainloop()
@@ -572,6 +593,22 @@ class TUI:
 
         self._categories[category] = name
 
+    def set_active_joint(
+        self, 
+        **kwargs
+    ):
+        name = kwargs["name"]
+        parent = kwargs["parent"]
+
+        _name = (name + parent).lower()
+
+        if "knee" in _name:
+            self._joint = self._knee
+        
+        elif "ankle" in _name:
+            self._joint = self._ankle
+
+
     def set_value(
         self,
         **kwargs,
@@ -599,6 +636,22 @@ class TUI:
         args = kwargs["args"]
 
         print(f"Button {name} in group {parent} was clicked.")
+
+    @property
+    def joint(self):
+        return self._joint
+    
+    @property
+    def attribute(self):
+        return self._attribute
+
+    @property
+    def categories(self):
+        return self._categories
+    
+    @property
+    def control_modes(self):
+        return self._modes
 
 
 if __name__ == "__main__":

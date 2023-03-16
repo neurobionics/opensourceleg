@@ -370,7 +370,7 @@ class ActpackMode:
         return str(self._control_mode)
 
     @property
-    def mode(self) -> str:
+    def mode(self):
         return self._control_mode
 
     @property
@@ -426,7 +426,7 @@ class CurrentMode(ActpackMode):
     def _exit(self):
         self._device._log.debug(f"[Actpack] Exiting Current mode.")
         self._device.send_motor_command(CONTROL_MODE.voltage, 0)
-        time.sleep(0.1)
+        time.sleep(1 / self._device.frequency)
 
     def _set_gains(
         self,
@@ -533,7 +533,7 @@ class ImpedanceMode(ActpackMode):
     def _exit(self):
         self._device._log.debug(f"[Actpack] Exiting Impedance mode.")
         self._device.send_motor_command(CONTROL_MODE.voltage, 0)
-        time.sleep(0.1)
+        time.sleep(1 / self._device.frequency)
 
     def _set_motor_position(self, counts: int):
         """Sets the motor position
@@ -625,6 +625,7 @@ class DephyActpack(Device):
     def start(self):
         self.open(self._frequency, self._debug_level, log_enabled=self._dephy_log)
         time.sleep(0.1)
+        self._data = self.read()
         self._mode.enter()
 
     def stop(self):
@@ -842,14 +843,14 @@ class DephyActpack(Device):
         )
 
     @property
-    def voltage(self):
+    def motor_voltage(self):
         return self._units.convert_from_default_units(
             self._data.mot_volt,
             "voltage",
         )
 
     @property
-    def current(self):
+    def motor_current(self):
         return self._units.convert_from_default_units(
             self._data.mot_cur,
             "current",
@@ -886,7 +887,7 @@ class DephyActpack(Device):
     @property
     def motor_torque(self):
         return self._units.convert_from_default_units(
-            self.current * NM_PER_AMP,
+            self.motor_current * NM_PER_AMP,
             "torque",
         )
 
@@ -903,6 +904,7 @@ class DephyActpack(Device):
             self._data.ank_vel * RAD_PER_COUNT,
             "velocity",
         )
+    
 
     @property
     def genvars(self):
@@ -1031,7 +1033,7 @@ class Joint(DephyActpack):
 
             if (
                 abs(self.output_velocity) <= VELOCITY_THRESHOLD
-                or abs(self.current) >= CURRENT_THRESHOLD
+                or abs(self.motor_current) >= CURRENT_THRESHOLD
             ):
                 self.set_voltage(0)
                 is_homing = False
@@ -1229,6 +1231,10 @@ class Joint(DephyActpack):
     @property
     def output_velocity(self):
         return self.motor_velocity / self.gear_ratio
+    
+    @property
+    def joint_torque(self):
+        return self.motor_torque * self.gear_ratio        
 
 
 class Loadcell:
@@ -1379,9 +1385,6 @@ class OpenSourceLeg:
         self._has_ankle: bool = False
         self._has_loadcell: bool = False
 
-        # self.tui = TUI()
-        # self.initialize_tui()
-
         self._knee: Joint = None
         self._ankle: Joint = None
         self._loadcell: Loadcell = None
@@ -1390,9 +1393,12 @@ class OpenSourceLeg:
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
         )
 
-        self.loop = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
+        self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
 
         self._units: UnitsDefinition = DEFAULT_UNITS
+
+        self.tui = TUI()
+        self.initialize_tui()
 
     def __enter__(self):
 
@@ -1414,6 +1420,9 @@ class OpenSourceLeg:
 
     def __repr__(self) -> str:
         return f"OSL object with 0 joints"
+
+    def get_attribute(self, object, attribute: str):
+        return getattr(object, attribute)
 
     def add_joint(
         self,
@@ -1484,6 +1493,23 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.update()
 
+    def run_tui(self):
+        if self.has_knee:
+            self.tui.add_knee(self.knee)
+
+            if self.tui.joint is None:
+                self.tui.set_active_joint(name="knee", parent="joint")            
+        
+        if self.has_ankle:
+            self.tui.add_ankle(self.ankle)
+
+            if self.tui.joint is None:
+                self.tui.set_active_joint(name="ankle", parent="joint")            
+
+
+        self.tui.add_update_callback(self.update)
+        self.tui.run()
+
     def initialize_tui(self):
 
         self.tui.add_group(
@@ -1544,7 +1570,7 @@ class OpenSourceLeg:
             name="knee",
             category="joint",
             parent="joint",
-            callback=self.tui.set_category,
+            callback=self.tui.set_active_joint,
             color=COLORS.white,
             is_checked=True,
             row=0,
@@ -1555,7 +1581,7 @@ class OpenSourceLeg:
             name="ankle",
             category="joint",
             parent="joint",
-            callback=self.tui.set_category,
+            callback=self.tui.set_active_joint,
             color=COLORS.white,
             is_checked=False,
             row=0,
@@ -1566,7 +1592,7 @@ class OpenSourceLeg:
             name="motor_position",
             category="attributes",
             parent="attributes",
-            callback=self.tui.set_category,
+            callback=self.set_tui_attribute,
             color=COLORS.white,
             is_checked=True,
             row=0,
@@ -1577,7 +1603,7 @@ class OpenSourceLeg:
             name="motor_velocity",
             category="attributes",
             parent="attributes",
-            callback=self.tui.set_category,
+            callback=self.set_tui_attribute,
             color=COLORS.white,
             is_checked=False,
             row=0,
@@ -1588,7 +1614,7 @@ class OpenSourceLeg:
             name="motor_current",
             category="attributes",
             parent="attributes",
-            callback=self.tui.set_category,
+            callback=self.set_tui_attribute,
             color=COLORS.white,
             is_checked=False,
             row=0,
@@ -1599,7 +1625,7 @@ class OpenSourceLeg:
             name="joint_position",
             category="attributes",
             parent="attributes",
-            callback=self.tui.set_category,
+            callback=self.set_tui_attribute,
             color=COLORS.white,
             is_checked=False,
             row=1,
@@ -1610,7 +1636,7 @@ class OpenSourceLeg:
             name="joint_velocity",
             category="attributes",
             parent="attributes",
-            callback=self.tui.set_category,
+            callback=self.set_tui_attribute,
             color=COLORS.white,
             is_checked=False,
             row=1,
@@ -1621,7 +1647,7 @@ class OpenSourceLeg:
             name="joint_torque",
             category="attributes",
             parent="attributes",
-            callback=self.tui.set_category,
+            callback=self.set_tui_attribute,
             color=COLORS.white,
             is_checked=False,
             row=1,
@@ -2105,6 +2131,10 @@ class OpenSourceLeg:
         if self.has_ankle:
             self.ankle.stop()
 
+    def set_tui_attribute(self, **kwargs):
+        name = kwargs["name"]
+        self.tui.set_active_attribute(name)
+
     def home(self, **kwargs):
         name = kwargs["name"]
         parent = kwargs["parent"]
@@ -2194,21 +2224,4 @@ if __name__ == "__main__":
     )
 
     with osl:
-        osl.update()
-        osl.log.info(f"{osl.knee.motor_position}")
-
-        osl.log.set_stream_level("DEBUG")
-        # osl.log.info(f"{osl.units}")
-
-        osl.knee.set_mode("voltage")
-        osl.knee.set_voltage(0)
-
-        time.sleep(3)
-
-        osl.knee.set_mode("current")
-        osl.knee.set_current_gains()
-        osl.knee.set_current(0)
-
-        time.sleep(3)
-
-    # osl.tui.run()
+        osl.run_tui()
