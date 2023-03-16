@@ -219,6 +219,7 @@ DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
 DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=300, B=1600, ff=128)
 
+
 @dataclass
 class ControlModes:
     voltage = fxe.FX_VOLTAGE
@@ -226,7 +227,9 @@ class ControlModes:
     position = fxe.FX_POSITION
     impedance = fxe.FX_IMPEDANCE
 
+
 CONTROL_MODE = ControlModes()
+
 
 class Logger(logging.Logger):
     """
@@ -252,6 +255,14 @@ class Logger(logging.Logger):
         self._writer = csv.writer(self._file)
         self._writer.writerow(self._attributes)
 
+        self._log_levels = {
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+            "CRITICAL": logging.CRITICAL,
+        }
+
         super().__init__(__name__)
         self.setLevel(logging.DEBUG)
 
@@ -274,6 +285,30 @@ class Logger(logging.Logger):
         self.addHandler(self._file_handler)
 
         self._is_logging = False
+
+    def set_file_level(self, level: str = "DEBUG") -> None:
+        """
+        Sets the level of the logger
+
+        Args:
+            level (str): Level of the logger
+        """
+        if level not in self._log_levels.keys():
+            self.warning(f"Invalid logging level: {level}")
+
+        self._file_handler.setLevel(self._log_levels[level])
+
+    def set_stream_level(self, level: str = "INFO") -> None:
+        """
+        Sets the level of the logger
+
+        Args:
+            level (str): Level of the logger
+        """
+        if level not in self._log_levels.keys():
+            self.warning(f"Invalid logging level: {level}")
+
+        self._stream_handler.setLevel(self._log_levels[level])
 
     def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
         """
@@ -360,10 +395,10 @@ class VoltageMode(ActpackMode):
         self._exit_callback = self._exit
 
     def _entry(self):
-        self._device._log.info(f"[Actpack] Entering Voltage mode.")
+        self._device._log.debug(f"[Actpack] Entering Voltage mode.")
 
     def _exit(self):
-        self._device._log.info(f"[Actpack] Exiting Voltage mode.")
+        self._device._log.debug(f"[Actpack] Exiting Voltage mode.")
         self._set_voltage(0)
         time.sleep(0.1)
 
@@ -381,7 +416,7 @@ class CurrentMode(ActpackMode):
         self._exit_callback = self._exit
 
     def _entry(self):
-        self._device._log.info(f"[Actpack] Entering Current mode.")
+        self._device._log.debug(f"[Actpack] Entering Current mode.")
 
         if not self.has_gains:
             self._set_gains()
@@ -389,7 +424,7 @@ class CurrentMode(ActpackMode):
         self._set_current(0)
 
     def _exit(self):
-        self._device._log.info(f"[Actpack] Exiting Current mode.")
+        self._device._log.debug(f"[Actpack] Exiting Current mode.")
         self._device.send_motor_command(CONTROL_MODE.voltage, 0)
         time.sleep(0.1)
 
@@ -406,6 +441,8 @@ class CurrentMode(ActpackMode):
 
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff)
         self._has_gains = True
+
+        time.sleep(1 / self._device.frequency)
 
     def _set_current(self, current: int):
         """Sets the Q-axis current of the motor
@@ -426,7 +463,7 @@ class PositionMode(ActpackMode):
         self._exit_callback = self._exit
 
     def _entry(self):
-        self._device._log.info(f"[Actpack] Entering Position mode.")
+        self._device._log.debug(f"[Actpack] Entering Position mode.")
 
         if not self.has_gains:
             self._set_gains()
@@ -441,7 +478,7 @@ class PositionMode(ActpackMode):
         )
 
     def _exit(self):
-        self._device._log.info(f"[Actpack] Exiting Position mode.")
+        self._device._log.debug(f"[Actpack] Exiting Position mode.")
         self._device.send_motor_command(CONTROL_MODE.voltage, 0)
         time.sleep(0.1)
 
@@ -458,6 +495,8 @@ class PositionMode(ActpackMode):
 
         self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=0)
         self._has_gains = True
+
+        time.sleep(1 / self._device.frequency)
 
     def _set_motor_position(self, counts: int):
         """Sets the motor position
@@ -478,7 +517,7 @@ class ImpedanceMode(ActpackMode):
         self._exit_callback = self._exit
 
     def _entry(self):
-        self._device._log.info(f"[Actpack] Entering Impedance mode.")
+        self._device._log.debug(f"[Actpack] Entering Impedance mode.")
         if not self.has_gains:
             self._set_gains()
 
@@ -492,7 +531,7 @@ class ImpedanceMode(ActpackMode):
         )
 
     def _exit(self):
-        self._device._log.info(f"[Actpack] Exiting Impedance mode.")
+        self._device._log.debug(f"[Actpack] Exiting Impedance mode.")
         self._device.send_motor_command(CONTROL_MODE.voltage, 0)
         time.sleep(0.1)
 
@@ -524,6 +563,8 @@ class ImpedanceMode(ActpackMode):
 
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=K, b=B, ff=ff)
         self._has_gains = True
+
+        time.sleep(1 / self._device.frequency)
 
 
 class DephyActpack(Device):
@@ -597,7 +638,9 @@ class DephyActpack(Device):
         if self.is_streaming:
             self._data = self.read()
         else:
-            self._log.warn(f"[Actpack] Please open() the device before streaming data.")
+            self._log.warning(
+                f"[Actpack] Please open() the device before streaming data."
+            )
 
     def set_mode(self, mode: str):
         if mode in self._modes:
@@ -605,8 +648,8 @@ class DephyActpack(Device):
             self._mode = self._modes[mode]
 
         else:
-            raise KeyError(f"Mode {mode} not found")
-
+            self._log.warning(f"Mode {mode} not found")
+            return
 
     def set_position_gains(
         self,
@@ -629,7 +672,8 @@ class DephyActpack(Device):
             ValueError: If the mode is not POSITION and force is False
         """
         if self._mode != self._modes["position"]:
-            raise ValueError(f"Cannot set position gains in mode {self._mode}")
+            self._log.warning(f"Cannot set position gains in mode {self._mode}")
+            return
 
         self._mode._set_gains(kp=kp, ki=ki, kd=kd)
 
@@ -654,7 +698,8 @@ class DephyActpack(Device):
             ValueError: If the mode is not CURRENT and force is False
         """
         if self._mode != self._modes["current"]:
-            raise ValueError(f"Cannot set current gains in mode {self._mode}")
+            self._log.warning(f"Cannot set current gains in mode {self._mode}")
+            return
 
         self._mode._set_gains(kp=kp, ki=ki, ff=ff)
 
@@ -682,7 +727,8 @@ class DephyActpack(Device):
             ValueError: If the mode is not IMPEDANCE and force is False
         """
         if self._mode != self._modes["impedance"]:
-            raise ValueError(f"Cannot set impedance gains in mode {self._mode}")
+            self._log.warning(f"Cannot set impedance gains in mode {self._mode}")
+            return
 
         self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)
 
@@ -699,7 +745,8 @@ class DephyActpack(Device):
 
         """
         if self._mode != self._modes["voltage"]:
-            raise ValueError(f"Cannot set voltage in mode {self._mode}")
+            self._log.warning(f"Cannot set voltage in mode {self._mode}")
+            return
 
         self._mode._set_voltage(
             int(self._units.convert_to_default_units(value, "voltage")),
@@ -717,7 +764,8 @@ class DephyActpack(Device):
             ValueError: If the mode is not CURRENT and force is False
         """
         if self._mode != self._modes["current"]:
-            raise ValueError(f"Cannot set current in mode {self._mode}")
+            self._log.warning(f"Cannot set current in mode {self._mode}")
+            return
 
         self._mode._set_current(
             int(self._units.convert_to_default_units(value, "current")),
@@ -735,7 +783,8 @@ class DephyActpack(Device):
             ValueError: If the mode is not CURRENT and force is False
         """
         if self._mode != self._modes["current"]:
-            raise ValueError(f"Cannot set motor_torque in mode {self._mode}")
+            self._log.warning(f"Cannot set motor_torque in mode {self._mode}")
+            return
 
         self._mode._set_current(
             int(
@@ -754,7 +803,8 @@ class DephyActpack(Device):
             ValueError: If the mode is not POSITION or IMPEDANCE
         """
         if self._mode not in [self._modes["position"], self._modes["impedance"]]:
-            raise ValueError(f"Cannot set motor position in mode {self._mode}")
+            self._log.warning(f"Cannot set motor position in mode {self._mode}")
+            return
 
         self._mode._set_motor_position(
             int(
@@ -944,7 +994,8 @@ class Joint(DephyActpack):
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name = name
         else:
-            raise ValueError(f"Invalid joint name: {name}")
+            self._log.warning(f"Invalid joint name: {name}")
+            return
 
         if os.path.isfile(f"./{self._name}_encoder_map.npy"):
             coefficients = np.load(f"./{self._name}_encoder_map.npy")
@@ -988,12 +1039,12 @@ class Joint(DephyActpack):
         time.sleep(0.1)
 
         if np.std(_motor_encoder_array) < 1e-6:
-            self._log.warn(
+            self._log.warning(
                 f"[{self._name}] Motor encoder not working. Please check the wiring."
             )
             return
         elif np.std(_joint_encoder_array) < 1e-6:
-            self._log.warn(
+            self._log.warning(
                 f"[{self._name}] Joint encoder not working. Please check the wiring."
             )
             return
@@ -1027,7 +1078,7 @@ class Joint(DephyActpack):
         """
 
         if not self.is_homed:
-            self._log.warn(
+            self._log.warning(
                 f"[{self._name}] Please home the joint before making the encoder map."
             )
             return
@@ -1261,7 +1312,7 @@ class Loadcell:
                     self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
             else:
-                self._log.warn(
+                self._log.warning(
                     "[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
                 )
                 return
@@ -1405,7 +1456,7 @@ class OpenSourceLeg:
                 dephy_log=dephy_log,
             )
         else:
-            self.log.warn("[OSL] Joint name is not recognized.")
+            self.log.warning("[OSL] Joint name is not recognized.")
 
     def add_loadcell(
         self,
@@ -2100,21 +2151,21 @@ class OpenSourceLeg:
         if self.has_knee:
             return self._knee
         else:
-            self.log.warn("[OSL] Knee is not connected.")
+            self.log.warning("[OSL] Knee is not connected.")
 
     @property
     def ankle(self):
         if self.has_ankle:
             return self._ankle
         else:
-            self.log.warn("[OSL] Ankle is not connected.")
+            self.log.warning("[OSL] Ankle is not connected.")
 
     @property
     def loadcell(self):
         if self.has_loadcell:
             return self._loadcell
         else:
-            self.log.warn("[OSL] Loadcell is not connected.")
+            self.log.warning("[OSL] Loadcell is not connected.")
 
     @property
     def units(self):
@@ -2146,12 +2197,18 @@ if __name__ == "__main__":
         osl.update()
         osl.log.info(f"{osl.knee.motor_position}")
 
-        osl.knee.set_mode("voltage")
-        # osl.knee.set_position_gains()
-        # osl.knee.set_motor_position(np.pi)
+        osl.log.set_stream_level("DEBUG")
+        # osl.log.info(f"{osl.units}")
 
-        osl.knee.set_voltage(500)
-        time.sleep(2)
+        osl.knee.set_mode("voltage")
+        osl.knee.set_voltage(0)
+
+        time.sleep(3)
+
+        osl.knee.set_mode("current")
+        osl.knee.set_current_gains()
+        osl.knee.set_current(0)
+
+        time.sleep(3)
 
     # osl.tui.run()
-
