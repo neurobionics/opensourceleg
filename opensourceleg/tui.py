@@ -171,17 +171,23 @@ class TUI:
         col: int = 0,
     ):
         """
-        Adds a group or frame to the TUI
+        Adds a group to the TUI
 
         Args:
             name (str): Name of the group. Defaults to "Group".
-            parent (str): Parent of the group. Defaults to "Groups".
+            parent (str): Parent of the group. Defaults to "root".
             layout (str): Layout of the group. Defaults to "horizontal".
-            color (str): Title color of the group . Defaults to COLORS.white.
-            border_color (str): Border color of the group. Defaults to COLORS.white.
-            border (bool): Boolean flag to show or hide the border. Defaults to True.
-            show_title (bool): Boolean flag to show or hide the title. Defaults to False.
+            title_color (str): Title color of the group. Defaults to COLORS.white.
+            border_color (str): _description_. Defaults to COLORS.white.
+            border (bool): _description_. Defaults to True.
+            show_title (bool): _description_. Defaults to False.
+            row (int): _description_. Defaults to 0.
+            col (int): _description_. Defaults to 0.
+
+        Raises:
+            ValueError: _description_
         """
+
         self._groups[name] = ttk.TTkFrame(
             border=border,
             titleColor=ttk.TTkColor.fg(title_color),

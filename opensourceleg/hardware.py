@@ -218,6 +218,16 @@ DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=300, B=1600, ff=128)
 
 
+class ControlModes(Enum):
+    voltage = fxe.FX_VOLTAGE
+    current = fxe.FX_CURRENT
+    position = fxe.FX_POSITION
+    impedance = fxe.FX_IMPEDANCE
+
+
+# create a enum for the control modes
+
+
 class Logger(logging.Logger):
     """
     Logger class is a class that logs attributes from a class to a csv file
@@ -308,7 +318,7 @@ class Logger(logging.Logger):
 
 
 class ActpackMode:
-    def __init__(self, control_mode: str, device: "DephyActpack"):
+    def __init__(self, control_mode, device: "DephyActpack"):
         self._control_mode = control_mode
         self._device = device
         self._entry_callback: callable = lambda: None
@@ -345,7 +355,7 @@ class ActpackMode:
 
 class VoltageMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__("voltage", device)
+        super().__init__(ControlModes.voltage, device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -357,14 +367,15 @@ class VoltageMode(ActpackMode):
         print("Exiting voltage mode")
 
     def _set_voltage(self, voltage: int):
-        self._device.command_motor_voltage(
+        self._device.send_motor_command(
+            self.mode,
             voltage,
         )
 
 
 class CurrentMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__("current", device)
+        super().__init__(ControlModes.current, device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -375,7 +386,7 @@ class CurrentMode(ActpackMode):
         self._set_current(0)
 
     def _exit(self):
-        self._device.command_motor_voltage(0)
+        self._device.send_motor_command(ControlModes.voltage, 0)
 
     def _set_gains(
         self,
@@ -397,14 +408,15 @@ class CurrentMode(ActpackMode):
         Args:
             current (int): _description_
         """
-        self._device.command_motor_current(
+        self._device.send_motor_command(
+            self.mode,
             current,
         )
 
 
 class PositionMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__("position", device)
+        super().__init__(ControlModes.position, device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -422,7 +434,7 @@ class PositionMode(ActpackMode):
         )
 
     def _exit(self):
-        self._device.command_motor_voltage(0)
+        self._device.send_motor_command(ControlModes.voltage, 0)
         print("Exiting POSITION mode")
 
     def _set_gains(
@@ -445,14 +457,15 @@ class PositionMode(ActpackMode):
         Args:
             counts (int): position in counts
         """
-        self._device.command_motor_position(
+        self._device.send_motor_command(
+            self.mode,
             counts,
         )
 
 
 class ImpedanceMode(ActpackMode):
     def __init__(self, device: "DephyActpack"):
-        super().__init__("impedance", device)
+        super().__init__(ControlModes.impedance, device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
 
@@ -470,7 +483,7 @@ class ImpedanceMode(ActpackMode):
         )
 
     def _exit(self):
-        self._device.command_motor_voltage(0)
+        self._device.send_motor_command(ControlModes.voltage, 0)
         print("Exiting IMPEDANCE mode")
 
     def _set_motor_position(self, counts: int):
@@ -479,7 +492,8 @@ class ImpedanceMode(ActpackMode):
         Args:
             counts (int): position in counts
         """
-        self._device.command_motor_position(
+        self._device.send_motor_command(
+            self.mode,
             counts,
         )
 
@@ -539,7 +553,7 @@ class DephyActpack(Device):
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
         """
-        super().__init__(os.path.realpath(port), baud_rate, debug_level)
+        super().__init__(port, baud_rate)
         self._debug_level = debug_level
         self._dephy_log = dephy_log
         self._frequency = frequency
@@ -558,7 +572,7 @@ class DephyActpack(Device):
         self._mode: ActpackMode = self._modes["voltage"]
 
     def start(self):
-        self.open(self._debug_level, log_enabled=self._dephy_log)
+        self.open(self._frequency, self._debug_level, log_enabled=self._dephy_log)
         self.start_streaming(self._frequency)
         time.sleep(0.1)
         self._mode.enter()
@@ -894,8 +908,8 @@ class Joint(DephyActpack):
         self,
         name: str = "knee",
         port: str = "/dev/ttyACM0",
-        baud_rate: int = 115200,
-        frequency: int = 1000,
+        baud_rate: int = 230400,
+        frequency: int = 500,
         gear_ratio: float = 1.0,
         has_loadcell: bool = False,
         logger: Logger = None,
