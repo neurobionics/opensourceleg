@@ -511,14 +511,14 @@ pipenv = ["pipenv"]
 
 [[package]]
 name = "filelock"
-version = "3.9.1"
+version = "3.10.0"
 description = "A platform independent file lock."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "filelock-3.9.1-py3-none-any.whl", hash = "sha256:4427cdda14a1c68e264845142842d6de2d0fa2c15ba31571a3d9c9a1ec9d191c"},
-    {file = "filelock-3.9.1.tar.gz", hash = "sha256:e393782f76abea324dee598d2ea145b857a20df0e0ee4f80fcf35e72a341d2c7"},
+    {file = "filelock-3.10.0-py3-none-any.whl", hash = "sha256:e90b34656470756edf8b19656785c5fea73afa1953f3e1b0d645cef11cab3182"},
+    {file = "filelock-3.10.0.tar.gz", hash = "sha256:3199fd0d3faea8b911be52b663dfccceb84c95949dd13179aa21436d1a79c4ce"},
 ]
 
 [package.extras]
@@ -527,13 +527,13 @@ testing = ["covdefaults (>=2.3)", "coverage (>=7.2.1)", "pytest (>=7.2.2)", "pyt
 
 [[package]]
 name = "flexsea"
-version = "9.1.1"
+version = "8.0.1"
 description = "Dephy's Actuator Package API library"
 category = "main"
 optional = false
-python-versions = ">= 3.8.*"
+python-versions = ">= 3.7.*"
 files = [
-    {file = "flexsea-9.1.1-py3-none-any.whl", hash = "sha256:1375650d380980ffe4443761d726103984a314fd415fbd810f035cced43ce329"},
+    {file = "flexsea-8.0.1-py3-none-any.whl", hash = "sha256:6b728a7cd8c74b1184cea4dad13138f8e843a2f58d4f2291ff24f14ca0d0e7aa"},
 ]
 
 [package.dependencies]
@@ -2071,4 +2071,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0.0"
-content-hash = "6acf0f50ee9d2a19c95c40bf963a325af8d44bb849e4f7546c0646656fdd4903"
+content-hash = "3de39c66120a3a02b8c8d30830251b245b298b50d098d5ef5983e2e1911aafde"

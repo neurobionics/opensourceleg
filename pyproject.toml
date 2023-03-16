@@ -35,7 +35,7 @@ in-project = true
 python = ">=3.9,<4.0.0"
 pyserial = "^3.5"
 numpy = "^1.22.3"
-flexsea = "^9.1.1"
+flexsea = "^8.0.1"
 sphinx = "^6.1.3"
 pytermtk = "^0.22.0a4"
 
