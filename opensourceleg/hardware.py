@@ -213,7 +213,7 @@ class Gains:
         return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, K={self.K}, B={self.B}, ff={self.ff}"
 
 
-DEFAULT_POSITION_GAINS = Gains(kp=200, ki=50, kd=0, K=0, B=0, ff=0)
+DEFAULT_POSITION_GAINS = Gains(kp=100, ki=50, kd=0, K=0, B=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
@@ -442,7 +442,7 @@ class CurrentMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff)
         self._has_gains = True
 
-        time.sleep(1 / self._device.frequency)
+        time.sleep(0.1)
 
     def _set_current(self, current: int):
         """Sets the Q-axis current of the motor
@@ -997,8 +997,8 @@ class Joint(DephyActpack):
         self._motor_current_sp = 0.0 
         self._motor_position_sp = 0.0
 
-        self._stiffness_sp: int = 0
-        self._damping_sp: int = 0
+        self._stiffness_sp: int = 300
+        self._damping_sp: int = 1600
         self._equilibrium_position_sp = 0.0
 
         self._control_mode_sp: str = "voltage"
@@ -1425,6 +1425,7 @@ class OpenSourceLeg:
         self._has_knee: bool = False
         self._has_ankle: bool = False
         self._has_loadcell: bool = False
+        self._has_tui: bool = False
 
         self._knee: Joint = None
         self._ankle: Joint = None
@@ -1438,8 +1439,7 @@ class OpenSourceLeg:
 
         self._units: UnitsDefinition = DEFAULT_UNITS
 
-        self.tui = TUI()
-        self.initialize_tui()
+        self.tui: TUI = None
 
     def __enter__(self):
 
@@ -1459,7 +1459,7 @@ class OpenSourceLeg:
         if self.has_ankle:
             self._ankle.stop()
 
-        if self.tui.is_running:
+        if self.has_tui and self.tui.is_running:
             self.tui.quit()
 
     def __repr__(self) -> str:
@@ -1467,6 +1467,15 @@ class OpenSourceLeg:
 
     def get_attribute(self, object, attribute: str):
         return getattr(object, attribute)
+
+    def add_tui(
+        self,
+        frequency: int = 30,
+    ):
+        self._has_tui = True
+        self.tui = TUI(frequency=frequency)
+        self.initialize_tui()
+
 
     def add_joint(
         self,
@@ -2347,10 +2356,10 @@ class OpenSourceLeg:
 
                 else:
                     self.knee.set_mode(self.knee.control_mode_sp)
-
+                    
                     self.knee.set_impedance_gains(
                         K=self.knee.stiffness_sp,
-                        B=self.knee.damping_sp,
+                        B=self.knee.damping_sp,                        
                     )
 
                     self.knee.set_output_position(self.knee.equilibirum_position_sp)
@@ -2444,6 +2453,9 @@ class OpenSourceLeg:
     def has_loadcell(self):
         return self._has_loadcell
 
+    @property
+    def has_tui(self):
+        return self._has_tui
 
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=100)
@@ -2452,7 +2464,18 @@ if __name__ == "__main__":
         name="knee",
         port="/dev/ttyACM0",
         baud_rate=230400,
+        gear_ratio=9.0,
     )
+
+    osl.add_tui()
 
     with osl:
         osl.run_tui()
+
+        # osl.knee.set_mode("impedance")
+        # osl.knee.set_impedance_gains()
+
+        # osl.log.info("[OSL] Setting knee to pi rad.")
+        # osl.knee.set_output_position(np.deg2rad(30))
+
+        # time.sleep(3)
