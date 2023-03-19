@@ -99,6 +99,7 @@ class TUI:
         self._ankle = None
 
         self._joint = None
+        self._loadcell = None
         self._attribute = "motor_position"
 
         self._buttons = {}
@@ -142,8 +143,18 @@ class TUI:
     def update(self):
         if self._plot is not None:
 
-            if self.joint is not None:
-                self.set_plot_value(getattr(self.joint, self._attribute))
+            if "loadcell" in self._attribute:
+                if self.loadcell is not None:
+                    if "fx" in self._attribute:
+                        self.set_plot_value(getattr(self.loadcell, "fx"))
+                    elif "fy" in self._attribute:
+                        self.set_plot_value(getattr(self.loadcell, "fy"))
+                    else:
+                        self.set_plot_value(getattr(self.loadcell, "fz"))
+
+            else:
+                if self.joint is not None:
+                    self.set_plot_value(getattr(self.joint, self._attribute))
 
             self._plot.addValue(self._pvalue)
 
@@ -615,6 +626,11 @@ class TUI:
         elif "ankle" in _name:
             self._joint = self._ankle
 
+    def set_loadcell(
+        self,
+        loadcell,
+    ):
+        self._loadcell = loadcell
 
     def set_value(
         self,
@@ -647,6 +663,10 @@ class TUI:
     @property
     def joint(self):
         return self._joint
+
+    @property
+    def loadcell(self):
+        return self._loadcell
     
     @property
     def attribute(self):
