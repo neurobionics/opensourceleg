@@ -15,10 +15,10 @@ from enum import Enum
 from logging.handlers import RotatingFileHandler
 from math import isfinite
 
-from smbus2 import SMBus
 import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
+from smbus2 import SMBus
 
 sys.path.append("../")
 
@@ -567,7 +567,7 @@ class ImpedanceMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=K, b=B, ff=ff)
         self._has_gains = True
 
-        time.sleep(1 / self._device.frequency)        
+        time.sleep(1 / self._device.frequency)
 
 
 class DephyActpack(Device):
@@ -657,7 +657,7 @@ class DephyActpack(Device):
         else:
             self._log.warning(f"Mode {mode} not found")
             return
-        
+
     def set_motor_zero_position(self, position: float):
         self._motor_zero_position = position
 
@@ -821,7 +821,8 @@ class DephyActpack(Device):
 
         self._mode._set_motor_position(
             int(
-                self._units.convert_to_default_units(position, "position") / RAD_PER_COUNT
+                self._units.convert_to_default_units(position, "position")
+                / RAD_PER_COUNT
             ),
         )
 
@@ -838,11 +839,11 @@ class DephyActpack(Device):
     @property
     def mode(self):
         return self._mode
-    
+
     @property
     def motor_zero_position(self):
         return self._motor_zero_position
-    
+
     @property
     def joint_zero_position(self):
         return self._joint_zero_position
@@ -923,7 +924,6 @@ class DephyActpack(Device):
             self._data.ank_vel * RAD_PER_COUNT,
             "velocity",
         )
-    
 
     @property
     def genvars(self):
@@ -1016,7 +1016,7 @@ class Joint(DephyActpack):
         self._joint_zero_pos = 0.0
 
         self._motor_voltage_sp = 0.0
-        self._motor_current_sp = 0.0 
+        self._motor_current_sp = 0.0
         self._motor_position_sp = 0.0
 
         self._stiffness_sp: int = 200
@@ -1050,6 +1050,7 @@ class Joint(DephyActpack):
         CURRENT_THRESHOLD = 6000
         VELOCITY_THRESHOLD = 0.001
 
+        self.set_mode("voltage")
         self.set_voltage(-1 * homing_voltage)  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
@@ -1094,7 +1095,6 @@ class Joint(DephyActpack):
             )
             return
 
-
         if "ankle" in self._name.lower():
             self._zero_pos = np.deg2rad(30)
             self.set_motor_zero_position(_motor_zero_pos)
@@ -1104,15 +1104,15 @@ class Joint(DephyActpack):
             self._zero_pos = 0.0
             self.set_motor_zero_position(_motor_zero_pos)
             self.set_joint_zero_position(_joint_zero_pos)
-            
+
         self._is_homed = True
 
-        if self.encoder_map is None:
-            if (
-                input(f"[{self._name}] Would you like to make an encoder map? (y/n): ")
-                == "y"
-            ):
-                self.make_encoder_map()
+        # if self.encoder_map is None:
+        #     if (
+        #         input(f"[{self._name}] Would you like to make an encoder map? (y/n): ")
+        #         == "y"
+        #     ):
+        #         self.make_encoder_map()
 
     def make_encoder_map(self):
         """
@@ -1290,31 +1290,31 @@ class Joint(DephyActpack):
     @property
     def output_velocity(self):
         return self.motor_velocity / self.gear_ratio
-    
+
     @property
     def joint_torque(self):
         return self.motor_torque * self.gear_ratio
-    
+
     @property
     def motor_current_sp(self):
         return self._motor_current_sp
-    
+
     @property
     def motor_voltage_sp(self):
         return self._motor_voltage_sp
-    
+
     @property
     def motor_position_sp(self):
         return self._motor_position_sp
-    
+
     @property
     def stiffness_sp(self):
         return self._stiffness_sp
-    
+
     @property
     def damping_sp(self):
         return self._damping_sp
-    
+
     @property
     def equilibirum_position_sp(self):
         return self._equilibrium_position_sp
@@ -1331,18 +1331,18 @@ class StrainAmp:
 
     # register numbers for the "ezi2c" interface on the strainamp
     # found in source code here: https://github.com/JFDuval/flexsea-strain/tree/dev
-    MEM_R_CH1_H=8
-    MEM_R_CH1_L=9
-    MEM_R_CH2_H=10
-    MEM_R_CH2_L=11
-    MEM_R_CH3_H=12
-    MEM_R_CH3_L=13
-    MEM_R_CH4_H=14
-    MEM_R_CH4_L=15
-    MEM_R_CH5_H=16
-    MEM_R_CH5_L=17
-    MEM_R_CH6_H=18
-    MEM_R_CH6_L=19
+    MEM_R_CH1_H = 8
+    MEM_R_CH1_L = 9
+    MEM_R_CH2_H = 10
+    MEM_R_CH2_L = 11
+    MEM_R_CH3_H = 12
+    MEM_R_CH3_L = 13
+    MEM_R_CH4_H = 14
+    MEM_R_CH4_L = 15
+    MEM_R_CH5_H = 16
+    MEM_R_CH5_L = 17
+    MEM_R_CH6_H = 18
+    MEM_R_CH6_L = 19
 
     def __init__(self, bus, I2C_addr=0x66) -> None:
         """Create a strainamp object, to talk over I2C"""
@@ -1351,7 +1351,7 @@ class StrainAmp:
         time.sleep(1)
         self.bus = bus
         self.addr = I2C_addr
-        self.genvars = np.zeros((3,6))
+        self.genvars = np.zeros((3, 6))
         self.indx = 0
         self.is_streaming = True
         self.data = []
@@ -1360,7 +1360,7 @@ class StrainAmp:
     def read_uncompressed_strain(self):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         data = []
-        for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L+1):
+        for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L + 1):
             data.append(self._SMBus.read_byte_data(self.addr, i))
 
         return self.unpack_uncompressed_strain(data)
@@ -1368,22 +1368,22 @@ class StrainAmp:
     def read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
         try:
-            self.data=self._SMBus.read_i2c_block_data(self.addr,self.MEM_R_CH1_H, 10)
+            self.data = self._SMBus.read_i2c_block_data(self.addr, self.MEM_R_CH1_H, 10)
             self.failed_reads = 0
-        except OSError as e: 
+        except OSError as e:
             self.failed_reads += 1
             # print("\n read failed")
             if self.failed_reads >= 5:
                 raise Exception("Load cell unresponsive.")
         # unpack them and return as nparray
         return self.unpack_compressed_strain(self.data)
- 
+
     def update(self):
         """Called to update data of strain amp. Also returns data."""
-        self.genvars[self.indx,:] = self.read_compressed_strain()
+        self.genvars[self.indx, :] = self.read_compressed_strain()
         self.indx = (self.indx + 1) % 3
         return np.median(self.genvars, axis=0)
-        
+
     @staticmethod
     def unpack_uncompressed_strain(data):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
@@ -1405,21 +1405,36 @@ class StrainAmp:
         # ch5 = (data[6] << 4) | ( (data[7] >> 4) & 0x0F)
         # ch6 = ( (data[7] << 8) & 0x0F00) | data[8]
         # moved into one line to save 0.02ms -- maybe pointless but eh
-        return np.array([(data[0] << 4) | ( (data[1] >> 4) & 0x0F), ( (data[1] << 8) & 0x0F00) | data[2], (data[3] << 4) | ( (data[4] >> 4) & 0x0F), ( (data[4] << 8) & 0x0F00) | data[5], (data[6] << 4) | ( (data[7] >> 4) & 0x0F), ( (data[7] << 8) & 0x0F00) | data[8] ])
+        return np.array(
+            [
+                (data[0] << 4) | ((data[1] >> 4) & 0x0F),
+                ((data[1] << 8) & 0x0F00) | data[2],
+                (data[3] << 4) | ((data[4] >> 4) & 0x0F),
+                ((data[4] << 8) & 0x0F00) | data[5],
+                (data[6] << 4) | ((data[7] >> 4) & 0x0F),
+                ((data[7] << 8) & 0x0F00) | data[8],
+            ]
+        )
 
     @staticmethod
-    def strain_data_to_wrench(unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125):
+    def strain_data_to_wrench(
+        unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125
+    ):
         """Converts strain values between 0 and 4095 to a wrench in N and Nm"""
         loadcell_signed = (unpacked_strain - 2048) / 4095 * exc
         loadcell_coupled = loadcell_signed * 1000 / (exc * gain)
-        return np.reshape(np.transpose(loadcell_matrix.dot(np.transpose(loadcell_coupled))) - loadcell_zero, (6,))
+        return np.reshape(
+            np.transpose(loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+            - loadcell_zero,
+            (6,),
+        )
 
     @staticmethod
     def wrench_to_strain_data(measurement, loadcell_matrix, exc=5, gain=125):
         """Wrench in N and Nm to the strain values that would give that wrench"""
         loadcell_coupled = (np.linalg.inv(loadcell_matrix)).dot(measurement)
         loadcell_signed = loadcell_coupled * (exc * gain) / 1000
-        return ((loadcell_signed/exc)*4095 + 2048).round(0).astype(int)
+        return ((loadcell_signed / exc) * 4095 + 2048).round(0).astype(int)
 
 
 class Loadcell:
@@ -1437,11 +1452,11 @@ class Loadcell:
         self._amp_gain = amp_gain
         self._exc = exc
         self._adc_range = 2**12 - 1
-        self._offset = (2**12)/2
+        self._offset = (2**12) / 2
         self._lc = None
 
         if not self._is_dephy:
-            self._lc = StrainAmp(bus = 1, I2C_addr=0x66)
+            self._lc = StrainAmp(bus=1, I2C_addr=0x66)
 
         if not loadcell_matrix:
             self._loadcell_matrix = np.array(
@@ -1481,10 +1496,13 @@ class Loadcell:
 
         """
         if self._is_dephy:
-            loadcell_signed = (self._joint.genvars - self._offset) / (self._adc_range * self._exc)
+            loadcell_signed = (self._joint.genvars - self._offset) / (
+                self._adc_range * self._exc
+            )
         else:
-            loadcell_signed = (self._lc.update() - self._offset) / (self._adc_range * self._exc)
-
+            loadcell_signed = (self._lc.update() - self._offset) / (
+                self._adc_range * self._exc
+            )
 
         loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
@@ -1498,7 +1516,6 @@ class Loadcell:
                 np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
                 - loadcell_zero
             )
-
 
     def initialize(self, number_of_iterations: int = 2000):
         """
@@ -1563,7 +1580,7 @@ class Loadcell:
     @property
     def mz(self):
         return self._loadcell_data[0][5]
-    
+
     @property
     def loadcell_data(self):
         return self._loadcell_data[0]
@@ -1648,7 +1665,6 @@ class OpenSourceLeg:
             self.tui.set_loadcell(self._loadcell)
 
         self.initialize_tui()
-
 
     def add_joint(
         self,
@@ -1739,14 +1755,13 @@ class OpenSourceLeg:
             self.tui.add_knee(self.knee)
 
             if self.tui.joint is None:
-                self.tui.set_active_joint(name="knee", parent="joint")            
-        
+                self.tui.set_active_joint(name="knee", parent="joint")
+
         if self.has_ankle:
             self.tui.add_ankle(self.ankle)
 
             if self.tui.joint is None:
-                self.tui.set_active_joint(name="ankle", parent="joint")            
-
+                self.tui.set_active_joint(name="ankle", parent="joint")
 
         self.tui.add_update_callback(self.update)
         self.tui.run()
@@ -2143,7 +2158,6 @@ class OpenSourceLeg:
             col=1,
         )
 
-    
         self.tui.add_group(
             name="mode",
             parent="knee",
@@ -2159,7 +2173,7 @@ class OpenSourceLeg:
             parent="mode",
             row=2,
             col=0,
-        )        
+        )
 
         self.tui.add_text(
             name=" Updates only the setpoints that are ",
@@ -2167,7 +2181,7 @@ class OpenSourceLeg:
             color=COLORS.turquoise,
             row=3,
             col=0,
-        )          
+        )
 
         self.tui.add_text(
             name=" relevant to the selected control mode.",
@@ -2175,7 +2189,7 @@ class OpenSourceLeg:
             color=COLORS.turquoise,
             row=4,
             col=0,
-        )  
+        )
 
         self.tui.add_group(
             name="kupdater",
@@ -2357,7 +2371,7 @@ class OpenSourceLeg:
             parent="mode",
             row=2,
             col=0,
-        )        
+        )
 
         self.tui.add_text(
             name=" Updates only the setpoints that are ",
@@ -2365,7 +2379,7 @@ class OpenSourceLeg:
             color=COLORS.turquoise,
             row=3,
             col=0,
-        )          
+        )
 
         self.tui.add_text(
             name=" relevant to the selected control mode.",
@@ -2373,7 +2387,7 @@ class OpenSourceLeg:
             color=COLORS.turquoise,
             row=4,
             col=0,
-        )  
+        )
 
         self.tui.add_group(
             name="aupdater",
@@ -2506,7 +2520,9 @@ class OpenSourceLeg:
 
         if "knee" in _name and self.has_knee:
             self.knee._equilibrium_position_sp = value
-            self.log.debug("[OSL] Setting knee equilibrium position setpoint to %s." % value)
+            self.log.debug(
+                "[OSL] Setting knee equilibrium position setpoint to %s." % value
+            )
 
         elif "ankle" in name and self.has_ankle:
             self.ankle._equilibrium_position_sp = value
@@ -2521,11 +2537,17 @@ class OpenSourceLeg:
 
         if "knee" in _name and self.has_knee:
             self.knee._control_mode_sp = self.tui.control_modes[_mode_id]
-            self.log.debug("[OSL] Setting knee control mode setpoint to %s." % self.tui.control_modes[_mode_id])
+            self.log.debug(
+                "[OSL] Setting knee control mode setpoint to %s."
+                % self.tui.control_modes[_mode_id]
+            )
 
         elif "ankle" in _name and self.has_ankle:
             self.ankle._control_mode_sp = self.tui.control_modes[_mode_id]
-            self.log.debug("[OSL] Setting ankle control mode setpoint to %s." % self.tui.control_modes[_mode_id])
+            self.log.debug(
+                "[OSL] Setting ankle control mode setpoint to %s."
+                % self.tui.control_modes[_mode_id]
+            )
 
     def estop(self, **kwargs):
         self.log.debug("[OSL] Emergency stop activated.")
@@ -2572,14 +2594,14 @@ class OpenSourceLeg:
             self.knee.set_mode("voltage")
             self.knee.set_voltage(0, force=True)
 
-            time.sleep(0.1)  
+            time.sleep(0.1)
 
         if self.has_ankle:
             self.ankle.set_mode("voltage")
             self.ankle.set_voltage(0, force=True)
 
             time.sleep(0.1)
-                  
+
     def update_joint(self, **kwargs):
         name = kwargs["name"]
         parent = kwargs["parent"]
@@ -2607,10 +2629,10 @@ class OpenSourceLeg:
 
                 else:
                     self.knee.set_mode(self.knee.control_mode_sp)
-                    
+
                     self.knee.set_impedance_gains(
                         K=self.knee.stiffness_sp,
-                        B=self.knee.damping_sp,                        
+                        B=self.knee.damping_sp,
                     )
 
                     self.knee.set_output_position(self.knee.equilibirum_position_sp)
@@ -2644,7 +2666,6 @@ class OpenSourceLeg:
 
                     self.ankle.set_output_position(self.ankle.equilibirum_position_sp)
 
-
     def stop_joint(self, **kwargs):
         name = kwargs["name"]
         parent = kwargs["parent"]
@@ -2657,7 +2678,7 @@ class OpenSourceLeg:
                 self.knee.set_mode("voltage")
                 self.knee.set_voltage(0, force=True)
 
-                time.sleep(0.1)                
+                time.sleep(0.1)
 
         elif "aupdater" in _name:
             self.log.debug("[OSL] Stopping ankle joint.")
@@ -2711,6 +2732,7 @@ class OpenSourceLeg:
     @property
     def has_tui(self):
         return self._has_tui
+
 
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=100)
