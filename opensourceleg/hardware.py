@@ -45,6 +45,8 @@ IMPEDANCE_C = 0.0007812
 NM_PER_RAD_TO_K = RAD_PER_COUNT / IMPEDANCE_C * 1e3 / NM_PER_AMP
 NM_S_PER_RAD_TO_B = RAD_PER_DEG / IMPEDANCE_A * 1e3 / NM_PER_AMP
 
+CURRENT_LIMIT = 8000
+
 # Global Units Dictionary
 ALL_UNITS = {
     "force": {
@@ -214,11 +216,11 @@ class Gains:
         return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, K={self.K}, B={self.B}, ff={self.ff}"
 
 
-DEFAULT_POSITION_GAINS = Gains(kp=100, ki=50, kd=0, K=0, B=0, ff=0)
+DEFAULT_POSITION_GAINS = Gains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
-DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=300, B=1600, ff=128)
+DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
 @dataclass
@@ -614,6 +616,9 @@ class DephyActpack(Device):
         self._state = None
         self._units = units if units else DEFAULT_UNITS
 
+        self._motor_zero_position = 0.0
+        self._joint_zero_position = 0.0
+
         self._modes: dict[str, ActpackMode] = {
             "voltage": VoltageMode(self),
             "position": PositionMode(self),
@@ -652,6 +657,12 @@ class DephyActpack(Device):
         else:
             self._log.warning(f"Mode {mode} not found")
             return
+        
+    def set_motor_zero_position(self, position: float):
+        self._motor_zero_position = position
+
+    def set_joint_zero_position(self, position: float):
+        self._joint_zero_position = position
 
     def set_position_gains(
         self,
@@ -810,8 +821,7 @@ class DephyActpack(Device):
 
         self._mode._set_motor_position(
             int(
-                self._units.convert_to_default_units(position, "position")
-                / RAD_PER_COUNT
+                self._units.convert_to_default_units(position, "position") / RAD_PER_COUNT
             ),
         )
 
@@ -828,6 +838,14 @@ class DephyActpack(Device):
     @property
     def mode(self):
         return self._mode
+    
+    @property
+    def motor_zero_position(self):
+        return self._motor_zero_position
+    
+    @property
+    def joint_zero_position(self):
+        return self._joint_zero_position
 
     @property
     def battery_voltage(self):
@@ -994,12 +1012,15 @@ class Joint(DephyActpack):
         self._encoder_map = None
         self._zero_pos = 0.0
 
+        self._motor_zero_pos = 0.0
+        self._joint_zero_pos = 0.0
+
         self._motor_voltage_sp = 0.0
         self._motor_current_sp = 0.0 
         self._motor_position_sp = 0.0
 
-        self._stiffness_sp: int = 300
-        self._damping_sp: int = 1600
+        self._stiffness_sp: int = 200
+        self._damping_sp: int = 400
         self._equilibrium_position_sp = 0.0
 
         self._control_mode_sp: str = "voltage"
@@ -1027,7 +1048,7 @@ class Joint(DephyActpack):
         is_homing = True
 
         CURRENT_THRESHOLD = 6000
-        VELOCITY_THRESHOLD = 0.01
+        VELOCITY_THRESHOLD = 0.001
 
         self.set_voltage(-1 * homing_voltage)  # mV, negative for counterclockwise
 
@@ -1036,18 +1057,28 @@ class Joint(DephyActpack):
 
         time.sleep(0.1)
 
-        while is_homing:
-            time.sleep(1 / homing_frequency)
+        try:
+            while is_homing:
+                self.update()
+                time.sleep(1 / homing_frequency)
 
-            _motor_encoder_array.append(self.motor_position)
-            _joint_encoder_array.append(self.joint_position)
+                _motor_encoder_array.append(self.motor_position)
+                _joint_encoder_array.append(self.joint_position)
 
-            if (
-                abs(self.output_velocity) <= VELOCITY_THRESHOLD
-                or abs(self.motor_current) >= CURRENT_THRESHOLD
-            ):
-                self.set_voltage(0)
-                is_homing = False
+                if (
+                    abs(self.output_velocity) <= VELOCITY_THRESHOLD
+                    or abs(self.motor_current) >= CURRENT_THRESHOLD
+                ):
+                    self.set_voltage(0)
+                    is_homing = False
+
+        except KeyboardInterrupt:
+            self.set_voltage(0)
+            self._log.warning("Homing interrupted.")
+            return
+
+        _motor_zero_pos = self.motor_position
+        _joint_zero_pos = self.joint_position
 
         time.sleep(0.1)
 
@@ -1056,15 +1087,24 @@ class Joint(DephyActpack):
                 f"[{self._name}] Motor encoder not working. Please check the wiring."
             )
             return
+
         elif np.std(_joint_encoder_array) < 1e-6:
             self._log.warning(
                 f"[{self._name}] Joint encoder not working. Please check the wiring."
             )
             return
 
+
         if "ankle" in self._name.lower():
             self._zero_pos = np.deg2rad(30)
+            self.set_motor_zero_position(_motor_zero_pos)
+            self.set_joint_zero_position(_joint_zero_pos)
 
+        else:
+            self._zero_pos = 0.0
+            self.set_motor_zero_position(_motor_zero_pos)
+            self.set_joint_zero_position(_joint_zero_pos)
+            
         self._is_homed = True
 
         if self.encoder_map is None:
@@ -1096,6 +1136,7 @@ class Joint(DephyActpack):
             )
             return
 
+        self.set_mode("current")
         self.set_current_gains()
         time.sleep(0.1)
         self.set_current_gains()
@@ -1113,15 +1154,19 @@ class Joint(DephyActpack):
                    \n Press any key to continue."
         )
 
-        input()
         _start_time = time.time()
 
-        while time.time() - _start_time < 10:
-            self.update()
-            _joint_position_array.append(self.joint_position)
-            _output_position_array.append(self.output_position)
+        try:
+            while time.time() - _start_time < 10:
+                self.update()
+                _joint_position_array.append(self.joint_position)
+                _output_position_array.append(self.output_position)
 
-            time.sleep(1 / self.frequency)
+                time.sleep(1 / self.frequency)
+
+        except KeyboardInterrupt:
+            self._log.warning("Encoder map interrupted.")
+            return
 
         self._log.info(f"[{self._name}] You may now stop moving the joint.")
 
@@ -1666,12 +1711,25 @@ class OpenSourceLeg:
             logger=self.log,
         )
 
-    def update(self):
+    def update(
+        self,
+        current_limit: int = CURRENT_LIMIT,
+    ):
         if self.has_knee:
             self._knee.update()
 
+            if self.knee.motor_current > current_limit:
+                self.knee.set_mode("voltage")
+                self.knee.set_voltage(0, force=True)
+                time.sleep(0.1)
+
         if self.has_ankle:
             self._ankle.update()
+
+            if self.ankle.motor_current > current_limit:
+                self.ankle.set_mode("voltage")
+                self.ankle.set_voltage(0, force=True)
+                time.sleep(0.1)
 
         if self.has_loadcell:
             self._loadcell.update()
@@ -1944,7 +2002,7 @@ class OpenSourceLeg:
         self.tui.add_button(
             name="encoders",
             parent="calibrate",
-            callback=self.tui.test_button,
+            # callback=self.calibrate_encoders,
             color=COLORS.white,
             row=0,
             col=0,
@@ -1953,7 +2011,7 @@ class OpenSourceLeg:
         self.tui.add_button(
             name="loadcell",
             parent="calibrate",
-            callback=self.tui.test_button,
+            # callback=self.calibrate_loadcell,
             color=COLORS.white,
             row=1,
             col=0,
@@ -2047,7 +2105,7 @@ class OpenSourceLeg:
         self.tui.add_value(
             name="stiffness",
             parent="knee_data",
-            default=300,
+            default=200,
             callback=self.set_stiffness_sp,
             row=4,
             col=1,
@@ -2063,7 +2121,7 @@ class OpenSourceLeg:
         self.tui.add_value(
             name="damping",
             parent="knee_data",
-            default=1600,
+            default=400,
             callback=self.set_damping_sp,
             row=5,
             col=1,
@@ -2246,7 +2304,7 @@ class OpenSourceLeg:
         self.tui.add_value(
             name="stiffness",
             parent="ankle_data",
-            default=300,
+            default=200,
             callback=self.set_stiffness_sp,
             row=4,
             col=1,
@@ -2262,7 +2320,7 @@ class OpenSourceLeg:
         self.tui.add_value(
             name="damping",
             parent="ankle_data",
-            default=1600,
+            default=400,
             callback=self.set_damping_sp,
             row=5,
             col=1,
@@ -2484,14 +2542,28 @@ class OpenSourceLeg:
         _name = (parent + name).lower()
 
         if "knee" in _name:
-            self.log.info("[OSL] Homing knee joint.")
+            self.log.debug("[OSL] Homing knee joint.")
             if self.has_knee:
                 self.knee.home()
 
         elif "ankle" in _name:
-            self.log.info("[OSL] Homing ankle joint.")
+            self.log.debug("[OSL] Homing ankle joint.")
             if self.has_ankle:
                 self.ankle.home()
+
+    def calibrate_loadcell(self, **kwargs):
+        self.log.debug("[OSL] Calibrating loadcell.")
+        if self.has_loadcell:
+            self.loadcell.reset()
+
+    def calibrate_encoders(self, **kwargs):
+        self.log.debug("[OSL] Calibrating encoders.")
+
+        if self.has_knee:
+            self.knee.make_encoder_map()
+
+        if self.has_ankle:
+            self.ankle.make_encoder_map()
 
     def reset(self, **kwargs):
         self.log.debug("[OSL] Resetting OSL.")
@@ -2560,7 +2632,7 @@ class OpenSourceLeg:
                 elif self.ankle.control_mode_sp == "position":
                     self.ankle.set_mode(self.ankle.control_mode_sp)
                     self.ankle.set_position_gains()
-                    self.ankle.set_output_position(self.ankle.motor_position_sp, force=True)
+                    self.ankle.set_output_position(self.ankle.motor_position_sp)
 
                 else:
                     self.ankle.set_mode(self.ankle.control_mode_sp)
@@ -2570,7 +2642,7 @@ class OpenSourceLeg:
                         B=self.ankle.damping_sp,
                     )
 
-                    self.ankle.set_motor_position(self.ankle.equilibirum_position_sp, force=True)
+                    self.ankle.set_output_position(self.ankle.equilibirum_position_sp)
 
 
     def stop_joint(self, **kwargs):
@@ -2645,9 +2717,9 @@ if __name__ == "__main__":
 
     osl.add_joint(
         name="knee",
-        port="/dev/ttyACM0",
+        port="/dev/ttyACM6",
         baud_rate=230400,
-        gear_ratio=9.0,
+        gear_ratio=41.4999,
     )
 
     osl.add_loadcell(
@@ -2661,6 +2733,10 @@ if __name__ == "__main__":
         # osl.log.info("[OSL] Loadcell: {}".format(osl.loadcell.fz))
 
         osl.run_tui()
+
+        # osl.knee.home(
+        #     homing_voltage=2000,
+        # )
 
         # osl.knee.set_mode("impedance")
         # osl.knee.set_impedance_gains()
