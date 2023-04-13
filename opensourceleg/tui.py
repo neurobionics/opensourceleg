@@ -185,7 +185,7 @@ class TUI:
 
     def add_knee(self, knee):
         self._knee = knee
-    
+
     def add_ankle(self, ankle):
         self._ankle = ankle
 
@@ -452,8 +452,12 @@ class TUI:
             category (str): Category of the radio button; only one radio button can be checked in a category.
                             Defaults to "Attributes".
             parent (str): Parent of the radio button. Defaults to "root".
+            callback (Callable): Callback function for the radio button. Defaults to None.
+            callback_args (list): Arguments for the callback function. Defaults to [].
             color (str): Color of the radio button. Defaults to COLORS.white.
             is_checked (bool): Is the radio button checked? Defaults to False.
+            row (int): Row of the radio button. Defaults to 0.
+            col (int): Column of the radio button. Defaults to 0.
         """
 
         _name = " ".join(name.split("_")).title()
@@ -611,10 +615,7 @@ class TUI:
 
         self._categories[category] = name
 
-    def set_active_joint(
-        self, 
-        **kwargs
-    ):
+    def set_active_joint(self, **kwargs):
         name = kwargs["name"]
         parent = kwargs["parent"]
 
@@ -622,7 +623,6 @@ class TUI:
 
         if "knee" in _name:
             self._joint = self._knee
-        
         elif "ankle" in _name:
             self._joint = self._ankle
 
@@ -667,7 +667,7 @@ class TUI:
     @property
     def loadcell(self):
         return self._loadcell
-    
+
     @property
     def attribute(self):
         return self._attribute
@@ -675,7 +675,7 @@ class TUI:
     @property
     def categories(self):
         return self._categories
-    
+
     @property
     def values(self):
         return self._values
@@ -683,11 +683,11 @@ class TUI:
     @property
     def dropdowns(self):
         return self._dropdowns
-    
+
     @property
     def control_modes(self):
         return self._modes
-    
+
     @property
     def is_running(self):
         return self._is_running

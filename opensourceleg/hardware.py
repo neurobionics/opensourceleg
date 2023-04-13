@@ -680,9 +680,6 @@ class DephyActpack(Device):
             ki (int): The integral gain
             kd (int): The derivative gain
             force (bool): Force the mode transition. Defaults to False.
-
-        Raises:
-            ValueError: If the mode is not POSITION and force is False
         """
         if self._mode != self._modes["position"]:
             self._log.warning(f"Cannot set position gains in mode {self._mode}")
@@ -706,9 +703,6 @@ class DephyActpack(Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
             force (bool): Force the mode transition. Defaults to False.
-
-        Raises:
-            ValueError: If the mode is not CURRENT and force is False
         """
         if self._mode != self._modes["current"]:
             self._log.warning(f"Cannot set current gains in mode {self._mode}")
@@ -735,9 +729,6 @@ class DephyActpack(Device):
             B (int): The damping constant
             ff (int): The feedforward gain
             force (bool): Force the mode transition. Defaults to False.
-
-        Raises:
-            ValueError: If the mode is not IMPEDANCE and force is False
         """
         if self._mode != self._modes["impedance"]:
             self._log.warning(f"Cannot set impedance gains in mode {self._mode}")
@@ -752,10 +743,6 @@ class DephyActpack(Device):
         Args:
             value (float): The voltage to set
             force (bool): Force the mode transition. Defaults to False.
-
-        Raises:
-            ValueError: If the mode is not VOLTAGE and force is False
-
         """
         if self._mode != self._modes["voltage"]:
             self._log.warning(f"Cannot set voltage in mode {self._mode}")
@@ -772,9 +759,6 @@ class DephyActpack(Device):
         Args:
             value (float): The current to set
             force (bool): Force the mode transition. Defaults to False.
-
-        Raises:
-            ValueError: If the mode is not CURRENT and force is False
         """
         if self._mode != self._modes["current"]:
             self._log.warning(f"Cannot set current in mode {self._mode}")
@@ -791,9 +775,6 @@ class DephyActpack(Device):
         Args:
             torque (float): The torque to set
             force (bool): Force the mode transition. Defaults to False.
-
-        Raises:
-            ValueError: If the mode is not CURRENT and force is False
         """
         if self._mode != self._modes["current"]:
             self._log.warning(f"Cannot set motor_torque in mode {self._mode}")
@@ -811,9 +792,6 @@ class DephyActpack(Device):
 
         Args:
             position (float): The position to set
-
-        Raises:
-            ValueError: If the mode is not POSITION or IMPEDANCE
         """
         if self._mode not in [self._modes["position"], self._modes["impedance"]]:
             self._log.warning(f"Cannot set motor position in mode {self._mode}")
