@@ -4,6 +4,7 @@ def hello(name: str) -> str:
 
     Args:
         name (str): Name to greet.
+
     Returns:
         str: greeting message
     """
