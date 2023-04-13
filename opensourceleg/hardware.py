@@ -22,7 +22,6 @@ from smbus2 import SMBus
 
 sys.path.append("../")
 
-from opensourceleg.tui import COLORS, TUI
 from opensourceleg.utilities import SoftRealtimeLoop
 
 # TODO: Support for TMotor driver with similar structure
@@ -1603,7 +1602,7 @@ class OpenSourceLeg:
 
         self._units: UnitsDefinition = DEFAULT_UNITS
 
-        self.tui: TUI = None
+        self.tui = None
 
     def __enter__(self):
 
@@ -1623,8 +1622,9 @@ class OpenSourceLeg:
         if self.has_ankle:
             self._ankle.stop()
 
-        if self.has_tui and self.tui.is_running:
-            self.tui.quit()
+        if self.has_tui:
+            if self.tui.is_running:
+                self.tui.quit()
 
     def __repr__(self) -> str:
         return f"OSL object with 0 joints"
@@ -1636,6 +1636,8 @@ class OpenSourceLeg:
         self,
         frequency: int = 30,
     ):
+        from opensourceleg.tui import TUI
+
         self._has_tui = True
         self.tui = TUI(frequency=frequency)
 
@@ -1745,6 +1747,8 @@ class OpenSourceLeg:
         self.tui.run()
 
     def initialize_tui(self):
+
+        from opensourceleg.tui import COLORS
 
         self.tui.add_group(
             name="left",

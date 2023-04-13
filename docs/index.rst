@@ -5,7 +5,7 @@
 
 Open-Source Leg
 ===============
-An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prosthesis.
+An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.
 
 .. toctree::
    :hidden:
