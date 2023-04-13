@@ -13,6 +13,6 @@
 [![License](https://img.shields.io/github/license/imsenthur/opensourceleg)](https://github.com/imsenthur/opensourceleg/blob/master/LICENSE)
 ![Coverage Report](assets/images/coverage.svg)
 
-An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.
+An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
 
-![OSL Banner](assets/images/banner.gif)
+<img src="assets/images/banner.gif" width="800" title="Open-Source Leg">
