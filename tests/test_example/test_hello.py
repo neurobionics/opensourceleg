@@ -1,4 +1,3 @@
-"""Tests for hello function."""
 import pytest
 
 from opensourceleg.example import hello
