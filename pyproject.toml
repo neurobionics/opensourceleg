@@ -42,7 +42,7 @@ smbus2 = "^0.4.2"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
-black = {version = "^22.3", allow-prereleases = true}
+black = {version = "^23.3", allow-prereleases = true}
 darglint = "^1.8.1"
 isort = {extras = ["colors"], version = "^5.10.1"}
 mypy = "^0.991"
