@@ -145,9 +145,9 @@ contourpy==1.0.7 ; python_version >= "3.9" and python_full_version < "4.0.0" \
 cycler==0.11.0 ; python_version >= "3.9" and python_full_version < "4.0.0" \
     --hash=sha256:3a27e95f763a428a739d2add979fa7494c912a32c17c4c38c4d5f082cad165a3 \
     --hash=sha256:9c87405839a19696e837b3b818fed3f5f69f16f1eec1a1ad77e043dcea9c772f
-docutils==0.19 ; python_version >= "3.9" and python_full_version < "4.0.0" \
-    --hash=sha256:33995a6753c30b7f577febfc2c50411fec6aac7f7ffeb7c4cfe5991072dcf9e6 \
-    --hash=sha256:5e1de4d849fee02c63b040a4a3fd567f4ab104defd8a5511fbbc24a8a017efbc
+docutils==0.18.1 ; python_version >= "3.9" and python_full_version < "4.0.0" \
+    --hash=sha256:23010f129180089fbcd3bc08cfefccb3b890b0050e1ca00c867036e9d161b98c \
+    --hash=sha256:679987caf361a7539d76e584cbeddc311e3aee937877c87346f31debc63e9d06
 flexsea==8.0.1 ; python_version >= "3.9" and python_full_version < "4.0.0" \
     --hash=sha256:6b728a7cd8c74b1184cea4dad13138f8e843a2f58d4f2291ff24f14ca0d0e7aa
 fonttools==4.39.2 ; python_version >= "3.9" and python_full_version < "4.0.0" \

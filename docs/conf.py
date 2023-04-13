@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath("../opensourceleg"))
 # -- Project information -----------------------------------------------------
 
 project = "Open-Source Leg"
-copyright = "2022, Open-source Leg"
+copyright = "2022, Open-Source Leg"
 author = "Senthur Raj Ayyappan"
 
 # The full version, including alpha/beta/rc tags
@@ -51,6 +51,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "alabaster"
+html_theme_options = {
+    "description": "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.",
+    "sidebar_width": "320px",
+    "page_width": "1040px",
+    "font_family": "Roboto, sans-serif",
+}
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
