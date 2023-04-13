@@ -1,8 +1,5 @@
 from typing import Callable
 
-import random
-
-import numpy as np
 import TermTk as ttk
 from attr import dataclass
 
