@@ -9,7 +9,7 @@ sys.path.append("../")
 from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
-from opensourceleg.state_machine import Idle, State, Transition
+from opensourceleg.state_machine import StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -56,6 +56,7 @@ class OpenSourceLeg:
         self._units: UnitsDefinition = DEFAULT_UNITS
 
         self.tui = None
+        self.state_machine = None
 
     def __enter__(self):
 
@@ -159,6 +160,11 @@ class OpenSourceLeg:
             loadcell_matrix=loadcell_matrix,
             logger=self.log,
         )
+
+    def add_state_machine(
+        self,
+    ):
+        self.state_machine = StateMachine()
 
     def update(
         self,
