@@ -164,7 +164,7 @@ class OpenSourceLeg:
     def add_state_machine(
         self,
     ):
-        self.state_machine = StateMachine()
+        self.state_machine = StateMachine(osl=self)
 
     def update(
         self,
@@ -1174,13 +1174,12 @@ class OpenSourceLeg:
     def has_tui(self):
         return self._has_tui
 
-
 if __name__ == "__main__":
-    osl = OpenSourceLeg(frequency=100)
+    osl = OpenSourceLeg(frequency=200)
 
     osl.add_joint(
         name="knee",
-        port="/dev/ttyACM6",
+        port="/dev/ttyACM0",
         baud_rate=230400,
         gear_ratio=41.4999,
     )
@@ -1189,22 +1188,7 @@ if __name__ == "__main__":
         dephy_mode=False,
     )
 
-    osl.add_tui()
-
     with osl:
-        # osl.loadcell.update()
-        # osl.log.info("[OSL] Loadcell: {}".format(osl.loadcell.fz))
-
-        osl.run_tui()
-
-        # osl.knee.home(
-        #     homing_voltage=2000,
-        # )
-
-        # osl.knee.set_mode("impedance")
-        # osl.knee.set_impedance_gains()
-
-        # osl.log.info("[OSL] Setting knee to pi rad.")
-        # osl.knee.set_output_position(np.deg2rad(30))
-
-        # time.sleep(3)
+        for t in osl.clock:
+            osl.loadcell.update()
+            osl.log.info("[OSL] Loadcell: {}".format(osl.loadcell.fz))

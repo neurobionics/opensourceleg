@@ -48,32 +48,12 @@ class State:
         self._exit_callbacks.append(callback)
 
     def start(self, data: Any):
-        print("Entering: ", self._name)
         for c in self._entry_callbacks:
             c(data)
 
     def stop(self, data: Any):
-        print("Exiting: ", self._name)
         for c in self._exit_callbacks:
             c(data)
-
-    def increase_theta(self, increment=45.5111):
-        self._theta = self._theta + increment
-
-    def decrease_theta(self, decrement=45.5111):
-        self._theta = self._theta - decrement
-
-    def increase_stiffness(self, increment=10):
-        self._k = self._k + increment
-
-    def decrease_stiffness(self, decrement=10):
-        self._k = self._k - decrement
-
-    def increase_damping(self, increment=10):
-        self._b = self._b + increment
-
-    def decrease_damping(self, decrement=10):
-        self._b = self._b - decrement
 
     @property
     def name(self):
@@ -192,7 +172,7 @@ class FromToTransition(Transition):
 
 
 class StateMachine:
-    def __init__(self) -> None:
+    def __init__(self, osl =  None) -> None:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
@@ -203,6 +183,8 @@ class StateMachine:
         self._exit_state = Idle()
         self.add_state(self._exit_state)
         self._exited = True
+
+        self._osl = osl      
 
     def add_state(self, state: State, initial_state: bool = False):
         if state in self._states:
@@ -243,7 +225,7 @@ class StateMachine:
 
         for transition in self._transitions:
             if transition.source_state == self._current_state:
-                self._current_state = transition(data)
+                self._current_state = transition(self._osl)
 
                 if isinstance(self._current_state, Idle) and not self._exited:
                     self._exited = True
@@ -255,7 +237,7 @@ class StateMachine:
                 break
 
         if not validity:
-            print("Event isn't valid at ", self._current_state)
+            self._osl.log.warn(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any):
         if not self._initial_state:
@@ -272,6 +254,12 @@ class StateMachine:
         self._current_state.stop(data)
         self._current_state = self._exit_state
         self._exited = True
+
+    def is_on(self) -> bool:
+        if self._current_state and self._current_state != self._exit_state:
+            return True
+        else:
+            return False
 
     @property
     def current_state(self):
