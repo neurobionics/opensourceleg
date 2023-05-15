@@ -1,26 +1,28 @@
 from osl import OpenSourceLeg
-from state_machine import State, Event
-import numpy as np
+from state_machine import Event, State
 
-BODY_WEIGHT = 60.0 # kg
-FZ_LSTANCE = -0.02 * BODY_WEIGHT
-FZ_ESWING = -0.01 * BODY_WEIGHT
+BODY_WEIGHT = 60.0  # kg
+FZ_LSTANCE = -0.0167 * BODY_WEIGHT
+FZ_ESWING = -0.00167 * BODY_WEIGHT
 FZ_ESTANCE = -0.02 * BODY_WEIGHT
-VELOCITY_LSWING = np.deg2rad(0.135)
-POSITION_LSWING = np.deg2rad(60)
-POSITION_ESTANCE = np.deg2rad(30)
+VELOCITY_LSWING = 0.135  # rad/sec
+POSITION_LSWING = 60  # deg
+POSITION_ESTANCE = 30  # deg
+
 
 def estance_to_lstance(osl: OpenSourceLeg):
-    if osl.loadcell.fz < -1.0:
+    if osl.loadcell.fz < FZ_LSTANCE:
         return True
     else:
         return False
 
+
 def lstance_to_eswing(osl: OpenSourceLeg):
-    if osl.loadcell.fz > -0.1:
+    if osl.loadcell.fz > FZ_ESWING:
         return True
     else:
         return False
+
 
 def eswing_to_lswing(osl: OpenSourceLeg):
     if (
@@ -31,22 +33,25 @@ def eswing_to_lswing(osl: OpenSourceLeg):
     else:
         return False
 
+
 def eswing_to_estance(osl: OpenSourceLeg):
     if osl.loadcell.fz < FZ_ESTANCE:
         return True
     else:
         False
 
+
 def lswing_to_estance(osl: OpenSourceLeg):
-    if (
-        osl.loadcell.fz < FZ_ESTANCE or osl.knee.output_position < POSITION_ESTANCE
-    ):
+    if osl.loadcell.fz < FZ_ESTANCE or osl.knee.output_position < POSITION_ESTANCE:
         return True
     else:
         return False
 
+
 def main():
     osl = OpenSourceLeg(frequency=200)
+    osl.units["position"] = "deg"
+    osl.log.info(f"Units: {osl.units}")
 
     osl.add_joint(
         name="knee",
@@ -62,40 +67,39 @@ def main():
     osl.add_state_machine()
 
     early_stance = State(
-        "EStance", 
-        np.deg2rad(5), 
-        130, 
+        "EStance",
+        5,
+        130,
         100,
     )
 
     late_stance = State(
-        "LStance", 
-        np.deg2rad(5), 
-        175, 
+        "LStance",
+        5,
+        175,
         0,
     )
 
     early_swing = State(
-        "ESwing", 
-        np.deg2rad(62), 
-        40, 
+        "ESwing",
+        62,
+        40,
         40,
     )
 
     late_swing = State(
-        "LSwing", 
-        np.deg2rad(30), 
-        60, 
+        "LSwing",
+        30,
+        60,
         200,
     )
-
 
     foot_flat = Event("foot_flat")
     heel_off = Event("heel_off")
     toe_off = Event("toe_off")
     pre_heel_strike = Event("pre_heel_strike")
     heel_strike = Event("heel_strike")
-    misc = Event("misc")   
+    misc = Event("misc")
 
     osl.state_machine.add_state(early_stance, initial_state=True)
     osl.state_machine.add_state(late_stance)
@@ -105,56 +109,57 @@ def main():
     osl.state_machine.add_event(foot_flat)
     osl.state_machine.add_event(heel_off)
     osl.state_machine.add_event(toe_off)
-    osl.state_machine.add_event(pre_heel_strike) 
+    osl.state_machine.add_event(pre_heel_strike)
     osl.state_machine.add_event(heel_strike)
     osl.state_machine.add_event(misc)
 
     osl.state_machine.add_transition(
-        early_stance, 
-        late_stance, 
-        foot_flat, 
+        early_stance,
+        late_stance,
+        foot_flat,
         estance_to_lstance,
     )
 
     osl.state_machine.add_transition(
-        late_stance, 
-        early_swing, 
-        heel_off, 
+        late_stance,
+        early_swing,
+        heel_off,
         lstance_to_eswing,
     )
-    
+
     osl.state_machine.add_transition(
-        early_swing, 
-        late_swing, 
-        toe_off, 
+        early_swing,
+        late_swing,
+        toe_off,
         eswing_to_lswing,
     )
 
     osl.state_machine.add_transition(
-        late_swing, 
-        early_stance, 
-        heel_strike, 
+        late_swing,
+        early_stance,
+        heel_strike,
         lswing_to_estance,
     )
 
     with osl:
-        osl.state_machine.start(data=None)
+        osl.state_machine.start()
         osl.knee.set_mode("impedance")
-        osl.knee.set_impedance_gains() 
+        osl.knee.set_impedance_gains()
 
         for t in osl.clock:
             osl.update(current_limit=8000)
-            osl.state_machine.on_event([t])
-            osl.log.info("[OSL] State: {}".format(osl.state_machine.current_state.name))
+            osl.state_machine.update()
+            osl.log.info(f"[OSL] State: {osl.state_machine.current_state.name}")
 
             osl.knee.set_impedance_gains(
-                K = osl.state_machine.current_state.stiffness,
-                B = osl.state_machine.current_state.damping,
+                K=osl.state_machine.current_state.stiffness,
+                B=osl.state_machine.current_state.damping,
             )
 
-            osl.knee.set_output_position(osl.state_machine.current_state.equilibrium_angle)
+            osl.knee.set_output_position(
+                osl.state_machine.current_state.equilibrium_angle
+            )
 
 
 if __name__ == "__main__":
     main()
-    

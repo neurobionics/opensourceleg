@@ -174,17 +174,17 @@ class OpenSourceLeg:
             self._knee.update()
 
             if self.knee.motor_current > current_limit:
-                self.knee.set_mode("voltage")
-                self.knee.set_voltage(0, force=True)
-                time.sleep(0.1)
+                self.log.warn("[KNEE] Current limit reached. Stopping motor.")
+                self.__exit__()
+                exit()
 
         if self.has_ankle:
             self._ankle.update()
 
             if self.ankle.motor_current > current_limit:
-                self.ankle.set_mode("voltage")
-                self.ankle.set_voltage(0, force=True)
-                time.sleep(0.1)
+                self.log.warn("[ANKLE] Current limit () reached. Stopping motor.")
+                self.__exit__()
+                exit()
 
         if self.has_loadcell:
             self._loadcell.update()
@@ -1174,6 +1174,7 @@ class OpenSourceLeg:
     def has_tui(self):
         return self._has_tui
 
+
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=200)
 
@@ -1188,7 +1189,10 @@ if __name__ == "__main__":
         dephy_mode=False,
     )
 
+    osl.units["position"] = "deg"
+    osl.log.info(f"Units: {osl.units}")
+
     with osl:
         for t in osl.clock:
             osl.loadcell.update()
-            osl.log.info("[OSL] Loadcell: {}".format(osl.loadcell.fz))
+            osl.log.info(f"[OSL] Loadcell: {osl.loadcell.fz}")

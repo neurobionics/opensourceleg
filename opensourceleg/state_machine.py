@@ -172,7 +172,7 @@ class FromToTransition(Transition):
 
 
 class StateMachine:
-    def __init__(self, osl =  None) -> None:
+    def __init__(self, osl=None) -> None:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
@@ -184,7 +184,7 @@ class StateMachine:
         self.add_state(self._exit_state)
         self._exited = True
 
-        self._osl = osl      
+        self._osl = osl
 
     def add_state(self, state: State, initial_state: bool = False):
         if state in self._states:
@@ -217,7 +217,7 @@ class StateMachine:
 
         return transition
 
-    def on_event(self, data: Any = None):
+    def update(self, data: Any = None):
         validity = False
 
         if not (self._initial_state or self._current_state):
@@ -239,7 +239,7 @@ class StateMachine:
         if not validity:
             self._osl.log.warn(f"Event isn't valid at {self._current_state.name}")
 
-    def start(self, data: Any):
+    def start(self, data: Any = None):
         if not self._initial_state:
             raise ValueError("Initial state not set.")
 
@@ -247,7 +247,7 @@ class StateMachine:
         self._exited = False
         self._current_state.start(data)
 
-    def stop(self, data: Any):
+    def stop(self, data: Any = None):
         if not (self._initial_state or self._current_state):
             raise ValueError("OSL isn't active.")
 
