@@ -317,6 +317,7 @@ class SaturatingRamp:
         self.value = min(max(self.value, 0), 1)
         return self.value
 
+
 def get_active_ports():
     """
     Lists active serial ports.
