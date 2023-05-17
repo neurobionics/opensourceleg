@@ -55,8 +55,6 @@ def main():
 
     osl.add_joint(
         name="knee",
-        port="/dev/ttyACM0",
-        baud_rate=230400,
         gear_ratio=41.4999,
     )
 
@@ -118,8 +116,10 @@ def main():
         lswing_to_estance,
     )
 
+    osl.add_tui()
+
     with osl:
-        osl.run(set_state_machine_parameters=True)
+        osl.run(set_state_machine_parameters=False)
 
 
 if __name__ == "__main__":

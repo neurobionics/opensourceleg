@@ -241,6 +241,7 @@ class OpenSourceLeg:
     def run(self, set_state_machine_parameters: bool = False):
 
         self._set_state_machine_parameters = set_state_machine_parameters
+        self.update()
 
         if not self.has_tui:
             self.update()
