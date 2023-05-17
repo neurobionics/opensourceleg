@@ -9,7 +9,7 @@ sys.path.append("../")
 from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
-from opensourceleg.state_machine import StateMachine
+from opensourceleg.state_machine import State, StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -34,7 +34,12 @@ class OpenSourceLeg:
             OpenSourceLeg()
         return OpenSourceLeg._instance
 
-    def __init__(self, frequency: int = 200, file_name: str = "./osl.log") -> None:
+    def __init__(
+        self,
+        frequency: int = 200,
+        current_limit: float = 8000,
+        file_name: str = "./osl.log",
+    ) -> None:
 
         self._frequency: int = frequency
 
@@ -42,6 +47,10 @@ class OpenSourceLeg:
         self._has_ankle: bool = False
         self._has_loadcell: bool = False
         self._has_tui: bool = False
+        self._has_sm: bool = False
+
+        self._current_limit: float = current_limit
+        self._set_state_machine_parameters: bool = False
 
         self._knee: Joint = None
         self._ankle: Joint = None
@@ -69,7 +78,21 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.initialize()
 
+        if self.has_state_machine:
+            self.state_machine.start()
+
+            if self.has_knee:
+                self.knee.set_mode("impedance")
+                self.knee.set_impedance_gains()
+
+            if self.has_ankle:
+                self.ankle.set_mode("impedance")
+                self.ankle.set_impedance_gains()
+
     def __exit__(self, type, value, tb):
+        if self.has_state_machine:
+            self.state_machine.stop()
+
         if self.has_knee:
             self._knee.stop()
 
@@ -81,24 +104,27 @@ class OpenSourceLeg:
                 self.tui.quit()
 
     def __repr__(self) -> str:
-        return f"OSL object with 0 joints"
-
-    def get_attribute(self, object, attribute: str):
-        return getattr(object, attribute)
+        return f"OSL object. Frequency: {self._frequency} Hz"
 
     def add_tui(
         self,
-        frequency: int = 30,
+        configuration: str = "state_machine",
+        layout: str = "vertical",
     ):
         from opensourceleg.tui import TUI
 
         self._has_tui = True
-        self.tui = TUI(frequency=frequency)
+        self.tui = TUI(
+            title="www.opensourceleg.com", frequency=self._frequency, layout=layout
+        )
 
-        if self.has_loadcell:
-            self.tui.set_loadcell(self._loadcell)
-
-        self.initialize_tui()
+        if configuration == "state_machine":
+            if self.has_state_machine:
+                self.initialize_sm_tui()
+            else:
+                self.log.warn(
+                    "State machine not initialized. Please initialize the state machine before adding the TUI."
+                )
 
     def add_joint(
         self,
@@ -165,15 +191,15 @@ class OpenSourceLeg:
         self,
     ):
         self.state_machine = StateMachine(osl=self)
+        self._has_sm = True
 
     def update(
         self,
-        current_limit: int = CURRENT_LIMIT,
     ):
         if self.has_knee:
             self._knee.update()
 
-            if self.knee.motor_current > current_limit:
+            if self.knee.motor_current > self.current_limit:
                 self.log.warn("[KNEE] Current limit reached. Stopping motor.")
                 self.__exit__()
                 exit()
@@ -181,7 +207,7 @@ class OpenSourceLeg:
         if self.has_ankle:
             self._ankle.update()
 
-            if self.ankle.motor_current > current_limit:
+            if self.ankle.motor_current > self.current_limit:
                 self.log.warn("[ANKLE] Current limit () reached. Stopping motor.")
                 self.__exit__()
                 exit()
@@ -189,837 +215,114 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.update()
 
-    def run_tui(self):
-        if self.has_knee:
-            self.tui.add_knee(self.knee)
+        if self.has_state_machine:
+            self.state_machine.update()
 
-            if self.tui.joint is None:
-                self.tui.set_active_joint(name="knee", parent="joint")
+            if self._set_state_machine_parameters:
+                if self.has_knee:
+                    self.knee.set_impedance_gains(
+                        K=self.state_machine.current_state.stiffness,
+                        B=self.state_machine.current_state.damping,
+                    )
 
-        if self.has_ankle:
-            self.tui.add_ankle(self.ankle)
+                if self.has_ankle:
+                    self.knee.set_output_position(
+                        self.state_machine.current_state.equilibrium_angle
+                    )
 
-            if self.tui.joint is None:
-                self.tui.set_active_joint(name="ankle", parent="joint")
+    def run(self, set_state_machine_parameters: bool = False):
 
-        self.tui.add_update_callback(self.update)
-        self.tui.run()
+        self._set_state_machine_parameters = set_state_machine_parameters
 
-    def initialize_tui(self):
+        if not self.has_tui:
+            self.update()
+
+        else:
+            self.tui.add_update_callback(self.update)
+            self.tui.run()
+
+    def initialize_sm_tui(self):
 
         from opensourceleg.tui import COLORS
 
-        self.tui.add_group(
-            name="left",
-            parent="root",
-            layout="vertical",
-            border=True,
-        )
-
-        self.tui.add_group(
-            name="control_panel",
-            parent="root",
-            layout="vertical",
+        self.tui.add_panel(
+            name="top",
+            layout="horizontal",
             border=False,
-            show_title=False,
         )
 
-        self.tui.add_group(
-            name="plot",
-            parent="left",
-            layout="vertical",
-            border=True,
+        self.tui.add_panel(
+            name="bottom",
+            layout="horizontal",
+            border=False,
+        )
+
+        self.tui.add_panel(
+            name="fz",
+            parent="top",
             show_title=True,
         )
 
-        self.tui.add_group(
-            name="plot_attributes",
-            parent="left",
-            layout="vertical",
-            border=False,
-            show_title=False,
+        self.tui.add_panel(
+            name="joint_position",
+            parent="top",
+            show_title=True,
         )
 
         self.tui.add_plot(
-            parent="plot",
-            color=COLORS.white,
+            name="fz_plot",
+            parent="fz",
+            object=self.loadcell,
+            attribute="fz",
         )
 
-        self.tui.add_group(
-            name="joint",
-            parent="plot_attributes",
-            layout="grid",
-            border=True,
-            show_title=True,
+        self.tui.add_plot(
+            name="joint_position_plot",
+            parent="joint_position",
+            object=self.knee,
+            attribute="output_position",
         )
 
-        self.tui.add_group(
-            name="attributes",
-            parent="plot_attributes",
-            layout="grid",
-            border=True,
-            show_title=True,
-        )
-
-        # ------------ RADIO BUTTONS ------------ #
-
-        self.tui.add_radio_button(
-            name="knee",
-            category="joint",
-            parent="joint",
-            callback=self.tui.set_active_joint,
-            color=COLORS.white,
-            is_checked=True,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_radio_button(
-            name="ankle",
-            category="joint",
-            parent="joint",
-            callback=self.tui.set_active_joint,
-            color=COLORS.white,
-            is_checked=False,
-            row=0,
-            col=1,
-        )
-
-        self.tui.add_radio_button(
-            name="motor_position",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=True,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_radio_button(
-            name="motor_velocity",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=0,
-            col=1,
-        )
-
-        self.tui.add_radio_button(
-            name="motor_current",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=0,
-            col=2,
-        )
-
-        self.tui.add_radio_button(
-            name="joint_position",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=1,
-            col=0,
-        )
-
-        self.tui.add_radio_button(
-            name="joint_velocity",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=1,
-            col=1,
-        )
-
-        self.tui.add_radio_button(
-            name="joint_torque",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=1,
-            col=2,
-        )
-
-        self.tui.add_radio_button(
-            name="loadcell_Fx",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_radio_button(
-            name="loadcell_fy",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=2,
-            col=1,
-        )
-
-        self.tui.add_radio_button(
-            name="loadcell_fz",
-            category="attributes",
-            parent="attributes",
-            callback=self.set_tui_attribute,
-            color=COLORS.white,
-            is_checked=False,
-            row=2,
-            col=2,
-        )
-
-        # ------------ CONTROL PANEL ------------ #
-
-        self.tui.add_group(
-            name="joint_control",
-            parent="control_panel",
+        self.tui.add_state_visualizer(
+            name="state_machine",
+            parent="bottom",
+            states=self.state_machine.states,
+            object=self.state_machine,
+            attribute="current_state_name",
             layout="horizontal",
-            border=False,
-            show_title=False,
         )
-
-        self.tui.add_group(
-            name="knee",
-            parent="joint_control",
-            layout="grid",
-            border=True,
-            show_title=True,
-        )
-
-        self.tui.add_group(
-            name="ankle",
-            parent="joint_control",
-            layout="grid",
-            border=True,
-            show_title=True,
-        )
-
-        self.tui.add_group(
-            name="utility",
-            parent="control_panel",
-            layout="grid",
-            border=False,
-            show_title=False,
-        )
-
-        self.tui.add_group(
-            name="estop",
-            parent="control_panel",
-            layout="grid",
-            border=False,
-            show_title=False,
-        )
-
-        # ------------ UTILITY BUTTONS ------------ #
 
         self.tui.add_button(
             name="emergency_stop",
-            parent="estop",
+            parent="bottom",
             callback=self.estop,
             color=COLORS.maize,
             border=True,
         )
 
-        self.tui.add_button(
-            name="safety_reset",
-            parent="utility",
-            callback=self.reset,
-            color=COLORS.white,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_group(
-            name="calibrate",
-            parent="utility",
-            layout="grid",
-            border=True,
-            show_title=True,
-            row=0,
-            col=1,
-        )
-
-        self.tui.add_button(
-            name="encoders",
-            parent="calibrate",
-            # callback=self.calibrate_encoders,
-            color=COLORS.white,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_button(
-            name="loadcell",
-            parent="calibrate",
-            # callback=self.calibrate_loadcell,
-            color=COLORS.white,
-            row=1,
-            col=0,
-        )
-
-        # ------------ KNEE BUTTONS ------------ #
-
-        self.tui.add_button(
-            name="home",
-            parent="knee",
-            callback=self.home,
-            color=COLORS.white,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_group(
-            name="knee_data",
-            parent="knee",
-            layout="grid",
-            border=True,
-            show_title=False,
-            row=1,
-            col=0,
-        )
-
-        # ------------ KNEE VALUES ------------ #
-
-        self.tui.add_text(
-            name="Voltage (mV): ",
-            parent="knee_data",
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="voltage",
-            parent="knee_data",
-            default=0,
-            callback=self.set_motor_voltage_sp,
-            row=0,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Position (deg): ",
-            parent="knee_data",
-            row=1,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="position",
-            parent="knee_data",
-            default=0,
-            callback=self.set_motor_position_sp,
-            row=1,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Current (mA): ",
-            parent="knee_data",
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="current",
-            parent="knee_data",
-            default=0,
-            callback=self.set_motor_current_sp,
-            row=2,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name=" ",
-            parent="knee_data",
-            row=3,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name="Stiffness: ",
-            parent="knee_data",
-            row=4,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="stiffness",
-            parent="knee_data",
-            default=200,
-            callback=self.set_stiffness_sp,
-            row=4,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Damping: ",
-            parent="knee_data",
-            row=5,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="damping",
-            parent="knee_data",
-            default=400,
-            callback=self.set_damping_sp,
-            row=5,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Equilibrium Position (deg): ",
-            parent="knee_data",
-            row=6,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="equilibrium_position",
-            parent="knee_data",
-            default=0,
-            callback=self.set_equilibrium_position_sp,
-            row=6,
-            col=1,
-        )
-
-        self.tui.add_group(
-            name="mode",
-            parent="knee",
-            layout="grid",
-            border=True,
-            show_title=True,
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name=" ",
-            parent="mode",
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name=" Updates only the setpoints that are ",
-            parent="mode",
-            color=COLORS.turquoise,
-            row=3,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name=" relevant to the selected control mode.",
-            parent="mode",
-            color=COLORS.turquoise,
-            row=4,
-            col=0,
-        )
-
-        self.tui.add_group(
-            name="kupdater",
-            parent="knee",
-            layout="grid",
-            border=False,
-            show_title=False,
-            row=3,
-            col=0,
-        )
-
-        self.tui.add_button(
-            name="stop",
-            parent="kupdater",
-            callback=self.stop_joint,
-            color=COLORS.white,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_button(
-            name="update",
-            parent="kupdater",
-            callback=self.update_joint,
-            color=COLORS.white,
-            row=0,
-            col=1,
-        )
-
-        # ------------ KNEE DROPDOWN ------------ #
-
-        self.tui.add_dropdown(
-            name="knee",
-            parent="mode",
-            options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
-            callback=self.set_control_mode_sp,
-            row=1,
-            col=0,
-        )
-
-        # ------------ ANKLE BUTTONS ------------ #
-
-        self.tui.add_button(
-            name="home",
-            parent="ankle",
-            callback=self.home,
-            color=COLORS.white,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_group(
-            name="ankle_data",
-            parent="ankle",
-            layout="grid",
-            border=True,
-            show_title=False,
-            row=1,
-            col=0,
-        )
-
-        # ------------ ANKLE VALUES ------------ #
-
-        self.tui.add_text(
-            name="Voltage (mV): ",
-            parent="ankle_data",
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="voltage",
-            parent="ankle_data",
-            default=0,
-            callback=self.set_motor_voltage_sp,
-            row=0,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Position (deg): ",
-            parent="ankle_data",
-            row=1,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="position",
-            parent="ankle_data",
-            default=0,
-            callback=self.set_motor_position_sp,
-            row=1,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Current (mA): ",
-            parent="ankle_data",
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="current",
-            parent="ankle_data",
-            default=0,
-            callback=self.set_motor_current_sp,
-            row=2,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name=" ",
-            parent="ankle_data",
-            row=3,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name="Stiffness: ",
-            parent="ankle_data",
-            row=4,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="stiffness",
-            parent="ankle_data",
-            default=200,
-            callback=self.set_stiffness_sp,
-            row=4,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Damping: ",
-            parent="ankle_data",
-            row=5,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="damping",
-            parent="ankle_data",
-            default=400,
-            callback=self.set_damping_sp,
-            row=5,
-            col=1,
-        )
-
-        self.tui.add_text(
-            name="Equilibrium Position (deg): ",
-            parent="ankle_data",
-            row=6,
-            col=0,
-        )
-
-        self.tui.add_value(
-            name="equilibrium_position",
-            parent="ankle_data",
-            default=0,
-            callback=self.set_equilibrium_position_sp,
-            row=6,
-            col=1,
-        )
-
-        self.tui.add_group(
-            name="mode",
-            parent="ankle",
-            layout="grid",
-            border=True,
-            show_title=True,
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name=" ",
-            parent="mode",
-            row=2,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name=" Updates only the setpoints that are ",
-            parent="mode",
-            color=COLORS.turquoise,
-            row=3,
-            col=0,
-        )
-
-        self.tui.add_text(
-            name=" relevant to the selected control mode.",
-            parent="mode",
-            color=COLORS.turquoise,
-            row=4,
-            col=0,
-        )
-
-        self.tui.add_group(
-            name="aupdater",
-            parent="ankle",
-            layout="grid",
-            border=False,
-            show_title=False,
-            row=3,
-            col=0,
-        )
-
-        self.tui.add_button(
-            name="stop",
-            parent="aupdater",
-            callback=self.stop_joint,
-            color=COLORS.white,
-            row=0,
-            col=0,
-        )
-
-        self.tui.add_button(
-            name="update",
-            parent="aupdater",
-            callback=self.update_joint,
-            color=COLORS.white,
-            row=0,
-            col=1,
-        )
-
-        # ------------ ANKLE DROPDOWN ------------ #
-
-        self.tui.add_dropdown(
-            name="ankle",
-            parent="mode",
-            options=["Voltage (V)", "Position (P)", "Current (I)", "Impedance (Z)"],
-            callback=self.set_control_mode_sp,
-        )
-
-    def set_motor_current_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting motor current setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        value = int(self.tui.values[parent + "_" + name].text())
-
-        _name = parent + name
-
-        if "knee" in _name and self.has_knee:
-            self.knee._motor_current_sp = value
-            self.log.debug("[OSL] Setting knee motor current setpoint to %s." % value)
-
-        elif "ankle" in name and self.has_ankle:
-            self.ankle._motor_current_sp = value
-
-    def set_motor_position_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting motor position setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        _value = int(self.tui.values[parent + "_" + name].text())
-
-        value = np.deg2rad(_value)
-        _name = parent + name
-
-        if "knee" in _name and self.has_knee:
-            self.knee._motor_position_sp = value
-            self.log.debug("[OSL] Setting knee motor position setpoint to %s." % value)
-
-        elif "ankle" in name and self.has_ankle:
-            self.ankle._motor_position_sp = value
-
-    def set_motor_voltage_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting motor voltage setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        value = int(self.tui.values[parent + "_" + name].text())
-
-        _name = parent + name
-
-        if "knee" in _name and self.has_knee:
-            self.knee._motor_voltage_sp = value
-            self.log.debug("[OSL] Setting knee motor voltage setpoint to %s." % value)
-
-        elif "ankle" in name and self.has_ankle:
-            self.ankle._motor_voltage_sp = value
-
-    def set_stiffness_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting stiffness setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        value = int(self.tui.values[parent + "_" + name].text())
-
-        _name = parent + name
-
-        if "knee" in _name and self.has_knee:
-            self.knee._stiffness_sp = value
-            self.log.debug("[OSL] Setting knee stiffness setpoint to %s." % value)
-
-        elif "ankle" in name and self.has_ankle:
-            self.ankle._stiffness_sp = value
-
-    def set_damping_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting damping setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        value = int(self.tui.values[parent + "_" + name].text())
-
-        _name = parent + name
-
-        if "knee" in _name and self.has_knee:
-            self.knee._damping_sp = value
-            self.log.debug("[OSL] Setting knee damping setpoint to %s." % value)
-
-        elif "ankle" in name and self.has_ankle:
-            self.ankle._damping_sp = value
-
-    def set_equilibrium_position_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting equilibrium position setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        _value = int(self.tui.values[parent + "_" + name].text())
-
-        value = np.deg2rad(_value)
-
-        _name = parent + name
-
-        if "knee" in _name and self.has_knee:
-            self.knee._equilibrium_position_sp = value
-            self.log.debug(
-                "[OSL] Setting knee equilibrium position setpoint to %s." % value
-            )
-
-        elif "ankle" in name and self.has_ankle:
-            self.ankle._equilibrium_position_sp = value
-
-    def set_control_mode_sp(self, **kwargs):
-        self.log.debug("[OSL] Setting control mode setpoint.")
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        _mode_id = self.tui.dropdowns[parent + "_" + name].currentIndex()
-        _name = (parent + name).lower()
-
-        if "knee" in _name and self.has_knee:
-            self.knee._control_mode_sp = self.tui.control_modes[_mode_id]
-            self.log.debug(
-                "[OSL] Setting knee control mode setpoint to %s."
-                % self.tui.control_modes[_mode_id]
-            )
-
-        elif "ankle" in _name and self.has_ankle:
-            self.ankle._control_mode_sp = self.tui.control_modes[_mode_id]
-            self.log.debug(
-                "[OSL] Setting ankle control mode setpoint to %s."
-                % self.tui.control_modes[_mode_id]
-            )
-
     def estop(self, **kwargs):
         self.log.debug("[OSL] Emergency stop activated.")
-        self.tui.quit()
 
-    def set_tui_attribute(self, **kwargs):
-        name = kwargs["name"]
-        self.tui.set_active_attribute(name)
+        if self.has_tui:
+            self.tui.quit()
 
-    def home(self, **kwargs):
-        name = kwargs["name"]
-        parent = kwargs["parent"]
+        self.__exit__(None, None, None)
 
-        _name = (parent + name).lower()
-
-        if "knee" in _name:
+    def home(self):
+        if self.has_knee:
             self.log.debug("[OSL] Homing knee joint.")
-            if self.has_knee:
-                self.knee.home()
+            self.knee.home()
 
-        elif "ankle" in _name:
+        if self.has_ankle:
             self.log.debug("[OSL] Homing ankle joint.")
-            if self.has_ankle:
-                self.ankle.home()
+            self.ankle.home()
 
-    def calibrate_loadcell(self, **kwargs):
+    def calibrate_loadcell(self):
         self.log.debug("[OSL] Calibrating loadcell.")
         if self.has_loadcell:
             self.loadcell.reset()
 
-    def calibrate_encoders(self, **kwargs):
+    def calibrate_encoders(self):
         self.log.debug("[OSL] Calibrating encoders.")
 
         if self.has_knee:
@@ -1028,7 +331,7 @@ class OpenSourceLeg:
         if self.has_ankle:
             self.ankle.make_encoder_map()
 
-    def reset(self, **kwargs):
+    def reset(self):
         self.log.debug("[OSL] Resetting OSL.")
 
         if self.has_knee:
@@ -1042,92 +345,6 @@ class OpenSourceLeg:
             self.ankle.set_voltage(0, force=True)
 
             time.sleep(0.1)
-
-    def update_joint(self, **kwargs):
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-
-        _name = (parent + name).lower()
-
-        if "kupdater" in _name:
-            self.log.debug("[OSL] Updating knee joint.")
-
-            if self.has_knee:
-
-                if self.knee.control_mode_sp == "voltage":
-                    self.knee.set_mode(self.knee.control_mode_sp)
-                    self.knee.set_voltage(self.knee.motor_voltage_sp, force=True)
-
-                elif self.knee.control_mode_sp == "current":
-                    self.knee.set_mode(self.knee.control_mode_sp)
-                    self.knee.set_current_gains()
-                    self.knee.set_current(self.knee.motor_current_sp, force=True)
-
-                elif self.knee.control_mode_sp == "position":
-                    self.knee.set_mode(self.knee.control_mode_sp)
-                    self.knee.set_position_gains()
-                    self.knee.set_output_position(self.knee.motor_position_sp)
-
-                else:
-                    self.knee.set_mode(self.knee.control_mode_sp)
-
-                    self.knee.set_impedance_gains(
-                        K=self.knee.stiffness_sp,
-                        B=self.knee.damping_sp,
-                    )
-
-                    self.knee.set_output_position(self.knee.equilibirum_position_sp)
-
-        elif "aupdater" in _name:
-            self.log.debug("[OSL] Updating ankle joint.")
-
-            if self.has_ankle:
-
-                if self.ankle.control_mode_sp == "voltage":
-                    self.ankle.set_mode(self.ankle.control_mode_sp)
-                    self.ankle.set_voltage(self.ankle.motor_voltage_sp, force=True)
-
-                elif self.ankle.control_mode_sp == "current":
-                    self.ankle.set_mode(self.ankle.control_mode_sp)
-                    self.ankle.set_current_gains()
-                    self.ankle.set_current(self.ankle.motor_current_sp, force=True)
-
-                elif self.ankle.control_mode_sp == "position":
-                    self.ankle.set_mode(self.ankle.control_mode_sp)
-                    self.ankle.set_position_gains()
-                    self.ankle.set_output_position(self.ankle.motor_position_sp)
-
-                else:
-                    self.ankle.set_mode(self.ankle.control_mode_sp)
-
-                    self.ankle.set_impedance_gains(
-                        K=self.ankle.stiffness_sp,
-                        B=self.ankle.damping_sp,
-                    )
-
-                    self.ankle.set_output_position(self.ankle.equilibirum_position_sp)
-
-    def stop_joint(self, **kwargs):
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-
-        _name = (parent + name).lower()
-
-        if "kupdater" in _name:
-            self.log.debug("[OSL] Stopping knee joint.")
-            if self.has_knee:
-                self.knee.set_mode("voltage")
-                self.knee.set_voltage(0, force=True)
-
-                time.sleep(0.1)
-
-        elif "aupdater" in _name:
-            self.log.debug("[OSL] Stopping ankle joint.")
-            if self.has_ankle:
-                self.ankle.set_mode("voltage")
-                self.ankle.set_voltage(0, force=True)
-
-                time.sleep(0.1)
 
     @property
     def knee(self):
@@ -1151,6 +368,10 @@ class OpenSourceLeg:
             self.log.warning("[OSL] Loadcell is not connected.")
 
     @property
+    def current_limit(self):
+        return self._current_limit
+
+    @property
     def units(self):
         return self._units
 
@@ -1167,6 +388,10 @@ class OpenSourceLeg:
         return self._has_loadcell
 
     @property
+    def has_state_machine(self):
+        return self._has_sm
+
+    @property
     def loadcell(self):
         return self._loadcell
 
@@ -1178,21 +403,9 @@ class OpenSourceLeg:
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=200)
 
-    osl.add_joint(
-        name="knee",
-        port="/dev/ttyACM0",
-        baud_rate=230400,
-        gear_ratio=41.4999,
-    )
-
-    osl.add_loadcell(
-        dephy_mode=False,
-    )
-
     osl.units["position"] = "deg"
-    osl.log.info(f"Units: {osl.units}")
+    osl.add_state_machine()
+    osl.add_tui()
 
     with osl:
-        for t in osl.clock:
-            osl.loadcell.update()
-            osl.log.info(f"[OSL] Loadcell: {osl.loadcell.fz}")
+        osl.run(set_state_machine_parameters=True)

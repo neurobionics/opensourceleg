@@ -121,6 +121,7 @@ class TUI:
                         self._state_vizualisers[_sv].object,
                         self._state_vizualisers[_sv].attribute,
                     )
+
                     self._state_vizualisers[_sv].states[_current_state].setDisabled(
                         False
                     )

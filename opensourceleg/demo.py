@@ -1,5 +1,5 @@
-from osl import OpenSourceLeg
-from state_machine import Event, State
+from opensourceleg.osl import OpenSourceLeg
+from opensourceleg.state_machine import Event, State
 
 BODY_WEIGHT = 60.0  # kg
 FZ_LSTANCE = -0.0167 * BODY_WEIGHT
@@ -66,33 +66,10 @@ def main():
 
     osl.add_state_machine()
 
-    early_stance = State(
-        "EStance",
-        5,
-        130,
-        100,
-    )
-
-    late_stance = State(
-        "LStance",
-        5,
-        175,
-        0,
-    )
-
-    early_swing = State(
-        "ESwing",
-        62,
-        40,
-        40,
-    )
-
-    late_swing = State(
-        "LSwing",
-        30,
-        60,
-        200,
-    )
+    early_stance = State("e_stance", 5, 130, 100)
+    late_stance = State("l_stance", 5, 175, 0)
+    early_swing = State("e_swing", 62, 40, 40)
+    late_swing = State("l_swing", 30, 60, 200)
 
     foot_flat = Event("foot_flat")
     heel_off = Event("heel_off")
@@ -142,23 +119,7 @@ def main():
     )
 
     with osl:
-        osl.state_machine.start()
-        osl.knee.set_mode("impedance")
-        osl.knee.set_impedance_gains()
-
-        for t in osl.clock:
-            osl.update(current_limit=8000)
-            osl.state_machine.update()
-            osl.log.info(f"[OSL] State: {osl.state_machine.current_state.name}")
-
-            osl.knee.set_impedance_gains(
-                K=osl.state_machine.current_state.stiffness,
-                B=osl.state_machine.current_state.damping,
-            )
-
-            osl.knee.set_output_position(
-                osl.state_machine.current_state.equilibrium_angle
-            )
+        osl.run(set_state_machine_parameters=True)
 
 
 if __name__ == "__main__":

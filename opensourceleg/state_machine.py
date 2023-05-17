@@ -73,8 +73,8 @@ class State:
 
 
 class Idle(State):
-    def __init__(self, status="Idle") -> None:
-        self._name = status
+    def __init__(self) -> None:
+        self._name = "idle"
         super().__init__(self._name)
 
     @property
@@ -182,8 +182,9 @@ class StateMachine:
         self._exit_callback: Optional[Callable[[Idle, Any], None]] = None
         self._exit_state = Idle()
         self.add_state(self._exit_state)
-        self._exited = True
+        self._initial_state = self._exit_state
 
+        self._exited = True
         self._osl = osl
 
     def add_state(self, state: State, initial_state: bool = False):
@@ -192,7 +193,7 @@ class StateMachine:
 
         self._states.append(state)
 
-        if not self._initial_state and initial_state:
+        if initial_state:
             self._initial_state = state
 
     def add_event(self, event: Event):
@@ -237,7 +238,7 @@ class StateMachine:
                 break
 
         if not validity:
-            self._osl.log.warn(f"Event isn't valid at {self._current_state.name}")
+            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any = None):
         if not self._initial_state:
@@ -263,4 +264,15 @@ class StateMachine:
 
     @property
     def current_state(self):
-        return self._current_state
+        if self._current_state is None:
+            return self._initial_state
+        else:
+            return self._current_state
+
+    @property
+    def states(self):
+        return [state.name for state in self._states]
+
+    @property
+    def current_state_name(self):
+        return self.current_state.name

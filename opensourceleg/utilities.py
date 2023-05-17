@@ -341,3 +341,7 @@ def get_active_ports():
             pass
 
     return serial_ports
+
+
+if __name__ == "__main__":
+    get_active_ports()
