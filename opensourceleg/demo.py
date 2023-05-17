@@ -1,24 +1,17 @@
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.state_machine import Event, State
+from osl import OpenSourceLeg
+from state_machine import Event, State
 
 BODY_WEIGHT = 60.0  # kg
-FZ_LSTANCE = -0.0167 * BODY_WEIGHT
-FZ_ESWING = -0.00167 * BODY_WEIGHT
-FZ_ESTANCE = -0.02 * BODY_WEIGHT
-VELOCITY_LSWING = 0.135  # rad/sec
-POSITION_LSWING = 60  # deg
-POSITION_ESTANCE = 30  # deg
-
 
 def estance_to_lstance(osl: OpenSourceLeg):
-    if osl.loadcell.fz < FZ_LSTANCE:
+    if osl.loadcell.fz < -0.0167 * BODY_WEIGHT:
         return True
     else:
         return False
 
 
 def lstance_to_eswing(osl: OpenSourceLeg):
-    if osl.loadcell.fz > FZ_ESWING:
+    if osl.loadcell.fz > -0.00267 * BODY_WEIGHT:
         return True
     else:
         return False
@@ -26,8 +19,8 @@ def lstance_to_eswing(osl: OpenSourceLeg):
 
 def eswing_to_lswing(osl: OpenSourceLeg):
     if (
-        osl.knee.output_position > POSITION_LSWING
-        and osl.knee.output_velocity < VELOCITY_LSWING
+        osl.knee.output_position > 60
+        and osl.knee.output_velocity < 0.135
     ):
         return True
     else:
@@ -35,14 +28,14 @@ def eswing_to_lswing(osl: OpenSourceLeg):
 
 
 def eswing_to_estance(osl: OpenSourceLeg):
-    if osl.loadcell.fz < FZ_ESTANCE:
+    if osl.loadcell.fz < -0.02 * BODY_WEIGHT:
         return True
     else:
         False
 
 
 def lswing_to_estance(osl: OpenSourceLeg):
-    if osl.loadcell.fz < FZ_ESTANCE or osl.knee.output_position < POSITION_ESTANCE:
+    if osl.loadcell.fz < -0.02 * BODY_WEIGHT or osl.knee.output_position < 30:
         return True
     else:
         return False
@@ -51,7 +44,6 @@ def lswing_to_estance(osl: OpenSourceLeg):
 def main():
     osl = OpenSourceLeg(frequency=200)
     osl.units["position"] = "deg"
-    osl.log.info(f"Units: {osl.units}")
 
     osl.add_joint(
         name="knee",
@@ -119,8 +111,7 @@ def main():
     osl.add_tui()
 
     with osl:
-        osl.run(set_state_machine_parameters=False)
-
+        osl.run(set_state_machine_parameters=True)
 
 if __name__ == "__main__":
     main()

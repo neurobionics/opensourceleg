@@ -5,14 +5,14 @@ import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.constants import Constants
-from opensourceleg.control import (
+from constants import Constants
+from control import (
     DEFAULT_CURRENT_GAINS,
     DEFAULT_IMPEDANCE_GAINS,
     DEFAULT_POSITION_GAINS,
 )
-from opensourceleg.logger import Logger
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
+from logger import Logger
+from units import DEFAULT_UNITS, UnitsDefinition
 
 
 @dataclass
@@ -500,132 +500,186 @@ class DephyActpack(Device):
 
     @property
     def battery_voltage(self):
-        return self._units.convert_from_default_units(
-            self._data.batt_volt,
-            "voltage",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.batt_volt,
+                "voltage",
+            )
+        else:
+            return 0
 
     @property
     def batter_current(self):
-        return self._units.convert_from_default_units(
-            self._data.batt_curr,
-            "current",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.batt_curr,
+                "current",
+            )
+        else:
+            return 0
 
     @property
     def motor_voltage(self):
-        return self._units.convert_from_default_units(
-            self._data.mot_volt,
-            "voltage",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.mot_volt,
+                "voltage",
+            )
+        else:
+            return 0
 
     @property
     def motor_current(self):
-        return self._units.convert_from_default_units(
-            self._data.mot_cur,
-            "current",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.mot_cur,
+                "current",
+            )
+        else:
+            return 0
 
     @property
     def motor_torque(self):
-        return self._units.convert_from_default_units(
-            self._data.mot_cur * Constants.NM_PER_MILLIAMP,
-            "torque",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.mot_cur * Constants.NM_PER_MILLIAMP,
+                "torque",
+            )
+        else:
+            return 0
 
     @property
     def motor_position(self):
-        return self._units.convert_from_default_units(
-            int(self._data.mot_ang) * Constants.RAD_PER_COUNT,
-            "position",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                int(self._data.mot_ang) * Constants.RAD_PER_COUNT,
+                "position",
+            )
+        else:
+            return 0
 
     @property
     def motor_velocity(self):
-        return self._units.convert_from_default_units(
-            self._data.mot_vel * Constants.RAD_PER_DEG,
-            "velocity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                int(self._data.mot_vel) * Constants.RAD_PER_COUNT,
+                "velocity",
+            )
+        else:
+            return 0
 
     @property
     def motor_acceleration(self):
-        return self._units.convert_from_default_units(
-            self._data.mot_acc,
-            "acceleration",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.mot_acc,
+                "acceleration",
+            )
+        else:
+            return 0
 
     @property
     def motor_torque(self):
-        return self._units.convert_from_default_units(
-            self.motor_current * Constants.NM_PER_AMP,
-            "torque",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self.motor_current * Constants.NM_PER_AMP,
+                "torque",
+            )
+        else:
+            return 0
 
     @property
     def joint_position(self):
-        return self._units.convert_from_default_units(
-            self._data.ank_ang * Constants.RAD_PER_COUNT,
-            "position",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.ank_ang * Constants.RAD_PER_COUNT,
+                "position",
+            )
+        else:
+            return 0
 
     @property
     def joint_velocity(self):
-        return self._units.convert_from_default_units(
-            self._data.ank_vel * Constants.RAD_PER_COUNT,
-            "velocity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.ank_vel * Constants.RAD_PER_COUNT,
+                "velocity",
+            )
+        else:
+            return 0
 
     @property
     def genvars(self):
-        return np.array(
-            [
-                self._data.genvar_0,
-                self._data.genvar_1,
-                self._data.genvar_2,
-                self._data.genvar_3,
-                self._data.genvar_4,
-                self._data.genvar_5,
-            ]
-        )
+        if self._data is not None:
+            return np.array(
+                [
+                    self._data.genvar_0,
+                    self._data.genvar_1,
+                    self._data.genvar_2,
+                    self._data.genvar_3,
+                    self._data.genvar_4,
+                    self._data.genvar_5,
+                ]
+            )
+        else:
+            return np.zeros(6)
 
     @property
     def acc_x(self):
-        return self._units.convert_from_default_units(
-            self._data.accelx * Constants.M_PER_SEC_SQUARED_ACCLSB,
-            "gravity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.accelx * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                "gravity",
+            )
+        else:
+            return 0
 
     @property
     def acc_y(self):
-        return self._units.convert_from_default_units(
-            self._data.accely * Constants.M_PER_SEC_SQUARED_ACCLSB,
-            "gravity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.accely * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                "gravity",
+            )
+        else:
+            return 0
 
     @property
     def acc_z(self):
-        return self._units.convert_from_default_units(
-            self._data.accelz * Constants.M_PER_SEC_SQUARED_ACCLSB,
-            "gravity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.accelz * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                "gravity",
+            )
+        else:
+            return 0
 
     @property
     def gyro_x(self):
-        return self._units.convert_from_default_units(
-            self._data.gyrox * Constants.RAD_PER_SEC_GYROLSB,
-            "velocity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.gyrox * Constants.RAD_PER_SEC_GYROLSB,
+                "velocity",
+            )
+        else:
+            return 0
 
     @property
     def gyro_y(self):
-        return self._units.convert_from_default_units(
-            self._data.gyroy * Constants.RAD_PER_SEC_GYROLSB,
-            "velocity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.gyroy * Constants.RAD_PER_SEC_GYROLSB,
+                "velocity",
+            )
+        else:
+            return 0
 
     @property
     def gyro_z(self):
-        return self._units.convert_from_default_units(
-            self._data.gyroz * Constants.RAD_PER_SEC_GYROLSB,
-            "velocity",
-        )
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                self._data.gyroz * Constants.RAD_PER_SEC_GYROLSB,
+                "velocity",
+            )
+        else:
+            return 0

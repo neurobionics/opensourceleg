@@ -6,10 +6,22 @@ from typing import Any, Callable, List, Optional
 
 class State:
     """
-    State class
+    A class to represent a state in a finite state machine.
     """
 
     def __init__(self, name, theta=0.0, k=0.0, b=0.0) -> None:
+        """
+        Parameters
+        ----------
+        name : str
+            The name of the state.
+        theta : float, optional
+            The theta parameter of the impedance model, by default 0.0
+        k : float, optional
+            The stiffness of the joint in PID units, by default 0.0
+        b : float, optional
+            The damping of the joint in PID units, by default 0.0
+        """
         self._name = name
 
         # Impedance parameters
@@ -88,6 +100,12 @@ class Event:
     """
 
     def __init__(self, name) -> None:
+        """
+        Parameters
+        ----------
+        name : str
+            The name of the event.
+        """
         self._name = name
 
     def __eq__(self, __o) -> bool:
@@ -188,6 +206,17 @@ class StateMachine:
         self._osl = osl
 
     def add_state(self, state: State, initial_state: bool = False):
+        """
+        Add a state to the state machine.
+
+        Parameters
+        ----------
+        state : State
+            The state to be added.
+        initial_state : bool, optional
+            Whether the state is the initial state, by default False
+
+        """
         if state in self._states:
             raise ValueError("State already exists.")
 
@@ -206,6 +235,20 @@ class StateMachine:
         event: Event,
         callback: Callable[[Any], bool] = None,
     ) -> Optional[Transition]:
+        """
+        Add a transition to the state machine.
+
+        Parameters
+        ----------
+        source : State
+            The source state.
+        destination : State
+            The destination state.
+        event : Event
+            The event that triggers the transition.
+        callback : Callable[[Any], bool], optional
+            A callback function that returns a boolean value, which determines whether the transition is valid, by default None
+        """
         transition = None
 
         if (

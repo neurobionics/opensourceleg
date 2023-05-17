@@ -3,10 +3,10 @@ import time
 
 import numpy as np
 
-from opensourceleg.actuators import DephyActpack
-from opensourceleg.constants import Constants
-from opensourceleg.logger import Logger
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
+from actuators import DephyActpack
+from constants import Constants
+from logger import Logger
+from units import DEFAULT_UNITS, UnitsDefinition
 
 
 class Joint(DephyActpack):

@@ -6,13 +6,13 @@ import numpy as np
 
 sys.path.append("../")
 
-from opensourceleg.joints import Joint
-from opensourceleg.loadcell import Loadcell
-from opensourceleg.logger import Logger
-from opensourceleg.state_machine import State, StateMachine
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
-from opensourceleg.utilities import SoftRealtimeLoop
-import opensourceleg.utilities as utilities
+from joints import Joint
+from loadcell import Loadcell
+from logger import Logger
+from state_machine import State, StateMachine
+from units import DEFAULT_UNITS, UnitsDefinition
+from utilities import SoftRealtimeLoop
+import utilities as utilities
 
 CURRENT_LIMIT = 8000
 
@@ -112,7 +112,7 @@ class OpenSourceLeg:
         configuration: str = "state_machine",
         layout: str = "vertical",
     ):
-        from opensourceleg.tui import TUI
+        from tui import TUI
 
         self._has_tui = True
         self.tui = TUI(
@@ -232,9 +232,18 @@ class OpenSourceLeg:
                         K=self.state_machine.current_state.stiffness,
                         B=self.state_machine.current_state.damping,
                     )
-
-                if self.has_ankle:
+                    
                     self.knee.set_output_position(
+                        self.state_machine.current_state.equilibrium_angle
+                    )
+
+                elif self.has_ankle:
+                    self.ankle.set_impedance_gains(
+                        K=self.state_machine.current_state.stiffness,
+                        B=self.state_machine.current_state.damping,
+                    )
+                    
+                    self.ankle.set_output_position(
                         self.state_machine.current_state.equilibrium_angle
                     )
 
@@ -242,6 +251,8 @@ class OpenSourceLeg:
 
         self._set_state_machine_parameters = set_state_machine_parameters
         self.update()
+
+        time.sleep(0.1)
 
         if not self.has_tui:
             self.update()
@@ -252,7 +263,7 @@ class OpenSourceLeg:
 
     def initialize_sm_tui(self):
 
-        from opensourceleg.tui import COLORS
+        from tui import COLORS
 
         self.tui.add_panel(
             name="top",
@@ -283,6 +294,7 @@ class OpenSourceLeg:
             parent="fz",
             object=self.loadcell,
             attribute="fz",
+            color=COLORS.cyan,
         )
 
         self.tui.add_plot(
@@ -290,6 +302,7 @@ class OpenSourceLeg:
             parent="joint_position",
             object=self.knee,
             attribute="output_position",
+            color=COLORS.yellow,
         )
 
         self.tui.add_state_visualizer(
@@ -314,8 +327,6 @@ class OpenSourceLeg:
 
         if self.has_tui:
             self.tui.quit()
-
-        self.__exit__(None, None, None)
 
     def home(self):
         if self.has_knee:

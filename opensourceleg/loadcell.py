@@ -3,8 +3,8 @@ import time
 import numpy as np
 from smbus2 import SMBus
 
-from opensourceleg.joints import Joint
-from opensourceleg.logger import Logger
+from joints import Joint
+from logger import Logger
 
 
 class StrainAmp:
@@ -243,28 +243,31 @@ class Loadcell:
 
     @property
     def fx(self):
-        return self._loadcell_data[0][0]
+        return self.loadcell_data[0]
 
     @property
     def fy(self):
-        return self._loadcell_data[0][1]
+        return self.loadcell_data[1]
 
     @property
     def fz(self):
-        return self._loadcell_data[0][2]
+        return self.loadcell_data[2]
 
     @property
     def mx(self):
-        return self._loadcell_data[0][3]
+        return self.loadcell_data[3]
 
     @property
     def my(self):
-        return self._loadcell_data[0][4]
+        return self.loadcell_data[4]
 
     @property
     def mz(self):
-        return self._loadcell_data[0][5]
+        return self.loadcell_data[5]
 
     @property
     def loadcell_data(self):
-        return self._loadcell_data[0]
+        if self._loadcell_data is not None:
+            return self._loadcell_data[0]
+        else:
+            return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
