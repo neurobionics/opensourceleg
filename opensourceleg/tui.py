@@ -1,7 +1,11 @@
-from typing import Callable
+from typing import Any, Callable
+
+import threading
+import time
 
 import TermTk as ttk
 from attr import dataclass
+from TermTk.TTkCore.string import TTkString
 
 
 # create a dataclass for various colors (str: hex codes)
@@ -22,38 +26,22 @@ class Colors:
     maize: str = "#FBEC5D"
 
 
-# create a tree data structure class
-class Group:
-    def __init__(self, name: str, parent: "Group" = None):
-        self._name = name
-        self._parent = parent
-        self._children = []
+@dataclass
+class Plot:
+    title: str = "plot"
+    parent: ttk.TTkFrame = None
+    object: Any = None
+    attribute: str = None
+    graph: ttk.TTkGraph = None
 
-    def add_child(self, child: "Group" = None):
-        self._children.append(child)
 
-    @property
-    def children(self):
-        return self._children
-
-    @property
-    def parent(self):
-        return self._parent
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def is_root(self):
-        return self.parent is None
-
-    @property
-    def is_leaf(self):
-        return len(self.children) == 0
-
-    def __str__(self):
-        return f"{self.name} -> {self.children}"
+@dataclass
+class StateVisualizer:
+    frame: ttk.TTkFrame = None
+    object: Any = None
+    attribute: str = None
+    states: dict[ttk.TTkButton] = None
+    previous_state: str = None
 
 
 COLORS = Colors()
@@ -82,35 +70,19 @@ class TUI:
             "grid": ttk.TTkGridLayout,
         }
 
-        self._modes = {
-            0: "voltage",
-            1: "position",
-            2: "current",
-            3: "impedance",
-        }
-
         self.root_ttk.setLayout(self._layouts["grid"]())
-        self._groups = {}
 
-        self._knee = None
-        self._ankle = None
-
-        self._joint = None
-        self._loadcell = None
-        self._attribute = "motor_position"
-
+        self._panels = {}
+        self._plots = {}
         self._buttons = {}
         self._radio_buttons = {}
         self._checkboxes = {}
         self._categories = {}
         self._dropdowns = {}
         self._values = {}
-
-        self._knee_values = {}
-        self._ankle_values = {}
-        self._other_values = {}
-
         self._texts = {}
+
+        self._state_vizualisers = {}
 
         self.frame = ttk.TTkFrame(
             parent=self.root_ttk,
@@ -118,18 +90,9 @@ class TUI:
             title=title,
             titleColor=ttk.TTkColor.BOLD + ttk.TTkColor.fg(COLORS.maize),
         )
+
         self.frame.setLayout(self._layouts[layout]())
-        self._groups["root"] = self.frame
-
-        self._plot_parent: ttk.TTkFrame = None
-        self._plot: ttk.TTkGraph = None
-        self._pvalue = [0.0]
-        self._pcounter: int = 0
-
-        self._kmode: int = 0
-        self._amode: int = 0
-
-        self._plot_title: str = "Plot"
+        self._panels["root"] = self.frame
 
         self._update_callbacks: list[callable] = []
 
@@ -138,33 +101,40 @@ class TUI:
 
     @ttk.pyTTkSlot()
     def update(self):
-        if self._plot is not None:
+        if self._plots:
+            for _plot in self._plots.keys():
+                if self._plots[_plot].object is not None:
+                    self._plots[_plot].graph.addValue(
+                        [
+                            getattr(
+                                self._plots[_plot].object, self._plots[_plot].attribute
+                            )
+                        ]
+                    )
+                else:
+                    self._plots[_plot].graph.addValue([0.0])
 
-            if "loadcell" in self._attribute:
-                if self.loadcell is not None:
-                    if "fx" in self._attribute:
-                        self.set_plot_value(getattr(self.loadcell, "fx"))
-                    elif "fy" in self._attribute:
-                        self.set_plot_value(getattr(self.loadcell, "fy"))
-                    else:
-                        self.set_plot_value(getattr(self.loadcell, "fz"))
+        if self._state_vizualisers:
+            for _sv in self._state_vizualisers.keys():
+                if self._state_vizualisers[_sv].object is not None:
+                    _current_state = getattr(
+                        self._state_vizualisers[_sv].object,
+                        self._state_vizualisers[_sv].attribute,
+                    )
+                    self._state_vizualisers[_sv].states[_current_state].setDisabled(
+                        False
+                    )
 
-            else:
-                if self.joint is not None:
-                    self.set_plot_value(getattr(self.joint, self._attribute))
+                    if (
+                        self._state_vizualisers[_sv].previous_state
+                        and self._state_vizualisers[_sv].previous_state
+                        != _current_state
+                    ):
+                        self._state_vizualisers[_sv].states[
+                            self._state_vizualisers[_sv].previous_state
+                        ].setDisabled(True)
 
-            self._plot.addValue(self._pvalue)
-
-            if "attributes" in self._categories:
-                _plot_name = self.attribute.replace("_", " ").title()
-
-            else:
-                _plot_name = self._plot_title
-
-            self._plot_parent.setTitle(
-                ttk.TTkString(f"{_plot_name}: {self._pvalue[0]:0.2f}")
-            )
-            self._pcounter += 1
+                    self._state_vizualisers[_sv].previous_state = _current_state
 
         for callback in self._update_callbacks:
             callback()
@@ -180,11 +150,8 @@ class TUI:
     def set_plot_value(self, value: float):
         self._pvalue = [value]
 
-    def add_knee(self, knee):
-        self._knee = knee
-
-    def add_ankle(self, ankle):
-        self._ankle = ankle
+    def set_plot_title(self, title: str):
+        self._plot_title = title
 
     def run(self):
         self._is_running = True
@@ -194,9 +161,9 @@ class TUI:
         self._is_running = False
         self.root_ttk.quit()
 
-    def add_group(
+    def add_panel(
         self,
-        name: str = "Group",
+        name: str = "Panel",
         parent: str = "root",
         layout: str = "horizontal",
         title_color: str = COLORS.white,
@@ -207,13 +174,13 @@ class TUI:
         col: int = 0,
     ):
         """
-        Adds a group to the TUI
+        Adds a panel to the TUI
 
         Args:
-            name (str): Name of the group. Defaults to "Group".
-            parent (str): Parent of the group. Defaults to "root".
-            layout (str): Layout of the group. Defaults to "horizontal".
-            title_color (str): Title color of the group. Defaults to COLORS.white.
+            name (str): Name of the panel. Defaults to "Panel".
+            parent (str): Parent of the panel. Defaults to "root".
+            layout (str): Layout of the panel. Defaults to "horizontal".
+            title_color (str): Title color of the panel. Defaults to COLORS.white.
             border_color (str): _description_. Defaults to COLORS.white.
             border (bool): _description_. Defaults to True.
             show_title (bool): _description_. Defaults to False.
@@ -224,7 +191,7 @@ class TUI:
             ValueError: _description_
         """
 
-        self._groups[name] = ttk.TTkFrame(
+        self._panels[name] = ttk.TTkFrame(
             border=border,
             titleColor=ttk.TTkColor.fg(title_color),
             borderColor=ttk.TTkColor.fg(border_color),
@@ -233,54 +200,129 @@ class TUI:
         _name = " ".join(name.split("_")).title()
 
         if show_title:
-            self._groups[name].setTitle(ttk.TTkString(" " + _name + " "))
+            self._panels[name].setTitle(ttk.TTkString(" " + _name + " "))
 
-        self._groups[name].setLayout(self._layouts[layout]())
+        self._panels[name].setLayout(self._layouts[layout]())
 
-        if parent in self._groups:
+        if parent in self._panels:
 
             if (
-                self._groups[parent].layout().__class__.__name__
+                self._panels[parent].layout().__class__.__name__
                 == ttk.TTkGridLayout.__name__
             ):
-                self._groups[parent].layout().addWidget(
-                    self._groups[name],
+                self._panels[parent].layout().addWidget(
+                    self._panels[name],
                     row,
                     col,
                 )
 
             else:
-                self._groups[parent].layout().addWidget(self._groups[name])
+                self._panels[parent].layout().addWidget(self._panels[name])
         else:
-            raise ValueError(f"Parent group: {parent} does not exist.")
+            raise ValueError(f"Parent panel: {parent} does not exist.")
 
-    def add_plot(
+    def set_panel_color(self, name: str, color: str):
+        self._panels[name].setBorderColor(ttk.TTkColor.fg(color))
+
+    def add_state_visualizer(
         self,
+        name: str = "state_visualizer",
         parent: str = "root",
-        color: str = COLORS.white,
+        states: list[str] = [],
+        object: Any = None,
+        attribute: str = None,
+        layout: str = "horizontal",
+        title_color: str = COLORS.white,
+        border_color: str = COLORS.white,
+        border: bool = True,
+        show_title: bool = True,
         row: int = 0,
         col: int = 0,
     ):
-        self._plot = ttk.TTkGraph(
-            color=ttk.TTkColor.fg(
-                color,
-            )
+        _sv_frame = ttk.TTkFrame(
+            border=border,
+            titleColor=ttk.TTkColor.fg(title_color),
+            borderColor=ttk.TTkColor.fg(border_color),
         )
 
-        self._plot_parent = self._groups[parent]
+        _sv_title = " ".join(name.split("_")).title()
+
+        if show_title:
+            _sv_frame.setTitle(ttk.TTkString(" " + _sv_title + " "))
+
+        _sv_frame.setLayout(self._layouts[layout]())
 
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
-                self._plot,
+            self._panels[parent].layout().addWidget(
+                _sv_frame,
                 row,
                 col,
             )
 
         else:
-            self._groups[parent].layout().addWidget(self._plot)
+            self._panels[parent].layout().addWidget(
+                _sv_frame,
+            )
+
+        _state_displays = {}
+
+        for state in states:
+            _sv_frame.layout().addWidget(
+                _button := ttk.TTkButton(
+                    text=" ".join(state.split("_")).title(),
+                    color=ttk.TTkColor.fg(title_color),
+                    border=border,
+                )
+            )
+
+            _button.setDisabled(True)
+            _button.setBorderColor(ttk.TTkColor.fg(COLORS.green))
+            _state_displays[state] = _button
+
+        self._state_vizualisers[name] = StateVisualizer(
+            frame=_sv_frame,
+            object=object,
+            attribute=attribute,
+            states=_state_displays,
+        )
+
+    def add_plot(
+        self,
+        name: str = "plot",
+        parent: str = "root",
+        object=None,
+        attribute: str = None,
+        color: str = COLORS.white,
+        row: int = 0,
+        col: int = 0,
+    ):
+        self._plots[name] = Plot(
+            title=" ".join(name.split("_")).title(),
+            parent=self._panels[parent],
+            object=object,
+            attribute=attribute,
+            graph=ttk.TTkGraph(
+                color=ttk.TTkColor.fg(
+                    color,
+                )
+            ),
+        )
+
+        if (
+            self._panels[parent].layout().__class__.__name__
+            == ttk.TTkGridLayout.__name__
+        ):
+            self._panels[parent].layout().addWidget(
+                self._plots[name].graph,
+                row,
+                col,
+            )
+
+        else:
+            self._panels[parent].layout().addWidget(self._plots[name].graph)
 
     def add_dropdown(
         self,
@@ -293,10 +335,10 @@ class TUI:
         col: int = 0,
     ):
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _dropdown := ttk.TTkComboBox(
                     list=options,
                 ),
@@ -305,7 +347,7 @@ class TUI:
             )
 
         else:
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _dropdown := ttk.TTkComboBox(
                     list=options,
                 )
@@ -331,18 +373,22 @@ class TUI:
     ):
 
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
-                ttk.TTkLabel(text=name, color=ttk.TTkColor.fg(color)),
+            self._panels[parent].layout().addWidget(
+                ttk.TTkLabel(
+                    text=" ".join(name.split("_")).title(), color=ttk.TTkColor.fg(color)
+                ),
                 row,
                 col,
             )
 
         else:
-            self._groups[parent].layout().addWidget(
-                ttk.TTkLabel(text=name, color=ttk.TTkColor.fg(color)),
+            self._panels[parent].layout().addWidget(
+                ttk.TTkLabel(
+                    text=" ".join(name.split("_")).title(), color=ttk.TTkColor.fg(color)
+                ),
             )
 
     def add_value(
@@ -357,10 +403,10 @@ class TUI:
     ):
 
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _value := ttk.TTkLineEdit(
                     text=default, inputType=ttk.TTkK.Input_Number
                 ),
@@ -369,7 +415,7 @@ class TUI:
             )
 
         else:
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _value := ttk.TTkLineEdit(
                     text=default, inputType=ttk.TTkK.Input_Number
                 ),
@@ -399,10 +445,10 @@ class TUI:
         _name = " ".join(name.split("_")).title()
 
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _button := ttk.TTkButton(
                     text=_name,
                     color=ttk.TTkColor.BOLD + ttk.TTkColor.bg(color),
@@ -413,7 +459,7 @@ class TUI:
             )
 
         else:
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _button := ttk.TTkButton(
                     text=_name, color=ttk.TTkColor.fg(color), border=border
                 )
@@ -460,10 +506,10 @@ class TUI:
         _name = " ".join(name.split("_")).title()
 
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _radio_button := ttk.TTkRadioButton(
                     text=" " + _name,
                     name=category,
@@ -475,7 +521,7 @@ class TUI:
             )
 
         else:
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _radio_button := ttk.TTkRadioButton(
                     text=" " + _name,
                     name=category,
@@ -512,10 +558,10 @@ class TUI:
         _name = " ".join(name.split("_")).title()
 
         if (
-            self._groups[parent].layout().__class__.__name__
+            self._panels[parent].layout().__class__.__name__
             == ttk.TTkGridLayout.__name__
         ):
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _checkbox := ttk.TTkCheckbox(
                     text=_name,
                     color=ttk.TTkColor.fg(color),
@@ -526,7 +572,7 @@ class TUI:
             )
 
         else:
-            self._groups[parent].layout().addWidget(
+            self._panels[parent].layout().addWidget(
                 _checkbox := ttk.TTkCheckbox(
                     text=_name,
                     color=ttk.TTkColor.fg(color),
@@ -592,16 +638,6 @@ class TUI:
             lambda x: callback(name=name, parent=parent, args=callback_args)
         )
 
-    def set_joint_mode(self, **kwargs):
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        mode_id = int(self._dropdowns[parent + "_" + name].currentIndex())
-
-        if "knee" in name.lower():
-            self._kmode = mode_id
-        elif "ankle" in name.lower():
-            self._amode = mode_id
-
     def set_category(
         self,
         **kwargs,
@@ -611,23 +647,6 @@ class TUI:
         category = args[0]
 
         self._categories[category] = name
-
-    def set_active_joint(self, **kwargs):
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-
-        _name = (name + parent).lower()
-
-        if "knee" in _name:
-            self._joint = self._knee
-        elif "ankle" in _name:
-            self._joint = self._ankle
-
-    def set_loadcell(
-        self,
-        loadcell,
-    ):
-        self._loadcell = loadcell
 
     def set_value(
         self,
@@ -655,19 +674,27 @@ class TUI:
         parent = kwargs["parent"]
         args = kwargs["args"]
 
-        print(f"Button {name} in group {parent} was clicked.")
+        print(f"Button {name} in panel {parent} was clicked.")
 
     @property
-    def joint(self):
-        return self._joint
+    def panels(self):
+        return self._panels
 
     @property
-    def loadcell(self):
-        return self._loadcell
+    def plots(self):
+        return self._plots
 
     @property
-    def attribute(self):
-        return self._attribute
+    def buttons(self):
+        return self._buttons
+
+    @property
+    def radio_buttons(self):
+        return self._radio_buttons
+
+    @property
+    def checkboxes(self):
+        return self._checkboxes
 
     @property
     def categories(self):
@@ -678,18 +705,63 @@ class TUI:
         return self._values
 
     @property
-    def dropdowns(self):
-        return self._dropdowns
+    def texts(self):
+        return self._texts
 
     @property
-    def control_modes(self):
-        return self._modes
+    def dropdowns(self):
+        return self._dropdowns
 
     @property
     def is_running(self):
         return self._is_running
 
 
+def quit(**kwargs):
+    tui.quit()
+
+
+def other_thread(loop, a):
+    for t in loop:
+        a.value += 1
+        a.t = t
+
+
+class V:
+    def __init__(self, value, loop, states) -> None:
+        self.value = value
+        self.states = states
+        self.loop = loop
+        self.state = states[0]
+
+    def run(self):
+        for t in self.loop:
+            self.value += 1
+
+            if self.value % 100 == 0:
+                self.state = self.states[
+                    (self.states.index(self.state) + 1) % len(self.states)
+                ]
+
+
 if __name__ == "__main__":
-    tui = TUI()
+    from opensourceleg.utilities import SoftRealtimeLoop
+
+    tui = TUI(frequency=200)
+    loop = SoftRealtimeLoop(dt=1 / 200)
+
+    states = ["early_stance", "late_stance", "early_swing", "late_swing"]
+
+    a = V(0, loop, states)
+
+    tui.add_state_visualizer(
+        name="state_machine",
+        parent="root",
+        states=states,
+        object=a,
+        attribute="state",
+    )
+
+    threading.Thread(target=a.run).start()
+
     tui.run()
