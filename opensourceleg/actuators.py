@@ -1,3 +1,4 @@
+import os
 import time
 from dataclasses import dataclass
 
@@ -299,7 +300,14 @@ class DephyActpack(Device):
         self._mode: ActpackMode = self._modes["voltage"]
 
     def start(self):
-        self.open(self._frequency, self._debug_level, log_enabled=self._dephy_log)
+        try:
+            self.open(self._frequency, self._debug_level, log_enabled=self._dephy_log)
+        except IOError as e:
+            print("\n")
+            self._log.error(f"Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n")
+            os._exit(1)
+
+
         time.sleep(0.1)
         self._data = self.read()
         self._mode.enter()
