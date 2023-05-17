@@ -235,7 +235,7 @@ class ImpedanceMode(ActpackMode):
         assert 0 <= K, "K must be greater than 0"
         assert 0 <= B, "B must be greater than 0"
 
-        self._device.set_gains(kp=kp, ki=ki, kd=0, k=K, b=B, ff=ff)
+        self._device.set_gains(kp=int(kp), ki=int(ki), kd=int(0), k=int(K), b=int(B), ff=int(ff))
         self._has_gains = True
 
         time.sleep(1 / self._device.frequency)

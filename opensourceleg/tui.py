@@ -88,7 +88,7 @@ class TUI:
             parent=self.root_ttk,
             border=True,
             title=title,
-            titleColor=ttk.TTkColor.BOLD + ttk.TTkColor.fg(COLORS.maize),
+            titleColor=ttk.TTkColor.BOLD + ttk.TTkColor.fg(COLORS.cyan),
         )
 
         self.frame.setLayout(self._layouts[layout]())

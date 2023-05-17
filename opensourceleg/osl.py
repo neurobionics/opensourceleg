@@ -389,7 +389,7 @@ class OpenSourceLeg:
             name="emergency_stop",
             parent="bottom",
             callback=self.estop,
-            color=COLORS.maize,
+            color=COLORS.red,
             border=True,
         )
 
