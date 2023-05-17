@@ -235,7 +235,9 @@ class ImpedanceMode(ActpackMode):
         assert 0 <= K, "K must be greater than 0"
         assert 0 <= B, "B must be greater than 0"
 
-        self._device.set_gains(kp=int(kp), ki=int(ki), kd=int(0), k=int(K), b=int(B), ff=int(ff))
+        self._device.set_gains(
+            kp=int(kp), ki=int(ki), kd=int(0), k=int(K), b=int(B), ff=int(ff)
+        )
         self._has_gains = True
 
         time.sleep(1 / self._device.frequency)
@@ -302,11 +304,12 @@ class DephyActpack(Device):
     def start(self):
         try:
             self.open(self._frequency, self._debug_level, log_enabled=self._dephy_log)
-        except IOError as e:
+        except OSError as e:
             print("\n")
-            self._log.error(f"Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n")
+            self._log.error(
+                f"Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+            )
             os._exit(1)
-
 
         time.sleep(0.1)
         self._data = self.read()
