@@ -76,10 +76,10 @@ def main():
 
     osl.add_state_machine()
 
-    early_stance = State("e_stance", 5, 130, 100)
-    late_stance = State("l_stance", 5, 175, 0)
+    early_stance = State("e_stance", 5, 130, 450)
+    late_stance = State("l_stance", 5, 175, 200)
     early_swing = State("e_swing", 62, 40, 40)
-    late_swing = State("l_swing", 30, 60, 200)
+    late_swing = State("l_swing", 30, 100, 200)
 
     foot_flat = Event("foot_flat")
     heel_off = Event("heel_off")
