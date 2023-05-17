@@ -175,10 +175,18 @@ class OpenSourceLeg:
             self._has_knee = True
 
             if port is None:
-                if "knee" in name.lower():
-                    port = utilities.get_active_ports()[0]
+                ports = utilities.get_active_ports()
+
+                if len(ports) == 0:
+                    self.log.warn(
+                        "No active ports found, please ensure that the joint is connected and powered on."
+                    )
+
                 else:
-                    port = utilities.get_active_ports()[1]
+                    if "knee" in name.lower():
+                        port = ports[0]
+                    else:
+                        port = ports[1]
 
             self._knee = Joint(
                 name=name,

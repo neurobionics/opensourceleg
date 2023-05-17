@@ -2,7 +2,6 @@ import os
 import time
 
 import numpy as np
-
 from actuators import DephyActpack
 from constants import Constants
 from logger import Logger

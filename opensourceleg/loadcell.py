@@ -1,10 +1,9 @@
 import time
 
 import numpy as np
-from smbus2 import SMBus
-
 from joints import Joint
 from logger import Logger
+from smbus2 import SMBus
 
 
 class StrainAmp:
