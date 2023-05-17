@@ -12,6 +12,7 @@ from opensourceleg.logger import Logger
 from opensourceleg.state_machine import State, StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
+import opensourceleg.utilities as utilities
 
 CURRENT_LIMIT = 8000
 
@@ -129,7 +130,7 @@ class OpenSourceLeg:
     def add_joint(
         self,
         name: str = "knee",
-        port: str = "/dev/ttyACM0",
+        port: str = None,
         baud_rate: int = 230400,
         gear_ratio: float = 1.0,
         has_loadcell: bool = False,
@@ -139,6 +140,13 @@ class OpenSourceLeg:
 
         if "knee" in name.lower():
             self._has_knee = True
+
+            if port is None:
+                if "knee" in name.lower():
+                    port = utilities.get_active_ports()[0]
+                else:
+                    port = utilities.get_active_ports()[1]
+
             self._knee = Joint(
                 name=name,
                 port=port,
@@ -404,8 +412,15 @@ if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=200)
 
     osl.units["position"] = "deg"
-    osl.add_state_machine()
-    osl.add_tui()
 
-    with osl:
-        osl.run(set_state_machine_parameters=True)
+    osl.add_joint(
+        name="knee",
+        gear_ratio=41.61,
+    )
+
+
+    # osl.add_state_machine()
+    # osl.add_tui()
+
+    # with osl:
+    #     osl.run(set_state_machine_parameters=True)

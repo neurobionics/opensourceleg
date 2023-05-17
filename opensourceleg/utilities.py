@@ -317,13 +317,12 @@ class SaturatingRamp:
         self.value = min(max(self.value, 0), 1)
         return self.value
 
-
 def get_active_ports():
     """
     Lists active serial ports.
     """
     if sys.platform.startswith("linux") or sys.platform.startswith("cygwin"):
-        ports = glob.glob("/dev/tty[A-Za-z]*")
+        ports = glob.glob("/dev/tty[A-Za-z]C*")
     elif sys.platform.startswith("darwin"):
         ports = glob.glob("/dev/tty.*")
     elif sys.platform.startswith("win"):
@@ -344,4 +343,4 @@ def get_active_ports():
 
 
 if __name__ == "__main__":
-    get_active_ports()
+    print(get_active_ports()[0])
