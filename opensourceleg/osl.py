@@ -6,13 +6,13 @@ import numpy as np
 
 sys.path.append("../")
 
+import utilities as utilities
 from joints import Joint
 from loadcell import Loadcell
 from logger import Logger
 from state_machine import State, StateMachine
 from units import DEFAULT_UNITS, UnitsDefinition
 from utilities import SoftRealtimeLoop
-import utilities as utilities
 
 CURRENT_LIMIT = 8000
 
@@ -41,6 +41,18 @@ class OpenSourceLeg:
         current_limit: float = 8000,
         file_name: str = "./osl.log",
     ) -> None:
+        """
+        Initialize the OSL class.
+
+        Parameters
+        ----------
+        frequency : int, optional
+            The frequency of the control loop, by default 200
+        current_limit : float, optional
+            The current limit of the motor in mA, by default 8000
+        file_name : str, optional
+            The name of the log file, by default "./osl.log"
+        """
 
         self._frequency: int = frequency
 
@@ -137,6 +149,27 @@ class OpenSourceLeg:
         debug_level: int = 0,
         dephy_log: bool = False,
     ):
+        """
+        Add a joint to the OSL object.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the joint, by default "knee"
+        port : str, optional
+            The serial port that the joint is connected to, by default None. If
+            None, the first active port will be used.
+        baud_rate : int, optional
+            The baud rate of the serial communication, by default 230400
+        gear_ratio : float, optional
+            The gear ratio of the joint, by default 1.0
+        has_loadcell : bool, optional
+            Whether the joint has a loadcell, by default False
+        debug_level : int, optional
+            The debug level of the joint, by default 0
+        dephy_log : bool, optional
+            Whether to log the joint data to the dephy log, by default False
+        """
 
         if "knee" in name.lower():
             self._has_knee = True
@@ -185,6 +218,22 @@ class OpenSourceLeg:
         exc: float = 5.0,
         loadcell_matrix=None,
     ):
+        """
+        Add a loadcell to the OSL object.
+
+        Parameters
+        ----------
+        dephy_mode : bool, optional
+            Whether the loadcell is in dephy mode ie. connected to the dephy actpack with an FFC cable, by default False
+        joint : Joint, optional
+            The joint that the loadcell is attached to, by default None
+        amp_gain : float, optional
+            The amplifier gain of the loadcell, by default 125.0
+        exc : float, optional
+            The excitation voltage of the loadcell, by default 5.0
+        loadcell_matrix : np.ndarray, optional
+            The loadcell calibration matrix, by default None
+        """
         self._has_loadcell = True
         self._loadcell = Loadcell(
             dephy_mode=dephy_mode,
@@ -198,6 +247,9 @@ class OpenSourceLeg:
     def add_state_machine(
         self,
     ):
+        """
+        Add a state machine to the OSL object.
+        """
         self.state_machine = StateMachine(osl=self)
         self._has_sm = True
 
@@ -232,7 +284,7 @@ class OpenSourceLeg:
                         K=self.state_machine.current_state.stiffness,
                         B=self.state_machine.current_state.damping,
                     )
-                    
+
                     self.knee.set_output_position(
                         self.state_machine.current_state.equilibrium_angle
                     )
@@ -242,12 +294,23 @@ class OpenSourceLeg:
                         K=self.state_machine.current_state.stiffness,
                         B=self.state_machine.current_state.damping,
                     )
-                    
+
                     self.ankle.set_output_position(
                         self.state_machine.current_state.equilibrium_angle
                     )
 
     def run(self, set_state_machine_parameters: bool = False):
+        """
+        Run the OpenSourceLeg instance: update the joints, loadcell, and state machine.
+        If the instance has a TUI, run the TUI.
+        If the instance has a state machine and if set_state_machine_parameters is True,
+        set the joint impedance gains and equilibrium angles to the current state's values.
+
+        Parameters
+        ----------
+        set_state_machine_parameters : bool, optional
+            Whether to set the joint impedance gains and equilibrium angles to the current state's values, by default False
+        """
 
         self._set_state_machine_parameters = set_state_machine_parameters
         self.update()
@@ -429,10 +492,3 @@ if __name__ == "__main__":
         name="knee",
         gear_ratio=41.61,
     )
-
-
-    # osl.add_state_machine()
-    # osl.add_tui()
-
-    # with osl:
-    #     osl.run(set_state_machine_parameters=True)
