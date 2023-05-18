@@ -6,13 +6,13 @@ import numpy as np
 
 sys.path.append("../")
 
-import utilities as utilities
-from joints import Joint
-from loadcell import Loadcell
-from logger import Logger
-from state_machine import State, StateMachine
-from units import DEFAULT_UNITS, UnitsDefinition
-from utilities import SoftRealtimeLoop
+import opensourceleg.utilities as utilities
+from opensourceleg.joints import Joint
+from opensourceleg.loadcell import Loadcell
+from opensourceleg.logger import Logger
+from opensourceleg.state_machine import State, StateMachine
+from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
+from opensourceleg.utilities import SoftRealtimeLoop
 
 CURRENT_LIMIT = 8000
 
@@ -334,7 +334,7 @@ class OpenSourceLeg:
 
     def initialize_sm_tui(self):
 
-        from tui import COLORS
+        from opensourceleg.tui import COLORS
 
         self.tui.add_panel(
             name="top",

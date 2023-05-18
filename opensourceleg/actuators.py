@@ -4,15 +4,16 @@ from dataclasses import dataclass
 
 import flexsea.fx_enums as fxe
 import numpy as np
-from constants import Constants
-from control import (
+from flexsea.device import Device
+
+from opensourceleg.constants import Constants
+from opensourceleg.control import (
     DEFAULT_CURRENT_GAINS,
     DEFAULT_IMPEDANCE_GAINS,
     DEFAULT_POSITION_GAINS,
 )
-from flexsea.device import Device
-from logger import Logger
-from units import DEFAULT_UNITS, UnitsDefinition
+from opensourceleg.logger import Logger
+from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 
 @dataclass

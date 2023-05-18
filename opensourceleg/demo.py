@@ -1,5 +1,5 @@
-from osl import OpenSourceLeg
-from state_machine import Event, State
+from opensourceleg.osl import OpenSourceLeg
+from opensourceleg.state_machine import Event, State
 
 BODY_WEIGHT = 60.0  # kg
 
