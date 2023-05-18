@@ -124,7 +124,7 @@ class OpenSourceLeg:
         configuration: str = "state_machine",
         layout: str = "vertical",
     ):
-        from tui import TUI
+        from opensourceleg.tui import TUI
 
         self._has_tui = True
         self.tui = TUI(
