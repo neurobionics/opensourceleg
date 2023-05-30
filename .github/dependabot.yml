@@ -12,7 +12,7 @@ updates:
       - dependency-type: "all"
     commit-message:
       prefix: ":arrow_up:"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -22,7 +22,7 @@ updates:
       - dependency-type: "all"
     commit-message:
       prefix: ":arrow_up:"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
 
   - package-ecosystem: "docker"
     directory: "/docker"
@@ -32,4 +32,4 @@ updates:
       - dependency-type: "all"
     commit-message:
       prefix: ":arrow_up:"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
