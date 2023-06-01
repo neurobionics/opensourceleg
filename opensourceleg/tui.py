@@ -29,19 +29,19 @@ class Colors:
 @dataclass
 class Plot:
     title: str = "plot"
-    parent: ttk.TTkFrame = None
+    parent: ttk.TTkFrame = None  # type: ignore
     object: Any = None
-    attribute: str = None
-    graph: ttk.TTkGraph = None
+    attribute: str = None  # type: ignore
+    graph: ttk.TTkGraph = None  # type: ignore
 
 
 @dataclass
 class StateVisualizer:
-    frame: ttk.TTkFrame = None
+    frame: ttk.TTkFrame = None  # type: ignore
     object: Any = None
-    attribute: str = None
-    states: dict[ttk.TTkButton] = None
-    previous_state: str = None
+    attribute: str = None  # type: ignore
+    states: dict[ttk.TTkButton] = None  # type: ignore
+    previous_state: str = None  # type: ignore
 
 
 COLORS = Colors()
@@ -57,10 +57,10 @@ class TUI:
         title: str = " Open-source Leg ",
         frequency: int = 30,
         layout: str = "horizontal",
-    ):
+    ) -> None:
         self.root_ttk = ttk.TTk()
         self.timer = ttk.TTkTimer()
-        self.dt = 1.0 / frequency
+        self.dt: float = 1.0 / frequency
 
         self._is_running = False
 
@@ -70,7 +70,7 @@ class TUI:
             "grid": ttk.TTkGridLayout,
         }
 
-        self.root_ttk.setLayout(self._layouts["grid"]())
+        self.root_ttk.setLayout(layout=self._layouts["grid"]())
 
         self._panels = {}
         self._plots = {}
@@ -94,7 +94,7 @@ class TUI:
         self.frame.setLayout(self._layouts[layout]())
         self._panels["root"] = self.frame
 
-        self._update_callbacks: list[callable] = []
+        self._update_callbacks: list[Callable] = []  # type: ignore
 
         self.timer.timeout.connect(self.update)
         self.timer.start(1)
@@ -142,7 +142,7 @@ class TUI:
 
         self.timer.start(self.dt)
 
-    def add_update_callback(self, callback: callable):
+    def add_update_callback(self, callback: Callable = lambda: None):  # type: ignore
         self._update_callbacks.append(callback)
 
     def set_active_attribute(self, attribute: str):
@@ -231,7 +231,7 @@ class TUI:
         parent: str = "root",
         states: list[str] = [],
         object: Any = None,
-        attribute: str = None,
+        attribute: str = None,  # type: ignore
         layout: str = "horizontal",
         title_color: str = COLORS.white,
         border_color: str = COLORS.white,
@@ -271,7 +271,7 @@ class TUI:
         _state_displays = {}
 
         for state in states:
-            _sv_frame.layout().addWidget(
+            _sv_frame.layout().addWidget(  # type: ignore
                 _button := ttk.TTkButton(
                     text=" ".join(state.split("_")).title(),
                     color=ttk.TTkColor.fg(title_color),
@@ -279,8 +279,8 @@ class TUI:
                 )
             )
 
-            _button.setDisabled(True)
-            _button.setBorderColor(ttk.TTkColor.fg(COLORS.green))
+            _button.setDisabled(disabled=True)
+            _button.setBorderColor(color=ttk.TTkColor.fg(COLORS.green))
             _state_displays[state] = _button
 
         self._state_vizualisers[name] = StateVisualizer(
@@ -295,11 +295,11 @@ class TUI:
         name: str = "plot",
         parent: str = "root",
         object=None,
-        attribute: str = None,
+        attribute: str = None,  # type: ignore
         color: str = COLORS.white,
         row: int = 0,
         col: int = 0,
-    ):
+    ) -> None:
         self._plots[name] = Plot(
             title=" ".join(name.split("_")).title(),
             parent=self._panels[parent],
@@ -330,7 +330,7 @@ class TUI:
         name: str = "dropdown",
         parent: str = "root",
         options: list[str] = [],
-        callback: callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
         row: int = 0,
         col: int = 0,
@@ -397,7 +397,7 @@ class TUI:
         name: str = "value",
         parent: str = "root",
         default: int = 0,
-        callback: callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
         row: int = 0,
         col: int = 0,
@@ -436,7 +436,7 @@ class TUI:
         self,
         name: str = "button",
         parent: str = "root",
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
         color: str = COLORS.white,
         border: bool = True,
@@ -481,7 +481,7 @@ class TUI:
         name: str = "radio_button",
         category: str = "attributes",
         parent: str = "root",
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
         color: str = COLORS.white,
         is_checked: bool = False,
@@ -549,7 +549,7 @@ class TUI:
         self,
         name: str = "Checkbox",
         parent: str = "root",
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
         color: str = COLORS.white,
         is_checked: bool = False,
@@ -591,7 +591,7 @@ class TUI:
         self,
         name: str,
         parent: str,
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
     ):
         self._buttons[parent + "_" + name].clicked.connect(
@@ -603,7 +603,7 @@ class TUI:
         name: str,
         parent: str,
         category: str = "attributes",
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
     ):
         callback_args.insert(0, category)
@@ -616,7 +616,7 @@ class TUI:
         self,
         name: str,
         parent: str,
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
     ):
 
@@ -630,7 +630,7 @@ class TUI:
         self,
         name: str,
         parent: str,
-        callback: Callable = None,
+        callback: Callable = lambda: None,
         callback_args: list = [],
     ):
         callback_args.insert(0, self._dropdowns[parent + "_" + name].currentIndex())
@@ -653,19 +653,7 @@ class TUI:
         self,
         **kwargs,
     ):
-
-        name = kwargs["name"]
-        parent = kwargs["parent"]
-        value = int(self._values[parent + "_" + name].text())
-
-        _name = parent + name
-
-        if "knee" in _name.lower():
-            self._knee_values[name] = value
-        elif "ankle" in _name.lower():
-            self._ankle_values[name] = value
-        else:
-            self._other_values[name] = value
+        pass
 
     def test_button(
         self,

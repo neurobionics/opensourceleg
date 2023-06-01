@@ -25,9 +25,9 @@ class State:
         self._name = name
 
         # Impedance parameters
-        self._theta = theta
-        self._k = k
-        self._b = b
+        self._theta: float = theta
+        self._k: float = k
+        self._b: float = b
 
         # Callbacks
         self._entry_callbacks: list[Callable[[Any], None]] = []
@@ -53,17 +53,17 @@ class State:
     def get_impedance_paramters(self):
         return self._theta, self._k, self._b
 
-    def on_entry(self, callback: Callable[[Any], None]):
+    def on_entry(self, callback: Callable[[Any], None]) -> None:
         self._entry_callbacks.append(callback)
 
-    def on_exit(self, callback: Callable[[Any], None]):
+    def on_exit(self, callback: Callable[[Any], None]) -> None:
         self._exit_callbacks.append(callback)
 
-    def start(self, data: Any):
+    def start(self, data: Any) -> None:
         for c in self._entry_callbacks:
             c(data)
 
-    def stop(self, data: Any):
+    def stop(self, data: Any) -> None:
         for c in self._exit_callbacks:
             c(data)
 
@@ -72,25 +72,25 @@ class State:
         return self._name
 
     @property
-    def equilibrium_angle(self):
+    def equilibrium_angle(self) -> float:
         return self._theta
 
     @property
-    def stiffness(self):
+    def stiffness(self) -> float:
         return self._k
 
     @property
-    def damping(self):
+    def damping(self) -> float:
         return self._b
 
 
 class Idle(State):
     def __init__(self) -> None:
         self._name = "idle"
-        super().__init__(self._name)
+        super().__init__(name=self._name)
 
     @property
-    def status(self):
+    def status(self) -> str:
         return self._name
 
 
@@ -132,11 +132,11 @@ class Transition:
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        callback: Callable[[Any], bool] = None,  # type: ignore
     ) -> None:
-        self._event = event
-        self._source_state = source
-        self._destination_state = destination
+        self._event: Event = event
+        self._source_state: State = source
+        self._destination_state: State = destination
 
         self._criteria: Optional[Callable[[Any], bool]] = callback
         self._action: Optional[Callable[[Any], None]] = None
@@ -144,22 +144,22 @@ class Transition:
     def __call__(self, data: Any) -> Any:
         raise NotImplementedError
 
-    def add_criteria(self, callback: Callable[[Any], bool]):
+    def add_criteria(self, callback: Callable[[Any], bool]) -> None:
         self._criteria = callback
 
-    def add_action(self, callback: Callable[[Any], Any]):
+    def add_action(self, callback: Callable[[Any], Any]) -> None:
         self._action = callback
 
     @property
-    def event(self):
+    def event(self) -> Event:
         return self._event
 
     @property
-    def source_state(self):
+    def source_state(self) -> State:
         return self._source_state
 
     @property
-    def destination_state(self):
+    def destination_state(self) -> State:
         return self._destination_state
 
 
@@ -169,20 +169,22 @@ class FromToTransition(Transition):
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        callback: Callable[[Any], bool] = None,  # type: ignore
     ) -> None:
-        super().__init__(event, source, destination, callback)
+        super().__init__(
+            event=event, source=source, destination=destination, callback=callback
+        )
 
-        self._from = source
-        self._to = destination
+        self._from: State = source
+        self._to: State = destination
 
-    def __call__(self, data: Any):
+    def __call__(self, data: Any) -> State:
         if not self._criteria or self._criteria(data):
             if self._action:
                 self._action(data)
 
-            self._from.stop(data)
-            self._to.start(data)
+            self._from.stop(data=data)
+            self._to.start(data=data)
 
             return self._to
         else:
@@ -199,13 +201,13 @@ class StateMachine:
         self._current_state: Optional[State] = None
         self._exit_callback: Optional[Callable[[Idle, Any], None]] = None
         self._exit_state = Idle()
-        self.add_state(self._exit_state)
+        self.add_state(state=self._exit_state)
         self._initial_state = self._exit_state
 
         self._exited = True
         self._osl = osl
 
-    def add_state(self, state: State, initial_state: bool = False):
+    def add_state(self, state: State, initial_state: bool = False) -> None:
         """
         Add a state to the state machine.
 
@@ -225,7 +227,7 @@ class StateMachine:
         if initial_state:
             self._initial_state = state
 
-    def add_event(self, event: Event):
+    def add_event(self, event: Event) -> None:
         self._events.append(event)
 
     def add_transition(
@@ -233,7 +235,7 @@ class StateMachine:
         source: State,
         destination: State,
         event: Event,
-        callback: Callable[[Any], bool] = None,
+        callback: Callable[[Any], bool] = None,  # type: ignore
     ) -> Optional[Transition]:
         """
         Add a transition to the state machine.
@@ -256,12 +258,14 @@ class StateMachine:
             and destination in self._states
             and event in self._events
         ):
-            transition = FromToTransition(event, source, destination, callback)
+            transition = FromToTransition(
+                event=event, source=source, destination=destination, callback=callback
+            )
             self._transitions.append(transition)
 
         return transition
 
-    def update(self, data: Any = None):
+    def update(self, data: Any = None) -> None:
         validity = False
 
         if not (self._initial_state or self._current_state):
@@ -281,21 +285,22 @@ class StateMachine:
                 break
 
         if not validity:
-            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
+            assert self._osl is not None
+            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")  # type: ignore
 
-    def start(self, data: Any = None):
+    def start(self, data: Any = None) -> None:
         if not self._initial_state:
             raise ValueError("Initial state not set.")
 
         self._current_state = self._initial_state
         self._exited = False
-        self._current_state.start(data)
+        self._current_state.start(data=data)
 
-    def stop(self, data: Any = None):
+    def stop(self, data: Any = None) -> None:
         if not (self._initial_state or self._current_state):
             raise ValueError("OSL isn't active.")
 
-        self._current_state.stop(data)
+        self._current_state.stop(data=data)  # type: ignore
         self._current_state = self._exit_state
         self._exited = True
 
@@ -318,4 +323,4 @@ class StateMachine:
 
     @property
     def current_state_name(self):
-        return self.current_state.name
+        return self.current_state.name  # type: ignore

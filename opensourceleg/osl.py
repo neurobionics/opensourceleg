@@ -7,14 +7,13 @@ import numpy as np
 sys.path.append("../")
 
 import opensourceleg.utilities as utilities
+from opensourceleg.constants import Constants
 from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
 from opensourceleg.state_machine import State, StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
-
-CURRENT_LIMIT = 8000
 
 
 class OpenSourceLeg:
@@ -38,7 +37,7 @@ class OpenSourceLeg:
     def __init__(
         self,
         frequency: int = 200,
-        current_limit: float = 8000,
+        current_limit: float = Constants.MAX_CURRENT,
         file_name: str = "./osl.log",
     ) -> None:
         """
@@ -65,9 +64,9 @@ class OpenSourceLeg:
         self._current_limit: float = current_limit
         self._set_state_machine_parameters: bool = False
 
-        self._knee: Joint = None
-        self._ankle: Joint = None
-        self._loadcell: Loadcell = None
+        self._knee: Joint = None  # type: ignore
+        self._ankle: Joint = None  # type: ignore
+        self._loadcell: Loadcell = None  # type: ignore
 
         self.log = Logger(
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
@@ -80,7 +79,7 @@ class OpenSourceLeg:
         self.tui = None
         self.state_machine = None
 
-    def __enter__(self):
+    def __enter__(self) -> None:
 
         if self.has_knee:
             self._knee.start()
@@ -92,19 +91,19 @@ class OpenSourceLeg:
             self._loadcell.initialize()
 
         if self.has_state_machine:
-            self.state_machine.start()
+            self.state_machine.start()  # type: ignore
 
             if self.has_knee:
-                self.knee.set_mode("impedance")
-                self.knee.set_impedance_gains()
+                self.knee.set_mode(mode="impedance")  # type: ignore
+                self.knee.set_impedance_gains()  # type: ignore
 
             if self.has_ankle:
-                self.ankle.set_mode("impedance")
-                self.ankle.set_impedance_gains()
+                self.ankle.set_mode(mode="impedance")  # type: ignore
+                self.ankle.set_impedance_gains()  # type: ignore
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self, type, value, tb) -> None:
         if self.has_state_machine:
-            self.state_machine.stop()
+            self.state_machine.stop()  # type: ignore
 
         if self.has_knee:
             self._knee.stop()
@@ -113,8 +112,8 @@ class OpenSourceLeg:
             self._ankle.stop()
 
         if self.has_tui:
-            if self.tui.is_running:
-                self.tui.quit()
+            if self.tui.is_running:  # type: ignore
+                self.tui.quit()  # type: ignore
 
     def __repr__(self) -> str:
         return f"OSL object. Frequency: {self._frequency} Hz"
@@ -123,7 +122,7 @@ class OpenSourceLeg:
         self,
         configuration: str = "state_machine",
         layout: str = "vertical",
-    ):
+    ) -> None:
         from opensourceleg.tui import TUI
 
         self._has_tui = True
@@ -136,19 +135,19 @@ class OpenSourceLeg:
                 self.initialize_sm_tui()
             else:
                 self.log.warn(
-                    "State machine not initialized. Please initialize the state machine before adding the TUI."
+                    msg="State machine not initialized. Please initialize the state machine before adding the TUI."
                 )
 
     def add_joint(
         self,
         name: str = "knee",
-        port: str = None,
+        port: str = None,  # type: ignore
         baud_rate: int = 230400,
         gear_ratio: float = 1.0,
         has_loadcell: bool = False,
         debug_level: int = 0,
         dephy_log: bool = False,
-    ):
+    ) -> None:
         """
         Add a joint to the OSL object.
 
@@ -179,7 +178,7 @@ class OpenSourceLeg:
 
                 if len(ports) == 0:
                     self.log.warn(
-                        "No active ports found, please ensure that the joint is connected and powered on."
+                        msg="No active ports found, please ensure that the joint is connected and powered on."
                     )
 
                 else:
@@ -216,16 +215,16 @@ class OpenSourceLeg:
                 dephy_log=dephy_log,
             )
         else:
-            self.log.warning("[OSL] Joint name is not recognized.")
+            self.log.warning(msg="[OSL] Joint name is not recognized.")
 
     def add_loadcell(
         self,
         dephy_mode: bool = False,
-        joint: Joint = None,
+        joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix=None,
-    ):
+        loadcell_matrix=Constants.LOADCELL_MATRIX,
+    ) -> None:
         """
         Add a loadcell to the OSL object.
 
@@ -248,13 +247,13 @@ class OpenSourceLeg:
             joint=joint,
             amp_gain=amp_gain,
             exc=exc,
-            loadcell_matrix=loadcell_matrix,
+            loadcell_matrix=loadcell_matrix,  # type: ignore
             logger=self.log,
         )
 
     def add_state_machine(
         self,
-    ):
+    ) -> None:
         """
         Add a state machine to the OSL object.
         """
@@ -263,51 +262,51 @@ class OpenSourceLeg:
 
     def update(
         self,
-    ):
+    ) -> None:
         if self.has_knee:
             self._knee.update()
 
-            if self.knee.motor_current > self.current_limit:
-                self.log.warn("[KNEE] Current limit reached. Stopping motor.")
-                self.__exit__()
+            if self.knee.motor_current > self.current_limit:  # type: ignore
+                self.log.warn(msg="[KNEE] Current limit reached. Stopping motor.")
+                self.__exit__(type=None, value=None, tb=None)
                 exit()
 
         if self.has_ankle:
             self._ankle.update()
 
-            if self.ankle.motor_current > self.current_limit:
+            if self.ankle.motor_current > self.current_limit:  # type: ignore
                 self.log.warn("[ANKLE] Current limit () reached. Stopping motor.")
-                self.__exit__()
+                self.__exit__(type=None, value=None, tb=None)
                 exit()
 
         if self.has_loadcell:
             self._loadcell.update()
 
         if self.has_state_machine:
-            self.state_machine.update()
+            self.state_machine.update()  # type: ignore
 
             if self._set_state_machine_parameters:
                 if self.has_knee:
-                    self.knee.set_impedance_gains(
-                        K=self.state_machine.current_state.stiffness,
-                        B=self.state_machine.current_state.damping,
+                    self.knee.set_impedance_gains(  # type: ignore
+                        K=self.state_machine.current_state.stiffness,  # type: ignore
+                        B=self.state_machine.current_state.damping,  # type: ignore
                     )
 
-                    self.knee.set_output_position(
-                        self.state_machine.current_state.equilibrium_angle
+                    self.knee.set_output_position(  # type: ignore
+                        position=self.state_machine.current_state.equilibrium_angle  # type: ignore
                     )
 
                 elif self.has_ankle:
-                    self.ankle.set_impedance_gains(
-                        K=self.state_machine.current_state.stiffness,
-                        B=self.state_machine.current_state.damping,
+                    self.ankle.set_impedance_gains(  # type: ignore
+                        K=self.state_machine.current_state.stiffness,  # type: ignore
+                        B=self.state_machine.current_state.damping,  # type: ignore
                     )
 
-                    self.ankle.set_output_position(
-                        self.state_machine.current_state.equilibrium_angle
+                    self.ankle.set_output_position(  # type: ignore
+                        position=self.state_machine.current_state.equilibrium_angle  # type: ignore
                     )
 
-    def run(self, set_state_machine_parameters: bool = False):
+    def run(self, set_state_machine_parameters: bool = False) -> None:
         """
         Run the OpenSourceLeg instance: update the joints, loadcell, and state machine.
         If the instance has a TUI, run the TUI.
@@ -323,19 +322,20 @@ class OpenSourceLeg:
         self._set_state_machine_parameters = set_state_machine_parameters
         self.update()
 
-        time.sleep(0.1)
+        time.sleep(secs=0.1)
 
         if not self.has_tui:
             self.update()
 
         else:
-            self.tui.add_update_callback(self.update)
-            self.tui.run()
+            self.tui.add_update_callback(callback=self.update)  # type: ignore
+            self.tui.run()  # type: ignore
 
-    def initialize_sm_tui(self):
+    def initialize_sm_tui(self) -> None:
 
         from opensourceleg.tui import COLORS
 
+        assert self.tui is not None
         self.tui.add_panel(
             name="top",
             layout="horizontal",
@@ -379,7 +379,7 @@ class OpenSourceLeg:
         self.tui.add_state_visualizer(
             name="state_machine",
             parent="bottom",
-            states=self.state_machine.states,
+            states=self.state_machine.states,  # type: ignore
             object=self.state_machine,
             attribute="current_state_name",
             layout="horizontal",
@@ -397,104 +397,100 @@ class OpenSourceLeg:
         self.log.debug("[OSL] Emergency stop activated.")
 
         if self.has_tui:
-            self.tui.quit()
+            self.tui.quit()  # type: ignore
 
-    def home(self):
+    def home(self) -> None:
         if self.has_knee:
-            self.log.debug("[OSL] Homing knee joint.")
-            self.knee.home()
+            self.log.debug(msg="[OSL] Homing knee joint.")
+            self.knee.home()  # type: ignore
 
         if self.has_ankle:
-            self.log.debug("[OSL] Homing ankle joint.")
-            self.ankle.home()
+            self.log.debug(msg="[OSL] Homing ankle joint.")
+            self.ankle.home()  # type: ignore
 
-    def calibrate_loadcell(self):
-        self.log.debug("[OSL] Calibrating loadcell.")
+    def calibrate_loadcell(self) -> None:
+        self.log.debug(msg="[OSL] Calibrating loadcell.")
         if self.has_loadcell:
-            self.loadcell.reset()
+            self.loadcell.reset()  # type: ignore
 
-    def calibrate_encoders(self):
-        self.log.debug("[OSL] Calibrating encoders.")
-
-        if self.has_knee:
-            self.knee.make_encoder_map()
-
-        if self.has_ankle:
-            self.ankle.make_encoder_map()
-
-    def reset(self):
-        self.log.debug("[OSL] Resetting OSL.")
+    def calibrate_encoders(self) -> None:
+        self.log.debug(msg="[OSL] Calibrating encoders.")
 
         if self.has_knee:
-            self.knee.set_mode("voltage")
-            self.knee.set_voltage(0, force=True)
-
-            time.sleep(0.1)
+            self.knee.make_encoder_map()  # type: ignore
 
         if self.has_ankle:
-            self.ankle.set_mode("voltage")
-            self.ankle.set_voltage(0, force=True)
+            self.ankle.make_encoder_map()  # type: ignore
 
-            time.sleep(0.1)
+    def reset(self) -> None:
+        self.log.debug(msg="[OSL] Resetting OSL.")
+
+        if self.has_knee:
+            self.knee.set_mode(mode="voltage")  # type: ignore
+            self.knee.set_voltage(value=0, force=True)  # type: ignore
+
+            time.sleep(secs=0.1)
+
+        if self.has_ankle:
+            self.ankle.set_mode(mode="voltage")  # type: ignore
+            self.ankle.set_voltage(value=0, force=True)  # type: ignore
+
+            time.sleep(secs=0.1)
 
     @property
     def knee(self):
         if self.has_knee:
             return self._knee
         else:
-            self.log.warning("[OSL] Knee is not connected.")
+            self.log.warning(msg="[OSL] Knee is not connected.")
 
     @property
     def ankle(self):
         if self.has_ankle:
             return self._ankle
         else:
-            self.log.warning("[OSL] Ankle is not connected.")
+            self.log.warning(msg="[OSL] Ankle is not connected.")
 
     @property
     def loadcell(self):
         if self.has_loadcell:
             return self._loadcell
         else:
-            self.log.warning("[OSL] Loadcell is not connected.")
+            self.log.warning(msg="[OSL] Loadcell is not connected.")
 
     @property
-    def current_limit(self):
+    def current_limit(self) -> float:
         return self._current_limit
 
     @property
-    def units(self):
+    def units(self) -> UnitsDefinition:
         return self._units
 
     @property
-    def has_knee(self):
+    def has_knee(self) -> bool:
         return self._has_knee
 
     @property
-    def has_ankle(self):
+    def has_ankle(self) -> bool:
         return self._has_ankle
 
     @property
-    def has_loadcell(self):
+    def has_loadcell(self) -> bool:
         return self._has_loadcell
 
     @property
-    def has_state_machine(self):
+    def has_state_machine(self) -> bool:
         return self._has_sm
 
     @property
-    def loadcell(self):
-        return self._loadcell
-
-    @property
-    def has_tui(self):
+    def has_tui(self) -> bool:
         return self._has_tui
 
 
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=200)
 
-    osl.units["position"] = "deg"
+    osl.units["position"] = "deg"  # type: ignore
 
     osl.add_joint(
         name="knee",

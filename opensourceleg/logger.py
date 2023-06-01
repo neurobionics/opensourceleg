@@ -14,18 +14,18 @@ class Logger(logging.Logger):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: str = "./osl.log",
         log_format: str = "[%(asctime)s] %(levelname)s: %(message)s",
     ) -> None:
 
-        self._file_path = file_path
+        self._file_path: str = file_path
 
         self._class_instances = []
         self._attributes = []
 
         self._file = open(self._file_path + ".csv", "w")
         self._writer = csv.writer(self._file)
-        self._writer.writerow(self._attributes)
+        self._writer.writerow(row=self._attributes)
 
         self._log_levels = {
             "DEBUG": logging.DEBUG,
@@ -41,20 +41,20 @@ class Logger(logging.Logger):
         self._std_formatter = logging.Formatter(log_format)
 
         self._file_handler = RotatingFileHandler(
-            self._file_path,
+            filename=self._file_path,
             mode="w",
             maxBytes=0,
             backupCount=10,
         )
-        self._file_handler.setLevel(logging.DEBUG)
-        self._file_handler.setFormatter(self._std_formatter)
+        self._file_handler.setLevel(level=logging.DEBUG)
+        self._file_handler.setFormatter(fmt=self._std_formatter)
 
         self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(logging.INFO)
-        self._stream_handler.setFormatter(self._std_formatter)
+        self._stream_handler.setLevel(level=logging.INFO)
+        self._stream_handler.setFormatter(fmt=self._std_formatter)
 
-        self.addHandler(self._stream_handler)
-        self.addHandler(self._file_handler)
+        self.addHandler(hdlr=self._stream_handler)
+        self.addHandler(hdlr=self._file_handler)
 
         self._is_logging = False
 
@@ -66,9 +66,9 @@ class Logger(logging.Logger):
             level (str): Level of the logger
         """
         if level not in self._log_levels.keys():
-            self.warning(f"Invalid logging level: {level}")
+            self.warning(msg=f"Invalid logging level: {level}")
 
-        self._file_handler.setLevel(self._log_levels[level])
+        self._file_handler.setLevel(level=self._log_levels[level])
 
     def set_stream_level(self, level: str = "INFO") -> None:
         """
@@ -78,9 +78,9 @@ class Logger(logging.Logger):
             level (str): Level of the logger
         """
         if level not in self._log_levels.keys():
-            self.warning(f"Invalid logging level: {level}")
+            self.warning(msg=f"Invalid logging level: {level}")
 
-        self._stream_handler.setLevel(self._log_levels[level])
+        self._stream_handler.setLevel(level=self._log_levels[level])
 
     def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
         """
@@ -103,7 +103,7 @@ class Logger(logging.Logger):
                 self._class_instances, self._attributes
             ):
                 self._writer.writerow(
-                    [
+                    row=[
                         f"{class_instance.__class__.__name__}: {attribute}"
                         for attribute in attributes
                     ]
@@ -112,7 +112,7 @@ class Logger(logging.Logger):
 
         for class_instance, attributes in zip(self._class_instances, self._attributes):
             self._writer.writerow(
-                [getattr(class_instance, attribute) for attribute in attributes]
+                row=[getattr(class_instance, attribute) for attribute in attributes]
             )
 
         self._file.flush()

@@ -3,6 +3,7 @@ import time
 import numpy as np
 from smbus2 import SMBus
 
+from opensourceleg.constants import Constants
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 
@@ -31,8 +32,8 @@ class StrainAmp:
     def __init__(self, bus, I2C_addr=0x66) -> None:
         """Create a strainamp object, to talk over I2C"""
         # self._I2CMan = I2CManager(bus)
-        self._SMBus = SMBus(bus)
-        time.sleep(1)
+        self._SMBus = SMBus(bus=bus)
+        time.sleep(secs=1)
         self.bus = bus
         self.addr = I2C_addr
         self.genvars = np.zeros((3, 6))
@@ -65,8 +66,8 @@ class StrainAmp:
     def update(self):
         """Called to update data of strain amp. Also returns data."""
         self.genvars[self.indx, :] = self.read_compressed_strain()
-        self.indx = (self.indx + 1) % 3
-        return np.median(self.genvars, axis=0)
+        self.indx: int = (self.indx + 1) % 3
+        return np.median(a=self.genvars, axis=0)
 
     @staticmethod
     def unpack_uncompressed_strain(data):
@@ -77,7 +78,7 @@ class StrainAmp:
         ch4 = (data[6] << 8) | data[7]
         ch5 = (data[8] << 8) | data[9]
         ch6 = (data[10] << 8) | data[11]
-        return np.array([ch1, ch2, ch3, ch4, ch5, ch6])
+        return np.array(object=[ch1, ch2, ch3, ch4, ch5, ch6])
 
     @staticmethod
     def unpack_compressed_strain(data):
@@ -90,7 +91,7 @@ class StrainAmp:
         # ch6 = ( (data[7] << 8) & 0x0F00) | data[8]
         # moved into one line to save 0.02ms -- maybe pointless but eh
         return np.array(
-            [
+            object=[
                 (data[0] << 4) | ((data[1] >> 4) & 0x0F),
                 ((data[1] << 8) & 0x0F00) | data[2],
                 (data[3] << 4) | ((data[4] >> 4) & 0x0F),
@@ -108,7 +109,7 @@ class StrainAmp:
         loadcell_signed = (unpacked_strain - 2048) / 4095 * exc
         loadcell_coupled = loadcell_signed * 1000 / (exc * gain)
         return np.reshape(
-            np.transpose(loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+            np.transpose(a=loadcell_matrix.dot(np.transpose(a=loadcell_coupled)))
             - loadcell_zero,
             (6,),
         )
@@ -125,56 +126,36 @@ class Loadcell:
     def __init__(
         self,
         dephy_mode: bool = False,
-        joint: Joint = None,
+        joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix: np.array = None,
-        logger: "Logger" = None,
+        loadcell_matrix: np.ndarray = Constants.LOADCELL_MATRIX,
+        logger: "Logger" = None,  # type: ignore
     ) -> None:
-        self._is_dephy = dephy_mode
-        self._joint = joint
-        self._amp_gain = amp_gain
-        self._exc = exc
-        self._adc_range = 2**12 - 1
-        self._offset = (2**12) / 2
+        self._is_dephy: bool = dephy_mode
+        self._joint: Joint = joint
+        self._amp_gain: float = amp_gain
+        self._exc: float = exc
+        self._adc_range: int = 2**12 - 1
+        self._offset: float = (2**12) / 2
         self._lc = None
 
         if not self._is_dephy:
             self._lc = StrainAmp(bus=1, I2C_addr=0x66)
 
-        if not loadcell_matrix:
-            self._loadcell_matrix = np.array(
-                [
-                    (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
-                    (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
-                    (
-                        -1047.16800,
-                        8.63900,
-                        -1047.28200,
-                        -20.70000,
-                        -1073.08800,
-                        -8.92300,
-                    ),
-                    (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
-                    (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
-                    (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
-                ]
-            )
-        else:
-            self._loadcell_matrix = loadcell_matrix
-
+        self._loadcell_matrix = loadcell_matrix
         self._loadcell_data = None
         self._prev_loadcell_data = None
 
-        self._loadcell_zero = np.zeros((1, 6), dtype=np.double)
+        self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
         self._zeroed = False
-        self._log = logger
+        self._log: Logger = logger
 
     def reset(self):
         self._zeroed = False
-        self._loadcell_zero = np.zeros((1, 6), dtype=np.double)
+        self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
-    def update(self, loadcell_zero=None):
+    def update(self, loadcell_zero=None) -> None:
         """
         Computes Loadcell data
 
@@ -184,6 +165,7 @@ class Loadcell:
                 self._adc_range * self._exc
             )
         else:
+            assert self._lc is not None
             loadcell_signed = (self._lc.update() - self._offset) / (
                 self._adc_range * self._exc
             )
@@ -192,20 +174,24 @@ class Loadcell:
 
         if loadcell_zero is None:
             self._loadcell_data = (
-                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+                np.transpose(
+                    a=self._loadcell_matrix.dot(b=np.transpose(a=loadcell_coupled))
+                )
                 - self._loadcell_zero
             )
         else:
             self._loadcell_data = (
-                np.transpose(self._loadcell_matrix.dot(np.transpose(loadcell_coupled)))
+                np.transpose(
+                    a=self._loadcell_matrix.dot(b=np.transpose(a=loadcell_coupled))
+                )
                 - loadcell_zero
             )
 
-    def initialize(self, number_of_iterations: int = 2000):
+    def initialize(self, number_of_iterations: int = 2000) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero
         """
-        ideal_loadcell_zero = np.zeros((1, 6), dtype=np.double)
+        ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
 
@@ -215,7 +201,7 @@ class Loadcell:
                     self.update()
                 else:
                     self._log.warning(
-                        "[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
+                        msg="[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
                     )
                     return
             else:
@@ -226,7 +212,7 @@ class Loadcell:
             for _ in range(number_of_iterations):
                 self.update(ideal_loadcell_zero)
                 loadcell_offset = self._loadcell_data
-                self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
+                self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0  # type: ignore
 
             self._zeroed = True
 
@@ -238,7 +224,7 @@ class Loadcell:
             self.initialize()
 
     @property
-    def is_zeroed(self):
+    def is_zeroed(self) -> bool:
         return self._zeroed
 
     @property

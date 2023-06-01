@@ -96,7 +96,7 @@ class UnitsDefinition(dict):
             raise KeyError(f"Invalid key: {key}")
         return super().__getitem__(key)
 
-    def convert_to_default_units(self, value: float, attribute: str) -> None:
+    def convert_to_default_units(self, value: float, attribute: str) -> float:
         """
         convert a value from one unit to the default unit
 
@@ -109,7 +109,7 @@ class UnitsDefinition(dict):
         """
         return value * ALL_UNITS[attribute][self[attribute]]
 
-    def convert_from_default_units(self, value: float, attribute: str) -> None:
+    def convert_from_default_units(self, value: float, attribute: str) -> float:
         """
         convert a value from the default unit to another unit
 
