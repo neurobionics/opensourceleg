@@ -326,7 +326,7 @@ class DephyActpack(Device):
 
     def stop(self) -> None:
         self.set_mode(mode="voltage")
-        self.set_voltage(value=0, force=True)
+        self.set_voltage(value=0)
 
         time.sleep(secs=0.1)
         self.close()
@@ -368,7 +368,6 @@ class DephyActpack(Device):
             kp (int): The proportional gain
             ki (int): The integral gain
             kd (int): The derivative gain
-            force (bool): Force the mode transition. Defaults to False.
         """
         if self._mode != self._modes["position"]:
             self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
@@ -390,7 +389,6 @@ class DephyActpack(Device):
             kp (int): The proportional gain
             ki (int): The integral gain
             ff (int): The feedforward gain
-            force (bool): Force the mode transition. Defaults to False.
         """
         if self._mode != self._modes["current"]:
             self._log.warning(f"Cannot set current gains in mode {self._mode}")
@@ -405,7 +403,6 @@ class DephyActpack(Device):
         K: int = DEFAULT_IMPEDANCE_GAINS.K,
         B: int = DEFAULT_IMPEDANCE_GAINS.B,
         ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
-        force: bool = True,
     ) -> None:
         """
         Sets the impedance gains
@@ -416,7 +413,6 @@ class DephyActpack(Device):
             K (int): The spring constant
             B (int): The damping constant
             ff (int): The feedforward gain
-            force (bool): Force the mode transition. Defaults to False.
         """
         if self._mode != self._modes["impedance"]:
             self._log.warning(msg=f"Cannot set impedance gains in mode {self._mode}")
@@ -424,13 +420,12 @@ class DephyActpack(Device):
 
         self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
 
-    def set_voltage(self, value: float, force: bool = False) -> None:
+    def set_voltage(self, value: float) -> None:
         """
         Sets the q axis voltage
 
         Args:
             value (float): The voltage to set
-            force (bool): Force the mode transition. Defaults to False.
         """
         if self._mode != self._modes["voltage"]:
             self._log.warning(msg=f"Cannot set voltage in mode {self._mode}")
@@ -440,13 +435,12 @@ class DephyActpack(Device):
             int(self._units.convert_to_default_units(value=value, attribute="voltage")),
         )
 
-    def set_current(self, value: float, force: bool = False) -> None:
+    def set_current(self, value: float) -> None:
         """
         Sets the q axis current
 
         Args:
             value (float): The current to set
-            force (bool): Force the mode transition. Defaults to False.
         """
         if self._mode != self._modes["current"]:
             self._log.warning(msg=f"Cannot set current in mode {self._mode}")
@@ -456,13 +450,12 @@ class DephyActpack(Device):
             int(self._units.convert_to_default_units(value=value, attribute="current")),
         )
 
-    def set_motor_torque(self, torque: float, force: bool = False) -> None:
+    def set_motor_torque(self, torque: float) -> None:
         """
         Sets the motor torque
 
         Args:
             torque (float): The torque to set
-            force (bool): Force the mode transition. Defaults to False.
         """
         if self._mode != self._modes["current"]:
             self._log.warning(msg=f"Cannot set motor_torque in mode {self._mode}")
