@@ -36,24 +36,24 @@ class ThermalModel:
         3: The model can also be used to scale the torque based on the temperature of the winding and the case.
 
     Args:
-        ambient (int, optional): Ambient temperature in Celsius. Defaults to 21.
+        ambient (float, optional): Ambient temperature in Celsius. Defaults to 21.
         params (dict, optional): Dictionary of parameters. Defaults to dict().
-        temp_limit_windings (int, optional): Maximum temperature of the windings in Celsius. Defaults to 115.
-        soft_border_C_windings (int, optional): Soft border of the windings in Celsius. Defaults to 15.
-        temp_limit_case (int, optional): Maximum temperature of the case in Celsius. Defaults to 80.
-        soft_border_C_case (int, optional): Soft border of the case in Celsius. Defaults to 5.
+        temp_limit_windings (float, optional): Maximum temperature of the windings in Celsius. Defaults to 115.
+        soft_border_C_windings (float, optional): Soft border of the windings in Celsius. Defaults to 15.
+        temp_limit_case (float, optional): Maximum temperature of the case in Celsius. Defaults to 80.
+        soft_border_C_case (float, optional): Soft border of the case in Celsius. Defaults to 5.
 
 
     """
 
     def __init__(
         self,
-        ambient=21,
-        params=dict(),
-        temp_limit_windings=115,
-        soft_border_C_windings=15,
-        temp_limit_case=80,
-        soft_border_C_case=5,
+        ambient: float = 21,
+        params: dict = dict(),
+        temp_limit_windings: float = 115,
+        soft_border_C_windings: float = 15,
+        temp_limit_case: float = 80,
+        soft_border_C_case: float = 5,
     ) -> None:
 
         # The following parameters result from Jack Schuchmann's test with no fans
@@ -79,12 +79,12 @@ class ThermalModel:
         self.abs_max_temp_case: float = temp_limit_case
         self.soft_border_case: float = soft_border_C_case
 
-    def update(self, dt, motor_current: float = 0) -> None:
+    def update(self, dt: float = 1 / 200, motor_current: float = 0) -> None:
         """
         Updates the temperature of the winding and the case based on the current and the ambient temperature.
 
         Args:
-            dt (float): Time step in seconds.
+            dt (float, optional): Time step in seconds. Defaults to 1/200.
             motor_current (float, optional): Current in mA. Defaults to 0.
 
         Dynamics:
