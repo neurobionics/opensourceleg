@@ -44,6 +44,7 @@ class ActpackMode:
     """
 
     def __init__(self, control_mode: c_int, device: "DephyActpack") -> None:
+
         self._control_mode: c_int = control_mode
         self._device: DephyActpack = device
         self._entry_callback: Callable[[], None] = lambda: None
@@ -98,9 +99,6 @@ class ActpackMode:
 
         Args:
             to_state (ActpackMode): Mode to transition to
-
-        Raises:
-            ValueError: If the mode to transition to is not a valid mode
         """
         self.exit()
         to_state.enter()
