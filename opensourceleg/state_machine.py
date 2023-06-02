@@ -9,22 +9,39 @@ from dataclasses import dataclass, field
 class State:
     """
     A class to represent a state in a finite state machine.
+
+    Args:
+        name (str): Name of the state
+        is_knee_active (bool): Whether the knee is active
+        knee_stiffness (float): Knee stiffness
+        knee_damping (float): Knee damping
+        knee_equilibrium_angle (float): Knee equilibrium angle
+        is_ankle_active (bool): Whether the ankle is active
+        ankle_stiffness (float): Ankle stiffness
+        ankle_damping (float): Ankle damping
+        ankle_equilibrium_angle (float): Ankle equilibrium angle
+
+    Note:
+        The knee and ankle impedance parameters are only used if the
+        corresponding joint is active. You can also set custom data
+        using the `set_custom_data` method.
     """
 
     def __init__(
-        self, name: str = "state",
+        self,
+        name: str = "state",
         is_knee_active: bool = False,
         knee_stiffness: float = 0.0,
         knee_damping: float = 0.0,
         knee_equilibrium_angle: float = 0.0,
-        is_ankle_active: float = 0.0,
+        is_ankle_active: bool = False,
         ankle_stiffness: float = 0.0,
         ankle_damping: float = 0.0,
         ankle_equilibrium_angle: float = 0.0,
     ) -> None:
 
         self._name: str = name
-        
+
         self._is_knee_active: bool = is_knee_active
         self._knee_stiffness: float = knee_stiffness
         self._knee_damping: float = knee_damping

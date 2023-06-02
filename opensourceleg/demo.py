@@ -10,7 +10,7 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     reads a force greater than a threshold.
     """
     assert osl is not None
-    if osl.loadcell.fz < -1.25:
+    if osl.loadcell.fz < -1.25:  # type: ignore
         return True
     else:
         return False
