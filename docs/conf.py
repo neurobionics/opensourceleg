@@ -50,13 +50,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
-html_theme_options = {
-    "description": "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.",
-    "sidebar_width": "320px",
-    "page_width": "1040px",
-    "font_family": "Roboto, sans-serif",
-}
+html_theme = "sphinx_rtd_theme"
+# html_theme_options = {
+#     "description": "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.",
+#     "sidebar_width": "320px",
+#     "font_family": "Roboto, sans-serif",
+#     "fixed_sidebar": True,
+# }
 
 
 # Add any paths that contain custom static files (such as style sheets) here,

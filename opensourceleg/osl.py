@@ -286,24 +286,24 @@ class OpenSourceLeg:
             self.state_machine.update()  # type: ignore
 
             if self._set_state_machine_parameters:
-                if self.has_knee:
+                if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
                     self.knee.set_impedance_gains(  # type: ignore
-                        K=self.state_machine.current_state.stiffness,  # type: ignore
-                        B=self.state_machine.current_state.damping,  # type: ignore
+                        K=self.state_machine.current_state.knee_stiffness,  # type: ignore
+                        B=self.state_machine.current_state.knee_damping,  # type: ignore
                     )
 
                     self.knee.set_output_position(  # type: ignore
-                        position=self.state_machine.current_state.equilibrium_angle  # type: ignore
+                        position=self.state_machine.current_state.knee_theta  # type: ignore
                     )
 
-                elif self.has_ankle:
+                elif self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
                     self.ankle.set_impedance_gains(  # type: ignore
-                        K=self.state_machine.current_state.stiffness,  # type: ignore
-                        B=self.state_machine.current_state.damping,  # type: ignore
+                        K=self.state_machine.current_state.ankle_stiffness,  # type: ignore
+                        B=self.state_machine.current_state.ankle_damping,  # type: ignore
                     )
 
                     self.ankle.set_output_position(  # type: ignore
-                        position=self.state_machine.current_state.equilibrium_angle  # type: ignore
+                        position=self.state_machine.current_state.ankle_theta  # type: ignore
                     )
 
     def run(self, set_state_machine_parameters: bool = False) -> None:

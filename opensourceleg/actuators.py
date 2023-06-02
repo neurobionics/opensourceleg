@@ -21,6 +21,10 @@ from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 @dataclass
 class ControlModes:
+    """
+    Control modes for the Dephy Actpack
+    """
+
     voltage: c_int = fxe.FX_VOLTAGE
     current: c_int = fxe.FX_CURRENT
     position: c_int = fxe.FX_POSITION
@@ -31,8 +35,16 @@ CONTROL_MODE = ControlModes()
 
 
 class ActpackMode:
-    def __init__(self, control_mode, device: "DephyActpack") -> None:
-        self._control_mode = control_mode
+    """
+    Base class for Actpack modes
+
+    Args:
+        control_mode (c_int): Control mode
+        device (DephyActpack): Dephy Actpack
+    """
+
+    def __init__(self, control_mode: c_int, device: "DephyActpack") -> None:
+        self._control_mode: c_int = control_mode
         self._device: DephyActpack = device
         self._entry_callback: Callable[[], None] = lambda: None
         self._exit_callback: Callable[[], None] = lambda: None
@@ -48,20 +60,48 @@ class ActpackMode:
         return str(object=self._control_mode)
 
     @property
-    def mode(self):
+    def mode(self) -> c_int:
+        """
+        Control mode
+
+        Returns:
+            c_int: Control mode
+        """
         return self._control_mode
 
     @property
     def has_gains(self) -> bool:
+        """
+        Whether the mode has gains
+
+        Returns:
+            bool: True if the mode has gains, False otherwise
+        """
         return self._has_gains
 
     def enter(self) -> None:
+        """
+        Calls the entry callback
+        """
         self._entry_callback()
 
     def exit(self) -> None:
+        """
+        Calls the exit callback
+        """
         self._exit_callback()
 
     def transition(self, to_state: "ActpackMode") -> None:
+        """
+        Transition to another mode. Calls the exit callback of the current mode
+        and the entry callback of the new mode.
+
+        Args:
+            to_state (ActpackMode): Mode to transition to
+
+        Raises:
+            ValueError: If the mode to transition to is not a valid mode
+        """
         self.exit()
         to_state.enter()
 

@@ -7,6 +7,8 @@ Open-Source Leg
 ---------------
 |build| |docs| |python| |license|
 
+An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.
+
 .. |build| image:: https://github.com/imsenthur/opensourceleg/workflows/build/badge.svg?branch=master&event=push
     :target: https://github.com/imsenthur/opensourceleg/actions?query=workflow%3Abuild
     :alt: Build Status
@@ -21,7 +23,8 @@ Open-Source Leg
     :alt: License
 
 .. image:: ../assets/images/banner.gif
-   :width: 100%
+   :width: 70%
+
 
 .. toctree::
    :hidden:

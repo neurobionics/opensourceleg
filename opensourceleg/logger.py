@@ -25,7 +25,7 @@ class Logger(logging.Logger):
 
         self._file = open(self._file_path + ".csv", "w")
         self._writer = csv.writer(self._file)
-        self._writer.writerow(row=self._attributes)
+        self._writer.writerow(self._attributes)
 
         self._log_levels = {
             "DEBUG": logging.DEBUG,

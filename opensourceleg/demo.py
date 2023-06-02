@@ -81,10 +81,21 @@ def main():
 
     osl.add_state_machine()
 
-    early_stance = State(name="e_stance", theta=5, k=130, b=450)
-    late_stance = State(name="l_stance", theta=5, k=175, b=200)
-    early_swing = State(name="e_swing", theta=62, k=40, b=40)
-    late_swing = State(name="l_swing", theta=30, k=100, b=200)
+    early_stance = State(name="e_stance")
+    early_stance.set_knee_impedance_paramters(theta=5, k=130, b=450)
+    early_stance.is_knee_active = True
+
+    late_stance = State(name="l_stance")
+    late_stance.set_knee_impedance_paramters(theta=5, k=175, b=200)
+    late_stance.is_knee_active = True
+
+    early_swing = State(name="e_swing")
+    early_swing.set_knee_impedance_paramters(theta=62, k=40, b=40)
+    early_swing.is_knee_active = True
+
+    late_swing = State(name="l_swing")
+    late_swing.set_knee_impedance_paramters(theta=30, k=100, b=200)
+    late_swing.is_knee_active = True
 
     foot_flat = Event(name="foot_flat")
     heel_off = Event(name="heel_off")
