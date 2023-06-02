@@ -36,12 +36,12 @@ class ThermalModel:
         3: The model can also be used to scale the torque based on the temperature of the winding and the case.
 
     Args:
-        ambient (float, optional): Ambient temperature in Celsius. Defaults to 21.
-        params (dict, optional): Dictionary of parameters. Defaults to dict().
-        temp_limit_windings (float, optional): Maximum temperature of the windings in Celsius. Defaults to 115.
-        soft_border_C_windings (float, optional): Soft border of the windings in Celsius. Defaults to 15.
-        temp_limit_case (float, optional): Maximum temperature of the case in Celsius. Defaults to 80.
-        soft_border_C_case (float, optional): Soft border of the case in Celsius. Defaults to 5.
+        ambient (float): Ambient temperature in Celsius. Defaults to 21.
+        params (dict): Dictionary of parameters. Defaults to dict().
+        temp_limit_windings (float): Maximum temperature of the windings in Celsius. Defaults to 115.
+        soft_border_C_windings (float): Soft border of the windings in Celsius. Defaults to 15.
+        temp_limit_case (float): Maximum temperature of the case in Celsius. Defaults to 80.
+        soft_border_C_case (float): Soft border of the case in Celsius. Defaults to 5.
 
 
     """
@@ -84,8 +84,8 @@ class ThermalModel:
         Updates the temperature of the winding and the case based on the current and the ambient temperature.
 
         Args:
-            dt (float, optional): Time step in seconds. Defaults to 1/200.
-            motor_current (float, optional): Current in mA. Defaults to 0.
+            dt (float): Time step in seconds. Defaults to 1/200.
+            motor_current (float): Current in mA. Defaults to 0.
 
         Dynamics:
             1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
@@ -111,8 +111,8 @@ class ThermalModel:
 
         Args:
             dt (float): Time step in seconds.
-            motor_current (float, optional): Current in mA. Defaults to 0.
-            FOS (float, optional): Factor of safety. Defaults to 3.0.
+            motor_current (float): Current in mA. Defaults to 0.
+            FOS (float): Factor of safety. Defaults to 3.0.
 
         Returns:
             float: Scale factor for the torque.
