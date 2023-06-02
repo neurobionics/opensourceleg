@@ -16,6 +16,7 @@ from opensourceleg.control import (
     DEFAULT_POSITION_GAINS,
 )
 from opensourceleg.logger import Logger
+from opensourceleg.thermal import ThermalModel
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 
@@ -335,6 +336,13 @@ class DephyActpack(Device):
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
 
+        self._thermal_model: ThermalModel = ThermalModel(
+            temp_limit_windings=80,
+            soft_border_C_windings=10,
+            temp_limit_case=70,
+            soft_border_C_case=10,
+        )
+
         self._modes: dict[str, ActpackMode] = {
             "voltage": VoltageMode(device=self),
             "position": PositionMode(device=self),
@@ -372,6 +380,10 @@ class DephyActpack(Device):
     def update(self) -> None:
         if self.is_streaming:
             self._data = self.read()
+            self._thermal_model.T_c = self.temperature
+            self._thermal_model.update(
+                dt=(1 / self._frequency), motor_current=self.motor_current
+            )
         else:
             self._log.warning(
                 msg=f"[Actpack] Please open() the device before streaming data."
@@ -649,6 +661,13 @@ class DephyActpack(Device):
             return 0
 
     @property
+    def temperature(self):
+        if self._data is not None:
+            return self._data.temperature
+        else:
+            return 0
+
+    @property
     def genvars(self):
         if self._data is not None:
             return np.array(
@@ -668,7 +687,7 @@ class DephyActpack(Device):
     def acc_x(self):
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.accelx * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.acc_x * Constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
@@ -678,7 +697,7 @@ class DephyActpack(Device):
     def acc_y(self):
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.accely * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.acc_y * Constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
@@ -688,7 +707,7 @@ class DephyActpack(Device):
     def acc_z(self):
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.accelz * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.acc_z * Constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
@@ -698,7 +717,7 @@ class DephyActpack(Device):
     def gyro_x(self):
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyrox * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyro_x * Constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
@@ -708,7 +727,7 @@ class DephyActpack(Device):
     def gyro_y(self):
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyroy * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyro_y * Constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
@@ -718,7 +737,7 @@ class DephyActpack(Device):
     def gyro_z(self):
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyroz * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyro_z * Constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:

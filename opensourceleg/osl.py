@@ -73,7 +73,6 @@ class OpenSourceLeg:
         )
 
         self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
-
         self._units: UnitsDefinition = DEFAULT_UNITS
 
         self.tui = None
