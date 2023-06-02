@@ -262,7 +262,9 @@ class OpenSourceLeg:
             self._knee.update()
 
             if self.knee.case_temperature > self.knee.max_temperature:  # type: ignore
-                self.log.warn(msg="[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor.")
+                self.log.warn(
+                    msg="[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
+                )
                 self.__exit__(type=None, value=None, tb=None)
                 exit()
 
@@ -270,7 +272,9 @@ class OpenSourceLeg:
             self._ankle.update()
 
             if self.ankle.case_temperature > self.ankle.max_temperature:  # type: ignore
-                self.log.warn("[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor.")
+                self.log.warn(
+                    msg="[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
+                )
                 self.__exit__(type=None, value=None, tb=None)
                 exit()
 
