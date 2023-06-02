@@ -262,7 +262,7 @@ class OpenSourceLeg:
             self._knee.update()
 
             if self.knee.case_temperature > self.knee.max_temperature:  # type: ignore
-                self.log.warn(msg="[KNEE] Current limit reached. Stopping motor.")
+                self.log.warn(msg="[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor.")
                 self.__exit__(type=None, value=None, tb=None)
                 exit()
 
@@ -270,7 +270,7 @@ class OpenSourceLeg:
             self._ankle.update()
 
             if self.ankle.case_temperature > self.ankle.max_temperature:  # type: ignore
-                self.log.warn("[ANKLE] Current limit () reached. Stopping motor.")
+                self.log.warn("[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor.")
                 self.__exit__(type=None, value=None, tb=None)
                 exit()
 
@@ -317,7 +317,7 @@ class OpenSourceLeg:
         self._set_state_machine_parameters = set_state_machine_parameters
         self.update()
 
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
 
         if not self.has_tui:
             self.update()
@@ -424,13 +424,13 @@ class OpenSourceLeg:
             self.knee.set_mode(mode="voltage")  # type: ignore
             self.knee.set_voltage(value=0, force=True)  # type: ignore
 
-            time.sleep(secs=0.1)
+            time.sleep(0.1)
 
         if self.has_ankle:
             self.ankle.set_mode(mode="voltage")  # type: ignore
             self.ankle.set_voltage(value=0, force=True)  # type: ignore
 
-            time.sleep(secs=0.1)
+            time.sleep(0.1)
 
     @property
     def knee(self):

@@ -86,12 +86,12 @@ class Joint(DephyActpack):
         _motor_encoder_array = []
         _joint_encoder_array = []
 
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
 
         try:
             while is_homing:
                 self.update()
-                time.sleep(secs=1 / homing_frequency)
+                time.sleep(1 / homing_frequency)
 
                 _motor_encoder_array.append(self.motor_position)
                 _joint_encoder_array.append(self.joint_position)
@@ -111,7 +111,7 @@ class Joint(DephyActpack):
         _motor_zero_pos = self.motor_position
         _joint_zero_pos = self.joint_position
 
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
 
         if np.std(_motor_encoder_array) < 1e-6:
             self._log.warning(
@@ -168,11 +168,11 @@ class Joint(DephyActpack):
 
         self.set_mode(mode="current")
         self.set_current_gains()
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
         self.set_current_gains()
 
         self.set_output_torque(torque=0.0)
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
         self.set_output_torque(torque=0.0)
 
         _joint_position_array = []
@@ -192,7 +192,7 @@ class Joint(DephyActpack):
                 _joint_position_array.append(self.joint_position)
                 _output_position_array.append(self.output_position)
 
-                time.sleep(secs=1 / self.frequency)
+                time.sleep(1 / self.frequency)
 
         except KeyboardInterrupt:
             self._log.warning(msg="Encoder map interrupted.")

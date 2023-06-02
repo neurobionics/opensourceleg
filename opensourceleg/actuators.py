@@ -117,7 +117,7 @@ class VoltageMode(ActpackMode):
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Voltage mode.")
         self._set_voltage(voltage=0)
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
 
     def _set_voltage(self, voltage: int) -> None:
         self._device.send_motor_command(
@@ -143,7 +143,7 @@ class CurrentMode(ActpackMode):
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
         self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
-        time.sleep(secs=1 / self._device.frequency)
+        time.sleep(1 / self._device.frequency)
 
     def _set_gains(
         self,
@@ -159,7 +159,7 @@ class CurrentMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff)
         self._has_gains = True
 
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
 
     def _set_current(self, current: int) -> None:
         """Sets the Q-axis current of the motor
@@ -197,7 +197,7 @@ class PositionMode(ActpackMode):
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
         self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
 
     def _set_gains(
         self,
@@ -213,7 +213,7 @@ class PositionMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=0)
         self._has_gains = True
 
-        time.sleep(secs=1 / self._device.frequency)
+        time.sleep(1 / self._device.frequency)
 
     def _set_motor_position(self, counts: int) -> None:
         """Sets the motor position
@@ -250,7 +250,7 @@ class ImpedanceMode(ActpackMode):
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
         self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
-        time.sleep(secs=1 / self._device.frequency)
+        time.sleep(1 / self._device.frequency)
 
     def _set_motor_position(self, counts: int) -> None:
         """Sets the motor position
@@ -283,7 +283,7 @@ class ImpedanceMode(ActpackMode):
         )
         self._has_gains = True
 
-        time.sleep(secs=1 / self._device.frequency)
+        time.sleep(1 / self._device.frequency)
 
 
 class DephyActpack(Device):
@@ -366,7 +366,7 @@ class DephyActpack(Device):
             )
             os._exit(status=1)
 
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
         self._data = self.read()
         self._mode.enter()
 
@@ -374,7 +374,7 @@ class DephyActpack(Device):
         self.set_mode(mode="voltage")
         self.set_voltage(value=0)
 
-        time.sleep(secs=0.1)
+        time.sleep(0.1)
         self.close()
 
     def update(self) -> None:

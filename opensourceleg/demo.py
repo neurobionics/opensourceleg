@@ -9,8 +9,8 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     Transition from early stance to late stance when the loadcell
     reads a force greater than a threshold.
     """
-    assert osl.loadcell is not None
-    if osl.loadcell.fz < -0.0167 * BODY_WEIGHT:
+    assert osl is not None
+    if osl.loadcell.fz < -1.25:
         return True
     else:
         return False
@@ -22,7 +22,7 @@ def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
     reads a force less than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz > -0.00267 * BODY_WEIGHT:
+    if osl.loadcell.fz > 0.0:
         return True
     else:
         return False
@@ -83,19 +83,19 @@ def main():
 
     early_stance = State(name="e_stance")
     early_stance.set_knee_impedance_paramters(theta=5, k=130, b=450)
-    early_stance.is_knee_active = True
+    early_stance.make_knee_active()
 
     late_stance = State(name="l_stance")
     late_stance.set_knee_impedance_paramters(theta=5, k=175, b=200)
-    late_stance.is_knee_active = True
+    late_stance.make_knee_active()
 
     early_swing = State(name="e_swing")
     early_swing.set_knee_impedance_paramters(theta=62, k=40, b=40)
-    early_swing.is_knee_active = True
+    early_swing.make_knee_active()
 
     late_swing = State(name="l_swing")
     late_swing.set_knee_impedance_paramters(theta=30, k=100, b=200)
-    late_swing.is_knee_active = True
+    late_swing.make_knee_active()
 
     foot_flat = Event(name="foot_flat")
     heel_off = Event(name="heel_off")

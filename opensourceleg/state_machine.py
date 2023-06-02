@@ -6,47 +6,36 @@ from typing import Any, Callable, List, Optional
 from dataclasses import dataclass, field
 
 
-@dataclass
-class StateMachineData:
-    """
-    A class to represent the data of the state machine.
-    """
-
-    is_knee_active: bool = False
-    knee_stiffness: float = 0.0
-    knee_damping: float = 0.0
-    knee_theta: float = 0.0
-
-    is_ankle_active: bool = False
-    ankle_stiffness: float = 0.0
-    ankle_damping: float = 0.0
-    ankle_theta: float = 0.0
-
-    custom_data: dict[str, Any] = field(default_factory=dict)
-
-
 class State:
     """
     A class to represent a state in a finite state machine.
     """
 
     def __init__(
-        self, name: str = "state", data: StateMachineData = StateMachineData()
+        self, name: str = "state",
+        is_knee_active: bool = False,
+        knee_stiffness: float = 0.0,
+        knee_damping: float = 0.0,
+        knee_equilibrium_angle: float = 0.0,
+        is_ankle_active: float = 0.0,
+        ankle_stiffness: float = 0.0,
+        ankle_damping: float = 0.0,
+        ankle_equilibrium_angle: float = 0.0,
     ) -> None:
-        """
-        Parameters
-        ----------
-        name : str
-            The name of the state.
-        theta : float, optional
-            The theta parameter of the impedance model, by default 0.0
-        k : float, optional
-            The stiffness of the joint in PID units, by default 0.0
-        b : float, optional
-            The damping of the joint in PID units, by default 0.0
-        """
+
         self._name: str = name
-        self._data: StateMachineData = data
+        
+        self._is_knee_active: bool = is_knee_active
+        self._knee_stiffness: float = knee_stiffness
+        self._knee_damping: float = knee_damping
+        self._knee_theta: float = knee_equilibrium_angle
+
+        self._is_ankle_active: bool = is_ankle_active
+        self._ankle_stiffness: float = ankle_stiffness
+        self._ankle_damping: float = ankle_damping
+        self._ankle_theta: float = ankle_equilibrium_angle
+
+        self._custom_data: dict[str, Any] = field(default_factory=dict)
 
         # Callbacks
         self._entry_callbacks: list[Callable[[Any], None]] = []
@@ -65,20 +54,20 @@ class State:
         pass
 
     def set_knee_impedance_paramters(self, theta, k, b) -> None:
-        self._data.knee_theta = theta
-        self._data.knee_stiffness = k
-        self._data.knee_damping = b
+        self._knee_theta = theta
+        self._knee_stiffness = k
+        self._knee_damping = b
 
     def set_ankle_impedance_paramters(self, theta, k, b) -> None:
-        self._data.ankle_theta = theta
-        self._data.ankle_stiffness = k
-        self._data.ankle_damping = b
+        self._ankle_theta = theta
+        self._ankle_stiffness = k
+        self._ankle_damping = b
 
     def set_custom_data(self, key: str, value: Any) -> None:
-        self._data.custom_data[key] = value
+        self._custom_data[key] = value
 
     def get_custom_data(self, key: str) -> Any:
-        return self._data.custom_data[key]
+        return self._custom_data[key]
 
     def on_entry(self, callback: Callable[[Any], None]) -> None:
         self._entry_callbacks.append(callback)
@@ -94,49 +83,47 @@ class State:
         for c in self._exit_callbacks:
             c(data)
 
+    def make_knee_active(self):
+        self._is_knee_active = True
+
+    def make_ankle_active(self):
+        self._is_ankle_active = True
+
     @property
     def name(self) -> str:
         return self._name
 
     @property
     def knee_stiffness(self) -> float:
-        return self._data.knee_stiffness
+        return self._knee_stiffness
 
     @property
     def knee_damping(self) -> float:
-        return self._data.knee_damping
+        return self._knee_damping
 
     @property
     def knee_theta(self) -> float:
-        return self._data.knee_theta
+        return self._knee_theta
 
     @property
     def ankle_stiffness(self) -> float:
-        return self._data.ankle_stiffness
+        return self._ankle_stiffness
 
     @property
     def ankle_damping(self) -> float:
-        return self._data.ankle_damping
+        return self._ankle_damping
 
     @property
     def ankle_theta(self) -> float:
-        return self._data.ankle_theta
+        return self._ankle_theta
 
     @property
     def is_knee_active(self) -> bool:
-        return self._data.is_knee_active
-
-    @is_knee_active.setter
-    def is_knee_active(self, value: bool) -> None:
-        self._data.is_knee_active = value
+        return self._is_knee_active
 
     @property
     def is_ankle_active(self) -> bool:
-        return self._data.is_ankle_active
-
-    @is_ankle_active.setter
-    def is_ankle_active(self, value: bool) -> None:
-        self._data.is_ankle_active = value
+        return self._is_ankle_active
 
 
 class Idle(State):
@@ -260,7 +247,7 @@ class StateMachine:
         self._initial_state = self._exit_state
 
         self._exited = True
-        self._osl: Any = None  # type: ignore
+        self._osl: Any = osl  # type: ignore
 
     def add_state(self, state: State, initial_state: bool = False) -> None:
         """

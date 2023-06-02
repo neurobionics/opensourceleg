@@ -33,7 +33,7 @@ class StrainAmp:
         """Create a strainamp object, to talk over I2C"""
         # self._I2CMan = I2CManager(bus)
         self._SMBus = SMBus(bus=bus)
-        time.sleep(secs=1)
+        time.sleep(1)
         self.bus = bus
         self.addr = I2C_addr
         self.genvars = np.zeros((3, 6))
