@@ -69,6 +69,17 @@ ALL_UNITS = {
         "m/s^2": 1.0,
         "g": 9.80665,
     },
+    "temperature": {
+        "C": 1.0,
+        "F": 0.55556,
+        "K": 1.0,
+    },
+}
+
+TEMPERATURE_CONVERSIONS = {
+    "C": 0,
+    "F": 32,
+    "K": 273.15,
 }
 
 
@@ -107,7 +118,12 @@ class UnitsDefinition(dict):
         Returns:
             float: Converted value in the default unit
         """
-        return value * ALL_UNITS[attribute][self[attribute]]
+        val: float = value * ALL_UNITS[attribute][self[attribute]]
+
+        if attribute == "temperature":
+            val = (value - TEMPERATURE_CONVERSIONS[self[attribute]]) * ALL_UNITS[attribute][self[attribute]]  # type: ignore
+
+        return val
 
     def convert_from_default_units(self, value: float, attribute: str) -> float:
         """
@@ -120,7 +136,13 @@ class UnitsDefinition(dict):
         Returns:
             float: Converted value in the default unit
         """
-        return value / ALL_UNITS[attribute][self[attribute]]
+
+        val: float = value / ALL_UNITS[attribute][self[attribute]]
+
+        if attribute == "temperature":
+            val = val + TEMPERATURE_CONVERSIONS[self[attribute]]  # type: ignore
+
+        return val
 
 
 DEFAULT_UNITS = UnitsDefinition(
@@ -138,5 +160,13 @@ DEFAULT_UNITS = UnitsDefinition(
         "current": "mA",
         "voltage": "mV",
         "gravity": "m/s^2",
+        "temperature": "C",
     }
 )
+
+if __name__ == "__main__":
+    units: UnitsDefinition = DEFAULT_UNITS
+    units["temperature"] = "F"  # type: ignore
+
+    print(units.convert_to_default_units(value=80, attribute="temperature"))
+    print(units.convert_from_default_units(value=0, attribute="temperature"))

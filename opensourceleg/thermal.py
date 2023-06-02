@@ -10,30 +10,30 @@ class ThermalModel:
     Thermal model of a motor developed by Jianping Lin and Gray C. Thomas
     @U-M Locomotion Lab, directed by Dr. Robert Gregg
 
-    The model is based on the following assumptions:
-    1. The motor is a lumped system with two thermal nodes: the winding and the case.
-    2. The winding and the case are assumed to be in thermal equilibrium with the ambient.
-    3. The winding and the case are assumed to be in thermal equilibrium with each other.
+    Assumptions:
+        1: The motor is a lumped system with two thermal nodes: the winding and the case.
+        2: The winding and the case are assumed to be in thermal equilibrium with the ambient.
+        3: The winding and the case are assumed to be in thermal equilibrium with each other.
 
-    The model is based on the following equations:
-    1. C_w * dT_w/dt = (I^2)R + (T_c-T_w)/R_WC
-    2. C_c * dT_c/dt = (T_w-T_c)/R_WC + (T_w-T_a)/R_CA
+    Equations:
+        1: C_w * dT_w/dt = (I^2)R + (T_c-T_w)/R_WC
+        2: C_c * dT_c/dt = (T_w-T_c)/R_WC + (T_w-T_a)/R_CA
 
     where:
-    C_w: Thermal capacitance of the winding
-    C_c: Thermal capacitance of the case
-    R_WC: Thermal resistance between the winding and the case
-    R_CA: Thermal resistance between the case and the ambient
-    T_w: Temperature of the winding
-    T_c: Temperature of the case
-    T_a: Temperature of the ambient
-    I: Current
-    R: Resistance
+        C_w: Thermal capacitance of the winding
+        C_c: Thermal capacitance of the case
+        R_WC: Thermal resistance between the winding and the case
+        R_CA: Thermal resistance between the case and the ambient
+        T_w: Temperature of the winding
+        T_c: Temperature of the case
+        T_a: Temperature of the ambient
+        I: Current
+        R: Resistance
 
-    The model is implemented in the following way:
-    1. The model is updated at every time step with the current and the ambient temperature.
-    2. The model can be used to predict the temperature of the winding and the case at any time step.
-    3. The model can also be used to scale the torque based on the temperature of the winding and the case.
+    Implementation:
+        1: The model is updated at every time step with the current and the ambient temperature.
+        2: The model can be used to predict the temperature of the winding and the case at any time step.
+        3: The model can also be used to scale the torque based on the temperature of the winding and the case.
 
     Args:
         ambient (int, optional): Ambient temperature in Celsius. Defaults to 21.
@@ -66,16 +66,18 @@ class ThermalModel:
         self.R_ϕ_0 = 0.376  # emirical, from the computed resistance (q-axis voltage/ q-axis current). Ohms
 
         self.__dict__.update(params)
-        self.T_w: int = ambient
-        self.T_c: int = ambient
-        self.T_a: int = ambient
-        self.soft_max_temp_windings: int = temp_limit_windings - soft_border_C_windings
-        self.abs_max_temp_windings: int = temp_limit_windings
-        self.soft_border_windings: int = soft_border_C_windings
+        self.T_w: float = ambient
+        self.T_c: float = ambient
+        self.T_a: float = ambient
+        self.soft_max_temp_windings: float = (
+            temp_limit_windings - soft_border_C_windings
+        )
+        self.abs_max_temp_windings: float = temp_limit_windings
+        self.soft_border_windings: float = soft_border_C_windings
 
-        self.soft_max_temp_case: int = temp_limit_case - soft_border_C_case
-        self.abs_max_temp_case: int = temp_limit_case
-        self.soft_border_case: int = soft_border_C_case
+        self.soft_max_temp_case: float = temp_limit_case - soft_border_C_case
+        self.abs_max_temp_case: float = temp_limit_case
+        self.soft_border_case: float = soft_border_C_case
 
     def update(self, dt, motor_current: float = 0) -> None:
         """
@@ -86,8 +88,8 @@ class ThermalModel:
             motor_current (float, optional): Current in mA. Defaults to 0.
 
         Dynamics:
-            self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
-            self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
+            1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
+            2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
         """
 
         I_q_des: float = motor_current * 1e-3
@@ -116,8 +118,8 @@ class ThermalModel:
             float: Scale factor for the torque.
 
         Dynamics:
-            self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
-            self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
+            1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
+            2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
         """
 
         I_q_des: float = motor_current * 1e-3

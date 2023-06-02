@@ -37,7 +37,6 @@ class OpenSourceLeg:
     def __init__(
         self,
         frequency: int = 200,
-        current_limit: float = Constants.MAX_CURRENT,
         file_name: str = "./osl.log",
     ) -> None:
         """
@@ -47,8 +46,6 @@ class OpenSourceLeg:
         ----------
         frequency : int, optional
             The frequency of the control loop, by default 200
-        current_limit : float, optional
-            The current limit of the motor in mA, by default 8000
         file_name : str, optional
             The name of the log file, by default "./osl.log"
         """
@@ -61,7 +58,6 @@ class OpenSourceLeg:
         self._has_tui: bool = False
         self._has_sm: bool = False
 
-        self._current_limit: float = current_limit
         self._set_state_machine_parameters: bool = False
 
         self._knee: Joint = None  # type: ignore
@@ -265,7 +261,7 @@ class OpenSourceLeg:
         if self.has_knee:
             self._knee.update()
 
-            if self.knee.motor_current > self.current_limit:  # type: ignore
+            if self.knee.case_temperature > self.knee.max_temperature:  # type: ignore
                 self.log.warn(msg="[KNEE] Current limit reached. Stopping motor.")
                 self.__exit__(type=None, value=None, tb=None)
                 exit()
@@ -273,7 +269,7 @@ class OpenSourceLeg:
         if self.has_ankle:
             self._ankle.update()
 
-            if self.ankle.motor_current > self.current_limit:  # type: ignore
+            if self.ankle.case_temperature > self.ankle.max_temperature:  # type: ignore
                 self.log.warn("[ANKLE] Current limit () reached. Stopping motor.")
                 self.__exit__(type=None, value=None, tb=None)
                 exit()
@@ -456,10 +452,6 @@ class OpenSourceLeg:
             return self._loadcell
         else:
             self.log.warning(msg="[OSL] Loadcell is not connected.")
-
-    @property
-    def current_limit(self) -> float:
-        return self._current_limit
 
     @property
     def units(self) -> UnitsDefinition:

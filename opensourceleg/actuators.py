@@ -380,7 +380,9 @@ class DephyActpack(Device):
     def update(self) -> None:
         if self.is_streaming:
             self._data = self.read()
-            self._thermal_model.T_c = self.temperature
+            self._thermal_model.T_c = self._units.convert_to_default_units(
+                value=self.case_temperature, attribute="temperature"
+            )
             self._thermal_model.update(
                 dt=(1 / self._frequency), motor_current=self.motor_current
             )
@@ -561,111 +563,124 @@ class DephyActpack(Device):
         return self._joint_zero_position
 
     @property
-    def battery_voltage(self):
+    def battery_voltage(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.batt_volt,
                 attribute="voltage",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def batter_current(self):
+    def batter_current(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.batt_curr,
                 attribute="current",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def motor_voltage(self):
+    def motor_voltage(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.mot_volt,
                 attribute="voltage",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def motor_current(self):
+    def motor_current(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.mot_cur,
                 attribute="current",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def motor_torque(self):
+    def motor_torque(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.mot_cur * Constants.NM_PER_MILLIAMP,
                 attribute="torque",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def motor_position(self):
+    def motor_position(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=int(self._data.mot_ang) * Constants.RAD_PER_COUNT,
                 attribute="position",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def motor_velocity(self):
+    def motor_velocity(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=int(self._data.mot_vel) * Constants.RAD_PER_COUNT,
                 attribute="velocity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def motor_acceleration(self):
+    def motor_acceleration(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.mot_acc,
                 attribute="acceleration",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def joint_position(self):
+    def joint_position(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.ank_ang * Constants.RAD_PER_COUNT,
                 attribute="position",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def joint_velocity(self):
+    def joint_velocity(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.ank_vel * Constants.RAD_PER_COUNT,
                 attribute="velocity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def temperature(self):
+    def case_temperature(self) -> float:
         if self._data is not None:
-            return self._data.temperature
+            return self._units.convert_from_default_units(
+                value=self._data.temperature,
+                attribute="temperature",
+            )
         else:
-            return 0
+            return 0.0
+
+    @property
+    def winding_temperature(self) -> float:
+        if self._data is not None:
+            return self._units.convert_from_default_units(
+                value=self._thermal_model.T_w,
+                attribute="temperature",
+            )
+        else:
+            return 0.0
 
     @property
     def genvars(self):
@@ -684,61 +699,61 @@ class DephyActpack(Device):
             return np.zeros(shape=6)
 
     @property
-    def acc_x(self):
+    def accelx(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.acc_x * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.accelx * Constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def acc_y(self):
+    def accely(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.acc_y * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.accely * Constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def acc_z(self):
+    def accelz(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.acc_z * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.accelz * Constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def gyro_x(self):
+    def gyrox(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyro_x * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyrox * Constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def gyro_y(self):
+    def gyroy(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyro_y * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyroy * Constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
-            return 0
+            return 0.0
 
     @property
-    def gyro_z(self):
+    def gyroz(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyro_z * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyroz * Constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
-            return 0
+            return 0.0

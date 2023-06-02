@@ -51,6 +51,8 @@ class Joint(DephyActpack):
         self._damping_sp: int = 400
         self._equilibrium_position_sp = 0.0
 
+        self._max_temperature: float = Constants.MAX_CASE_TEMPERATURE
+
         self._control_mode_sp: str = "voltage"
 
         if "knee" in name.lower() or "ankle" in name.lower():
@@ -208,6 +210,17 @@ class Joint(DephyActpack):
         np.save(file=f"./{self._name}_encoder_map.npy", arr=_coeffs)
         self._log.info(msg=f"[{self._name}] Encoder map saved.")
 
+    def set_max_temperature(self, temperature: float) -> None:
+        """
+        Set the maximum temperature of the motor.
+
+        Args:
+            temperature (float): temperature in degrees Celsius
+        """
+        self._max_temperature = self._units.convert_to_default_units(
+            value=temperature, attribute="temperature"
+        )
+
     def set_output_torque(self, torque: float) -> None:
         """
         Set the output torque of the joint.
@@ -302,6 +315,12 @@ class Joint(DephyActpack):
     @property
     def gear_ratio(self) -> float:
         return self._gear_ratio
+
+    @property
+    def max_temperature(self) -> float:
+        return self._units.convert_from_default_units(
+            value=self._max_temperature, attribute="temperature"
+        )
 
     @property
     def is_homed(self) -> bool:

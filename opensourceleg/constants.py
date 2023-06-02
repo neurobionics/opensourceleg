@@ -22,7 +22,7 @@ class Constants:
     NM_PER_RAD_TO_K: float = RAD_PER_COUNT / IMPEDANCE_C * 1e3 / NM_PER_AMP
     NM_S_PER_RAD_TO_B: float = RAD_PER_DEG / IMPEDANCE_A * 1e3 / NM_PER_AMP
 
-    MAX_CURRENT: float = 22000
+    MAX_CASE_TEMPERATURE: float = 80
 
     LOADCELL_MATRIX = np.array(
         [
