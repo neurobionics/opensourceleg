@@ -86,7 +86,9 @@ class Joint(DephyActpack):
         else:
             homing_direction = -1.0
 
-        self.set_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
+        self.set_voltage(
+            value=homing_direction * homing_voltage
+        )  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
         _joint_encoder_array = []
