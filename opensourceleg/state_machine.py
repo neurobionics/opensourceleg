@@ -3,6 +3,7 @@
 
 from typing import Any, Callable, List, Optional
 
+import time
 from dataclasses import dataclass, field
 
 
@@ -12,14 +13,15 @@ class State:
 
     Args:
         name (str): Name of the state
-        is_knee_active (bool): Whether the knee is active
+        is_knee_active (bool): Whether the knee is active. Default: False
         knee_stiffness (float): Knee stiffness
         knee_damping (float): Knee damping
         knee_equilibrium_angle (float): Knee equilibrium angle
-        is_ankle_active (bool): Whether the ankle is active
+        is_ankle_active (bool): Whether the ankle is active. Default: False
         ankle_stiffness (float): Ankle stiffness
         ankle_damping (float): Ankle damping
         ankle_equilibrium_angle (float): Ankle equilibrium angle
+        minimum_time_in_state (float): Minimum time spent in the state in seconds. Default: 2.0
 
     Note:
         The knee and ankle impedance parameters are only used if the
@@ -38,6 +40,7 @@ class State:
         ankle_stiffness: float = 0.0,
         ankle_damping: float = 0.0,
         ankle_equilibrium_angle: float = 0.0,
+        minimum_time_in_state: float = 2.0,
     ) -> None:
 
         self._name: str = name
@@ -53,6 +56,10 @@ class State:
         self._ankle_theta: float = ankle_equilibrium_angle
 
         self._custom_data: dict[str, Any] = field(default_factory=dict)
+
+        self._time_entered: float = 0.0
+        self._time_exited: float = 0.0
+        self._min_time_in_state: float = minimum_time_in_state
 
         # Callbacks
         self._entry_callbacks: list[Callable[[Any], None]] = []
@@ -70,20 +77,75 @@ class State:
     def __call__(self, data: Any) -> Any:
         pass
 
+    def set_minimum_time_spent_in_state(self, time: float) -> None:
+        """
+        Set the minimum time spent in the state
+
+        Args:
+            time (float): Minimum time spent in the state in seconds
+        """
+        self._min_time_in_state = time
+
     def set_knee_impedance_paramters(self, theta, k, b) -> None:
+        """
+        Set the knee impedance parameters
+
+        Args:
+            theta (float): Equilibrium angle of the knee joint
+            k (float): Stiffness of the knee joint
+            b (float): Damping of the knee joint
+
+        Note:
+            The knee impedance parameters are only used if the knee is
+            active. You can make the knee active by calling the
+            `make_knee_active` method.
+        """
         self._knee_theta = theta
         self._knee_stiffness = k
         self._knee_damping = b
 
     def set_ankle_impedance_paramters(self, theta, k, b) -> None:
+        """
+        Set the ankle impedance parameters
+
+        Args:
+            theta (float): Equilibrium angle of the ankle joint
+            k (float): Stiffness of the ankle joint
+            b (float): Damping of the ankle joint
+
+        Note:
+            The ankle impedance parameters are only used if the ankle is
+            active. You can make the ankle active by calling the
+            `make_ankle_active` method.
+        """
         self._ankle_theta = theta
         self._ankle_stiffness = k
         self._ankle_damping = b
 
     def set_custom_data(self, key: str, value: Any) -> None:
+        """
+        Set custom data for the state. The custom data is a dictionary
+        that can be used to store any data you want to associate with
+        the state.
+
+        Args:
+            key (str): Key of the data
+            value (Any): Value of the data
+        """
         self._custom_data[key] = value
 
     def get_custom_data(self, key: str) -> Any:
+        """
+        Get custom data for the state. The custom data is a dictionary
+        that can be used to store any data you want to associate with
+        the state.
+
+        Args:
+            key (str): Key of the data
+
+        Returns:
+            Any: Value of the data
+        """
         return self._custom_data[key]
 
     def on_entry(self, callback: Callable[[Any], None]) -> None:
@@ -93,17 +155,33 @@ class State:
         self._exit_callbacks.append(callback)
 
     def start(self, data: Any) -> None:
+        self._time_entered = time.time()
         for c in self._entry_callbacks:
             c(data)
 
     def stop(self, data: Any) -> None:
+        self._time_exited = time.time()
         for c in self._exit_callbacks:
             c(data)
 
     def make_knee_active(self):
+        """
+        Make the knee active
+
+        Note:
+            The knee impedance parameters are only used if the knee is
+            active.
+        """
         self._is_knee_active = True
 
     def make_ankle_active(self):
+        """
+        Make the ankle active
+
+        Note:
+            The ankle impedance parameters are only used if the ankle is
+            active.
+        """
         self._is_ankle_active = True
 
     @property
@@ -141,6 +219,18 @@ class State:
     @property
     def is_ankle_active(self) -> bool:
         return self._is_ankle_active
+
+    @property
+    def minimum_time_spent_in_state(self) -> float:
+        return self._min_time_in_state
+
+    @property
+    def current_time_in_state(self) -> float:
+        return time.time() - self._time_entered
+
+    @property
+    def time_spent_in_state(self) -> float:
+        return self._time_exited - self._time_entered
 
 
 class Idle(State):
@@ -237,8 +327,24 @@ class FromToTransition(Transition):
         self._from: State = source
         self._to: State = destination
 
-    def __call__(self, data: Any) -> State:
-        if not self._criteria or self._criteria(data):
+    def __call__(self, data: Any, spoof: bool = False) -> State:
+        if spoof:
+            if (
+                self._from.current_time_in_state
+                > self._from.minimum_time_spent_in_state
+            ):
+                if self._action:
+                    self._action(data)
+
+                self._from.stop(data=data)
+                self._to.start(data=data)
+
+                return self._to
+
+            else:
+                return self._from
+
+        elif not self._criteria or self._criteria(data):
             if self._action:
                 self._action(data)
 
@@ -246,12 +352,38 @@ class FromToTransition(Transition):
             self._to.start(data=data)
 
             return self._to
+
         else:
             return self._from
 
 
 class StateMachine:
-    def __init__(self, osl=None) -> None:
+    """
+    State Machine class
+
+    Parameters
+    ----------
+    osl : Any
+        The OpenSourceLeg object.
+    spoof : bool
+        If True, the state machine will spoof the state transitions--ie, it will not
+        check the criteria for transitioning but will instead transition after the
+        minimum time spent in state has elapsed. This is useful for testing.
+        Defaults to False.
+
+    Attributes
+    ----------
+    current_state : State
+        The current state of the state machine.
+    current_state_name : str
+        The name of the current state of the state machine.
+    states : list[State]
+        The list of states in the state machine.
+    is_spoofing : bool
+        Whether or not the state machine is spoofing the state transitions.
+    """
+
+    def __init__(self, osl=None, spoof: bool = False) -> None:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
@@ -266,6 +398,8 @@ class StateMachine:
         self._exited = True
         self._osl: Any = osl  # type: ignore
 
+        self._spoof: bool = spoof
+
     def add_state(self, state: State, initial_state: bool = False) -> None:
         """
         Add a state to the state machine.
@@ -276,7 +410,6 @@ class StateMachine:
             The state to be added.
         initial_state : bool, optional
             Whether the state is the initial state, by default False
-
         """
         if state in self._states:
             raise ValueError("State already exists.")
@@ -332,7 +465,7 @@ class StateMachine:
 
         for transition in self._transitions:
             if transition.source_state == self._current_state:
-                self._current_state = transition(self._osl)
+                self._current_state = transition(self._osl, spoof=self.is_spoofing)
 
                 if isinstance(self._current_state, Idle) and not self._exited:
                     self._exited = True
@@ -369,6 +502,9 @@ class StateMachine:
         else:
             return False
 
+    def spoof(self, spoof: bool) -> None:
+        self._spoof = spoof
+
     @property
     def current_state(self):
         if self._current_state is None:
@@ -383,3 +519,7 @@ class StateMachine:
     @property
     def current_state_name(self):
         return self.current_state.name  # type: ignore
+
+    @property
+    def is_spoofing(self):
+        return self._spoof
