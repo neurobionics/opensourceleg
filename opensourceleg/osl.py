@@ -156,23 +156,26 @@ class OpenSourceLeg:
         dephy_log : bool, optional
             Whether to log the joint data to the dephy log, by default False
         """
+        if port is None:
+            ports = utilities.get_active_ports()
+
+            if len(ports) == 0:
+                self.log.warn(
+                    msg="No active ports found, please ensure that the joint is connected and powered on."
+                )
+
+                exit()
+
+            elif len(ports) == 1:
+                port = ports[0]
+                
+            else:
+                port = ports[0]
+                port_a = ports[1]
+
 
         if "knee" in name.lower():
             self._has_knee = True
-
-            if port is None:
-                ports = utilities.get_active_ports()
-
-                if len(ports) == 0:
-                    self.log.warn(
-                        msg="No active ports found, please ensure that the joint is connected and powered on."
-                    )
-
-                else:
-                    if "knee" in name.lower():
-                        port = ports[0]
-                    else:
-                        port = ports[1]
 
             self._knee = Joint(
                 name=name,
@@ -189,6 +192,10 @@ class OpenSourceLeg:
 
         elif "ankle" in name.lower():
             self._has_ankle = True
+
+            if self.has_knee:
+                port = port_a
+
             self._ankle = Joint(
                 name=name,
                 port=port,

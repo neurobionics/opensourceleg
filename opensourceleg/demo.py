@@ -121,7 +121,7 @@ def main():
     osl.units["velocity"] = "deg/s"  # type: ignore
 
     osl.add_joint(
-        name="knee",
+        name="ankle",
         gear_ratio=41.4999,
     )
 
@@ -204,17 +204,17 @@ def main():
     #         osl.run(set_state_machine_parameters=False)
     #         osl.log.info(osl.state_machine.current_state.name)
 
-    osl.add_tui()
+    # osl.add_tui()
 
     with osl:
-        osl.home()
-        # osl.log.info(osl.knee.motor_position)
-        # osl.log.info(osl.knee.output_position)        
-        # time.sleep(1)
         # osl.home()
-        # osl.log.info(osl.knee.motor_position)
-        # osl.log.info(osl.knee.output_position)
-        # time.sleep(1)
+        osl.log.info(osl.ankle.motor_position)
+        osl.log.info(osl.ankle.output_position)        
+        time.sleep(1)
+        osl.home()
+        osl.log.info(osl.ankle.motor_position)
+        osl.log.info(osl.ankle.output_position)
+        time.sleep(1)
 
         # osl.knee.set_mode(mode="impedance")
         # osl.knee.set_impedance_gains()
@@ -227,7 +227,7 @@ def main():
         # osl.log.info(osl.knee.motor_position)
         # osl.log.info(osl.knee.output_position)
 
-        osl.run(set_state_machine_parameters=True)
+        # osl.run(set_state_machine_parameters=True)
 
 
 if __name__ == "__main__":

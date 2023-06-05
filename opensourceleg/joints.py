@@ -76,11 +76,17 @@ class Joint(DephyActpack):
 
         is_homing = True
 
-        CURRENT_THRESHOLD = 6000
+        CURRENT_THRESHOLD = 5000
         VELOCITY_THRESHOLD = 0.001
 
         self.set_mode(mode="voltage")
-        self.set_voltage(value=-1 * homing_voltage)  # mV, negative for counterclockwise
+
+        if "ankle" in self._name.lower():
+            homing_direction = 1.0
+        else:
+            homing_direction = -1.0
+
+        self.set_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
         _joint_encoder_array = []
@@ -147,7 +153,7 @@ class Joint(DephyActpack):
 
         if not self.is_homed:
             self._log.warning(
-                msg=f"[{self._name}] Please home the joint before making the encoder map."
+                msg=f"[{self._name.capitalize}] Please home the joint before making the encoder map."
             )
             return
 
@@ -164,9 +170,7 @@ class Joint(DephyActpack):
         _output_position_array = []
 
         self._log.info(
-            msg=f"[{self._name}] Please manually move the joint numerous times \
-                through its full range of motion for 10 seconds.\
-                   \n Press any key to continue."
+            msg=f"[{self._name.capitalize}] Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
         )
 
         _start_time: float = time.time()

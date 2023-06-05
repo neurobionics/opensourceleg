@@ -344,4 +344,4 @@ def get_active_ports():
 
 
 if __name__ == "__main__":
-    print(get_active_ports()[0])
+    print(get_active_ports())
