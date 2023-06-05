@@ -84,6 +84,7 @@ class Joint(DephyActpack):
         Args:
             homing_voltage (int): voltage in mV to use for homing
             homing_frequency (int): frequency in Hz to use for homing
+            
 
         """
 
