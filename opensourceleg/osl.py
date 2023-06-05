@@ -248,11 +248,20 @@ class OpenSourceLeg:
 
     def add_state_machine(
         self,
+        spoof: bool = False,
     ) -> None:
         """
         Add a state machine to the OSL object.
+
+        Parameters
+        ----------
+        spoof : bool, optional
+            If True, the state machine will spoof the state transitions--ie, it will not
+            check the criteria for transitioning but will instead transition after the
+            minimum time spent in state has elapsed. This is useful for testing.
+            Defaults to False.
         """
-        self.state_machine = StateMachine(osl=self)
+        self.state_machine = StateMachine(osl=self, spoof=spoof)
         self._has_sm = True
 
     def update(

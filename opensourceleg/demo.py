@@ -1,7 +1,49 @@
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.state_machine import Event, State
 
-BODY_WEIGHT = 60.0  # kg
+# ------------- FSM PARAMETERS ---------------- #
+
+BODY_WEIGHT = 130
+
+# STATE 1: EARLY STANCE
+
+K_ESTANCE = 130
+B_ESTANCE = 0
+THETA_ESTANCE = 3
+
+LOAD_LSTANCE = -1 * BODY_WEIGHT * 0.3 * 4.4
+
+# --------------------------------------------- #
+# STATE 2: LATE STANCE
+
+K_LSTANCE = 150
+B_LSTANCE = 0
+THETA_LSTANCE = 3
+
+LOAD_ESWING = -1 * BODY_WEIGHT * 0.2 * 4.4
+
+# --------------------------------------------- #
+# STATE 3: EARLY SWING
+
+K_ESWING = 30
+B_ESWING = 40
+THETA_ESWING = 85
+
+THETA_ESWING_TO_LSWING = 60
+DTHETA_ESWING_TO_LSWING = 3
+
+# --------------------------------------------- #
+# STATE 4: LATE SWING
+
+K_LSWING = 20
+B_LSWING = 60
+THETA_LSWING = 3
+
+LOAD_ESTANCE = -1 * BODY_WEIGHT * 0.3 * 4.4
+THETA_LSWING_TO_ESTANCE = 20
+
+
+# ------------- FSM TRANSITIONS --------------- #
 
 
 def estance_to_lstance(osl: OpenSourceLeg) -> bool:
@@ -9,8 +51,8 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     Transition from early stance to late stance when the loadcell
     reads a force greater than a threshold.
     """
-    assert osl is not None
-    if osl.loadcell.fz < -1.25:  # type: ignore
+    assert osl.loadcell is not None
+    if osl.loadcell.fz < LOAD_ESTANCE:
         return True
     else:
         return False
@@ -22,7 +64,7 @@ def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
     reads a force less than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz > 0.0:
+    if osl.loadcell.fz > LOAD_ESWING:
         return True
     else:
         return False
@@ -35,7 +77,10 @@ def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
     a threshold.
     """
     assert osl.knee is not None
-    if osl.knee.output_position > 60 and osl.knee.output_velocity < 0.135:
+    if (
+        osl.knee.output_position < THETA_ESWING_TO_LSWING
+        and osl.knee.output_velocity < DTHETA_ESWING_TO_LSWING
+    ):
         return True
     else:
         return False
@@ -47,7 +92,7 @@ def eswing_to_estance(osl: OpenSourceLeg) -> bool:
     reads a force greater than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz < -0.02 * BODY_WEIGHT:
+    if osl.loadcell.fz < LOAD_ESTANCE:
         return True
     else:
         return False
@@ -60,7 +105,10 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
     less than a threshold.
     """
     assert osl.knee is not None and osl.loadcell is not None
-    if osl.loadcell.fz < -0.02 * BODY_WEIGHT or osl.knee.output_position < 30:
+    if (
+        osl.loadcell.fz < LOAD_ESTANCE
+        or osl.knee.output_position > THETA_LSWING_TO_ESTANCE
+    ):
         return True
     else:
         return False
@@ -69,32 +117,37 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
 def main():
     osl = OpenSourceLeg(frequency=200)
     osl.units["position"] = "deg"  # type: ignore
+    osl.units["velocity"] = "deg/s"  # type: ignore
 
-    osl.add_joint(
-        name="knee",
-        gear_ratio=41.4999,
-    )
+    # osl.add_joint(
+    #     name="knee",
+    #     gear_ratio=41.4999,
+    # )
 
-    osl.add_loadcell(
-        dephy_mode=False,
-    )
+    # osl.add_loadcell(
+    #     dephy_mode=False,
+    # )
 
-    osl.add_state_machine()
+    osl.add_state_machine(spoof=True)
 
     early_stance = State(name="e_stance")
-    early_stance.set_knee_impedance_paramters(theta=5, k=130, b=450)
+    early_stance.set_knee_impedance_paramters(
+        theta=THETA_ESTANCE, k=K_ESTANCE, b=B_ESTANCE
+    )
     early_stance.make_knee_active()
 
     late_stance = State(name="l_stance")
-    late_stance.set_knee_impedance_paramters(theta=5, k=175, b=200)
+    late_stance.set_knee_impedance_paramters(
+        theta=THETA_LSTANCE, k=K_LSTANCE, b=B_LSTANCE
+    )
     late_stance.make_knee_active()
 
     early_swing = State(name="e_swing")
-    early_swing.set_knee_impedance_paramters(theta=62, k=40, b=40)
+    early_swing.set_knee_impedance_paramters(theta=THETA_ESWING, k=K_ESWING, b=B_ESWING)
     early_swing.make_knee_active()
 
     late_swing = State(name="l_swing")
-    late_swing.set_knee_impedance_paramters(theta=30, k=100, b=200)
+    late_swing.set_knee_impedance_paramters(theta=THETA_LSWING, k=K_ESWING, b=B_ESWING)
     late_swing.make_knee_active()
 
     foot_flat = Event(name="foot_flat")
@@ -144,6 +197,11 @@ def main():
         event=heel_strike,
         callback=lswing_to_estance,
     )
+
+    # with osl:
+    #     for t in osl.clock:
+    #         osl.run(set_state_machine_parameters=False)
+    #         osl.log.info(osl.state_machine.current_state.name)
 
     osl.add_tui()
 
