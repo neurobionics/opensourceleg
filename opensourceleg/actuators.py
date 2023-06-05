@@ -23,7 +23,9 @@ from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 @dataclass
 class ControlModes:
     """
-    Control modes for the Dephy Actpack
+    Control modes for the Dephy Actpack.
+
+    Available modes are Voltage, Current, Position, Impedance.
     """
 
     voltage: c_int = fxe.FX_VOLTAGE
