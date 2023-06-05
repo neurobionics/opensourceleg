@@ -110,6 +110,24 @@ class OpenSourceLeg:
         configuration: str = "state_machine",
         layout: str = "vertical",
     ) -> None:
+        """
+        Add a Terminal User Interface (TUI) to the OSL object. The TUI is used
+        to visualize the data from the OSL and to send commands to the OSL. Additionally,
+        the TUI also has a timer built-in to govern the frequency of the control loop, which is
+        less accurate than the "osl.clock" (SoftRealTimeLoop) object but is more convenient.
+
+        Note
+        ----
+        The timer/interface runs in a separate thread, so it does not affect the control loop.
+        This causes the code to not respond to keyboard interrupts (Ctrl+C) when the TUI is running.
+
+        Parameters
+        ----------
+        configuration : str, optional
+            The configuration of the TUI, by default "state_machine"
+        layout : str, optional
+            The layout of the TUI, by default "vertical"
+        """
         from opensourceleg.tui import TUI
 
         self._has_tui = True
@@ -168,11 +186,10 @@ class OpenSourceLeg:
 
             elif len(ports) == 1:
                 port = ports[0]
-                
+
             else:
                 port = ports[0]
                 port_a = ports[1]
-
 
         if "knee" in name.lower():
             self._has_knee = True
@@ -295,9 +312,9 @@ class OpenSourceLeg:
             if self._set_state_machine_parameters:
                 if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
 
-                    if self.knee.mode != self.knee.modes["impedance"]: # type: ignore
+                    if self.knee.mode != self.knee.modes["impedance"]:  # type: ignore
                         self.knee.set_mode(mode="impedance")  # type: ignore
-                        self.knee.set_impedance_gains() # type: ignore
+                        self.knee.set_impedance_gains()  # type: ignore
 
                     self.knee.set_impedance_gains(  # type: ignore
                         K=self.state_machine.current_state.knee_stiffness,  # type: ignore
@@ -310,9 +327,9 @@ class OpenSourceLeg:
 
                 elif self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
 
-                    if self.ankle.mode != self.ankle.modes["impedance"]: # type: ignore
+                    if self.ankle.mode != self.ankle.modes["impedance"]:  # type: ignore
                         self.ankle.set_mode(mode="impedance")  # type: ignore
-                        self.ankle.set_impedance_gains() # type: ignore
+                        self.ankle.set_impedance_gains()  # type: ignore
 
                     self.ankle.set_impedance_gains(  # type: ignore
                         K=self.state_machine.current_state.ankle_stiffness,  # type: ignore

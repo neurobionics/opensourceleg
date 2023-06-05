@@ -1,6 +1,7 @@
+import time
+
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.state_machine import Event, State
-import time
 
 # ------------- FSM PARAMETERS ---------------- #
 
@@ -8,41 +9,56 @@ BODY_WEIGHT = 130
 
 # STATE 1: EARLY STANCE
 
-K_ESTANCE = 130
-B_ESTANCE = 0
-THETA_ESTANCE = 5
+KNEE_K_ESTANCE = 130
+KNEE_B_ESTANCE = 0
+KNEE_THETA_ESTANCE = 5
 
 LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
+
+ANKLE_K_ESTANCE = 50
+ANKLE_B_ESTANCE = 0
+ANKLE_THETA_ESTANCE = 20
 
 # --------------------------------------------- #
 # STATE 2: LATE STANCE
 
-K_LSTANCE = 150
-B_LSTANCE = 0
-THETA_LSTANCE = 5
+KNEE_K_LSTANCE = 150
+KNEE_B_LSTANCE = 0
+KNEE_THETA_LSTANCE = 5
 
 LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.2 * 4.4
+
+ANKLE_K_LSTANCE = 90
+ANKLE_B_LSTANCE = 0
+ANKLE_THETA_LSTANCE = 0
 
 # --------------------------------------------- #
 # STATE 3: EARLY SWING
 
-K_ESWING = 30
-B_ESWING = 40
-THETA_ESWING = 85
+KNEE_K_ESWING = 30
+KNEE_B_ESWING = 40
+KNEE_THETA_ESWING = 85
 
-THETA_ESWING_TO_LSWING = 60
-DTHETA_ESWING_TO_LSWING = 3
+KNEE_THETA_ESWING_TO_LSWING = 60
+KNEE_DTHETA_ESWING_TO_LSWING = 3
+
+ANKLE_K_ESWING = 20
+ANKLE_B_ESWING = 0
+ANKLE_THETA_ESWING = 30
 
 # --------------------------------------------- #
 # STATE 4: LATE SWING
 
-K_LSWING = 20
-B_LSWING = 60
-THETA_LSWING = 5
+KNEE_K_LSWING = 20
+KNEE_B_LSWING = 60
+KNEE_THETA_LSWING = 5
 
 LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
-THETA_LSWING_TO_ESTANCE = 20
+KNEE_THETA_LSWING_TO_ESTANCE = 20
 
+ANKLE_K_LSWING = 20
+ANKLE_B_LSWING = 0
+ANKLE_THETA_LSWING = 30
 
 # ------------- FSM TRANSITIONS --------------- #
 
@@ -79,8 +95,8 @@ def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
     """
     assert osl.knee is not None
     if (
-        osl.knee.output_position < THETA_ESWING_TO_LSWING
-        and osl.knee.output_velocity < DTHETA_ESWING_TO_LSWING
+        osl.knee.output_position < KNEE_THETA_ESWING_TO_LSWING
+        and osl.knee.output_velocity < KNEE_DTHETA_ESWING_TO_LSWING
     ):
         return True
     else:
@@ -108,7 +124,7 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
     assert osl.knee is not None and osl.loadcell is not None
     if (
         osl.loadcell.fz < LOAD_ESTANCE
-        or osl.knee.output_position > THETA_LSWING_TO_ESTANCE
+        or osl.knee.output_position > KNEE_THETA_LSWING_TO_ESTANCE
     ):
         return True
     else:
@@ -133,23 +149,47 @@ def main():
 
     early_stance = State(name="e_stance")
     early_stance.set_knee_impedance_paramters(
-        theta=THETA_ESTANCE, k=K_ESTANCE, b=B_ESTANCE
+        theta=KNEE_THETA_ESTANCE, k=KNEE_K_ESTANCE, b=KNEE_B_ESTANCE
     )
     early_stance.make_knee_active()
 
+    early_stance.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_ESTANCE, k=ANKLE_K_ESTANCE, b=ANKLE_B_ESTANCE
+    )
+    early_stance.make_ankle_active()
+
     late_stance = State(name="l_stance")
     late_stance.set_knee_impedance_paramters(
-        theta=THETA_LSTANCE, k=K_LSTANCE, b=B_LSTANCE
+        theta=KNEE_THETA_LSTANCE, k=KNEE_K_LSTANCE, b=KNEE_B_LSTANCE
     )
     late_stance.make_knee_active()
 
+    late_stance.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_LSTANCE, k=ANKLE_K_LSTANCE, b=ANKLE_B_LSTANCE
+    )
+    late_stance.make_ankle_active()
+
     early_swing = State(name="e_swing")
-    early_swing.set_knee_impedance_paramters(theta=THETA_ESWING, k=K_ESWING, b=B_ESWING)
+    early_swing.set_knee_impedance_paramters(
+        theta=KNEE_THETA_ESWING, k=KNEE_K_ESWING, b=KNEE_B_ESWING
+    )
     early_swing.make_knee_active()
 
+    early_swing.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_ESWING, k=ANKLE_K_ESWING, b=ANKLE_B_ESWING
+    )
+    early_swing.make_ankle_active()
+
     late_swing = State(name="l_swing")
-    late_swing.set_knee_impedance_paramters(theta=THETA_LSWING, k=K_ESWING, b=B_ESWING)
+    late_swing.set_knee_impedance_paramters(
+        theta=KNEE_THETA_LSWING, k=KNEE_K_LSWING, b=KNEE_B_LSWING
+    )
     late_swing.make_knee_active()
+
+    late_swing.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_LSWING, k=ANKLE_K_LSWING, b=ANKLE_B_LSWING
+    )
+    late_swing.make_ankle_active()
 
     foot_flat = Event(name="foot_flat")
     heel_off = Event(name="heel_off")
@@ -199,17 +239,12 @@ def main():
         callback=lswing_to_estance,
     )
 
-    # with osl:
-    #     for t in osl.clock:
-    #         osl.run(set_state_machine_parameters=False)
-    #         osl.log.info(osl.state_machine.current_state.name)
-
     # osl.add_tui()
 
     with osl:
         # osl.home()
         osl.log.info(osl.ankle.motor_position)
-        osl.log.info(osl.ankle.output_position)        
+        osl.log.info(osl.ankle.output_position)
         time.sleep(1)
         osl.home()
         osl.log.info(osl.ankle.motor_position)
