@@ -88,14 +88,6 @@ class OpenSourceLeg:
         if self.has_state_machine:
             self.state_machine.start()  # type: ignore
 
-            if self.has_knee:
-                self.knee.set_mode(mode="impedance")  # type: ignore
-                self.knee.set_impedance_gains()  # type: ignore
-
-            if self.has_ankle:
-                self.ankle.set_mode(mode="impedance")  # type: ignore
-                self.ankle.set_impedance_gains()  # type: ignore
-
     def __exit__(self, type, value, tb) -> None:
         if self.has_state_machine:
             self.state_machine.stop()  # type: ignore
@@ -295,6 +287,11 @@ class OpenSourceLeg:
 
             if self._set_state_machine_parameters:
                 if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
+
+                    if self.knee.mode != self.knee.modes["impedance"]: # type: ignore
+                        self.knee.set_mode(mode="impedance")  # type: ignore
+                        self.knee.set_impedance_gains() # type: ignore
+
                     self.knee.set_impedance_gains(  # type: ignore
                         K=self.state_machine.current_state.knee_stiffness,  # type: ignore
                         B=self.state_machine.current_state.knee_damping,  # type: ignore
@@ -305,6 +302,11 @@ class OpenSourceLeg:
                     )
 
                 elif self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
+
+                    if self.ankle.mode != self.ankle.modes["impedance"]: # type: ignore
+                        self.ankle.set_mode(mode="impedance")  # type: ignore
+                        self.ankle.set_impedance_gains() # type: ignore
+
                     self.ankle.set_impedance_gains(  # type: ignore
                         K=self.state_machine.current_state.ankle_stiffness,  # type: ignore
                         B=self.state_machine.current_state.ankle_damping,  # type: ignore

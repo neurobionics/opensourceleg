@@ -38,7 +38,6 @@ class Joint(DephyActpack):
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell
         self._encoder_map = None
-        self._zero_pos = 0.0
 
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
@@ -108,32 +107,18 @@ class Joint(DephyActpack):
             self._log.warning(msg="Homing interrupted.")
             return
 
-        _motor_zero_pos = self.motor_position
-        _joint_zero_pos = self.joint_position
+        _motor_zero_pos = self.motor_encoder_counts
+        _joint_zero_pos = self.joint_encoder_counts
 
         time.sleep(0.1)
 
-        if np.std(_motor_encoder_array) < 1e-6:
-            self._log.warning(
-                msg=f"[{self._name}] Motor encoder not working. Please check the wiring."
-            )
-            return
-
-        elif np.std(_joint_encoder_array) < 1e-6:
-            self._log.warning(
-                msg=f"[{self._name}] Joint encoder not working. Please check the wiring."
-            )
-            return
-
         if "ankle" in self._name.lower():
-            self._zero_pos = np.deg2rad(30)
-            self.set_motor_zero_position(position=_motor_zero_pos)
-            self.set_joint_zero_position(position=_joint_zero_pos)
-
+            _zero_pos: int = int(np.deg2rad(30) / Constants.RAD_PER_COUNT)
         else:
-            self._zero_pos = 0.0
-            self.set_motor_zero_position(position=_motor_zero_pos)
-            self.set_joint_zero_position(position=_joint_zero_pos)
+            _zero_pos: int = 0
+
+        self.set_motor_zero_position(position=(_motor_zero_pos + _zero_pos))
+        self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos))
 
         self._is_homed = True
 
@@ -299,14 +284,6 @@ class Joint(DephyActpack):
 
     def update_set_points(self) -> None:
         self.set_mode(mode=self.control_mode_sp)
-
-    @property
-    def zero_position(self):
-        return self._zero_pos
-
-    @zero_position.setter
-    def zero_position(self, value):
-        self._zero_pos = value
 
     @property
     def name(self) -> str:

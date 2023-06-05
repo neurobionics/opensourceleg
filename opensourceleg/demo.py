@@ -1,5 +1,6 @@
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.state_machine import Event, State
+import time
 
 # ------------- FSM PARAMETERS ---------------- #
 
@@ -9,18 +10,18 @@ BODY_WEIGHT = 130
 
 K_ESTANCE = 130
 B_ESTANCE = 0
-THETA_ESTANCE = 3
+THETA_ESTANCE = 5
 
-LOAD_LSTANCE = -1 * BODY_WEIGHT * 0.3 * 4.4
+LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
 
 # --------------------------------------------- #
 # STATE 2: LATE STANCE
 
 K_LSTANCE = 150
 B_LSTANCE = 0
-THETA_LSTANCE = 3
+THETA_LSTANCE = 5
 
-LOAD_ESWING = -1 * BODY_WEIGHT * 0.2 * 4.4
+LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.2 * 4.4
 
 # --------------------------------------------- #
 # STATE 3: EARLY SWING
@@ -37,9 +38,9 @@ DTHETA_ESWING_TO_LSWING = 3
 
 K_LSWING = 20
 B_LSWING = 60
-THETA_LSWING = 3
+THETA_LSWING = 5
 
-LOAD_ESTANCE = -1 * BODY_WEIGHT * 0.3 * 4.4
+LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
 THETA_LSWING_TO_ESTANCE = 20
 
 
@@ -119,14 +120,14 @@ def main():
     osl.units["position"] = "deg"  # type: ignore
     osl.units["velocity"] = "deg/s"  # type: ignore
 
-    # osl.add_joint(
-    #     name="knee",
-    #     gear_ratio=41.4999,
-    # )
+    osl.add_joint(
+        name="knee",
+        gear_ratio=41.4999,
+    )
 
-    # osl.add_loadcell(
-    #     dephy_mode=False,
-    # )
+    osl.add_loadcell(
+        dephy_mode=False,
+    )
 
     osl.add_state_machine(spoof=True)
 
@@ -206,6 +207,26 @@ def main():
     osl.add_tui()
 
     with osl:
+        osl.home()
+        # osl.log.info(osl.knee.motor_position)
+        # osl.log.info(osl.knee.output_position)        
+        # time.sleep(1)
+        # osl.home()
+        # osl.log.info(osl.knee.motor_position)
+        # osl.log.info(osl.knee.output_position)
+        # time.sleep(1)
+
+        # osl.knee.set_mode(mode="impedance")
+        # osl.knee.set_impedance_gains()
+        # osl.knee.set_output_position(position=10)
+
+        # time.sleep(2)
+
+        # osl.update()
+
+        # osl.log.info(osl.knee.motor_position)
+        # osl.log.info(osl.knee.output_position)
+
         osl.run(set_state_machine_parameters=True)
 
 

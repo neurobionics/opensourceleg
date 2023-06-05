@@ -535,10 +535,10 @@ class DephyActpack(Device):
 
         self._mode._set_motor_position(  # type: ignore
             int(
-                self._units.convert_to_default_units(
+                (self._units.convert_to_default_units(
                     value=position, attribute="position"
                 )
-                / Constants.RAD_PER_COUNT
+                / Constants.RAD_PER_COUNT) + self.motor_zero_position
             ),
         )
 
@@ -555,6 +555,10 @@ class DephyActpack(Device):
     @property
     def mode(self) -> ActpackMode:
         return self._mode
+
+    @property
+    def modes(self) -> dict[str, ActpackMode]:
+        return self._modes
 
     @property
     def motor_zero_position(self) -> float:
@@ -618,11 +622,19 @@ class DephyActpack(Device):
     def motor_position(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=int(self._data.mot_ang) * Constants.RAD_PER_COUNT,
+                value=int(self._data.mot_ang - self.motor_zero_position) * Constants.RAD_PER_COUNT,
                 attribute="position",
             )
         else:
             return 0.0
+
+    @property
+    def motor_encoder_counts(self):
+        return self._data.mot_ang
+
+    @property
+    def joint_encoder_counts(self):
+        return self._data.ank_ang
 
     @property
     def motor_velocity(self) -> float:
@@ -648,7 +660,7 @@ class DephyActpack(Device):
     def joint_position(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.ank_ang * Constants.RAD_PER_COUNT,
+                value=int(self._data.ank_ang - self._joint_zero_position) * Constants.RAD_PER_COUNT,
                 attribute="position",
             )
         else:
