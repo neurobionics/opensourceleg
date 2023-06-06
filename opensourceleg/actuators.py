@@ -9,7 +9,7 @@ import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.constants import Constants
+import opensourceleg.constants as constants
 from opensourceleg.control import (
     DEFAULT_CURRENT_GAINS,
     DEFAULT_IMPEDANCE_GAINS,
@@ -192,7 +192,7 @@ class PositionMode(ActpackMode):
                 self._device._units.convert_to_default_units(
                     value=self._device.motor_position, attribute="position"
                 )
-                / Constants.RAD_PER_COUNT
+                / constants.RAD_PER_COUNT
             )
         )
 
@@ -245,7 +245,7 @@ class ImpedanceMode(ActpackMode):
                 self._device._units.convert_to_default_units(
                     value=self._device.motor_position, attribute="position"
                 )
-                / Constants.RAD_PER_COUNT
+                / constants.RAD_PER_COUNT
             )
         )
 
@@ -518,7 +518,7 @@ class DephyActpack(Device):
         self._mode._set_current(  # type: ignore
             int(
                 self._units.convert_to_default_units(value=torque, attribute="torque")
-                / Constants.NM_PER_MILLIAMP
+                / constants.NM_PER_MILLIAMP
             ),
         )
 
@@ -535,10 +535,13 @@ class DephyActpack(Device):
 
         self._mode._set_motor_position(  # type: ignore
             int(
-                self._units.convert_to_default_units(
-                    value=position, attribute="position"
+                (
+                    self._units.convert_to_default_units(
+                        value=position, attribute="position"
+                    )
+                    / constants.RAD_PER_COUNT
                 )
-                / Constants.RAD_PER_COUNT
+                + self.motor_zero_position
             ),
         )
 
@@ -555,6 +558,10 @@ class DephyActpack(Device):
     @property
     def mode(self) -> ActpackMode:
         return self._mode
+
+    @property
+    def modes(self) -> dict[str, ActpackMode]:
+        return self._modes
 
     @property
     def motor_zero_position(self) -> float:
@@ -608,7 +615,7 @@ class DephyActpack(Device):
     def motor_torque(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.mot_cur * Constants.NM_PER_MILLIAMP,
+                value=self._data.mot_cur * constants.NM_PER_MILLIAMP,
                 attribute="torque",
             )
         else:
@@ -618,17 +625,26 @@ class DephyActpack(Device):
     def motor_position(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=int(self._data.mot_ang) * Constants.RAD_PER_COUNT,
+                value=int(self._data.mot_ang - self.motor_zero_position)
+                * constants.RAD_PER_COUNT,
                 attribute="position",
             )
         else:
             return 0.0
 
     @property
+    def motor_encoder_counts(self):
+        return self._data.mot_ang
+
+    @property
+    def joint_encoder_counts(self):
+        return self._data.ank_ang
+
+    @property
     def motor_velocity(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=int(self._data.mot_vel) * Constants.RAD_PER_COUNT,
+                value=int(self._data.mot_vel) * constants.RAD_PER_COUNT,
                 attribute="velocity",
             )
         else:
@@ -648,7 +664,8 @@ class DephyActpack(Device):
     def joint_position(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.ank_ang * Constants.RAD_PER_COUNT,
+                value=int(self._data.ank_ang - self._joint_zero_position)
+                * constants.RAD_PER_COUNT,
                 attribute="position",
             )
         else:
@@ -658,7 +675,7 @@ class DephyActpack(Device):
     def joint_velocity(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.ank_vel * Constants.RAD_PER_COUNT,
+                value=self._data.ank_vel * constants.RAD_PER_COUNT,
                 attribute="velocity",
             )
         else:
@@ -704,7 +721,7 @@ class DephyActpack(Device):
     def accelx(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.accelx * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.accelx * constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
@@ -714,7 +731,7 @@ class DephyActpack(Device):
     def accely(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.accely * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.accely * constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
@@ -724,7 +741,7 @@ class DephyActpack(Device):
     def accelz(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.accelz * Constants.M_PER_SEC_SQUARED_ACCLSB,
+                value=self._data.accelz * constants.M_PER_SEC_SQUARED_ACCLSB,
                 attribute="gravity",
             )
         else:
@@ -734,7 +751,7 @@ class DephyActpack(Device):
     def gyrox(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyrox * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyrox * constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
@@ -744,7 +761,7 @@ class DephyActpack(Device):
     def gyroy(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyroy * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyroy * constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:
@@ -754,7 +771,7 @@ class DephyActpack(Device):
     def gyroz(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
-                value=self._data.gyroz * Constants.RAD_PER_SEC_GYROLSB,
+                value=self._data.gyroz * constants.RAD_PER_SEC_GYROLSB,
                 attribute="velocity",
             )
         else:

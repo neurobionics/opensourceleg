@@ -6,8 +6,8 @@ import numpy as np
 
 sys.path.append("../")
 
+import opensourceleg.constants as constants
 import opensourceleg.utilities as utilities
-from opensourceleg.constants import Constants
 from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
@@ -58,7 +58,8 @@ class OpenSourceLeg:
         self._has_tui: bool = False
         self._has_sm: bool = False
 
-        self._set_state_machine_parameters: bool = False
+        self._is_sm_running: bool = False
+        self._is_homed: bool = False
 
         self._knee: Joint = None  # type: ignore
         self._ankle: Joint = None  # type: ignore
@@ -85,19 +86,8 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.initialize()
 
-        if self.has_state_machine:
-            self.state_machine.start()  # type: ignore
-
-            if self.has_knee:
-                self.knee.set_mode(mode="impedance")  # type: ignore
-                self.knee.set_impedance_gains()  # type: ignore
-
-            if self.has_ankle:
-                self.ankle.set_mode(mode="impedance")  # type: ignore
-                self.ankle.set_impedance_gains()  # type: ignore
-
     def __exit__(self, type, value, tb) -> None:
-        if self.has_state_machine:
+        if self.has_state_machine and self.is_sm_running:
             self.state_machine.stop()  # type: ignore
 
         if self.has_knee:
@@ -118,6 +108,24 @@ class OpenSourceLeg:
         configuration: str = "state_machine",
         layout: str = "vertical",
     ) -> None:
+        """
+        Add a Terminal User Interface (TUI) to the OSL object. The TUI is used
+        to visualize the data from the OSL and to send commands to the OSL. Additionally,
+        the TUI also has a timer built-in to govern the frequency of the control loop, which is
+        less accurate than the "osl.clock" (SoftRealTimeLoop) object but is more convenient.
+
+        Note
+        ----
+        The timer/interface runs in a separate thread, so it does not affect the control loop.
+        This causes the code to not respond to keyboard interrupts (Ctrl+C) when the TUI is running.
+
+        Parameters
+        ----------
+        configuration : str, optional
+            The configuration of the TUI, by default "state_machine"
+        layout : str, optional
+            The layout of the TUI, by default "vertical"
+        """
         from opensourceleg.tui import TUI
 
         self._has_tui = True
@@ -164,23 +172,25 @@ class OpenSourceLeg:
         dephy_log : bool, optional
             Whether to log the joint data to the dephy log, by default False
         """
+        if port is None:
+            ports = utilities.get_active_ports()
+
+            if len(ports) == 0:
+                self.log.warn(
+                    msg="No active ports found, please ensure that the joint is connected and powered on."
+                )
+
+                exit()
+
+            elif len(ports) == 1:
+                port = ports[-1]
+
+            else:
+                port = ports[-1]
+                port_a = ports[-2]
 
         if "knee" in name.lower():
             self._has_knee = True
-
-            if port is None:
-                ports = utilities.get_active_ports()
-
-                if len(ports) == 0:
-                    self.log.warn(
-                        msg="No active ports found, please ensure that the joint is connected and powered on."
-                    )
-
-                else:
-                    if "knee" in name.lower():
-                        port = ports[0]
-                    else:
-                        port = ports[1]
 
             self._knee = Joint(
                 name=name,
@@ -197,6 +207,10 @@ class OpenSourceLeg:
 
         elif "ankle" in name.lower():
             self._has_ankle = True
+
+            if self.has_knee:
+                port = port_a
+
             self._ankle = Joint(
                 name=name,
                 port=port,
@@ -218,7 +232,7 @@ class OpenSourceLeg:
         joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix=Constants.LOADCELL_MATRIX,
+        loadcell_matrix=constants.LOADCELL_MATRIX,
     ) -> None:
         """
         Add a loadcell to the OSL object.
@@ -266,6 +280,7 @@ class OpenSourceLeg:
 
     def update(
         self,
+        set_state_machine_parameters: bool = False,
     ) -> None:
         if self.has_knee:
             self._knee.update()
@@ -291,10 +306,20 @@ class OpenSourceLeg:
             self._loadcell.update()
 
         if self.has_state_machine:
+
+            if self.is_homed and not self.is_sm_running:
+                self.state_machine.start()
+                self._is_sm_running = True
+
             self.state_machine.update()  # type: ignore
 
-            if self._set_state_machine_parameters:
+            if set_state_machine_parameters:
                 if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
+
+                    if self.knee.mode != self.knee.modes["impedance"]:  # type: ignore
+                        self.knee.set_mode(mode="impedance")  # type: ignore
+                        self.knee.set_impedance_gains()  # type: ignore
+
                     self.knee.set_impedance_gains(  # type: ignore
                         K=self.state_machine.current_state.knee_stiffness,  # type: ignore
                         B=self.state_machine.current_state.knee_damping,  # type: ignore
@@ -304,7 +329,12 @@ class OpenSourceLeg:
                         position=self.state_machine.current_state.knee_theta  # type: ignore
                     )
 
-                elif self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
+                if self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
+
+                    if self.ankle.mode != self.ankle.modes["impedance"]:  # type: ignore
+                        self.ankle.set_mode(mode="impedance")  # type: ignore
+                        self.ankle.set_impedance_gains()  # type: ignore
+
                     self.ankle.set_impedance_gains(  # type: ignore
                         K=self.state_machine.current_state.ankle_stiffness,  # type: ignore
                         B=self.state_machine.current_state.ankle_damping,  # type: ignore
@@ -327,16 +357,24 @@ class OpenSourceLeg:
             Whether to set the joint impedance gains and equilibrium angles to the current state's values, by default False
         """
 
-        self._set_state_machine_parameters = set_state_machine_parameters
-        self.update()
+        if self.is_homed:
+            if not self.is_sm_running:
+                self.state_machine.start()
+                self._is_sm_running = True
+        else:
+            osl.log.warn(
+                f"[OSL] Please run the homing routine by calling `osl.home()` before starting the state-machine."
+            )
+            exit()
 
-        time.sleep(0.1)
+        self.update(set_state_machine_parameters=set_state_machine_parameters)
 
         if not self.has_tui:
-            self.update()
+            self.update(set_state_machine_parameters=set_state_machine_parameters)
 
         else:
-            self.tui.add_update_callback(callback=self.update)  # type: ignore
+            time.sleep(0.1)
+            self.tui.add_update_callback(callback=self.update, args=set_state_machine_parameters)  # type: ignore
             self.tui.run()  # type: ignore
 
     def initialize_sm_tui(self) -> None:
@@ -363,7 +401,7 @@ class OpenSourceLeg:
         )
 
         self.tui.add_panel(
-            name="joint_position",
+            name="knee_joint_position",
             parent="top",
             show_title=True,
         )
@@ -378,7 +416,7 @@ class OpenSourceLeg:
 
         self.tui.add_plot(
             name="joint_position_plot",
-            parent="joint_position",
+            parent="knee_joint_position",
             object=self.knee,
             attribute="output_position",
             color=COLORS.yellow,
@@ -415,6 +453,8 @@ class OpenSourceLeg:
         if self.has_ankle:
             self.log.debug(msg="[OSL] Homing ankle joint.")
             self.ankle.home()  # type: ignore
+
+        self._is_homed = True
 
     def calibrate_loadcell(self) -> None:
         self.log.debug(msg="[OSL] Calibrating loadcell.")
@@ -489,6 +529,14 @@ class OpenSourceLeg:
     @property
     def has_tui(self) -> bool:
         return self._has_tui
+
+    @property
+    def is_homed(self) -> bool:
+        return self._is_homed
+
+    @property
+    def is_sm_running(self) -> bool:
+        return self._is_sm_running
 
 
 if __name__ == "__main__":

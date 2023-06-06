@@ -95,6 +95,7 @@ class TUI:
         self._panels["root"] = self.frame
 
         self._update_callbacks: list[Callable] = []  # type: ignore
+        self._update_args: list = []  # type: ignore
 
         self.timer.timeout.connect(self.update)
         self.timer.start(1)
@@ -137,13 +138,15 @@ class TUI:
 
                     self._state_vizualisers[_sv].previous_state = _current_state
 
-        for callback in self._update_callbacks:
-            callback()
+        for i, callback in enumerate(self._update_callbacks):
+            if self._update_args[i]:
+                callback(self._update_args[i])
 
         self.timer.start(self.dt)
 
-    def add_update_callback(self, callback: Callable = lambda: None):  # type: ignore
+    def add_update_callback(self, callback: Callable = lambda: None, args: Any = None):  # type: ignore
         self._update_callbacks.append(callback)
+        self._update_args.append(args)
 
     def set_active_attribute(self, attribute: str):
         self._attribute = attribute

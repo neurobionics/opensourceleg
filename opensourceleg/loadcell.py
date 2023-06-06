@@ -3,7 +3,7 @@ import time
 import numpy as np
 from smbus2 import SMBus
 
-from opensourceleg.constants import Constants
+import opensourceleg.constants as constants
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 
@@ -129,7 +129,7 @@ class Loadcell:
         joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix: np.ndarray = Constants.LOADCELL_MATRIX,
+        loadcell_matrix: np.ndarray = constants.LOADCELL_MATRIX,
         logger: "Logger" = None,  # type: ignore
     ) -> None:
         self._is_dephy: bool = dephy_mode
