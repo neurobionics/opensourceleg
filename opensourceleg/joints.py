@@ -3,8 +3,8 @@ import time
 
 import numpy as np
 
+import opensourceleg.constants as constants
 from opensourceleg.actuators import DephyActpack
-from opensourceleg.constants import Constants
 from opensourceleg.logger import Logger
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
@@ -50,7 +50,7 @@ class Joint(DephyActpack):
         self._damping_sp: int = 400
         self._equilibrium_position_sp = 0.0
 
-        self._max_temperature: float = Constants.MAX_CASE_TEMPERATURE
+        self._max_temperature: float = constants.MAX_CASE_TEMPERATURE
 
         self._control_mode_sp: str = "voltage"
 
@@ -121,7 +121,7 @@ class Joint(DephyActpack):
         time.sleep(0.1)
 
         if "ankle" in self._name.lower():
-            _zero_pos: int = int(np.deg2rad(30) / Constants.RAD_PER_COUNT)
+            _zero_pos: int = int(np.deg2rad(30) / constants.RAD_PER_COUNT)
         else:
             _zero_pos: int = 0
 
@@ -253,8 +253,8 @@ class Joint(DephyActpack):
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
-            K=int(K * Constants.NM_PER_RAD_TO_K),
-            B=int(B * Constants.NM_S_PER_RAD_TO_B),
+            K=int(K * constants.NM_PER_RAD_TO_K),
+            B=int(B * constants.NM_S_PER_RAD_TO_B),
             ff=ff,
         )
 

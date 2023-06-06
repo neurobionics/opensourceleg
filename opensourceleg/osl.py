@@ -6,8 +6,8 @@ import numpy as np
 
 sys.path.append("../")
 
+import opensourceleg.constants as constants
 import opensourceleg.utilities as utilities
-from opensourceleg.constants import Constants
 from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
@@ -234,7 +234,7 @@ class OpenSourceLeg:
         joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix=Constants.LOADCELL_MATRIX,
+        loadcell_matrix=constants.LOADCELL_MATRIX,
     ) -> None:
         """
         Add a loadcell to the OSL object.
