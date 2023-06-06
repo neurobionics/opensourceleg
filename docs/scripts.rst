@@ -3,7 +3,6 @@ Actuators
 
 .. automodule:: opensourceleg.actuators
    :members:
-   :show-inheritance:
 
 Constants
 ---------
@@ -26,7 +25,6 @@ Control
 
 .. automodule:: opensourceleg.control
    :members:
-   :show-inheritance:
 
 Joints
 -------
@@ -40,7 +38,6 @@ Loadcell
 
 .. automodule:: opensourceleg.loadcell
    :members:
-   :show-inheritance:
 
 Logger
 -------
@@ -61,32 +58,27 @@ State Machine
 
 .. automodule:: opensourceleg.state_machine
    :members:
-   :show-inheritance:
 
 Thermal
 --------
 
 .. automodule:: opensourceleg.thermal
    :members:
-   :show-inheritance:
 
 TUI
 ----
 
 .. automodule:: opensourceleg.tui
    :members:
-   :show-inheritance:
 
 Units
 ------
 
 .. automodule:: opensourceleg.units
    :members:
-   :show-inheritance:
 
 Utilities
 ---------
 
 .. automodule:: opensourceleg.utilities
-   :members:
-   :show-inheritance:   
+   :members: 

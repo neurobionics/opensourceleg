@@ -6,7 +6,7 @@ class Gains:
     """
     Dataclass for controller gains
 
-    Attributes:
+    Args:
         kp (int): Proportional gain
         ki (int): Integral gain
         kd (int): Derivative gain
