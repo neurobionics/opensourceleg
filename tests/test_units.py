@@ -5,337 +5,243 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
+    ("attribute", "unit", "expected"),
     [
-        (2, "force", 2),
-        (2, "torque", 2),
-        (2, "stiffness", 2),
-        (2, "damping", 2),
-        (2, "length", 2),
-        (2, "position", 2),
-        (2, "mass", 2),
-        (2, "velocity", 2),
-        (2, "acceleration", 2),
-        (2, "time", 2),
-        (2, "current", 2),
-        (2, "voltage", 2),
-        (2, "gravity", 2),
-        (2, "temperature", 2)
+        ("force", "lbf", "lbf"),
+        ("length", "in", "in")
     ]
 )
 
-def test_convert_to_default_units_default(value, attribute, expected):
+def test_setter(attribute, unit, expected):
     default_units = units.DEFAULT_UNITS
-    assert default_units.convert_to_default_units(value, attribute) == expected
-
-
-    
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "force", 4.4482216152605),
-        (20, "force", 20 * 4.4482216152605),
-        (-30, "force", -30 * 4.4482216152605)
-    ]
-)
-    
-def test_convert_to_default_units_force_lbf(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["force"] = "lbf"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-    
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "force", 9.80665),
-        (20, "force", 20 * 9.80665),
-        (-30, "force", -30 * 9.80665)
-    ]
-) 
-    
-def test_convert_to_default_units_force_kgf(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["force"] = "kgf"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "torque", 0.1129848290276167),
-        (20, "torque", 20 * 0.1129848290276167),
-        (-30, "torque", -30 * 0.1129848290276167)
-    ]
-)
-
-def test_convert_to_default_units_torque_lbfin(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["torque"] = "lbf-in"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "torque", 1.3558179483314004),
-        (20, "torque", 20 * 1.3558179483314004),
-        (-30, "torque", -30 * 1.3558179483314004)
-    ]
-)
-
-def test_convert_to_default_units_torque_lbfft(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["torque"] = "lbf-ft"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "torque", 0.0980665),
-        (20, "torque", 20 * 0.0980665),
-        (-30, "torque", -30 * 0.0980665)
-    ]
-)
-
-def test_convert_to_default_units_torque_kgfcm(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["torque"] = "kgf-cm"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "torque", 0.980665),
-        (20, "torque", 20 * 0.980665),
-        (-30, "torque", -30 * 0.980665)
-    ]
-)
-
-def test_convert_to_default_units_torque_kgfm(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["torque"] = "kgf-m"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "stiffness", 0.017453292519943295),
-        (20, "stiffness", 20 * 0.017453292519943295),
-        (-30, "stiffness", -30 * 0.017453292519943295)
-    ]
-)
-
-def test_convert_to_default_units_stiffness_Ndeg(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["stiffness"] = "N/deg"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "stiffness", 0.224809),
-        (20, "stiffness", 20 * 0.224809),
-        (-30, "stiffness", -30 * 0.224809)
-    ]
-)
-
-def test_convert_to_default_units_stiffness_lbfrad(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["stiffness"] = "lbf/rad"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
+    default_units[attribute] = unit
+    assert default_units[attribute] == expected
     
 
 
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "stiffness", 0.003490659),
-        (20, "stiffness", 20 * 0.003490659),
-        (-30, "stiffness", -30 * 0.003490659)
-    ]
-)
 
-def test_convert_to_default_units_stiffness_lbfdeg(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["stiffness"] = "lbf/deg"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "stiffness", 1.8518518518518519),
-        (20, "stiffness", 20 * 1.8518518518518519),
-        (-30, "stiffness", -30 * 1.8518518518518519)
-    ]
-)
-
-def test_convert_to_default_units_stiffness_kgfrad(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["stiffness"] = "kgf/rad"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "stiffness", 0.031746031746031744),
-        (20, "stiffness", 20 * 0.031746031746031744),
-        (-30, "stiffness", -30 * 0.031746031746031744)
-    ]
-)
-
-def test_convert_to_default_units_stiffness_kgfdeg(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["stiffness"] = "kgf/deg"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
 
 
 
 @pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
+    ("attribute", "unit", "expected_output", "expected_error"),
     [
-        (1, "damping", 0.017453292519943295),
-        (20, "damping", 20 * 0.017453292519943295),
-        (-30, "damping", -30 * 0.017453292519943295)
+        ("forc", "N", "'Invalid key: forc'", KeyError),
+        ("force", "n", "Invalid unit: n", ValueError), 
+        ("", "N", "'Invalid key: '", KeyError),
+        ("force", "", "Invalid unit: ", ValueError),
     ]
 )
 
-def test_convert_to_default_units_stiffness_Ndegs(value, attribute, expected):
+
+def test_setter_error(attribute, unit, expected_output, expected_error):
     default_units = units.DEFAULT_UNITS
-    default_units["damping"] = "N/(deg/s)"
     
-    assert default_units.convert_to_default_units(value, attribute) == expected
+    with pytest.raises(Exception) as e:
+        default_units[attribute] = unit
+    assert str(e.value) == expected_output
+    assert type(e.value) == expected_error
 
 
 @pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
+    ("attribute", "expected_output", "expected_error"),
+    
     [
-        (1, "damping", 0.224809),
-        (20, "damping", 20 * 0.224809),
-        (-30, "damping", -30 * 0.224809)
+        ("tork", "'Invalid key: tork'", KeyError),
+        ("", "'Invalid key: '", KeyError)
     ]
+    
 )
 
-def test_convert_to_default_units_stiffness_lbfrads(value, attribute, expected):
+def test_getter_error(attribute, expected_output, expected_error):
     default_units = units.DEFAULT_UNITS
-    default_units["damping"] = "lbf/(rad/s)"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
+    with pytest.raises(Exception) as e:
+        default_units[attribute]
+    assert str(e.value) == expected_output
+    assert type(e.value) == expected_error
+
 
 
 @pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
+    ("value", "attribute", "unit", "expected"),
     [
-        (1, "damping", 1.8518518518518519),
-        (20, "damping", 20 * 1.8518518518518519),
-        (-30, "damping", -30 * 1.8518518518518519)
+        (2, "force", "N", 2),
+        (2, "torque", "N-m", 2),
+        (2, "stiffness", "N/rad", 2),
+        (2, "damping", "N/(rad/s)", 2),
+        (2, "length", "m", 2),
+        (2, "position", "rad", 2),
+        (2, "mass", "kg", 2),
+        (2, "velocity", "rad/s", 2),
+        (2, "acceleration", "rad/s^2", 2),
+        (2, "time", "s", 2),
+        (2, "current", "mA", 2),
+        (2, "voltage", "mV", 2),
+        (2, "gravity", "m/s^2", 2),
+        (2, "temperature", "C", 2),
+        (20, "force", "lbf", 20 * 4.4482216152605),
+        (-30, "force", "lbf", -30 * 4.4482216152605),
+        (20, "force", "kgf", 20 * 9.80665),
+        (-30, "force", "kgf", -30 * 9.80665),
+        (20, "torque", "lbf-in", 20 * 0.1129848290276167),
+        (-30, "torque", "lbf-in", -30 * 0.1129848290276167),
+        (20, "torque", "lbf-ft", 20 * 1.3558179483314004),
+        (-30, "torque", "lbf-ft", -30 * 1.3558179483314004),
+        (20, "torque", "kgf-cm", 20 * 0.0980665),
+        (-30, "torque", "kgf-cm", -30 * 0.0980665),
+        (20, "torque", "kgf-m", 20 * 0.980665),
+        (-30, "torque", "kgf-m", -30 * 0.980665),
+        (20, "stiffness", "N/deg", 20 * 0.017453292519943295),
+        (-30, "stiffness", "N/deg", -30 * 0.017453292519943295),
+        (20, "stiffness", "lbf/rad", 20 * 0.224809),
+        (-30, "stiffness", "lbf/rad", -30 * 0.224809),
+        (20, "stiffness", "lbf/deg", 20 * 0.003490659),
+        (-30, "stiffness", "lbf/deg", -30 * 0.003490659),
+        (20, "stiffness", "kgf/rad", 20 * 1.8518518518518519),
+        (-30, "stiffness", "kgf/rad", -30 * 1.8518518518518519),
+        (20, "stiffness", "kgf/deg", 20 * 0.031746031746031744),
+        (-30, "stiffness", "kgf/deg", -30 * 0.031746031746031744),
+        (20, "damping", "N/(deg/s)", 20 * 0.017453292519943295),
+        (-30, "damping", "N/(deg/s)", -30 * 0.017453292519943295),
+        (20, "damping", "lbf/(deg/s)", 20 * 0.003490659),
+        (-30, "damping", "lbf/(deg/s)", -30 * 0.003490659),
+        (20, "damping", "lbf/(rad/s)", 20 * 0.224809),
+        (-30, "damping", "lbf/(rad/s)", -30 * 0.224809),
+        (20, "damping", "kgf/(rad/s)", 20 * 1.8518518518518519),
+        (-30, "damping", "kgf/(rad/s)", -30 * 1.8518518518518519),
+        (20, "damping", "kgf/(deg/s)", 20 * 0.031746031746031744),
+        (-30, "damping", "kgf/(deg/s)", -30 * 0.031746031746031744),
+        (20, "length", "cm", 20 * 0.01),
+        (-30, "length", "cm", -30 * 0.01),
+        (20, "length", "in", 20 * 0.0254),
+        (-30, "length", "in", -30 * 0.0254),
+        (20, "length", "ft", 20 * 0.3048),
+        (-30, "length", "ft", -30 * 0.3048),
+        (20, "position", "deg", 20 * 0.017453292519943295),
+        (-30, "position", "deg", -30 * 0.017453292519943295),
+        (20, "mass", "g", 20 * 0.001),
+        (-30, "mass", "g", -30 * 0.001),
+        (20, "mass", "lb", 20 * 0.45359237),
+        (-30, "mass", "lb", -30 * 0.45359237),
+        (20, "velocity", "deg/s", 20 * 0.017453292519943295),
+        (-30, "velocity", "deg/s", -30 * 0.017453292519943295),
+        (20, "velocity", "rpm", 20 * 0.10471975511965977),
+        (-30, "velocity", "rpm", -30 * 0.10471975511965977),
+        (20, "acceleration", "deg/s^2", 20 * 0.017453292519943295),
+        (-30, "acceleration", "deg/s^2", -30 * 0.017453292519943295),
+        (20, "time", "ms", 20 * 0.001),
+        (-30, "time", "ms", -30 * 0.001),
+        (20, "time", "us", 20 * 0.000001),
+        (-30, "time", "us", -30 * 0.000001),
+        (20, "current", "A", 20 * 1000),
+        (-30, "current", "A", -30 * 1000),
+        (20, "voltage", "V", 20 * 1000),
+        (-30, "voltage", "V", -30 * 1000),
+        (20, "gravity", "g", 20 * 9.80665),
+        (-30, "gravity", "g", -30 * 9.80665),
+        (20, "temperature", "F", (20 - 32) * 0.55556),
+        (-30, "temperature", "F", (-30 - 32) * 0.55556),
+        (20, "temperature", "K", 20 - 273.15),
+        (-30, "temperature", "K", -30 - 273.15)   
     ]
 )
 
-def test_convert_to_default_units_stiffness_kgfrads(value, attribute, expected):
+def test_convert_to_default_units(value, attribute, unit, expected):
     default_units = units.DEFAULT_UNITS
-    default_units["damping"] = "kgf/(rad/s)"
-    
+    default_units[attribute] = unit
     assert default_units.convert_to_default_units(value, attribute) == expected
-
 
 @pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
+    ("value", "attribute", "unit", "expected"),
     [
-        (1, "damping", 0.031746031746031744),
-        (20, "damping", 20 * 0.031746031746031744),
-        (-30, "damping", -30 * 0.031746031746031744)
+        (2, "force", "N", 2),
+        (2, "torque", "N-m", 2),
+        (2, "stiffness", "N/rad", 2),
+        (2, "damping", "N/(rad/s)", 2),
+        (2, "length", "m", 2),
+        (2, "position", "rad", 2),
+        (2, "mass", "kg", 2),
+        (2, "velocity", "rad/s", 2),
+        (2, "acceleration", "rad/s^2", 2),
+        (2, "time", "s", 2),
+        (2, "current", "mA", 2),
+        (2, "voltage", "mV", 2),
+        (2, "gravity", "m/s^2", 2),
+        (2, "temperature", "C", 2),
+        (20, "force", "lbf", 20 / 4.4482216152605),
+        (-30, "force", "lbf", -30 / 4.4482216152605),
+        (20, "force", "kgf", 20 / 9.80665),
+        (-30, "force", "kgf", -30 / 9.80665),
+        (20, "torque", "lbf-in", 20 / 0.1129848290276167),
+        (-30, "torque", "lbf-in", -30 / 0.1129848290276167),
+        (20, "torque", "lbf-ft", 20 / 1.3558179483314004),
+        (-30, "torque", "lbf-ft", -30 / 1.3558179483314004),
+        (20, "torque", "kgf-cm", 20 / 0.0980665),
+        (-30, "torque", "kgf-cm", -30 / 0.0980665),
+        (20, "torque", "kgf-m", 20 / 0.980665),
+        (-30, "torque", "kgf-m", -30 / 0.980665),
+        (20, "stiffness", "N/deg", 20 / 0.017453292519943295),
+        (-30, "stiffness", "N/deg", -30 / 0.017453292519943295),
+        (20, "stiffness", "lbf/rad", 20 / 0.224809),
+        (-30, "stiffness", "lbf/rad", -30 / 0.224809),
+        (20, "stiffness", "lbf/deg", 20 / 0.003490659),
+        (-30, "stiffness", "lbf/deg", -30 / 0.003490659),
+        (20, "stiffness", "kgf/rad", 20 / 1.8518518518518519),
+        (-30, "stiffness", "kgf/rad", -30 / 1.8518518518518519),
+        (20, "stiffness", "kgf/deg", 20 / 0.031746031746031744),
+        (-30, "stiffness", "kgf/deg", -30 / 0.031746031746031744),
+        (20, "damping", "N/(deg/s)", 20 / 0.017453292519943295),
+        (-30, "damping", "N/(deg/s)", -30 / 0.017453292519943295),
+        (20, "damping", "lbf/(deg/s)", 20 / 0.003490659),
+        (-30, "damping", "lbf/(deg/s)", -30 / 0.003490659),
+        (20, "damping", "lbf/(rad/s)", 20 / 0.224809),
+        (-30, "damping", "lbf/(rad/s)", -30 / 0.224809),
+        (20, "damping", "kgf/(rad/s)", 20 / 1.8518518518518519),
+        (-30, "damping", "kgf/(rad/s)", -30 / 1.8518518518518519),
+        (20, "damping", "kgf/(deg/s)", 20 / 0.031746031746031744),
+        (-30, "damping", "kgf/(deg/s)", -30 / 0.031746031746031744),
+        (20, "length", "cm", 20 / 0.01),
+        (-30, "length", "cm", -30 / 0.01),
+        (20, "length", "in", 20 / 0.0254),
+        (-30, "length", "in", -30 / 0.0254),
+        (20, "length", "ft", 20 / 0.3048),
+        (-30, "length", "ft", -30 / 0.3048),
+        (20, "position", "deg", 20 / 0.017453292519943295),
+        (-30, "position", "deg", -30 / 0.017453292519943295),
+        (20, "mass", "g", 20 / 0.001),
+        (-30, "mass", "g", -30 / 0.001),
+        (20, "mass", "lb", 20 / 0.45359237),
+        (-30, "mass", "lb", -30 / 0.45359237),
+        (20, "velocity", "deg/s", 20 / 0.017453292519943295),
+        (-30, "velocity", "deg/s", -30 / 0.017453292519943295),
+        (20, "velocity", "rpm", 20 / 0.10471975511965977),
+        (-30, "velocity", "rpm", -30 / 0.10471975511965977),
+        (20, "acceleration", "deg/s^2", 20 / 0.017453292519943295),
+        (-30, "acceleration", "deg/s^2", -30 /0.017453292519943295),
+        (20, "time", "ms", 20 / 0.001),
+        (-30, "time", "ms", -30 / 0.001),
+        (20, "time", "us", 20 / 0.000001),
+        (-30, "time", "us", -30 / 0.000001),
+        (20, "current", "A", 20 / 1000),
+        (-30, "current", "A", -30 / 1000),
+        (20, "voltage", "V", 20 / 1000),
+        (-30, "voltage", "V", -30 / 1000),
+        (20, "gravity", "g", 20 / 9.80665),
+        (-30, "gravity", "g", -30 / 9.80665),
+        (20, "temperature", "F", 20 / 0.55556 + 32),
+        (-30, "temperature", "F", -30 / 0.55556 + 32),
+        (20, "temperature", "K", 20 + 273.15),
+        (-30, "temperature", "K", -30 + 273.15)   
     ]
 )
 
-def test_convert_to_default_units_stiffness_kgfdegs(value, attribute, expected):
+def test_convert_from_default_units(value, attribute, unit, expected):
     default_units = units.DEFAULT_UNITS
-    default_units["damping"] = "kgf/(deg/s)"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "length", 0.01),
-        (20, "length", 20 * 0.01),
-        (-30, "length", -30 * 0.01)
-    ]
-)
-
-def test_convert_to_default_units_length_cm(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["length"] = "cm"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "length", 0.0254),
-        (20, "length", 20 * 0.0254),
-        (-30, "length", -30 * 0.0254)
-    ]
-)
-
-def test_convert_to_default_units_length_in(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["length"] = "in"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
+    default_units[attribute] = unit
+    assert default_units.convert_from_default_units(value, attribute) == expected
 
 
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "length", 0.3048),
-        (20, "length", 20 * 0.3048),
-        (-30, "length", -30 * 0.3048)
-    ]
-)
 
-def test_convert_to_default_units_length_ft(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["length"] = "ft"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
-
-
-@pytest.mark.parametrize(
-    ("value", "attribute", "expected"),
-    [
-        (1, "position", 0.017453292519943295),
-        (20, "position", 20 * 0.017453292519943295),
-        (-30, "position", -30 * 0.017453292519943295)
-    ]
-)
-
-def test_convert_to_default_units_position_deg(value, attribute, expected):
-    default_units = units.DEFAULT_UNITS
-    default_units["position"] = "deg"
-    
-    assert default_units.convert_to_default_units(value, attribute) == expected
-    
 
 
 
