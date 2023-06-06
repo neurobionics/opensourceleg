@@ -16,7 +16,7 @@ class Joint(DephyActpack):
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
-        gear_ratio: float = 1.0,
+        gear_ratio: float = 41.4999,
         has_loadcell: bool = False,
         logger: Logger = Logger(),
         units: UnitsDefinition = DEFAULT_UNITS,
@@ -80,11 +80,7 @@ class Joint(DephyActpack):
         VELOCITY_THRESHOLD = 0.001
 
         self.set_mode(mode="voltage")
-
-        if "ankle" in self._name.lower():
-            homing_direction = 1.0
-        else:
-            homing_direction = -1.0
+        homing_direction = -1.0
 
         self.set_voltage(
             value=homing_direction * homing_voltage
@@ -121,12 +117,14 @@ class Joint(DephyActpack):
         time.sleep(0.1)
 
         if "ankle" in self._name.lower():
-            _zero_pos: int = int(np.deg2rad(30) / constants.RAD_PER_COUNT)
+            _zero_pos: int = int((np.deg2rad(30) * self.gear_ratio) / constants.RAD_PER_COUNT)
+            _zero_pos_joint: int = int(np.deg2rad(30) / constants.RAD_PER_COUNT)
         else:
             _zero_pos: int = 0
+            _zero_pos_joint: int = 0
 
         self.set_motor_zero_position(position=(_motor_zero_pos + _zero_pos))
-        self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos))
+        self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos_joint))
 
         self._is_homed = True
 
@@ -136,6 +134,8 @@ class Joint(DephyActpack):
                 == "y"
             ):
                 self.make_encoder_map()
+
+        self._log.info(f"[{self._name}] Homing complete.")
 
     def make_encoder_map(self) -> None:
         """

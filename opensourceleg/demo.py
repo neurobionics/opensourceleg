@@ -17,7 +17,7 @@ LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
 
 ANKLE_K_ESTANCE = 50
 ANKLE_B_ESTANCE = 0
-ANKLE_THETA_ESTANCE = 20
+ANKLE_THETA_ESTANCE = 0
 
 # --------------------------------------------- #
 # STATE 2: LATE STANCE
@@ -30,7 +30,7 @@ LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.2 * 4.4
 
 ANKLE_K_LSTANCE = 90
 ANKLE_B_LSTANCE = 0
-ANKLE_THETA_LSTANCE = 0
+ANKLE_THETA_LSTANCE = 15
 
 # --------------------------------------------- #
 # STATE 3: EARLY SWING
@@ -44,7 +44,7 @@ KNEE_DTHETA_ESWING_TO_LSWING = 3
 
 ANKLE_K_ESWING = 20
 ANKLE_B_ESWING = 0
-ANKLE_THETA_ESWING = 30
+ANKLE_THETA_ESWING = -25
 
 # --------------------------------------------- #
 # STATE 4: LATE SWING
@@ -58,7 +58,7 @@ KNEE_THETA_LSWING_TO_ESTANCE = 20
 
 ANKLE_K_LSWING = 20
 ANKLE_B_LSWING = 0
-ANKLE_THETA_LSWING = 30
+ANKLE_THETA_LSWING = -25
 
 # ------------- FSM TRANSITIONS --------------- #
 
@@ -131,10 +131,15 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
         return False
 
 
-def main():
+def state_machine_controller():
     osl = OpenSourceLeg(frequency=200)
     osl.units["position"] = "deg"  # type: ignore
     osl.units["velocity"] = "deg/s"  # type: ignore
+
+    osl.add_joint(
+        name="knee",
+        gear_ratio=41.4999,
+    )
 
     osl.add_joint(
         name="ankle",
@@ -239,31 +244,12 @@ def main():
         callback=lswing_to_estance,
     )
 
-    # osl.add_tui()
+    osl.add_tui()
 
     with osl:
-        # osl.home()
-        osl.log.info(osl.ankle.motor_position)
-        osl.log.info(osl.ankle.output_position)
-        time.sleep(1)
         osl.home()
-        osl.log.info(osl.ankle.motor_position)
-        osl.log.info(osl.ankle.output_position)
-        time.sleep(1)
-
-        # osl.knee.set_mode(mode="impedance")
-        # osl.knee.set_impedance_gains()
-        # osl.knee.set_output_position(position=10)
-
-        # time.sleep(2)
-
-        # osl.update()
-
-        # osl.log.info(osl.knee.motor_position)
-        # osl.log.info(osl.knee.output_position)
-
-        # osl.run(set_state_machine_parameters=True)
+        osl.run(set_state_machine_parameters=True)
 
 
 if __name__ == "__main__":
-    main()
+    state_machine_controller()

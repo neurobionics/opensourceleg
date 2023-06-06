@@ -58,7 +58,8 @@ class OpenSourceLeg:
         self._has_tui: bool = False
         self._has_sm: bool = False
 
-        self._set_state_machine_parameters: bool = False
+        self._is_sm_running: bool = False
+        self._is_homed: bool = False
 
         self._knee: Joint = None  # type: ignore
         self._ankle: Joint = None  # type: ignore
@@ -85,11 +86,8 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.initialize()
 
-        if self.has_state_machine:
-            self.state_machine.start()  # type: ignore
-
     def __exit__(self, type, value, tb) -> None:
-        if self.has_state_machine:
+        if self.has_state_machine and self.is_sm_running:
             self.state_machine.stop()  # type: ignore
 
         if self.has_knee:
@@ -185,11 +183,11 @@ class OpenSourceLeg:
                 exit()
 
             elif len(ports) == 1:
-                port = ports[0]
+                port = ports[-1]
 
             else:
-                port = ports[0]
-                port_a = ports[1]
+                port = ports[-1]
+                port_a = ports[-2]
 
         if "knee" in name.lower():
             self._has_knee = True
@@ -282,6 +280,7 @@ class OpenSourceLeg:
 
     def update(
         self,
+        set_state_machine_parameters: bool = False,
     ) -> None:
         if self.has_knee:
             self._knee.update()
@@ -307,9 +306,14 @@ class OpenSourceLeg:
             self._loadcell.update()
 
         if self.has_state_machine:
+
+            if self.is_homed and not self.is_sm_running:
+                self.state_machine.start()
+                self._is_sm_running = True
+
             self.state_machine.update()  # type: ignore
 
-            if self._set_state_machine_parameters:
+            if set_state_machine_parameters:
                 if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
 
                     if self.knee.mode != self.knee.modes["impedance"]:  # type: ignore
@@ -325,7 +329,7 @@ class OpenSourceLeg:
                         position=self.state_machine.current_state.knee_theta  # type: ignore
                     )
 
-                elif self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
+                if self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
 
                     if self.ankle.mode != self.ankle.modes["impedance"]:  # type: ignore
                         self.ankle.set_mode(mode="impedance")  # type: ignore
@@ -353,16 +357,23 @@ class OpenSourceLeg:
             Whether to set the joint impedance gains and equilibrium angles to the current state's values, by default False
         """
 
-        self._set_state_machine_parameters = set_state_machine_parameters
-        self.update()
+        if self.is_homed:
+            if not self.is_sm_running:
+                self.state_machine.start()
+                self._is_sm_running = True
+        else:
+            osl.log.warn(f"[OSL] Please run the homing routine by calling `osl.home()` before starting the state-machine.")
+            exit()
 
-        time.sleep(0.1)
+
+        self.update(set_state_machine_parameters=set_state_machine_parameters)
 
         if not self.has_tui:
-            self.update()
+            self.update(set_state_machine_parameters=set_state_machine_parameters)
 
         else:
-            self.tui.add_update_callback(callback=self.update)  # type: ignore
+            time.sleep(0.1)
+            self.tui.add_update_callback(callback=self.update, args=set_state_machine_parameters)  # type: ignore
             self.tui.run()  # type: ignore
 
     def initialize_sm_tui(self) -> None:
@@ -389,7 +400,7 @@ class OpenSourceLeg:
         )
 
         self.tui.add_panel(
-            name="joint_position",
+            name="knee_joint_position",
             parent="top",
             show_title=True,
         )
@@ -404,7 +415,7 @@ class OpenSourceLeg:
 
         self.tui.add_plot(
             name="joint_position_plot",
-            parent="joint_position",
+            parent="knee_joint_position",
             object=self.knee,
             attribute="output_position",
             color=COLORS.yellow,
@@ -441,6 +452,8 @@ class OpenSourceLeg:
         if self.has_ankle:
             self.log.debug(msg="[OSL] Homing ankle joint.")
             self.ankle.home()  # type: ignore
+
+        self._is_homed = True
 
     def calibrate_loadcell(self) -> None:
         self.log.debug(msg="[OSL] Calibrating loadcell.")
@@ -515,6 +528,14 @@ class OpenSourceLeg:
     @property
     def has_tui(self) -> bool:
         return self._has_tui
+    
+    @property
+    def is_homed(self) -> bool:
+        return self._is_homed
+    
+    @property
+    def is_sm_running(self) -> bool:
+        return self._is_sm_running
 
 
 if __name__ == "__main__":
