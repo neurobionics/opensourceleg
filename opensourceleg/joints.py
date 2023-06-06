@@ -117,7 +117,9 @@ class Joint(DephyActpack):
         time.sleep(0.1)
 
         if "ankle" in self._name.lower():
-            _zero_pos: int = int((np.deg2rad(30) * self.gear_ratio) / constants.RAD_PER_COUNT)
+            _zero_pos: int = int(
+                (np.deg2rad(30) * self.gear_ratio) / constants.RAD_PER_COUNT
+            )
             _zero_pos_joint: int = int(np.deg2rad(30) / constants.RAD_PER_COUNT)
         else:
             _zero_pos: int = 0

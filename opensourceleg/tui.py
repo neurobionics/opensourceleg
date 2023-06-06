@@ -95,7 +95,7 @@ class TUI:
         self._panels["root"] = self.frame
 
         self._update_callbacks: list[Callable] = []  # type: ignore
-        self._update_args: list = [] # type: ignore
+        self._update_args: list = []  # type: ignore
 
         self.timer.timeout.connect(self.update)
         self.timer.start(1)

@@ -362,9 +362,10 @@ class OpenSourceLeg:
                 self.state_machine.start()
                 self._is_sm_running = True
         else:
-            osl.log.warn(f"[OSL] Please run the homing routine by calling `osl.home()` before starting the state-machine.")
+            osl.log.warn(
+                f"[OSL] Please run the homing routine by calling `osl.home()` before starting the state-machine."
+            )
             exit()
-
 
         self.update(set_state_machine_parameters=set_state_machine_parameters)
 
@@ -528,11 +529,11 @@ class OpenSourceLeg:
     @property
     def has_tui(self) -> bool:
         return self._has_tui
-    
+
     @property
     def is_homed(self) -> bool:
         return self._is_homed
-    
+
     @property
     def is_sm_running(self) -> bool:
         return self._is_sm_running
