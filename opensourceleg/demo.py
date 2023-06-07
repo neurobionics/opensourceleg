@@ -70,7 +70,10 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     reads a force greater than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz < LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE:
+    if (
+        osl.loadcell.fz < LOAD_LSTANCE
+        and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
+    ):
         return True
     else:
         return False
@@ -250,10 +253,6 @@ def state_machine_controller():
     with osl:
         osl.home()
         osl.run(set_state_machine_parameters=True)
-
-        # for t in osl.clock:
-        #     osl.update(set_state_machine_parameters=False)
-        #     osl.log.info(osl.state_machine.current_state_name)        
 
 
 if __name__ == "__main__":
