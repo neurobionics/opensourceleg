@@ -5,15 +5,16 @@ from opensourceleg.state_machine import Event, State
 
 # ------------- FSM PARAMETERS ---------------- #
 
-BODY_WEIGHT = 60
+BODY_WEIGHT = 80
 
 # STATE 1: EARLY STANCE
 
-KNEE_K_ESTANCE = 130
-KNEE_B_ESTANCE = 0
+KNEE_K_ESTANCE = 250
+KNEE_B_ESTANCE = 1000
 KNEE_THETA_ESTANCE = 5
 
-LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.4
+LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.25
+ANKLE_THETA_ESTANCE_TO_LSTANCE = 6.0
 
 ANKLE_K_ESTANCE = 50
 ANKLE_B_ESTANCE = 0
@@ -22,24 +23,24 @@ ANKLE_THETA_ESTANCE = -2
 # --------------------------------------------- #
 # STATE 2: LATE STANCE
 
-KNEE_K_LSTANCE = 175
-KNEE_B_LSTANCE = 0
-KNEE_THETA_LSTANCE = 5
+KNEE_K_LSTANCE = 250
+KNEE_B_LSTANCE = 400
+KNEE_THETA_LSTANCE = 8
 
-LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.22
+LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.15
 
-ANKLE_K_LSTANCE = 90
-ANKLE_B_LSTANCE = 0
+ANKLE_K_LSTANCE = 200
+ANKLE_B_LSTANCE = 20
 ANKLE_THETA_LSTANCE = -20
 
 # --------------------------------------------- #
 # STATE 3: EARLY SWING
 
-KNEE_K_ESWING = 40
-KNEE_B_ESWING = 40
-KNEE_THETA_ESWING = 62
+KNEE_K_ESWING = 100
+KNEE_B_ESWING = 20
+KNEE_THETA_ESWING = 65
 
-KNEE_THETA_ESWING_TO_LSWING = 60
+KNEE_THETA_ESWING_TO_LSWING = 55
 KNEE_DTHETA_ESWING_TO_LSWING = 3
 
 ANKLE_K_ESWING = 20
@@ -49,9 +50,9 @@ ANKLE_THETA_ESWING = 25
 # --------------------------------------------- #
 # STATE 4: LATE SWING
 
-KNEE_K_LSWING = 30
-KNEE_B_LSWING = 120
-KNEE_THETA_LSWING = 20
+KNEE_K_LSWING = 40
+KNEE_B_LSWING = 1200
+KNEE_THETA_LSWING = 5
 
 LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.4
 KNEE_THETA_LSWING_TO_ESTANCE = 30
@@ -69,7 +70,10 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     reads a force greater than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz < LOAD_LSTANCE:
+    if (
+        osl.loadcell.fz < LOAD_LSTANCE
+        and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
+    ):
         return True
     else:
         return False
@@ -249,10 +253,6 @@ def state_machine_controller():
     with osl:
         osl.home()
         osl.run(set_state_machine_parameters=True)
-
-        # for t in osl.clock:
-        #     osl.update(set_state_machine_parameters=False)
-        #     osl.log.info(osl.state_machine.current_state_name)        
 
 
 if __name__ == "__main__":
