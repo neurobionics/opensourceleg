@@ -5,60 +5,61 @@ from opensourceleg.state_machine import Event, State
 
 # ------------- FSM PARAMETERS ---------------- #
 
-BODY_WEIGHT = 130
+BODY_WEIGHT = 80
 
 # STATE 1: EARLY STANCE
 
-KNEE_K_ESTANCE = 130
-KNEE_B_ESTANCE = 0
+KNEE_K_ESTANCE = 250
+KNEE_B_ESTANCE = 1000
 KNEE_THETA_ESTANCE = 5
 
-LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
+LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.25
+ANKLE_THETA_ESTANCE_TO_LSTANCE = 6.0
 
 ANKLE_K_ESTANCE = 50
 ANKLE_B_ESTANCE = 0
-ANKLE_THETA_ESTANCE = 0
+ANKLE_THETA_ESTANCE = -2
 
 # --------------------------------------------- #
 # STATE 2: LATE STANCE
 
-KNEE_K_LSTANCE = 150
-KNEE_B_LSTANCE = 0
-KNEE_THETA_LSTANCE = 5
+KNEE_K_LSTANCE = 250
+KNEE_B_LSTANCE = 400
+KNEE_THETA_LSTANCE = 8
 
-LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.2 * 4.4
+LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.15
 
-ANKLE_K_LSTANCE = 90
-ANKLE_B_LSTANCE = 0
-ANKLE_THETA_LSTANCE = 15
+ANKLE_K_LSTANCE = 200
+ANKLE_B_LSTANCE = 20
+ANKLE_THETA_LSTANCE = -20
 
 # --------------------------------------------- #
 # STATE 3: EARLY SWING
 
-KNEE_K_ESWING = 30
-KNEE_B_ESWING = 40
-KNEE_THETA_ESWING = 85
+KNEE_K_ESWING = 100
+KNEE_B_ESWING = 20
+KNEE_THETA_ESWING = 65
 
-KNEE_THETA_ESWING_TO_LSWING = 60
+KNEE_THETA_ESWING_TO_LSWING = 55
 KNEE_DTHETA_ESWING_TO_LSWING = 3
 
 ANKLE_K_ESWING = 20
 ANKLE_B_ESWING = 0
-ANKLE_THETA_ESWING = -25
+ANKLE_THETA_ESWING = 25
 
 # --------------------------------------------- #
 # STATE 4: LATE SWING
 
-KNEE_K_LSWING = 20
-KNEE_B_LSWING = 60
+KNEE_K_LSWING = 40
+KNEE_B_LSWING = 1200
 KNEE_THETA_LSWING = 5
 
-LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.3 * 4.4
-KNEE_THETA_LSWING_TO_ESTANCE = 20
+LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.4
+KNEE_THETA_LSWING_TO_ESTANCE = 30
 
 ANKLE_K_LSWING = 20
 ANKLE_B_LSWING = 0
-ANKLE_THETA_LSWING = -25
+ANKLE_THETA_LSWING = 15
 
 # ------------- FSM TRANSITIONS --------------- #
 
@@ -69,7 +70,7 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     reads a force greater than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz < LOAD_ESTANCE:
+    if osl.loadcell.fz < LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE:
         return True
     else:
         return False
@@ -95,7 +96,7 @@ def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
     """
     assert osl.knee is not None
     if (
-        osl.knee.output_position < KNEE_THETA_ESWING_TO_LSWING
+        osl.knee.output_position > KNEE_THETA_ESWING_TO_LSWING
         and osl.knee.output_velocity < KNEE_DTHETA_ESWING_TO_LSWING
     ):
         return True
@@ -124,7 +125,7 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
     assert osl.knee is not None and osl.loadcell is not None
     if (
         osl.loadcell.fz < LOAD_ESTANCE
-        or osl.knee.output_position > KNEE_THETA_LSWING_TO_ESTANCE
+        or osl.knee.output_position < KNEE_THETA_LSWING_TO_ESTANCE
     ):
         return True
     else:
@@ -150,7 +151,7 @@ def state_machine_controller():
         dephy_mode=False,
     )
 
-    osl.add_state_machine(spoof=True)
+    osl.add_state_machine(spoof=False)
 
     early_stance = State(name="e_stance")
     early_stance.set_knee_impedance_paramters(
@@ -249,6 +250,10 @@ def state_machine_controller():
     with osl:
         osl.home()
         osl.run(set_state_machine_parameters=True)
+
+        # for t in osl.clock:
+        #     osl.update(set_state_machine_parameters=False)
+        #     osl.log.info(osl.state_machine.current_state_name)        
 
 
 if __name__ == "__main__":

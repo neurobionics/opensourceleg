@@ -369,11 +369,12 @@ class OpenSourceLeg:
 
         self.update(set_state_machine_parameters=set_state_machine_parameters)
 
+        time.sleep(0.1)
+
         if not self.has_tui:
             self.update(set_state_machine_parameters=set_state_machine_parameters)
 
         else:
-            time.sleep(0.1)
             self.tui.add_update_callback(callback=self.update, args=set_state_machine_parameters)  # type: ignore
             self.tui.run()  # type: ignore
 
