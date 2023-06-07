@@ -29,6 +29,22 @@ An open-source software library for numerical computation, data acquisition, and
 .. toctree::
     :maxdepth: 2
     :hidden:
+    :caption: Getting Started
+
+    installation
+    tutorials
+
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
     :caption: API Reference
 
     scripts
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    :caption: Contributing
+
+    contributing    

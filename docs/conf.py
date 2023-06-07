@@ -51,12 +51,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
-# html_theme_options = {
-#     "description": "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.",
-#     "sidebar_width": "320px",
-#     "font_family": "Roboto, sans-serif",
-#     "fixed_sidebar": True,
-# }
+html_theme_options = {
+    "navigation_depth": 5,
+}
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
