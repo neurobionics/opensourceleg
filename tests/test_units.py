@@ -1,32 +1,21 @@
-
+import pytest
 
 import opensourceleg.units as units
-import pytest
 
 
 @pytest.mark.parametrize(
-    ("attribute", "unit", "expected"),
-    [
-        ("force", "lbf", "lbf"),
-        ("length", "in", "in")
-    ]
+    ("attribute", "unit", "expected"), [("force", "lbf", "lbf"), ("length", "in", "in")]
 )
-
 def test_setter(attribute, unit, expected):
     default_units = units.DEFAULT_UNITS
     default_units[attribute] = unit
     assert default_units[attribute] == expected
-    
+
 
 @pytest.mark.parametrize(
     ("attribute", "expected"),
-    [
-        ("position", "rad"),
-        ("acceleration", "rad/s^2"),
-        ("temperature", "C")
-    ]
+    [("position", "rad"), ("acceleration", "rad/s^2"), ("temperature", "C")],
 )
-
 def test_getter(attribute, expected):
     default_units = units.DEFAULT_UNITS
     assert default_units[attribute] == expected
@@ -36,15 +25,14 @@ def test_getter(attribute, expected):
     ("attribute", "unit", "expected_output", "expected_error"),
     [
         ("forc", "N", "'Invalid key: forc'", KeyError),
-        ("force", "n", "Invalid unit: n", ValueError), 
+        ("force", "n", "Invalid unit: n", ValueError),
         ("", "N", "'Invalid key: '", KeyError),
         ("force", "", "Invalid unit: ", ValueError),
-    ]
+    ],
 )
-
 def test_setter_error(attribute, unit, expected_output, expected_error):
     default_units = units.DEFAULT_UNITS
-    
+
     with pytest.raises(Exception) as e:
         default_units[attribute] = unit
     assert str(e.value) == expected_output
@@ -53,12 +41,8 @@ def test_setter_error(attribute, unit, expected_output, expected_error):
 
 @pytest.mark.parametrize(
     ("attribute", "expected_output", "expected_error"),
-    [
-        ("tork", "'Invalid key: tork'", KeyError),
-        ("", "'Invalid key: '", KeyError)
-    ]  
+    [("tork", "'Invalid key: tork'", KeyError), ("", "'Invalid key: '", KeyError)],
 )
-
 def test_getter_error(attribute, expected_output, expected_error):
     default_units = units.DEFAULT_UNITS
     with pytest.raises(Exception) as e:
@@ -147,10 +131,9 @@ def test_getter_error(attribute, expected_output, expected_error):
         (20, "temperature", "F", (20 - 32) * 0.55556),
         (-30, "temperature", "F", (-30 - 32) * 0.55556),
         (20, "temperature", "K", 20 - 273.15),
-        (-30, "temperature", "K", -30 - 273.15)   
-    ]
+        (-30, "temperature", "K", -30 - 273.15),
+    ],
 )
-
 def test_convert_to_default_units(value, attribute, unit, expected):
     default_units = units.DEFAULT_UNITS
     default_units[attribute] = unit
@@ -223,7 +206,7 @@ def test_convert_to_default_units(value, attribute, unit, expected):
         (20, "velocity", "rpm", 20 / 0.10471975511965977),
         (-30, "velocity", "rpm", -30 / 0.10471975511965977),
         (20, "acceleration", "deg/s^2", 20 / 0.017453292519943295),
-        (-30, "acceleration", "deg/s^2", -30 /0.017453292519943295),
+        (-30, "acceleration", "deg/s^2", -30 / 0.017453292519943295),
         (20, "time", "ms", 20 / 0.001),
         (-30, "time", "ms", -30 / 0.001),
         (20, "time", "us", 20 / 0.000001),
@@ -237,13 +220,10 @@ def test_convert_to_default_units(value, attribute, unit, expected):
         (20, "temperature", "F", 20 / 0.55556 + 32),
         (-30, "temperature", "F", -30 / 0.55556 + 32),
         (20, "temperature", "K", 20 + 273.15),
-        (-30, "temperature", "K", -30 + 273.15)   
-    ]
+        (-30, "temperature", "K", -30 + 273.15),
+    ],
 )
-
 def test_convert_from_default_units(value, attribute, unit, expected):
     default_units = units.DEFAULT_UNITS
     default_units[attribute] = unit
     assert default_units.convert_from_default_units(value, attribute) == expected
-
-
