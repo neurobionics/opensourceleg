@@ -5,60 +5,60 @@ from opensourceleg.state_machine import Event, State
 
 # ------------- FSM PARAMETERS ---------------- #
 
-BODY_WEIGHT = 80
+BODY_WEIGHT = 60
 
 # STATE 1: EARLY STANCE
 
-KNEE_K_ESTANCE = 250
-KNEE_B_ESTANCE = 1000
+KNEE_K_ESTANCE = 99.372
+KNEE_B_ESTANCE = 3.180
 KNEE_THETA_ESTANCE = 5
 
 LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.25
 ANKLE_THETA_ESTANCE_TO_LSTANCE = 6.0
 
-ANKLE_K_ESTANCE = 50
+ANKLE_K_ESTANCE = 19.874
 ANKLE_B_ESTANCE = 0
 ANKLE_THETA_ESTANCE = -2
 
 # --------------------------------------------- #
 # STATE 2: LATE STANCE
 
-KNEE_K_LSTANCE = 250
-KNEE_B_LSTANCE = 400
+KNEE_K_LSTANCE = 99.372
+KNEE_B_LSTANCE = 1.272
 KNEE_THETA_LSTANCE = 8
 
 LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.15
 
-ANKLE_K_LSTANCE = 200
-ANKLE_B_LSTANCE = 20
+ANKLE_K_LSTANCE = 79.498
+ANKLE_B_LSTANCE = 0.063
 ANKLE_THETA_LSTANCE = -20
 
 # --------------------------------------------- #
 # STATE 3: EARLY SWING
 
-KNEE_K_ESWING = 100
-KNEE_B_ESWING = 20
+KNEE_K_ESWING = 39.749
+KNEE_B_ESWING = 0.063
 KNEE_THETA_ESWING = 65
 
 KNEE_THETA_ESWING_TO_LSWING = 55
 KNEE_DTHETA_ESWING_TO_LSWING = 3
 
-ANKLE_K_ESWING = 20
-ANKLE_B_ESWING = 0
+ANKLE_K_ESWING = 7.949
+ANKLE_B_ESWING = 0.0
 ANKLE_THETA_ESWING = 25
 
 # --------------------------------------------- #
 # STATE 4: LATE SWING
 
-KNEE_K_LSWING = 40
-KNEE_B_LSWING = 1200
+KNEE_K_LSWING = 15.899
+KNEE_B_LSWING = 3.816
 KNEE_THETA_LSWING = 5
 
 LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.4
 KNEE_THETA_LSWING_TO_ESTANCE = 30
 
-ANKLE_K_LSWING = 20
-ANKLE_B_LSWING = 0
+ANKLE_K_LSWING = 7.949
+ANKLE_B_LSWING = 0.0
 ANKLE_THETA_LSWING = 15
 
 # ------------- FSM TRANSITIONS --------------- #
@@ -142,10 +142,10 @@ def state_machine_controller():
         gear_ratio=41.4999,
     )
 
-    osl.add_joint(
-        name="ankle",
-        gear_ratio=41.4999,
-    )
+    # osl.add_joint(
+    #     name="ankle",
+    #     gear_ratio=41.4999,
+    # )
 
     osl.add_loadcell(
         dephy_mode=False,
@@ -247,14 +247,13 @@ def state_machine_controller():
 
     osl.add_tui()
 
+    osl.log.add_attributes(class_instance=osl.knee, attributes_str=['output_position', 'motor_current', 'motor_torque', 'motor_voltage', 'accelx'])
+    osl.log.add_attributes(class_instance=osl.ankle, attributes_str=['output_position', 'motor_current', 'motor_torque', 'motor_voltage', 'accelx'])
+    osl.log.add_attributes(class_instance=osl.loadcell, attributes_str=['fz'])
+
     with osl:
         osl.home()
-        osl.run(set_state_machine_parameters=True)
-
-        # for t in osl.clock:
-        #     osl.update(set_state_machine_parameters=False)
-        #     osl.log.info(osl.state_machine.current_state_name)        
-
+        osl.run(set_state_machine_parameters=True, log_data=True)
 
 if __name__ == "__main__":
     state_machine_controller()

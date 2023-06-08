@@ -65,6 +65,8 @@ class OpenSourceLeg:
         self._ankle: Joint = None  # type: ignore
         self._loadcell: Loadcell = None  # type: ignore
 
+        self._log_data: bool = False
+
         self.log = Logger(
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
         )
@@ -305,13 +307,17 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.update()
 
+        if self._log_data:
+            self.log.data()
+
         if self.has_state_machine:
 
             if self.is_homed and not self.is_sm_running:
                 self.state_machine.start()
                 self._is_sm_running = True
 
-            self.state_machine.update()  # type: ignore
+            if self.is_sm_running:
+                self.state_machine.update()  # type: ignore
 
             if set_state_machine_parameters:
                 if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
@@ -320,7 +326,7 @@ class OpenSourceLeg:
                         self.knee.set_mode(mode="impedance")  # type: ignore
                         self.knee.set_impedance_gains()  # type: ignore
 
-                    self.knee.set_impedance_gains(  # type: ignore
+                    self.knee.set_joint_impedance(  # type: ignore
                         K=self.state_machine.current_state.knee_stiffness,  # type: ignore
                         B=self.state_machine.current_state.knee_damping,  # type: ignore
                     )
@@ -335,7 +341,7 @@ class OpenSourceLeg:
                         self.ankle.set_mode(mode="impedance")  # type: ignore
                         self.ankle.set_impedance_gains()  # type: ignore
 
-                    self.ankle.set_impedance_gains(  # type: ignore
+                    self.ankle.set_joint_impedance(  # type: ignore
                         K=self.state_machine.current_state.ankle_stiffness,  # type: ignore
                         B=self.state_machine.current_state.ankle_damping,  # type: ignore
                     )
@@ -344,7 +350,7 @@ class OpenSourceLeg:
                         position=self.state_machine.current_state.ankle_theta  # type: ignore
                     )
 
-    def run(self, set_state_machine_parameters: bool = False) -> None:
+    def run(self, set_state_machine_parameters: bool = False, log_data: bool = False) -> None:
         """
         Run the OpenSourceLeg instance: update the joints, loadcell, and state machine.
         If the instance has a TUI, run the TUI.
@@ -366,6 +372,9 @@ class OpenSourceLeg:
                 f"[OSL] Please run the homing routine by calling `osl.home()` before starting the state-machine."
             )
             exit()
+
+        if log_data:
+            self._log_data = True        
 
         self.update(set_state_machine_parameters=set_state_machine_parameters)
 
@@ -448,11 +457,11 @@ class OpenSourceLeg:
 
     def home(self) -> None:
         if self.has_knee:
-            self.log.debug(msg="[OSL] Homing knee joint.")
+            self.log.info(msg="[OSL] Homing knee joint.")
             self.knee.home()  # type: ignore
 
         if self.has_ankle:
-            self.log.debug(msg="[OSL] Homing ankle joint.")
+            self.log.info(msg="[OSL] Homing ankle joint.")
             self.ankle.home()  # type: ignore
 
         self._is_homed = True
@@ -485,6 +494,9 @@ class OpenSourceLeg:
             self.ankle.set_voltage(value=0, force=True)  # type: ignore
 
             time.sleep(0.1)
+
+    def log_data(self):
+        self._log_data = True
 
     @property
     def knee(self):
