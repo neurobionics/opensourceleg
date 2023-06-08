@@ -301,6 +301,36 @@ class Joint(DephyActpack):
             ff=ff,
         )
 
+    def convert_to_joint_impedance(
+        self,
+        K: float = 100,
+        B: float = 40,
+    ):
+        joint_stiffness = (K/constants.NM_PER_RAD_TO_K) * self.gear_ratio**2
+        joint_damping = (B/constants.NM_S_PER_RAD_TO_B) * self.gear_ratio**2
+
+        return joint_stiffness, joint_damping
+
+    def convert_to_motor_impedance(
+        self,
+        K: float = 100,
+        B: float = 40,
+    ):
+        motor_stiffness = K/constants.NM_PER_RAD_TO_K
+        motor_damping = B/constants.NM_S_PER_RAD_TO_B
+
+        return motor_stiffness, motor_damping
+
+    def convert_to_pid_impedance(
+        self,
+        K: float = 0.08922,
+        B: float = 0.0038070,            
+    ):
+        pid_stiffness = (K/self.gear_ratio**2) * constants.NM_PER_RAD_TO_K
+        pid_damping = (B/self.gear_ratio**2) * constants.NM_S_PER_RAD_TO_B
+
+        return pid_stiffness, pid_damping
+
     def update_set_points(self) -> None:
         self.set_mode(mode=self.control_mode_sp)
 

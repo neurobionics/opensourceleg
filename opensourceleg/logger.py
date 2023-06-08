@@ -97,24 +97,25 @@ class Logger(logging.Logger):
         """
         Logs the attributes of the class instance to the csv file
         """
+        header_data = []
+        data = []
 
         if not self._is_logging:
             for class_instance, attributes in zip(
                 self._class_instances, self._attributes
             ):
-                self._writer.writerow(
-                    row=[
-                        f"{class_instance.__class__.__name__}: {attribute}"
-                        for attribute in attributes
-                    ]
-                )
+                for attribute in attributes:
+                    header_data.append(f"{class_instance.__class__.__name__}: {attribute}")
+                
+
+            self._writer.writerow(header_data)
             self._is_logging = True
 
         for class_instance, attributes in zip(self._class_instances, self._attributes):
-            self._writer.writerow(
-                row=[getattr(class_instance, attribute) for attribute in attributes]
-            )
+            for attribute in attributes:
+                data.append(getattr(class_instance, attribute))
 
+        self._writer.writerow(data)
         self._file.flush()
 
     def close(self) -> None:
