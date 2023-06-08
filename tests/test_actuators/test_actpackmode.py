@@ -1,7 +1,3 @@
-from typing import Callable
-
-from ctypes import c_int
-
 import pytest
 
 from opensourceleg import actuators as act
@@ -11,11 +7,6 @@ class MockDephyActpack:
     def __init__(self):
         pass
 
-    def set_mode(self, mode):
-        pass
-
-    def set_motor_zero_position(self):
-        pass
 
 
 @pytest.fixture
@@ -23,7 +14,8 @@ def mock_dephyactpack():
     return MockDephyActpack()
 
 
-def test_actpackmode(mock_dephyactpack):
+def test_ActpackMode(mock_dephyactpack):
+    mock_dephyactpack = MockDephyActpack()
     control_mode1 = 1
     control_mode2 = 2
 
@@ -80,7 +72,6 @@ def test_actpackmode(mock_dephyactpack):
     assert exit_callback_counter == 1
 
     # Testing the ActpackMode transition method
-
     entry_callback_counter = 0
 
     def my_entry_callback():
