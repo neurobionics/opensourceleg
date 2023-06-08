@@ -57,7 +57,47 @@ def test_actpackmode(mock_dephyactpack):
     assert test_mode2.has_gains == True
     assert new_instance_test_mode1.has_gains == False
 
-    # assert test_mode1.enter() == "entry"
-    # assert test_mode1.exit() == "exit"
-    # assert test_mode2.enter() == "entry"
-    # assert test_mode2.exit() == "exit"
+    # Testing the ActpackMode enter method
+    entry_callback_counter = 0
+
+    def my_entry_callback():
+        nonlocal entry_callback_counter
+        entry_callback_counter += 1
+
+    test_mode1._entry_callback = my_entry_callback
+    test_mode1.enter()
+    assert entry_callback_counter == 1
+
+    # Testing the ActpackMode exit method
+    exit_callback_counter = 0
+
+    def my_exit_callback():
+        nonlocal exit_callback_counter
+        exit_callback_counter += 1
+
+    test_mode1._exit_callback = my_exit_callback
+    test_mode1.exit()
+    assert exit_callback_counter == 1
+
+    # Testing the ActpackMode transition method
+
+    entry_callback_counter = 0
+
+    def my_entry_callback():
+        nonlocal entry_callback_counter
+        entry_callback_counter += 1
+
+    test_mode2._entry_callback = my_entry_callback
+
+    exit_callback_counter = 0
+
+    def my_exit_callback():
+        nonlocal exit_callback_counter
+        exit_callback_counter += 1
+
+    test_mode1._exit_callback = my_exit_callback
+
+    test_mode1.transition(test_mode2)
+
+    assert entry_callback_counter == 1
+    assert exit_callback_counter == 1
