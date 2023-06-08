@@ -1,5 +1,3 @@
-import time
-
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.state_machine import Event, State
 
