@@ -105,7 +105,6 @@ class Logger(logging.Logger):
             ):
                 for attribute in attributes:
                     header_data.append(f"{attribute}")
-                
 
             self._writer.writerow(header_data)
             self._is_logging = True

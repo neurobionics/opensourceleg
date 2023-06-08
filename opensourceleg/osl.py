@@ -354,7 +354,9 @@ class OpenSourceLeg:
 
             self._timestamp = time.time()
 
-    def run(self, set_state_machine_parameters: bool = False, log_data: bool = False) -> None:
+    def run(
+        self, set_state_machine_parameters: bool = False, log_data: bool = False
+    ) -> None:
         """
         Run the OpenSourceLeg instance: update the joints, loadcell, and state machine.
         If the instance has a TUI, run the TUI.
@@ -378,7 +380,7 @@ class OpenSourceLeg:
             exit()
 
         if log_data:
-            self._log_data = True        
+            self._log_data = True
 
         self.update(set_state_machine_parameters=set_state_machine_parameters)
 

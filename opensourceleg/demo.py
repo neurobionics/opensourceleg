@@ -250,15 +250,37 @@ def state_machine_controller():
 
     osl.add_tui()
 
-    osl.log.add_attributes(class_instance=osl, attributes_str=['timestamp'])
-    osl.log.add_attributes(class_instance=osl.knee, attributes_str=['output_position', 'motor_current', 'joint_torque', 'motor_voltage', 'accelx'])
-    osl.log.add_attributes(class_instance=osl.ankle, attributes_str=['output_position', 'motor_current', 'joint_torque', 'motor_voltage', 'accelx'])
-    osl.log.add_attributes(class_instance=osl.loadcell, attributes_str=['fz'])
-    osl.log.add_attributes(class_instance=osl.state_machine, attributes_str=['current_state_name'])
-    
+    osl.log.add_attributes(class_instance=osl, attributes_str=["timestamp"])
+    osl.log.add_attributes(
+        class_instance=osl.knee,
+        attributes_str=[
+            "output_position",
+            "motor_current",
+            "joint_torque",
+            "motor_voltage",
+            "accelx",
+        ],
+    )
+
+    osl.log.add_attributes(
+        class_instance=osl.ankle,
+        attributes_str=[
+            "output_position",
+            "motor_current",
+            "joint_torque",
+            "motor_voltage",
+            "accelx",
+        ],
+    )
+    osl.log.add_attributes(class_instance=osl.loadcell, attributes_str=["fz"])
+    osl.log.add_attributes(
+        class_instance=osl.state_machine, attributes_str=["current_state_name"]
+    )
+
     with osl:
         osl.home()
         osl.run(set_state_machine_parameters=True, log_data=True)
+
 
 if __name__ == "__main__":
     state_machine_controller()
