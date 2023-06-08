@@ -14,12 +14,12 @@ class State:
     Args:
         name (str): Name of the state
         is_knee_active (bool): Whether the knee is active. Default: False
-        knee_stiffness (float): Knee stiffness
-        knee_damping (float): Knee damping
+        knee_stiffness (float): Knee stiffness in Nm/rad
+        knee_damping (float): Knee damping in Nm/rad/sec
         knee_equilibrium_angle (float): Knee equilibrium angle
         is_ankle_active (bool): Whether the ankle is active. Default: False
-        ankle_stiffness (float): Ankle stiffness
-        ankle_damping (float): Ankle damping
+        ankle_stiffness (float): Ankle stiffness in Nm/rad
+        ankle_damping (float): Ankle damping in Nm/rad/sec
         ankle_equilibrium_angle (float): Ankle equilibrium angle
         minimum_time_in_state (float): Minimum time spent in the state in seconds. Default: 2.0
 

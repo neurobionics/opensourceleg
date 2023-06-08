@@ -1,7 +1,0 @@
-from opensourceleg.osl import OpenSourceLeg
-
-osl = OpenSourceLeg(frequency=200, file_name="getting_started.log")
-osl.add_joint(name="knee", gear_ratio=41.99)
-
-with osl:
-    osl.update()
