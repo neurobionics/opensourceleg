@@ -7,4 +7,5 @@ In this section you will find tutorials on how to use the **opensourceleg** libr
     :maxdepth: 2
     :hidden:
 
-    /tutorials/adding_a_joint
+    /tutorials/adding_joints
+    /tutorials/adding_loadcell

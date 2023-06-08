@@ -164,9 +164,9 @@ DEFAULT_UNITS = UnitsDefinition(
     }
 )
 
-if __name__ == "__main__":
-    units: UnitsDefinition = DEFAULT_UNITS
-    units["temperature"] = "F"  # type: ignore
+# if __name__ == "__main__":
+#     units: UnitsDefinition = DEFAULT_UNITS
+#     units["temperature"] = "F"  # type: ignore
 
-    print(units.convert_to_default_units(value=80, attribute="temperature"))
-    print(units.convert_from_default_units(value=0, attribute="temperature"))
+#     print(units.convert_to_default_units(value=80, attribute="temperature"))
+#     print(units.convert_from_default_units(value=0, attribute="temperature"))
