@@ -38,9 +38,9 @@ ANKLE_THETA_LSTANCE = -20
 
 KNEE_K_ESWING = 39.749
 KNEE_B_ESWING = 0.063
-KNEE_THETA_ESWING = 65
+KNEE_THETA_ESWING = 60
 
-KNEE_THETA_ESWING_TO_LSWING = 55
+KNEE_THETA_ESWING_TO_LSWING = 50
 KNEE_DTHETA_ESWING_TO_LSWING = 3
 
 ANKLE_K_ESWING = 7.949
@@ -145,10 +145,10 @@ def state_machine_controller():
         gear_ratio=41.4999,
     )
 
-    # osl.add_joint(
-    #     name="ankle",
-    #     gear_ratio=41.4999,
-    # )
+    osl.add_joint(
+        name="ankle",
+        gear_ratio=41.4999,
+    )
 
     osl.add_loadcell(
         dephy_mode=False,
@@ -250,8 +250,9 @@ def state_machine_controller():
 
     osl.add_tui()
 
-    osl.log.add_attributes(class_instance=osl.knee, attributes_str=['output_position', 'motor_current', 'motor_torque', 'motor_voltage', 'accelx'])
-    osl.log.add_attributes(class_instance=osl.ankle, attributes_str=['output_position', 'motor_current', 'motor_torque', 'motor_voltage', 'accelx'])
+    osl.log.add_attributes(class_instance=osl, attributes_str=['timestamp'])
+    osl.log.add_attributes(class_instance=osl.knee, attributes_str=['output_position', 'motor_current', 'joint_torque', 'motor_voltage', 'accelx'])
+    osl.log.add_attributes(class_instance=osl.ankle, attributes_str=['output_position', 'motor_current', 'joint_torque', 'motor_voltage', 'accelx'])
     osl.log.add_attributes(class_instance=osl.loadcell, attributes_str=['fz'])
 
     with osl:

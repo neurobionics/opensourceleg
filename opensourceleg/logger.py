@@ -14,18 +14,17 @@ class Logger(logging.Logger):
 
     def __init__(
         self,
-        file_path: str = "./osl.log",
+        file_path: str = "./osl",
         log_format: str = "[%(asctime)s] %(levelname)s: %(message)s",
     ) -> None:
 
-        self._file_path: str = file_path
+        self._file_path: str = file_path + ".log"
 
         self._class_instances = []
         self._attributes = []
 
-        self._file = open(self._file_path + ".csv", "w")
+        self._file = open(file_path + ".csv", "w")
         self._writer = csv.writer(self._file)
-        self._writer.writerow(self._attributes)
 
         self._log_levels = {
             "DEBUG": logging.DEBUG,
@@ -105,7 +104,7 @@ class Logger(logging.Logger):
                 self._class_instances, self._attributes
             ):
                 for attribute in attributes:
-                    header_data.append(f"{class_instance.__class__.__name__}: {attribute}")
+                    header_data.append(f"{attribute}")
                 
 
             self._writer.writerow(header_data)

@@ -37,7 +37,7 @@ class OpenSourceLeg:
     def __init__(
         self,
         frequency: int = 200,
-        file_name: str = "./osl.log",
+        file_name: str = "osl",
     ) -> None:
         """
         Initialize the OSL class.
@@ -76,6 +76,8 @@ class OpenSourceLeg:
 
         self.tui = None
         self.state_machine = None
+
+        self._timestamp: float = time.time()
 
     def __enter__(self) -> None:
 
@@ -350,6 +352,8 @@ class OpenSourceLeg:
                         position=self.state_machine.current_state.ankle_theta  # type: ignore
                     )
 
+            self._timestamp = time.time()
+
     def run(self, set_state_machine_parameters: bool = False, log_data: bool = False) -> None:
         """
         Run the OpenSourceLeg instance: update the joints, loadcell, and state machine.
@@ -497,6 +501,10 @@ class OpenSourceLeg:
 
     def log_data(self):
         self._log_data = True
+
+    @property
+    def timestamp(self) -> float:
+        return self._timestamp
 
     @property
     def knee(self):
