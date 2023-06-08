@@ -74,6 +74,17 @@ class Joint(DephyActpack):
         homing_frequency: int = 100,
     ) -> None:
 
+        """
+
+        This method homes the joint by moving it to the zero position.
+        The zero position is defined as the position where the joint is fully extended.
+        This method will also make an encoder map if one does not exist.
+
+        Args:
+            homing_voltage (int): voltage in mV to use for homing
+            homing_frequency (int): frequency in Hz to use for homing
+        """
+
         is_homing = True
 
         CURRENT_THRESHOLD = 5000

@@ -70,7 +70,10 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     reads a force greater than a threshold.
     """
     assert osl.loadcell is not None
-    if osl.loadcell.fz < LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE:
+    if (
+        osl.loadcell.fz < LOAD_LSTANCE
+        and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
+    ):
         return True
     else:
         return False
