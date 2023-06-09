@@ -11,6 +11,7 @@ test_model_specified = thermal.ThermalModel(
     soft_border_C_case=10,
 )
 
+
 @pytest.mark.parametrize(
     ("test_model", "class_variable", "expected_value"),
     [
@@ -60,10 +61,10 @@ def test_update():
         21
         + (
             ((10 * 1e-3) ** 2)
-            * .376
-            * (1 + (.393 * 1 / 100) * (21 - 65))
-            /(16.292405391941298)
-        ) 
+            * 0.376
+            * (1 + (0.393 * 1 / 100) * (21 - 65))
+            / (16.292405391941298)
+        )
         / 200
     )
     assert test_model_default.T_w == default_T_w_update1
@@ -75,17 +76,17 @@ def test_update():
         + (
             (
                 ((10 * 1e-3) ** 2)
-                * .376
-                * (1 + (.393 * 1 / 100) * (default_T_w_update1 - 65))
+                * 0.376
+                * (1 + (0.393 * 1 / 100) * (default_T_w_update1 - 65))
                 + (21 - default_T_w_update1) / 1.0702867186480716
             )
-            /(16.292405391941298)
+            / (16.292405391941298)
         )
         / 200
     )
     assert test_model_default.T_w == default_T_w_update2
     assert (
-        test_model_default.T_c 
+        test_model_default.T_c
         == (((default_T_w_update1 - 21) / 1.0702867186480716) / 512.249065845453)
         * 1
         / 200
@@ -108,7 +109,7 @@ def test_update_and_get_scale():
     default_T_w_update1 = (
         21
         + (
-            (3.0 * ((10 * 1e-3) ** 2) * .376 * (1 + (.393 * 1 / 100) * (21 - 65)))
+            (3.0 * ((10 * 1e-3) ** 2) * 0.376 * (1 + (0.393 * 1 / 100) * (21 - 65)))
             / (16.292405391941298)
         )
         / 200
