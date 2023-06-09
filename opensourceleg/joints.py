@@ -141,12 +141,12 @@ class Joint(DephyActpack):
 
         self._is_homed = True
 
-        if self.encoder_map is None:
-            if (
-                input(f"[{self._name}] Would you like to make an encoder map? (y/n): ")
-                == "y"
-            ):
-                self.make_encoder_map()
+        # if self.encoder_map is None:
+        #     if (
+        #         input(f"[{self._name}] Would you like to make an encoder map? (y/n): ")
+        #         == "y"
+        #     ):
+        #         self.make_encoder_map()
 
         self._log.info(f"[{self._name}] Homing complete.")
 

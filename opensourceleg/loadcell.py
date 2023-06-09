@@ -161,24 +161,26 @@ class Loadcell:
 
         """
         if self._is_dephy:
-            loadcell_signed = (self._joint.genvars - self._offset) / (
-                self._adc_range * self._exc
+            loadcell_signed = (
+                (self._joint.genvars - self._offset) / self._adc_range * self._exc
             )
         else:
             assert self._lc is not None
-            loadcell_signed = (self._lc.update() - self._offset) / (
-                self._adc_range * self._exc
+            loadcell_signed = (
+                (self._lc.update() - self._offset) / self._adc_range * self._exc
             )
 
         loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
         if loadcell_zero is None:
+
             self._loadcell_data = (
                 np.transpose(
                     a=self._loadcell_matrix.dot(b=np.transpose(a=loadcell_coupled))
                 )
                 - self._loadcell_zero
             )
+
         else:
             self._loadcell_data = (
                 np.transpose(
@@ -194,6 +196,10 @@ class Loadcell:
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
+            self._log.info(
+                f"[LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
+            )
+            time.sleep(1)
 
             if self._is_dephy:
                 if self._joint.is_streaming:
@@ -215,6 +221,7 @@ class Loadcell:
                 self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0  # type: ignore
 
             self._zeroed = True
+            self._log.info(f"[LOADCELL] Zeroing routine complete.")
 
         elif (
             input(f"[Loadcell] Would you like to re-initialize loadcell? (y/n): ")
