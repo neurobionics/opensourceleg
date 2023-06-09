@@ -189,8 +189,6 @@ class Loadcell:
                 - loadcell_zero
             )
 
-            # self._loadcell_data = (self._loadcell_matrix @ loadcell_coupled) - loadcell_zero
-
     def initialize(self, number_of_iterations: int = 2000) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero
@@ -198,7 +196,9 @@ class Loadcell:
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
-            self._log.info(f"[LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force.")
+            self._log.info(
+                f"[LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
+            )
             time.sleep(1)
 
             if self._is_dephy:
