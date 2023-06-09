@@ -8,7 +8,6 @@ class MockDephyActpack:
         pass
 
 
-
 @pytest.fixture
 def mock_dephyactpack():
     return MockDephyActpack()
