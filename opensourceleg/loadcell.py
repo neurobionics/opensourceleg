@@ -194,8 +194,8 @@ class Loadcell:
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
-
-            print("Zeroing!")
+            self._log.info(f"[LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force.")
+            time.sleep(1)
 
             if self._is_dephy:
                 if self._joint.is_streaming:
@@ -215,10 +215,9 @@ class Loadcell:
                 self.update(ideal_loadcell_zero)
                 loadcell_offset = self._loadcell_data
                 self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0  # type: ignore
-                print(self._loadcell_zero)
 
             self._zeroed = True
-            print(self._loadcell_zero)
+            self._log.info(f"[LOADCELL] Zeroing routine complete.")
 
         elif (
             input(f"[Loadcell] Would you like to re-initialize loadcell? (y/n): ")
