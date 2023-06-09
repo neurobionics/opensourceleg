@@ -36,6 +36,3 @@ LOADCELL_MATRIX = np.array(
         (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
     ]
 )
-
-if __name__ == "__main__":
-    print(NM_PER_RAD_TO_K, NM_S_PER_RAD_TO_B)
