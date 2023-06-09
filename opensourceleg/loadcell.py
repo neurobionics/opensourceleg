@@ -161,24 +161,22 @@ class Loadcell:
 
         """
         if self._is_dephy:
-            loadcell_signed = (self._joint.genvars - self._offset) / (
-                self._adc_range * self._exc
-            )
+            loadcell_signed = (self._joint.genvars - self._offset) / self._adc_range * self._exc
         else:
             assert self._lc is not None
-            loadcell_signed = (self._lc.update() - self._offset) / (
-                self._adc_range * self._exc
-            )
+            loadcell_signed = (self._lc.update() - self._offset) / self._adc_range * self._exc
 
         loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
         if loadcell_zero is None:
+
             self._loadcell_data = (
                 np.transpose(
                     a=self._loadcell_matrix.dot(b=np.transpose(a=loadcell_coupled))
                 )
                 - self._loadcell_zero
-            )
+            )            
+
         else:
             self._loadcell_data = (
                 np.transpose(
@@ -187,6 +185,8 @@ class Loadcell:
                 - loadcell_zero
             )
 
+            # self._loadcell_data = (self._loadcell_matrix @ loadcell_coupled) - loadcell_zero
+
     def initialize(self, number_of_iterations: int = 2000) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero
@@ -194,6 +194,8 @@ class Loadcell:
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
+
+            print("Zeroing!")
 
             if self._is_dephy:
                 if self._joint.is_streaming:
@@ -213,8 +215,10 @@ class Loadcell:
                 self.update(ideal_loadcell_zero)
                 loadcell_offset = self._loadcell_data
                 self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0  # type: ignore
+                print(self._loadcell_zero)
 
             self._zeroed = True
+            print(self._loadcell_zero)
 
         elif (
             input(f"[Loadcell] Would you like to re-initialize loadcell? (y/n): ")
@@ -257,3 +261,20 @@ class Loadcell:
             return self._loadcell_data[0]
         else:
             return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        
+
+if __name__ == "__main__":
+    from opensourceleg.osl import OpenSourceLeg
+
+    osl = OpenSourceLeg(frequency=200)
+    osl.units["position"] = "deg"  # type: ignore
+    osl.units["velocity"] = "deg/s"  # type: ignore
+
+    osl.add_loadcell(
+        dephy_mode=False,
+    )
+
+    with osl:
+        for t in osl.clock:
+            osl.update()
+            osl.log.info(osl.loadcell.fz)

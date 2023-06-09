@@ -5,7 +5,7 @@ from opensourceleg.state_machine import Event, State
 
 # ------------- FSM PARAMETERS ---------------- #
 
-BODY_WEIGHT = 60
+BODY_WEIGHT = 60 * 9.8
 
 # STATE 1: EARLY STANCE
 
