@@ -97,6 +97,11 @@ def test_update():
 
 test_model_default2 = thermal.ThermalModel()
 test_model_specified2 = thermal.ThermalModel(ambient=77)
+test_mode_specified3 = thermal.ThermalModel(ambient=85)
+test_mode_specified4 = thermal.ThermalModel(ambient=110)
+test_mode_specified4.T_c = 10
+test_mode_specified5 = thermal.ThermalModel(ambient=150)
+test_mode_specified5.T_c = 10                     
 
 
 def test_update_and_get_scale():
@@ -122,3 +127,20 @@ def test_update_and_get_scale():
         dt=1 / 200, motor_current=10
     )
     assert scale_specified2_1 == ((80 - 77) / (80 - 75)) ** (1 / 2)
+
+    scale_specified3_1 = test_mode_specified3.update_and_get_scale(
+        dt=1 / 200, motor_current=10
+    )
+    assert scale_specified3_1 == 0
+
+    scale_specified4_1 = test_mode_specified4.update_and_get_scale(
+        dt=1 / 200, motor_current=10
+    )
+
+    assert scale_specified4_1 == ((115 - 110) / (115 - 100)) ** (1 / 2)
+
+    scale_specified5_1 = test_mode_specified5.update_and_get_scale(
+        dt=1 / 200, motor_current=10
+    )
+
+    assert scale_specified5_1 == 0
