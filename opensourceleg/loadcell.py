@@ -161,10 +161,14 @@ class Loadcell:
 
         """
         if self._is_dephy:
-            loadcell_signed = (self._joint.genvars - self._offset) / self._adc_range * self._exc
+            loadcell_signed = (
+                (self._joint.genvars - self._offset) / self._adc_range * self._exc
+            )
         else:
             assert self._lc is not None
-            loadcell_signed = (self._lc.update() - self._offset) / self._adc_range * self._exc
+            loadcell_signed = (
+                (self._lc.update() - self._offset) / self._adc_range * self._exc
+            )
 
         loadcell_coupled = loadcell_signed * 1000 / (self._exc * self._amp_gain)
 
@@ -175,7 +179,7 @@ class Loadcell:
                     a=self._loadcell_matrix.dot(b=np.transpose(a=loadcell_coupled))
                 )
                 - self._loadcell_zero
-            )            
+            )
 
         else:
             self._loadcell_data = (
@@ -261,20 +265,3 @@ class Loadcell:
             return self._loadcell_data[0]
         else:
             return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        
-
-if __name__ == "__main__":
-    from opensourceleg.osl import OpenSourceLeg
-
-    osl = OpenSourceLeg(frequency=200)
-    osl.units["position"] = "deg"  # type: ignore
-    osl.units["velocity"] = "deg/s"  # type: ignore
-
-    osl.add_loadcell(
-        dephy_mode=False,
-    )
-
-    with osl:
-        for t in osl.clock:
-            osl.update()
-            osl.log.info(osl.loadcell.fz)
