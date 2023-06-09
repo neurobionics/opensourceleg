@@ -3,6 +3,7 @@ import pytest
 import opensourceleg.units as units
 
 
+# Testing the UnitsDefinition setter method
 @pytest.mark.parametrize(
     ("attribute", "unit", "expected"), [("force", "lbf", "lbf"), ("length", "in", "in")]
 )
@@ -12,6 +13,7 @@ def test_setter(attribute, unit, expected):
     assert default_units[attribute] == expected
 
 
+# Testing the UnitsDefinition getter method
 @pytest.mark.parametrize(
     ("attribute", "expected"),
     [("position", "rad"), ("acceleration", "rad/s^2"), ("temperature", "C")],
@@ -21,6 +23,7 @@ def test_getter(attribute, expected):
     assert default_units[attribute] == expected
 
 
+# Testing the UnitsDefinition setter method for errors
 @pytest.mark.parametrize(
     ("attribute", "unit", "expected_output", "expected_error"),
     [
@@ -39,6 +42,7 @@ def test_setter_error(attribute, unit, expected_output, expected_error):
     assert type(e.value) == expected_error
 
 
+# Testing the UnitsDefinition getter method for errors
 @pytest.mark.parametrize(
     ("attribute", "expected_output", "expected_error"),
     [("tork", "'Invalid key: tork'", KeyError), ("", "'Invalid key: '", KeyError)],
@@ -51,6 +55,7 @@ def test_getter_error(attribute, expected_output, expected_error):
     assert type(e.value) == expected_error
 
 
+# Testing the UnitsDefinition convert_to_default_units method
 @pytest.mark.parametrize(
     ("value", "attribute", "unit", "expected"),
     [
@@ -140,6 +145,7 @@ def test_convert_to_default_units(value, attribute, unit, expected):
     assert default_units.convert_to_default_units(value, attribute) == expected
 
 
+# Testing the UnitsDefinition convert_from_default_units method
 @pytest.mark.parametrize(
     ("value", "attribute", "unit", "expected"),
     [
