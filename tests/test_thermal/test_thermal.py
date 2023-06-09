@@ -101,7 +101,7 @@ test_mode_specified3 = thermal.ThermalModel(ambient=85)
 test_mode_specified4 = thermal.ThermalModel(ambient=110)
 test_mode_specified4.T_c = 10
 test_mode_specified5 = thermal.ThermalModel(ambient=150)
-test_mode_specified5.T_c = 10                     
+test_mode_specified5.T_c = 10
 
 
 def test_update_and_get_scale():
