@@ -2,9 +2,9 @@ from typing import Any, Callable
 
 import threading
 import time
+from dataclasses import dataclass
 
 import TermTk as ttk
-from attr import dataclass
 from TermTk.TTkCore.string import TTkString
 
 
