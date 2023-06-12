@@ -13,13 +13,13 @@ class Simple_Class:
 
 
 def test_init():
-    test_Logger_default = Logger(file_path="test_logger/test_log_default")
+    test_Logger_default = Logger(file_path="tests/test_logger/test_log_default")
     assert test_Logger_default._class_instances == []
     assert test_Logger_default._attributes == []
 
 
 def test_set_file_level():
-    test_Logger_file_level = Logger(file_path="test_logger/test_log_file_level")
+    test_Logger_file_level = Logger(file_path="tests/test_logger/test_log_file_level")
     test_Logger_file_level.set_file_level(level="DEBUG")
     assert test_Logger_file_level._file_handler.level == 10
     test_Logger_file_level.set_file_level(level="INFO")
@@ -36,7 +36,7 @@ def test_set_file_level():
 
 def test_set_stream_level():
     test_Logger_stream_level = Logger(
-        file_path="test_logger/test_log_stream_level"
+        file_path="tests/test_logger/test_log_stream_level"
     )
     test_Logger_stream_level.set_stream_level(level="DEBUG")
     assert test_Logger_stream_level._stream_handler.level == 10
@@ -56,7 +56,7 @@ def test_add_attributes():
     test_class_instance = Simple_Class()
     test_class_instance2 = Simple_Class()
 
-    test_Logger1 = Logger(file_path="test_logger/test_log1")
+    test_Logger1 = Logger(file_path="tests/test_logger/test_log1")
     test_Logger1.add_attributes(
         class_instance=test_class_instance, attributes_str=["a", "b", "c"]
     )
@@ -71,7 +71,7 @@ def test_add_attributes():
 
 
 def test_close():
-    test_Logger3 = Logger(file_path="test_logger/test_log3")
+    test_Logger3 = Logger(file_path="tests/test_logger/test_log3")
     test_Logger3.close()
     assert test_Logger3._file.closed == True
 
@@ -79,13 +79,13 @@ def test_close():
 def test_data():
     test_class_instance = Simple_Class()
     test_class_instance2 = Simple_Class()
-    test_Logger_data = Logger(file_path="test_logger/test_log_data")
+    test_Logger_data = Logger(file_path="tests/test_logger/test_log_data")
     test_Logger_data.add_attributes(
         class_instance=test_class_instance, attributes_str=["a", "b", "c"]
     )
     test_Logger_data.data()
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
-    with open("test_logger/test_log_data.csv", "r", newline="") as f:
+    with open("tests/test_logger/test_log_data.csv", "r", newline="") as f:
         reader = csv.reader(f)
         rows = list(reader)
     assert rows == expected_rows
@@ -95,7 +95,7 @@ def test_data():
     )
     test_Logger_data.data()
     expected_rows2 = [["a", "b", "c"], ["1", "2", "3"], ["1", "2", "3", "1", "2", "3"]]
-    with open("test_logger/test_log_data.csv", "r", newline="") as f:
+    with open("tests/test_logger/test_log_data.csv", "r", newline="") as f:
         reader = csv.reader(f)
         rows2 = list(reader)
     assert rows2 == expected_rows2
