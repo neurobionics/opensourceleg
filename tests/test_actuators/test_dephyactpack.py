@@ -1,12 +1,10 @@
 from typing import Any
 
-from unittest.mock import Mock, patch
-
 import numpy as np
 import pytest
 from pytest_mock import mocker
 
-from opensourceleg import constants
+import opensourceleg.constants as constants
 from opensourceleg.actuators import (
     ActpackMode,
     CurrentMode,
@@ -19,14 +17,15 @@ from opensourceleg.logger import Logger
 from opensourceleg.thermal import ThermalModel
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
-# class MockDephyActpack(DephyActpack):
-#     def __init__(self, port, baud_rate):
-#         self._device = MockDevice(port, baud_rate)
-
 
 class MockDevice:
-    def __init__(self, port, baud_rate):
-        self._motor_zero_position = 0
+
+    v1: int = 0
+    v2: int = 0
+
+    def __init__(self, port=None, baud_rate=None):
+        self.port = port
+        self.baud_rate = baud_rate
 
     def read(self, size):
         return b""
@@ -38,7 +37,7 @@ class MockDevice:
         pass
 
 
-class MockDephyActpack:
+class MockDephyActpack(DephyActpack):
     def __init__(
         self,
         port: str = "/dev/ttyACM0",
@@ -48,18 +47,19 @@ class MockDephyActpack:
         units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
-    ):
-        self._device = MockDevice(port, baud_rate)
-        self._voltage_mode = "SINGLE"
-        self._current_limit = 0.0
-        self._position = 0.0
-        self._velocity = 0.0
-        self._torque = 0.0
-        self._gains = (0.0, 0.0, 0.0)
-        self._units = DEFAULT_UNITS
-        self._logger = None
-        self._thermal_model = None
-        self._units: UnitsDefinition = units if units else DEFAULT_UNITS
+    ) -> None:
+        """
+        Initializes the MockActpack class
+
+        Args:
+            port (str): _description_
+            baud_rate (int): _description_. Defaults to 230400.
+            frequency (int): _description_. Defaults to 500.
+            logger (Logger): _description_
+            units (UnitsDefinition): _description_
+            debug_level (int): _description_. Defaults to 0.
+            dephy_log (bool): _description_. Defaults to False.
+        """
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
@@ -88,312 +88,102 @@ class MockDephyActpack:
 
         self._mode: ActpackMode = self._modes["voltage"]
 
-    def set_voltage_mode(self, mode):
-        self._voltage_mode = mode
 
-    def get_voltage_mode(self):
-        return self._voltage_mode
-
-    def set_current_limit(self, limit):
-        self._current_limit = limit
-
-    def get_current_limit(self):
-        return self._current_limit
-
-    def set_position(self, position):
-        self._position = position
-
-    def get_position(self):
-        return self._position
-
-    def set_velocity(self, velocity):
-        self._velocity = velocity
-
-    def get_velocity(self):
-        return self._velocity
-
-    def set_torque(self, torque):
-        self._torque = torque
-
-    def get_torque(self):
-        return self._torque
-
-    def set_gains(self, kp, ki, kd):
-        self._gains = (kp, ki, kd)
-
-    def get_gains(self):
-        return self._gains
-
-    def set_units(self, units):
-        self._units = units
-
-    def get_units(self):
-        return self._units
-
-    def set_logger(self, logger):
-        self._logger = logger
-
-    def get_logger(self):
-        return self._logger
-
-    def set_thermal_model(self, thermal_model):
-        self._thermal_model = thermal_model
-
-    def get_thermal_model(self):
-        return self._thermal_model
-
-    @property
-    def units(self) -> UnitsDefinition:
-        return self._units
-
-    @property
-    def frequency(self) -> int:
-        return self._frequency
-
-    @property
-    def mode(self) -> ActpackMode:
-        return self._mode
-
-    @property
-    def modes(self) -> dict[str, ActpackMode]:
-        return self._modes
-
-    @property
-    def motor_zero_position(self) -> float:
-        return self._motor_zero_position
-
-    @property
-    def joint_zero_position(self) -> float:
-        return self._joint_zero_position
-
-    @property
-    def battery_voltage(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.batt_volt,
-                attribute="voltage",
-            )
-        else:
-            return 0.0
-
-    @property
-    def batter_current(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.batt_curr,
-                attribute="current",
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_voltage(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.mot_volt,
-                attribute="voltage",
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_current(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.mot_cur,
-                attribute="current",
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_torque(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.mot_cur * constants.NM_PER_MILLIAMP,
-                attribute="torque",
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_position(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=int(self._data.mot_ang - self.motor_zero_position)
-                * constants.RAD_PER_COUNT,
-                attribute="position",
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_encoder_counts(self):
-        return self._data.mot_ang
-
-    @property
-    def joint_encoder_counts(self):
-        return self._data.ank_ang
-
-    @property
-    def motor_velocity(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=int(self._data.mot_vel) * constants.RAD_PER_COUNT,
-                attribute="velocity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_acceleration(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.mot_acc,
-                attribute="acceleration",
-            )
-        else:
-            return 0.0
-
-    @property
-    def joint_position(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=int(self._data.ank_ang - self._joint_zero_position)
-                * constants.RAD_PER_COUNT,
-                attribute="position",
-            )
-        else:
-            return 0.0
-
-    @property
-    def joint_velocity(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.ank_vel * constants.RAD_PER_COUNT,
-                attribute="velocity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def case_temperature(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.temperature,
-                attribute="temperature",
-            )
-        else:
-            return 0.0
-
-    @property
-    def winding_temperature(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._thermal_model.T_w,
-                attribute="temperature",
-            )
-        else:
-            return 0.0
-
-    @property
-    def genvars(self):
-        if self._data is not None:
-            return np.array(
-                object=[
-                    self._data.genvar_0,
-                    self._data.genvar_1,
-                    self._data.genvar_2,
-                    self._data.genvar_3,
-                    self._data.genvar_4,
-                    self._data.genvar_5,
-                ]
-            )
-        else:
-            return np.zeros(shape=6)
-
-    @property
-    def accelx(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.accelx * constants.M_PER_SEC_SQUARED_ACCLSB,
-                attribute="gravity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def accely(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.accely * constants.M_PER_SEC_SQUARED_ACCLSB,
-                attribute="gravity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def accelz(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.accelz * constants.M_PER_SEC_SQUARED_ACCLSB,
-                attribute="gravity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def gyrox(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.gyrox * constants.RAD_PER_SEC_GYROLSB,
-                attribute="velocity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def gyroy(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.gyroy * constants.RAD_PER_SEC_GYROLSB,
-                attribute="velocity",
-            )
-        else:
-            return 0.0
-
-    @property
-    def gyroz(self) -> float:
-        if self._data is not None:
-            return self._units.convert_from_default_units(
-                value=self._data.gyroz * constants.RAD_PER_SEC_GYROLSB,
-                attribute="velocity",
-            )
-        else:
-            return 0.0
+class Data:
+    def __init__(
+        self,
+        batt_volt=0,
+        batt_curr=0,
+        mot_volt=0,
+        mot_cur=0,
+        mot_ang=0,
+        ank_ang=0,
+        mot_vel=0,
+        mot_acc=0,
+        ank_vel=0,
+        temperature=0,
+        genvar_0=0,
+        genvar_1=0,
+        genvar_2=0,
+        genvar_3=0,
+        genvar_4=0,
+        genvar_5=0,
+        accelx=0,
+        accely=0,
+        accelz=0,
+        gyrox=0,
+        gyroy=0,
+        gyroz=0,
+    ):
+        self.batt_volt = batt_volt
+        self.batt_curr = batt_curr
+        self.mot_volt = mot_volt
+        self.mot_cur = mot_cur
+        self.mot_ang = mot_ang
+        self.ank_ang = ank_ang
+        self.mot_vel = mot_vel
+        self.mot_acc = mot_acc
+        self.ank_vel = ank_vel
+        self.temperature = temperature
+        self.genvar_0 = genvar_0
+        self.genvar_1 = genvar_1
+        self.genvar_2 = genvar_2
+        self.genvar_3 = genvar_3
+        self.genvar_4 = genvar_4
+        self.genvar_5 = genvar_5
+        self.accelx = accelx
+        self.accely = accely
+        self.accelz = accelz
+        self.gyrox = gyrox
+        self.gyroy = gyroy
+        self.gyroz = gyroz
 
 
-def test_mockdevice():
-    test_md = MockDevice(port=None, baud_rate=None)
-    assert test_md._motor_zero_position == 0
-    assert test_md.read(1) == b""
-    assert test_md.write(b"") == None
-    assert test_md.close() == None
+@pytest.fixture
+def device_mock() -> MockDevice:
+    return MockDevice(port=None, baud_rate=None)
 
 
-def test_set_motor_zero_position(monkeypatch):
-    monkeypatch.setattr("test_dephyactpack.DephyActpack", MockDephyActpack)
-    mock_dap = DephyActpack()
-    mock_dap.set_position(1)
-    assert mock_dap.get_position() == 1
+@pytest.fixture
+def patch_device(mocker, device_mock: MockDevice):
+    mocker.patch("flexsea.device.Device.__new__", return_value=device_mock)
 
 
-def test_properties_zero(monkeypatch):
-    monkeypatch.setattr("test_dephyactpack.DephyActpack", MockDephyActpack)
-    mock_dap = DephyActpack()
+@pytest.fixture
+def dephyactpack_mock() -> MockDephyActpack:
+    return MockDephyActpack()
+
+
+@pytest.fixture
+def patch_dephyactpack(mocker, dephyactpack_mock: MockDephyActpack):
+    mocker.patch(
+        "opensourceleg.actuators.DephyActpack.__new__", return_value=dephyactpack_mock
+    )
+
+
+@pytest.fixture
+def dephyactpack_patched(patch_dephyactpack) -> MockDephyActpack:
+    obj = DephyActpack()
+    return obj
+
+
+def test_patching(dephyactpack_patched: DephyActpack):
+    patched_dap = dephyactpack_patched
+    assert isinstance(patched_dap, MockDephyActpack)
+
+
+def test_device_mock(device_mock: MockDevice):
+    mocked_device = device_mock
+    assert isinstance(mocked_device, MockDevice)
+
+
+def test_properties_zero(dephyactpack_patched: DephyActpack):
+
+    mock_dap = dephyactpack_patched
+
     assert mock_dap.units == DEFAULT_UNITS
     assert mock_dap.frequency == 500
-    # assert mock_dap.mode == VoltageMode
+    # assert mock_dap.mode == ActpackMode
     assert mock_dap.motor_zero_position == 0
     assert mock_dap.joint_zero_position == 0
     assert mock_dap.battery_voltage == 0
@@ -418,8 +208,92 @@ def test_properties_zero(monkeypatch):
     assert mock_dap.gyroz == 0
 
 
-# def test_properties_nonzero(monkeypatch):
-#     monkeypatch.setattr("test_dephyactpack.DephyActpack", MockDephyActpack)
-#     mock_dap1 = DephyActpack()
-#     mock_dap1._data = {"batt_volt": 1}
-#     assert mock_dap1.battery_voltage == 1
+def test_properties_nonzero(dephyactpack_patched: DephyActpack):
+    mock_dap1 = dephyactpack_patched
+
+    mock_dap1._data = Data(
+        batt_volt=10,
+        batt_curr=20,
+        mot_volt=10,
+        mot_cur=20,
+        mot_ang=10,
+        ank_ang=20,
+        mot_vel=10,
+        mot_acc=20,
+        ank_vel=10,
+        temperature=20,
+        genvar_0=10,
+        genvar_1=20,
+        genvar_2=10,
+        genvar_3=20,
+        genvar_4=10,
+        genvar_5=20,
+        accelx=10,
+        accely=20,
+        accelz=10,
+        gyrox=20,
+        gyroy=10,
+        gyroz=20,
+    )
+    assert mock_dap1.battery_voltage == 10
+    assert mock_dap1.batter_current == 20
+    assert mock_dap1.motor_voltage == 10
+    assert mock_dap1.motor_current == 20
+    assert mock_dap1.motor_torque == 20 * 0.1133 / 1000
+    assert mock_dap1.motor_encoder_counts == 10
+    assert mock_dap1.joint_encoder_counts == 20
+    assert mock_dap1.motor_velocity == 10 * 2 * np.pi / 16384
+    assert mock_dap1.motor_acceleration == 20
+    assert mock_dap1.joint_position == 20 * 2 * np.pi / 16384
+    assert mock_dap1.joint_velocity == 10 * 2 * np.pi / 16384
+    assert mock_dap1.case_temperature == 20
+    assert mock_dap1.winding_temperature == 21
+    assert mock_dap1.genvars.shape == (6,)
+    assert np.all(mock_dap1.genvars == np.array([10, 20, 10, 20, 10, 20]))
+    assert mock_dap1.accelx == 10 * 9.80665 / 8192
+    assert mock_dap1.accely == 20 * 9.80665 / 8192
+    assert mock_dap1.accelz == 10 * 9.80665 / 8192
+    assert mock_dap1.gyrox == 20.0 * float(np.pi / 180 / 32.8)
+    assert mock_dap1.gyroy == 10 * float(np.pi / 180 / 32.8)
+    assert mock_dap1.gyroz == 20 * float(np.pi / 180 / 32.8)
+
+
+def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
+    mock_dap2 = dephyactpack_patched
+    mock_dap2.set_motor_zero_position(10)
+    assert mock_dap2._motor_zero_position == 10
+    mock_dap2.set_motor_zero_position(-20)
+    assert mock_dap2._motor_zero_position == -20
+
+
+def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
+    mock_dap3 = dephyactpack_patched
+    mock_dap3.set_joint_zero_position(10)
+    assert mock_dap3._joint_zero_position == 10
+    mock_dap3.set_joint_zero_position(-20)
+    assert mock_dap3._joint_zero_position == -20
+
+
+# def test_set_position_gains(dephyactpack_patched: DephyActpack):
+#     mock_dap4 = dephyactpack_patched
+#     mock_dap4._mode = PositionMode(mock_dap4)
+#     mock_dap4.set_position_gains(10, 20, 30)
+#     # assert mock_dap4._impedance_gains == (10, 20, 30)
+#     mock_dap4.set_position_gains()
+#     # assert mock_dap4._position_gains == (50, 0, 0)
+
+# def test_set_current_gains(dephyactpack_patched: DephyActpack):
+#     mock_dap5 = dephyactpack_patched
+#     mock_dap5._mode = CurrentMode(mock_dap5)
+#     mock_dap5.set_current_gains(10, 20, 30)
+#     # assert mock_dap5._impedance_gains == (10, 20, 30)
+#     mock_dap5.set_current_gains()
+#     # assert mock_dap5._current_gains == (40, 400, 128)
+
+# def test_set_impedance_gains(dephyactpack_patched: DephyActpack):
+#     mock_dap5 = dephyactpack_patched
+#     mock_dap5._mode = ImpedanceMode(mock_dap5)
+#     mock_dap5.set_impedance_gains(10, 20, 30, 40, 50)
+#     # assert mock_dap5._impedance_gains == (10, 20, 30, 40, 50)
+#     mock_dap5.set_impedance_gains()
+#     # assert mock_dap5._impedance_gains == (40, 400, 200, 400, 128)
