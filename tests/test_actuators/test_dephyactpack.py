@@ -476,7 +476,7 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
         gyroz=10,
     )
     mock_dap8.start()
-    with open("tests/test_actuators/test_dephyactpack_start_log.log", "r") as f:
+    with open("tests/test_actuators/test_dephyactpack_start8_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
