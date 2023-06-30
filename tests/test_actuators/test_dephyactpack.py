@@ -19,16 +19,8 @@ from opensourceleg.thermal import ThermalModel
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 
-class MockDevice:
-
-    v1: int = 0
-    v2: int = 0
-
-    def __init__(self, port=None, baud_rate=None):
-        self.port = port
-        self.baud_rate = baud_rate
-
-
+# MockDephyActpack class definition for testing
+# This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 class MockDephyActpack(DephyActpack):
     def __init__(
         self,
@@ -41,7 +33,7 @@ class MockDephyActpack(DephyActpack):
         dephy_log: bool = False,
     ) -> None:
         """
-        Initializes the MockActpack class
+        Initializes the MockDephyActpack class
 
         Args:
             port (str): _description_
@@ -61,8 +53,15 @@ class MockDephyActpack(DephyActpack):
         self._state = None
         self._units: UnitsDefinition = units if units else DEFAULT_UNITS
 
+        # New attributes to be used for testing
+
+        # This is used in the open() method to display the port the device should be connected to
         self.port: str = port
+
+        # This is used in the send_motor_command() method to display the motor command that was sent
         self._motor_command: str = "None"
+
+        # This is used in the set_gains() method to display the gains that were set
         self._gains: dict[str, float] = {
             "kp": 0,
             "ki": 0,
@@ -71,6 +70,8 @@ class MockDephyActpack(DephyActpack):
             "b": 0,
             "ff": 0,
         }
+
+        # This is used in the read() method to indicate a data stream
         self.is_streaming: bool = False
 
         self._motor_zero_position = 0.0
@@ -92,15 +93,18 @@ class MockDephyActpack(DephyActpack):
 
         self._mode: ActpackMode = self._modes["voltage"]
 
+    # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
         if freq == 100 and log_level == 5 and log_enabled:
             raise OSError
         else:
             self._log.debug(msg=f"Opening Device at {self.port}")
 
+    # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
         self._motor_command = "Control Mode: {}, Value: {}".format(ctrl_mode, value)
 
+    # Overrides the set_gains method to set the gains in the new _gains attribute
     def set_gains(self, kp, ki, kd, k, b, ff):
         self._gains["kp"] = kp
         self._gains["ki"] = ki
@@ -109,6 +113,7 @@ class MockDephyActpack(DephyActpack):
         self._gains["b"] = b
         self._gains["ff"] = ff
 
+    # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
         self._data.batt_volt += 15
         self._data.batt_curr += 15
@@ -134,10 +139,12 @@ class MockDephyActpack(DephyActpack):
         self._data.gyroz += 15
         return self._data
 
+    # Overrides the close method to do nothing
     def close(self):
         pass
 
 
+# MockData class definition for testing without a data stream
 class Data:
     def __init__(
         self,
@@ -188,21 +195,13 @@ class Data:
         self.gyroz = gyroz
 
 
-@pytest.fixture
-def device_mock() -> MockDevice:
-    return MockDevice(port=None, baud_rate=None)
-
-
-@pytest.fixture
-def patch_device(mocker, device_mock: MockDevice):
-    mocker.patch("flexsea.device.Device.__new__", return_value=device_mock)
-
-
+# Fixture that returns a MockDephyActpack
 @pytest.fixture
 def dephyactpack_mock() -> MockDephyActpack:
     return MockDephyActpack()
 
 
+# Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
 @pytest.fixture
 def patch_dephyactpack(mocker, dephyactpack_mock: MockDephyActpack):
     mocker.patch(
@@ -210,33 +209,37 @@ def patch_dephyactpack(mocker, dephyactpack_mock: MockDephyActpack):
     )
 
 
+# Fixture that returns a MockDephyActpack instance when the DephyActpack class is called
 @pytest.fixture
 def dephyactpack_patched(patch_dephyactpack) -> DephyActpack:
     obj = DephyActpack()
     return obj
 
 
-def test_patch_device(patch_device):
-    mocked_device = Device(port=None, baud_rate=None)
-    assert isinstance(mocked_device, MockDevice)
-
-
+# Test which ensures the dephyactpack_patched fixture returns an instance of the MockDephyActpack class
 def test_patching(dephyactpack_patched: DephyActpack):
     patched_dap = dephyactpack_patched
     assert isinstance(patched_dap, MockDephyActpack)
 
 
-def test_device_mock(device_mock: MockDevice):
-    mocked_device = device_mock
-    assert isinstance(mocked_device, MockDevice)
-
-
+# Tests the open method
 def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
     mocked_dap = dephyactpack_mock
+    mocked_dap._log = Logger(
+        file_path="tests/test_actuators/test_mockdephyactpack_open_log"
+    )
+    mocked_dap._log.set_stream_level("DEBUG")
+    # Tests the open method with non-erroring arguments
+    mocked_dap.open(freq=10, log_level=4, log_enabled=False)
+    with open("tests/test_actuators/test_mockdephyactpack_open_log.log", "r") as f:
+        contents = f.read()
+        assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
+    # Tests the open method with erroring arguments
     with pytest.raises(OSError):
         mocked_dap.open(freq=100, log_level=5, log_enabled=True)
 
 
+# Tests the default properties of the MockDephyActpack class
 def test_properties_zero(dephyactpack_patched: DephyActpack):
 
     mock_dap = dephyactpack_patched
@@ -274,6 +277,7 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
     assert mock_dap.gyroz == 0
 
 
+# Tests the properties of the DephyActpack class when the data attribute has non-zero values
 def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     mock_dap1 = dephyactpack_patched
 
@@ -332,6 +336,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     assert mock_dap1.gyroz == 20 * float(np.pi / 180 / 32.8)
 
 
+# Tests the mode property of the DephyActpack class where the device is an instance of the MockDephyActpack class
 def test_mode_prop(dephyactpack_patched: DephyActpack):
     mock_dap1 = dephyactpack_patched
     mock_dap1._mode = VoltageMode(device=mock_dap1)
@@ -344,6 +349,7 @@ def test_mode_prop(dephyactpack_patched: DephyActpack):
     assert mock_dap1.mode == ImpedanceMode(device=mock_dap1)
 
 
+# Tests the set_mode method of the DephyActpack class
 def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
     mock_dap2 = dephyactpack_patched
     mock_dap2.set_motor_zero_position(10)
@@ -352,6 +358,7 @@ def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
     assert mock_dap2._motor_zero_position == -20
 
 
+# Tests the set_joint_zero_position method of the DephyActpack class
 def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
     mock_dap3 = dephyactpack_patched
     mock_dap3.set_joint_zero_position(10)
@@ -360,42 +367,61 @@ def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
     assert mock_dap3._joint_zero_position == -20
 
 
+# Tests the voltagemode class
 def test_voltagemode(dephyactpack_patched: DephyActpack):
+
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap4 = dephyactpack_patched
     mock_dap4._log = Logger(file_path="tests/test_actuators/test_voltagemode_log")
     mock_dap4._log.set_stream_level("DEBUG")
     mock_dap4._mode = VoltageMode(mock_dap4)
+    # Tests the entry method of the VoltageMode class
     mock_dap4._mode._entry()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_voltagemode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
+    # Tests the exit method of the VoltageMode class
     mock_dap4._mode._exit()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_voltagemode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Voltage mode." in contents
+    # Asserts the proper motor command is sent
     assert mock_dap4._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
 def test_currentmode(dephyactpack_patched: DephyActpack):
+
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap5 = dephyactpack_patched
     mock_dap5._log = Logger(file_path="tests/test_actuators/test_currentmode_log")
     mock_dap5._log.set_stream_level("DEBUG")
     mock_dap5._mode = CurrentMode(mock_dap5)
+    # Tests the entry method of the VoltageMode class
     mock_dap5._mode._entry()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_currentmode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Current mode." in contents
+    # Asserts the set_gains method works properly
     assert mock_dap5._gains == {"kp": 40, "ki": 400, "kd": 0, "k": 0, "b": 0, "ff": 128}
     assert mock_dap5._mode._has_gains == True
+    # Asserts the proper motor command is sent
     assert mock_dap5._motor_command == "Control Mode: c_int(2), Value: 0"
+    # Tests the exit method of the VoltageMode class
     mock_dap5._mode._exit()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_currentmode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Current mode." in contents
+    # Asserts the proper motor command is sent
     assert mock_dap5._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
+# Tests the PositionMode class
 def test_positionmode(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap6 = dephyactpack_patched
     mock_dap6._data = Data(
         mot_ang=10,
@@ -403,21 +429,30 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     mock_dap6._log = Logger(file_path="tests/test_actuators/test_positionmode_log")
     mock_dap6._log.set_stream_level("DEBUG")
     mock_dap6._mode = PositionMode(mock_dap6)
+    # Tests the entry method of the PositionMode class
     mock_dap6._mode._entry()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_positionmode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Position mode." in contents
+    # Asserts the set_gains method works properly
     assert mock_dap6._gains == {"kp": 50, "ki": 0, "kd": 0, "k": 0, "b": 0, "ff": 0}
     assert mock_dap6._mode._has_gains == True
+    # Asserts the proper motor command is sent
     assert mock_dap6._motor_command == "Control Mode: c_int(0), Value: 10"
+    # Tests the exit method of the PositionMode class
     mock_dap6._mode._exit()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_positionmode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Position mode." in contents
+    # Asserts the proper motor command is sent
     assert mock_dap6._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
+# Tests the ImpedanceMode class
 def test_impedancemode(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap7 = dephyactpack_patched
     mock_dap7._data = Data(
         mot_ang=10,
@@ -425,10 +460,13 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     mock_dap7._log = Logger(file_path="tests/test_actuators/test_impedancemode_log")
     mock_dap7._log.set_stream_level("DEBUG")
     mock_dap7._mode = ImpedanceMode(mock_dap7)
+    # Tests the entry method of the ImpedanceMode class
     mock_dap7._mode._entry()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_impedancemode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Impedance mode." in contents
+    # Asserts the set_gains method works properly
     assert mock_dap7._gains == {
         "kp": 40,
         "ki": 400,
@@ -437,20 +475,28 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
         "b": 400,
         "ff": 128,
     }
+    assert mock_dap7._mode._has_gains == True
+    # Asserts the proper motor command is sent
     assert mock_dap7._motor_command == "Control Mode: c_int(3), Value: 10"
+    # Tests the exit method of the ImpedanceMode class
     mock_dap7._mode._exit()
+    # Asserts the proper log message is written
     with open("tests/test_actuators/test_positionmode_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Position mode." in contents
+    # Asserts the proper motor command is sent
     assert mock_dap7._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
+# Tests the DephyActpack start method
 def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap8 = dephyactpack_patched
     mock_dap8._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_start8_log"
     )
     mock_dap8._log.set_stream_level("DEBUG")
+    # Defines the _data attribute of the MockDephyActpack instance
     mock_dap8._data = Data(
         batt_volt=10,
         batt_curr=10,
@@ -475,11 +521,14 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
         gyroy=10,
         gyroz=10,
     )
+    # Calls the start method of the MockDephyActpack instance
     mock_dap8.start()
+    # Asserts the proper log messages are written
     with open("tests/test_actuators/test_dephyactpack_start8_log.log", "r") as f:
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
+    # Asserts the read method updated the _data attribute properly
     assert mock_dap8._data.batt_volt == 25
     assert mock_dap8._data.batt_curr == 25
     assert mock_dap8._data.mot_volt == 25
@@ -516,35 +565,49 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     #         assert "Need admin previleges to open the port '/dev/ttyACM0'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n" in contents
 
 
+# Tests the DephyActpack stop method
 def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap10 = dephyactpack_patched
     mock_dap10._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_stop_log"
     )
     mock_dap10._log.set_stream_level("DEBUG")
     mock_dap10._mode = CurrentMode(device=mock_dap10)
+    # Calls the stop method of the MockDephyActpack instance
     mock_dap10.stop()
+    # Asserts the set_mode method was called properly
     assert mock_dap10._mode == VoltageMode(device=mock_dap10)
+    # Asserts the motor command was sent properly
     assert mock_dap10._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
+# Tests the DephyActpack update method
 def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap11 = dephyactpack_patched
     mock_dap11._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_update_log"
     )
     mock_dap11._log.set_stream_level("DEBUG")
+    # Sets the data values needed for testing the update method
     mock_dap11._data = Data(mot_cur=13, temperature=12)
+    # Calls the update method of the MockDephyActpack instance
     mock_dap11.update()
+    # Asserts the proper log messages are written for an unopened device
     with open("tests/test_actuators/test_dephyactpack_update_log.log", "r") as f:
         contents = f.read()
         assert (
             "WARNING: [Actpack] Please open() the device before streaming data."
             in contents
         )
+    # Set the is_streaming attribute to True to simulate an open device
     mock_dap11.is_streaming = True
+    # Assert the default thermal model was properly initialized
     assert mock_dap11._thermal_model.T_w == 21
+    # Calls the update method of the MockDephyActpack instance
     mock_dap11.update()
+    # Asserts the update method properly updated the _data attribute
     assert mock_dap11._data.batt_volt == 15
     assert mock_dap11._data.batt_curr == 15
     assert mock_dap11._data.mot_volt == 15
@@ -588,7 +651,9 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     )
 
 
+# Tests the DephyActpack set_mode method
 def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap12 = dephyactpack_patched
     mock_dap12._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_mode_log"
@@ -596,23 +661,31 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     mock_dap12._log.set_stream_level("DEBUG")
     mock_dap12._mode = CurrentMode(device=mock_dap12)
     mock_dap12.set_mode("voltage")
+    # Asserts the mode was properly set
     assert mock_dap12._mode == VoltageMode(device=mock_dap12)
-    mock_dap12.set_mode("voltage")
-    assert mock_dap12._mode == VoltageMode(device=mock_dap12)
+    mock_dap12.set_mode("current")
+    # Asserts the mode was properly set
+    assert mock_dap12._mode == CurrentMode(device=mock_dap12)
+    # Calls the set_mode method with invalid mode
     mock_dap12.set_mode("badmode")
+    # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_mode_log.log", "r") as f:
         contents = f.read()
         assert "WARNING: Mode badmode not found" in contents
 
 
+# Tests the DephyActpack set_position_gains method
 def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap13 = dephyactpack_patched
     mock_dap13._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_position_gains_log"
     )
     mock_dap13._log.set_stream_level("DEBUG")
     mock_dap13._mode = PositionMode(device=mock_dap13)
+    # Calls the set_position_gains method with no arguments in PositionMode
     mock_dap13.set_position_gains()
+    # Asserts the default gains were properly set
     assert mock_dap13._gains == {
         "kp": 50,
         "ki": 0,
@@ -621,7 +694,9 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
         "b": 0,
         "ff": 0,
     }
+    # Calls the set_position_gains method with arguments
     mock_dap13.set_position_gains(kp=1, ki=2, kd=3)
+    # Asserts the gains were properly set
     assert mock_dap13._gains == {
         "kp": 1,
         "ki": 2,
@@ -630,8 +705,11 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
         "b": 0,
         "ff": 0,
     }
+    # Changed mode to CurrentMode
     mock_dap13._mode = CurrentMode(device=mock_dap13)
+    # Calls the set_position_gains method with no arguments in CurrentMode
     mock_dap13.set_position_gains()
+    # Asserts the proper log messages are written for an invalid mode
     with open(
         "tests/test_actuators/test_dephyactpack_set_position_gains_log.log", "r"
     ) as f:
@@ -639,14 +717,18 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set position gains in mode c_int(2)" in contents
 
 
+# Tests the DephyActpack set_current_gains method
 def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap14 = dephyactpack_patched
     mock_dap14._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_current_gains_log"
     )
     mock_dap14._log.set_stream_level("DEBUG")
     mock_dap14._mode = CurrentMode(device=mock_dap14)
+    # Calls the set_current_gains method with no arguments in CurrentMode
     mock_dap14.set_current_gains()
+    # Asserts the default gains were properly set
     assert mock_dap14._gains == {
         "kp": 40,
         "ki": 400,
@@ -655,7 +737,9 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
         "b": 0,
         "ff": 128,
     }
+    # Calls the set_current_gains method with arguments
     mock_dap14.set_current_gains(kp=1, ki=2, ff=3)
+    # Asserts the gains were properly set
     assert mock_dap14._gains == {
         "kp": 1,
         "ki": 2,
@@ -664,8 +748,11 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
         "b": 0,
         "ff": 3,
     }
+    # Changed mode to PositionMode
     mock_dap14._mode = PositionMode(device=mock_dap14)
+    # Calls the set_current_gains method with no arguments in PositionMode
     mock_dap14.set_current_gains()
+    # Asserts the proper log messages are written for an invalid mode
     with open(
         "tests/test_actuators/test_dephyactpack_set_current_gains_log.log", "r"
     ) as f:
@@ -673,14 +760,18 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set current gains in mode c_int(0)" in contents
 
 
+# Tests the DephyActpack set_impedance_gains method
 def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap15 = dephyactpack_patched
     mock_dap15._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_impedance_gains_log"
     )
     mock_dap15._log.set_stream_level("DEBUG")
     mock_dap15._mode = ImpedanceMode(device=mock_dap15)
+    # Calls the set_impedance_gains method with no arguments in ImpedanceMode
     mock_dap15.set_impedance_gains()
+    # Asserts the default gains were properly set
     assert mock_dap15._gains == {
         "kp": 40,
         "ki": 400,
@@ -689,7 +780,9 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
         "b": 400,
         "ff": 128,
     }
+    # Calls the set_impedance_gains method with arguments
     mock_dap15.set_impedance_gains(kp=1, ki=2, K=3, B=4, ff=5)
+    # Asserts the gains were properly set
     assert mock_dap15._gains == {
         "kp": 1,
         "ki": 2,
@@ -698,8 +791,11 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
         "b": 4,
         "ff": 5,
     }
+    # Changed mode to CurrentMode
     mock_dap15._mode = CurrentMode(device=mock_dap15)
+    # Calls the set_impedance_gains method with no arguments in CurrentMode
     mock_dap15.set_impedance_gains()
+    # Asserts the proper log messages are written for an invalid mode
     with open(
         "tests/test_actuators/test_dephyactpack_set_impedance_gains_log.log", "r"
     ) as f:
@@ -707,50 +803,70 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set impedance gains in mode c_int(2)" in contents
 
 
+# Tests the DephyActpack set_voltage method
 def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap16 = dephyactpack_patched
     mock_dap16._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_voltage_log"
     )
     mock_dap16._log.set_stream_level("DEBUG")
     mock_dap16._mode = VoltageMode(device=mock_dap16)
+    # Calls the set_voltage method in VoltageMode
     mock_dap16.set_voltage(value=4.0)
+    # Asserts the proper motor command was sent
     assert mock_dap16._motor_command == "Control Mode: c_int(1), Value: 4"
+    # Changed mode to PositionMode
     mock_dap16._mode = PositionMode(device=mock_dap16)
+    # Calls the set_voltage method in PositionMode
     mock_dap16.set_voltage(value=4.0)
+    # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log", "r") as f:
         contents = f.read()
         assert "WARNING: Cannot set voltage in mode c_int(0)" in contents
 
-
+# Tests the DephyActpack set_current method
 def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap17 = dephyactpack_patched
     mock_dap17._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_current_log"
     )
     mock_dap17._log.set_stream_level("DEBUG")
     mock_dap17._mode = CurrentMode(device=mock_dap17)
+    # Calls the set_current method in CurrentMode
     mock_dap17.set_current(value=6.0)
+    # Asserts the proper motor command was sent
     assert mock_dap17._motor_command == "Control Mode: c_int(2), Value: 6"
+    # Changed mode to PositionMode
     mock_dap17._mode = PositionMode(device=mock_dap17)
+    # Calls the set_current method in PositionMode
     mock_dap17.set_current(value=6.0)
+    # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_current_log.log", "r") as f:
         contents = f.read()
         assert "WARNING: Cannot set current in mode c_int(0)" in contents
 
 
+# Tests the DephyActpack set_motor_torque method
 def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap18 = dephyactpack_patched
     mock_dap18._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_motor_torque_log"
     )
     mock_dap18._log.set_stream_level("DEBUG")
     mock_dap18._mode = CurrentMode(device=mock_dap18)
+    # Calls the set_motor_torque method in CurrentMode
     mock_dap18.set_motor_torque(torque=7.0)
+    # Asserts the proper motor command was sent
     motor_torque = int(7 * 1000 / 0.1133)
     assert mock_dap18._motor_command == f"Control Mode: c_int(2), Value: {motor_torque}"
+    # Changed mode to PositionMode
     mock_dap18._mode = PositionMode(device=mock_dap18)
+    # Calls the set_motor_torque method in PositionMode
     mock_dap18.set_motor_torque(torque=7.0)
+    # Asserts the proper log messages are written for an invalid mode
     with open(
         "tests/test_actuators/test_dephyactpack_set_motor_torque_log.log", "r"
     ) as f:
@@ -758,22 +874,32 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set motor_torque in mode c_int(0)" in contents
 
 
+# Tests the DephyActpack set_motor_position method
 def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
+    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap19 = dephyactpack_patched
     mock_dap19._log = Logger(
         file_path="tests/test_actuators/test_dephyactpack_set_motor_position_log"
     )
     mock_dap19._log.set_stream_level("DEBUG")
     mock_dap19._mode = PositionMode(device=mock_dap19)
+    # Calls the set_motor_position method in PositionMode
     mock_dap19.set_motor_position(position=8.0)
+    # Asserts the proper motor command was sent
     motor_pos = int(8 / 2 / np.pi * 16384)
     assert mock_dap19._motor_command == f"Control Mode: c_int(0), Value: {motor_pos}"
+    # Changed mode to ImpedanceMode
     mock_dap19._mode = ImpedanceMode(device=mock_dap19)
+    # Calls the set_motor_position method in ImpedanceMode
     mock_dap19.set_motor_position(position=9.0)
+    # Asserts the proper motor command was sent
     motor_pos2 = int(9 / 2 / np.pi * 16384)
     assert mock_dap19._motor_command == f"Control Mode: c_int(3), Value: {motor_pos2}"
+    # Changed mode to CurrentMode
     mock_dap19._mode = CurrentMode(device=mock_dap19)
+    # Calls the set_motor_position method in CurrentMode
     mock_dap19.set_motor_position(position=10.0)
+    # Asserts the proper log messages are written for an invalid mode
     with open(
         "tests/test_actuators/test_dephyactpack_set_motor_position_log.log", "r"
     ) as f:
