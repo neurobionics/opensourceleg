@@ -9,7 +9,7 @@ class MockDephyActpack:
 
 
 @pytest.fixture
-def mock_dephyactpack():
+def mock_dephyactpack() -> MockDephyActpack:
     return MockDephyActpack()
 
 

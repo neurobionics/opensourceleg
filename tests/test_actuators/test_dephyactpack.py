@@ -825,6 +825,7 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
         contents = f.read()
         assert "WARNING: Cannot set voltage in mode c_int(0)" in contents
 
+
 # Tests the DephyActpack set_current method
 def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
