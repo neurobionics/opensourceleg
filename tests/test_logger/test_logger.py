@@ -71,7 +71,7 @@ def test_add_attributes():
     test_Logger1.add_attributes(
         class_instance=test_class_instance, attributes_str=["a", "b", "c"]
     )
-    
+
     # Asserts the add_attributes method works properly when a class instance is passed multiple times
     assert test_Logger1._class_instances == [test_class_instance]
     assert test_Logger1._attributes == [["a", "b", "c"]]
@@ -87,6 +87,7 @@ def test_close():
     test_Logger3 = Logger(file_path="tests/test_logger/test_log3")
     test_Logger3.close()
     assert test_Logger3._file.closed == True
+
 
 # Testing the Logger data method
 def test_data():
