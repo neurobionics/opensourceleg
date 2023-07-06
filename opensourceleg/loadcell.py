@@ -207,7 +207,7 @@ class Loadcell:
                     self.update()
                 else:
                     self._log.warning(
-                        msg="[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
+                        msg=f"[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
                     )
                     return
             else:
