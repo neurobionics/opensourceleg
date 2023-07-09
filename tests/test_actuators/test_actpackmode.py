@@ -32,6 +32,7 @@ def test_ActpackMode(mock_dephyactpack):
     # Testing the ActpackMode equality
     assert (test_mode1 == test_mode2) == False
     assert test_mode1 == new_instance_test_mode1
+    assert (test_mode1 == "ActpackMode") == False
 
     # Testing the ActpackMode string representation
     assert str(test_mode1) == "1"
