@@ -427,7 +427,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
             return
 
-        self._mode.set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
+        self._mode._set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
 
     def set_current_gains(
         self,

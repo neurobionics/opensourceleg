@@ -39,6 +39,7 @@ flexsea = "^8.0.1"
 pytermtk = "^0.22.0a4"
 smbus2 = "^0.4.2"
 numpy = "^1.24.3"
+pytest-mock = "^3.10.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
