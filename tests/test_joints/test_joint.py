@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 from pytest_mock import mocker
@@ -104,20 +106,130 @@ def test_mockjoint(joint_patched: Joint):
     assert isinstance(jp, MockJoint)
 
 
+@pytest.fixture
+def patch_sleep(monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda x: None)
+
+
 # Unfinished
-def test_home(joint_patched: Joint):
+def test_home(joint_patched: Joint, patch_sleep):
     jp1 = joint_patched
-    jp1._data = Data(mot_ang=20, ank_ang=10)
+    jp1._log = Logger(file_path="tests/test_joints/test_home_log")
+    jp1._log.set_stream_level(level="DEBUG")
+    jp1._data = Data(mot_cur=4999)
+    jp1.is_streaming = True
     jp1.home()
     assert jp1.is_homed == True
     assert jp1._mode == VoltageMode(device=jp1)
-
+    assert jp1.gear_ratio == 41.4999
     assert jp1._motor_command == "Control Mode: c_int(1), Value: 0"
+    with open(file="tests/test_joints/test_home_log.log", mode="r") as f:
+        contents = f.read()
+        assert "INFO: [knee] Homing complete." in contents
+    assert jp1.motor_zero_position == 15
+    assert jp1.motor_zero_position == 15
+    jpa = joint_patched
+    jpa._name = "ankle"
+    jpa._log = Logger(file_path="tests/test_joints/test_home_ankle_log")
+    jpa._log.set_stream_level(level="DEBUG")
+    jpa._data = Data(mot_cur=4999)
+    jpa.is_streaming = True
+    jpa.home()
+    assert jpa.is_homed == True
+    assert jpa._mode == VoltageMode(device=jpa)
+    assert jpa.gear_ratio == 41.4999
+    assert jpa._motor_command == "Control Mode: c_int(1), Value: 0"
+    with open(file="tests/test_joints/test_home_ankle_log.log", mode="r") as f:
+        contents = f.read()
+        assert "INFO: [ankle] Homing complete." in contents
+    assert jpa.motor_zero_position == 56676
+    assert jpa.joint_zero_position == 1380
 
 
-# Unfinished
-def test_make_encoder_map(joint_patched: Joint):
-    pass
+# Test the home KeyBoardInterrupt
+# def test_home_keyboardinterrupt(joint_patched: Joint, patch_sleep, mocker):
+#     jp_ki = joint_patched
+#     jp_ki._log = Logger(file_path="tests/test_joints/test_home_keyboardinterrupt_log")
+#     jp_ki._log.set_stream_level(level="DEBUG")
+#     jp_ki._data = Data()
+#     jp_ki.is_streaming = True
+#     with pytest.raises(KeyboardInterrupt):
+#         jp_ki.home()
+#         assert jp_ki._motor_command == "Control Mode: c_int(1), Value: 0"
+#         with open(file="tests/test_joints/test_home_keyboardinterrupt_log.log", mode="r") as f:
+#             contents = f.read()
+#             assert "WARNING: Homing interrupted." in contents
+
+
+@pytest.fixture
+def patch_time_time(monkeypatch):
+    values = [
+        0,
+        0,
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60,
+        64,
+        68,
+        72,
+        76,
+        80,
+    ]
+    monkeypatch.setattr(time, "time", lambda: values.pop(0))
+
+
+def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_time):
+    jp2 = joint_patched
+    jp2._log = Logger(file_path="tests/test_joints/test_make_knee_encoder_map_log")
+    jp2._log.set_stream_level(level="DEBUG")
+    jp2._data = Data(mot_cur=4999)
+    jp2.make_encoder_map()
+    with open(
+        file="tests/test_joints/test_make_knee_encoder_map_log.log", mode="r"
+    ) as f:
+        contents = f.read()
+        assert "Please home the joint before making the encoder map." in contents
+    jp2.is_streaming = True
+    jp2.home()
+    jp2.make_encoder_map()
+    with open(
+        file="tests/test_joints/test_make_knee_encoder_map_log.log", mode="r"
+    ) as f:
+        contents = f.read()
+        assert "Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
+        assert "INFO: [knee] You may now stop moving the joint." in contents
+        assert "INFO: [knee] Encoder map saved." in contents
+    assert jp2._mode == CurrentMode(device=jp2)
+    assert jp2._gains == {
+        "kp": 40,
+        "ki": 400,
+        "kd": 0,
+        "k": 0,
+        "b": 0,
+        "ff": 128,
+    }
+    assert jp2._motor_command == "Control Mode: c_int(2), Value: 0"
+    test_joint_position_array = [0.005752427954571154, 0.011504855909142308]
+    test_output_position_array = [0.00013861305580425867, 0.00027722611160851734]
+    test_power = np.arange(4.0)
+    test_a_mat = np.array(test_joint_position_array).reshape(-1, 1) ** test_power
+    test_beta = np.linalg.lstsq(test_a_mat, test_output_position_array, rcond=None)[0]
+    test_coeffs = test_beta[0]
+    test_encoder_map = np.polynomial.polynomial.Polynomial(coef=test_coeffs)
+    assert jp2._encoder_map == test_encoder_map
 
 
 # Test the set_max_temperature method
