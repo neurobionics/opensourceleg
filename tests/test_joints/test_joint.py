@@ -43,7 +43,7 @@ class MockJoint(Joint, MockDephyActpack):
         dephy_log: bool = False,
     ) -> None:
 
-        MockDephyActpack.__init__(self)
+        MockDephyActpack.__init__(self, port)
         self._gear_ratio: float = gear_ratio
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell
