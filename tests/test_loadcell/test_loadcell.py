@@ -7,7 +7,7 @@ from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell, StrainAmp
 from opensourceleg.logger import Logger
 from tests.test_actuators.test_dephyactpack import Data
-from tests.test_joints.test_joint import MockJoint
+from tests.test_joints.test_joint import MockJoint, patch_sleep
 
 
 # Create a mock SMBus class to test the StrainAmp class
@@ -726,7 +726,7 @@ def test_loadcell_update(loadcell_patched: Loadcell):
 
 
 # Test the Loadcell initialize method
-def test_loadcell_initialize(loadcell_patched: Loadcell, mocker):
+def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
     # Initialize the Loadcell object and pass data into attributes needed for testing
     lc_initialize = loadcell_patched
     lc_initialize._log = Logger(
