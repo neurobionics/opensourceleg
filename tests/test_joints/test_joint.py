@@ -111,7 +111,6 @@ def patch_sleep(monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda x: None)
 
 
-# Unfinished
 def test_home(joint_patched: Joint, patch_sleep):
     jp1 = joint_patched
     jp1._log = Logger(file_path="tests/test_joints/test_home_log")
