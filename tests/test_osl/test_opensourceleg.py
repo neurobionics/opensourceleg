@@ -1,3 +1,4 @@
+import csv
 import time
 
 import numpy as np
@@ -15,7 +16,7 @@ from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
 from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.state_machine import State, StateMachine
+from opensourceleg.state_machine import Event, State, StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
@@ -33,6 +34,7 @@ from tests.test_loadcell.test_loadcell import (
     loadcell_patched,
     patch_loadcell,
 )
+from tests.test_logger.test_logger import Simple_Class
 from tests.test_state_machine.test_state_machine import mock_time
 
 
@@ -68,7 +70,7 @@ def test_osl_create(mock_time):
 
 # Test the OpenSourceLeg __enter__ method
 def test_osl_enter(
-    mock_get_active_ports, joint_patched: Joint, loadcell_patched: Loadcell
+    mock_get_active_ports, joint_patched: Joint, loadcell_patched: Loadcell, patch_sleep
 ):
     # Create a new OpenSourceLeg
     test_osl_ent = OpenSourceLeg()
@@ -114,7 +116,7 @@ def test_osl_enter(
 
 # Unfnished: tui
 # Test the OpenSourceLeg __exit__ method
-def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time):
+def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_sleep):
     # Create a new OpenSourceLeg
     test_osl_ex = OpenSourceLeg()
     test_osl_ex.log = Logger(file_path="tests/test_osl/test_osl_ex")
@@ -290,6 +292,331 @@ def test_osl_add_state_machine():
     assert test_osl_asm._has_sm == True
 
 
+# Override the exit() method
+@pytest.fixture
+def patch_exit(monkeypatch):
+    monkeypatch.setattr("builtins.exit", lambda: None)
+
+
+# Test the OpenSourceLeg update method with knee
+def test_osl_update_knee(
+    joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
+):
+    test_osl_u_knee = OpenSourceLeg()
+    test_osl_u_knee.log = Logger(file_path="tests/test_osl/test_osl_u_knee")
+    test_osl_u_knee.log.set_stream_level("DEBUG")
+    test_osl_u_knee.add_joint(name="knee")
+    test_osl_u_knee._knee._data = Data()
+    test_osl_u_knee._knee.is_streaming = True
+    test_osl_u_knee._knee._max_temperature = 1
+    test_osl_u_knee.update()
+    assert test_osl_u_knee._knee._data.batt_volt == 15
+    with open("tests/test_osl/test_osl_u_knee.log", "r") as f:
+        contents = f.read()
+        assert "WARNING: [KNEE] Thermal limit 1.0 reached. Stopping motor." in contents
+
+
+# Test the OpenSourceLeg update method with ankle
+def test_osl_update_ankle(
+    joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
+):
+    test_osl_u_ankle = OpenSourceLeg()
+    test_osl_u_ankle.log = Logger(file_path="tests/test_osl/test_osl_u_ankle")
+    test_osl_u_ankle.log.set_stream_level("DEBUG")
+    test_osl_u_ankle.add_joint(name="ankle")
+    test_osl_u_ankle._ankle._data = Data()
+    test_osl_u_ankle._ankle.is_streaming = True
+    test_osl_u_ankle._ankle._max_temperature = 1
+    test_osl_u_ankle.update()
+    assert test_osl_u_ankle._ankle._data.batt_volt == 15
+    with open("tests/test_osl/test_osl_u_ankle.log", "r") as f:
+        contents = f.read()
+        assert "WARNING: [ANKLE] Thermal limit 1.0 reached. Stopping motor." in contents
+
+
+# Test the OpenSourceLeg update method with loadcell
+def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
+    test_osl_u_loadcell = OpenSourceLeg()
+    test_osl_u_loadcell.log = Logger(file_path="tests/test_osl/test_osl_u_loadcell")
+    test_osl_u_loadcell.log.set_stream_level("DEBUG")
+    test_osl_u_loadcell.add_loadcell()
+    test_osl_u_loadcell._loadcell._joint = joint_patched
+    test_osl_u_loadcell._loadcell._joint._data = Data(
+        genvar_0=1, genvar_1=2, genvar_2=3, genvar_3=4, genvar_4=5, genvar_5=6
+    )
+    test_osl_u_loadcell.update()
+    loadcell_coupled = [
+        ((1 - (2**12) / 2) / (2**12 - 1) * 5.0) * 1000 / (5.0 * 125.0),
+        ((2 - (2**12) / 2) / (2**12 - 1) * 5.0) * 1000 / (5.0 * 125.0),
+        ((3 - (2**12) / 2) / (2**12 - 1) * 5.0) * 1000 / (5.0 * 125.0),
+        ((4 - (2**12) / 2) / (2**12 - 1) * 5.0) * 1000 / (5.0 * 125.0),
+        ((5 - (2**12) / 2) / (2**12 - 1) * 5.0) * 1000 / (5.0 * 125.0),
+        ((6 - (2**12) / 2) / (2**12 - 1) * 5.0) * 1000 / (5.0 * 125.0),
+    ]
+    loadcell_signed = [
+        [
+            loadcell_coupled[0] * -38.72600,
+            loadcell_coupled[0] * -1817.74700,
+            loadcell_coupled[0] * 9.84900,
+            loadcell_coupled[0] * 43.37400,
+            loadcell_coupled[0] * -44.54000,
+            loadcell_coupled[0] * 1824.67000,
+        ],
+        [
+            loadcell_coupled[1] * -8.61600,
+            loadcell_coupled[1] * 1041.14900,
+            loadcell_coupled[1] * 18.86100,
+            loadcell_coupled[1] * -2098.82200,
+            loadcell_coupled[1] * 31.79400,
+            loadcell_coupled[1] * 1058.6230,
+        ],
+        [
+            loadcell_coupled[2] * -1047.16800,
+            loadcell_coupled[2] * 8.63900,
+            loadcell_coupled[2] * -1047.28200,
+            loadcell_coupled[2] * -20.70000,
+            loadcell_coupled[2] * -1073.08800,
+            loadcell_coupled[2] * -8.92300,
+        ],
+        [
+            loadcell_coupled[3] * 20.57600,
+            loadcell_coupled[3] * -0.04000,
+            loadcell_coupled[3] * -0.24600,
+            loadcell_coupled[3] * 0.55400,
+            loadcell_coupled[3] * -21.40800,
+            loadcell_coupled[3] * -0.47600,
+        ],
+        [
+            loadcell_coupled[4] * -12.13400,
+            loadcell_coupled[4] * -1.10800,
+            loadcell_coupled[4] * 24.36100,
+            loadcell_coupled[4] * 0.02300,
+            loadcell_coupled[4] * -12.14100,
+            loadcell_coupled[4] * 0.79200,
+        ],
+        [
+            loadcell_coupled[5] * -0.65100,
+            loadcell_coupled[5] * -28.28700,
+            loadcell_coupled[5] * 0.02200,
+            loadcell_coupled[5] * -25.23000,
+            loadcell_coupled[5] * 0.47300,
+            loadcell_coupled[5] * -27.3070,
+        ],
+    ]
+    loadcell_signed_added_and_transposed = [
+        [
+            loadcell_signed[0][0]
+            + loadcell_signed[0][1]
+            + loadcell_signed[0][2]
+            + loadcell_signed[0][3]
+            + loadcell_signed[0][4]
+            + loadcell_signed[0][5],
+            loadcell_signed[1][0]
+            + loadcell_signed[1][1]
+            + loadcell_signed[1][2]
+            + loadcell_signed[1][3]
+            + loadcell_signed[1][4]
+            + loadcell_signed[1][5],
+            loadcell_signed[2][0]
+            + loadcell_signed[2][1]
+            + loadcell_signed[2][2]
+            + loadcell_signed[2][3]
+            + loadcell_signed[2][4]
+            + loadcell_signed[2][5],
+            loadcell_signed[3][0]
+            + loadcell_signed[3][1]
+            + loadcell_signed[3][2]
+            + loadcell_signed[3][3]
+            + loadcell_signed[3][4]
+            + loadcell_signed[3][5],
+            loadcell_signed[4][0]
+            + loadcell_signed[4][1]
+            + loadcell_signed[4][2]
+            + loadcell_signed[4][3]
+            + loadcell_signed[4][4]
+            + loadcell_signed[4][5],
+            loadcell_signed[5][0]
+            + loadcell_signed[5][1]
+            + loadcell_signed[5][2]
+            + loadcell_signed[5][3]
+            + loadcell_signed[5][4]
+            + loadcell_signed[5][5],
+        ],
+        [0, 0, 0, 0, 0, 0],
+    ]
+    # Assert the proper values are returned with a couple significant figures
+    assert round(test_osl_u_loadcell._loadcell.fx, -2) == round(
+        loadcell_signed_added_and_transposed[0][0], -2
+    )
+    assert round(test_osl_u_loadcell._loadcell.fy) == round(
+        loadcell_signed_added_and_transposed[0][1]
+    )
+    assert round(test_osl_u_loadcell._loadcell.fz, -3) == round(
+        loadcell_signed_added_and_transposed[0][2], -3
+    )
+    assert round(test_osl_u_loadcell._loadcell.mx) == round(
+        loadcell_signed_added_and_transposed[0][3]
+    )
+    assert round(test_osl_u_loadcell._loadcell.my) == round(
+        loadcell_signed_added_and_transposed[0][4]
+    )
+    assert round(test_osl_u_loadcell._loadcell.mz, -1) == round(
+        loadcell_signed_added_and_transposed[0][5], -1
+    )
+
+
+# Test the OpenSourceLeg update method with _log_data
+def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_sleep):
+    test_osl_u_ld = OpenSourceLeg()
+    test_osl_u_ld.log = Logger(file_path="tests/test_osl/test_osl_u_ld")
+    test_osl_u_ld.log.set_stream_level("DEBUG")
+    test_osl_u_ld.add_joint(name="knee")
+    test_osl_u_ld._log_data = True
+    test_osl_u_ld._knee._data = Data()
+    test_osl_u_ld._knee.is_streaming = True
+    assert test_osl_u_ld._log_data == True
+    test_class_instance = Simple_Class()
+    test_osl_u_ld.log.add_attributes(
+        class_instance=test_class_instance, attributes_str=["a", "b", "c"]
+    )
+    test_osl_u_ld.update()
+    expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
+    with open("tests/test_osl/test_osl_u_ld.csv", "r", newline="") as f:
+        reader = csv.reader(f)
+        rows = list(reader)
+        assert rows == expected_rows
+
+
+# Test the OpenSourceLeg update method with state machine
+def test_osl_update_state_machine(
+    joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
+):
+    test_osl_u_sm = OpenSourceLeg()
+    test_osl_u_sm.log = Logger(file_path="tests/test_osl/test_osl_u_sm")
+    test_osl_u_sm.log.set_stream_level("DEBUG")
+    test_osl_u_sm.add_joint(name="knee")
+    test_osl_u_sm._knee._data = Data()
+    test_osl_u_sm._knee.is_streaming = True
+    test_osl_u_sm._knee._max_temperature = 10000
+    test_osl_u_sm.add_state_machine()
+    assert test_osl_u_sm.has_state_machine == True
+    test_osl_u_sm.home()
+    assert test_osl_u_sm.is_sm_running == False
+    test_osl_u_sm.state_machine._initial_state = State(name="state_1")
+    test_osl_u_sm.state_machine._current_state = None
+    test_osl_u_sm.update()
+    assert test_osl_u_sm.state_machine._current_state.name == "state_1"
+    assert test_osl_u_sm.is_sm_running == True
+    test_osl_u_sm.state_machine._exited = False
+    test_osl_u_sm.state_machine._osl = OpenSourceLeg()
+    test_osl_u_sm.state_machine.add_state(state=State(name="state_1"))
+    test_osl_u_sm.state_machine.add_state(state=State(name="state_2"))
+    test_osl_u_sm.state_machine.add_event(event=Event(name="test_event_1"))
+    transition1 = test_osl_u_sm.state_machine.add_transition(
+        source=State(name="state_1"),
+        destination=State(name="state_2"),
+        event=Event(name="test_event_1"),
+    )
+    assert test_osl_u_sm.state_machine._transitions == [transition1]
+    test_osl_u_sm.update()
+    assert test_osl_u_sm.state_machine._current_state.name == "state_2"
+    test_osl_u_sm.state_machine._current_state.make_knee_active()
+    assert test_osl_u_sm._knee._mode == VoltageMode(device=test_osl_u_sm._knee)
+    transition2 = test_osl_u_sm.state_machine.add_transition(
+        source=State(name="state_2"),
+        destination=State(name="state_1"),
+        event=Event(name="test_event_2"),
+    )
+    test_osl_u_sm.update(set_state_machine_parameters=True)
+    assert test_osl_u_sm._knee._mode == ImpedanceMode(device=test_osl_u_sm._knee)
+    assert test_osl_u_sm._knee._gains == {
+        "kp": 40,
+        "ki": 400,
+        "kd": 0,
+        "k": 0,
+        "b": 0,
+        "ff": 128,
+    }
+    assert test_osl_u_sm._knee._motor_command == "Control Mode: c_int(3), Value: 5010"
+
+
+def test_osl_update_state_machine_ankle(
+    joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
+):
+    test_osl_u_sm_ank = OpenSourceLeg()
+    test_osl_u_sm_ank.log = Logger(file_path="tests/test_osl/test_osl_u_sm_ank")
+    test_osl_u_sm_ank.log.set_stream_level("DEBUG")
+    test_osl_u_sm_ank.add_joint(name="ankle")
+    test_osl_u_sm_ank._ankle._data = Data()
+    test_osl_u_sm_ank._ankle.is_streaming = True
+    test_osl_u_sm_ank._ankle._max_temperature = 10000
+    test_osl_u_sm_ank.add_state_machine()
+    assert test_osl_u_sm_ank.has_state_machine == True
+    test_osl_u_sm_ank.home()
+    assert test_osl_u_sm_ank.is_sm_running == False
+    test_osl_u_sm_ank.state_machine._initial_state = State(name="state_1")
+    test_osl_u_sm_ank.state_machine._current_state = None
+    test_osl_u_sm_ank.update()
+    assert test_osl_u_sm_ank.state_machine._current_state.name == "state_1"
+    assert test_osl_u_sm_ank.is_sm_running == True
+    test_osl_u_sm_ank.state_machine._exited = False
+    test_osl_u_sm_ank.state_machine._osl = OpenSourceLeg()
+    test_osl_u_sm_ank.state_machine.add_state(state=State(name="state_1"))
+    test_osl_u_sm_ank.state_machine.add_state(state=State(name="state_2"))
+    test_osl_u_sm_ank.state_machine.add_event(event=Event(name="test_event_1"))
+    transition1 = test_osl_u_sm_ank.state_machine.add_transition(
+        source=State(name="state_1"),
+        destination=State(name="state_2"),
+        event=Event(name="test_event_1"),
+    )
+    assert test_osl_u_sm_ank.state_machine._transitions == [transition1]
+    test_osl_u_sm_ank.update()
+    assert test_osl_u_sm_ank.state_machine._current_state.name == "state_2"
+    test_osl_u_sm_ank.state_machine._current_state.make_ankle_active()
+    assert test_osl_u_sm_ank._ankle._mode == VoltageMode(
+        device=test_osl_u_sm_ank._ankle
+    )
+    transition2 = test_osl_u_sm_ank.state_machine.add_transition(
+        source=State(name="state_2"),
+        destination=State(name="state_1"),
+        event=Event(name="test_event_2"),
+    )
+    test_osl_u_sm_ank.update(set_state_machine_parameters=True)
+    assert test_osl_u_sm_ank._ankle._mode == ImpedanceMode(
+        device=test_osl_u_sm_ank._ankle
+    )
+    assert test_osl_u_sm_ank._ankle._gains == {
+        "kp": 40,
+        "ki": 400,
+        "kd": 0,
+        "k": 0,
+        "b": 0,
+        "ff": 128,
+    }
+    assert (
+        test_osl_u_sm_ank._ankle._motor_command == "Control Mode: c_int(3), Value: 6375"
+    )
+
+
+def test_osl_run(joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit):
+    test_osl_r = OpenSourceLeg()
+    test_osl_r.log = Logger(file_path="tests/test_osl/test_osl_r")
+    test_osl_r.log.set_stream_level("DEBUG")
+    test_osl_r.add_joint(name="knee")
+    test_osl_r._knee._data = Data()
+    test_osl_r._knee.is_streaming = True
+    test_osl_r._knee._max_temperature = 10000
+    test_osl_r.add_state_machine()
+    test_osl_r.home()
+    assert test_osl_r.is_sm_running == False
+    test_osl_r.state_machine._initial_state = State(name="state_1")
+    test_osl_r.state_machine._current_state = None
+    assert test_osl_r._log_data == False
+    test_osl_r.run(log_data=True)
+    assert test_osl_r.is_sm_running == True
+    assert test_osl_r._log_data == True
+
+
 # Test the OpenSourceLeg estop method
 def test_osl_estop():
     test_osl_es = OpenSourceLeg()
@@ -358,7 +685,7 @@ def test_osl_calibrate_encoders(
 
 
 # Test the OpenSourceLeg reset method
-def test_osl_reset(joint_patched: Joint, mock_get_active_ports):
+def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
     test_osl_r = OpenSourceLeg()
     test_osl_r.add_joint(name="knee")
     test_osl_r.add_joint(name="ankle")
