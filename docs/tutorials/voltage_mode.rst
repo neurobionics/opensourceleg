@@ -51,6 +51,8 @@ In this code, we enter a `with` block that sets the mode of the `knee` joint to 
 
 Note that this code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the joint is properly connected and functioning.
 
+.. rubric:: Here is the code for this tutorial:
+
 .. literalinclude:: ../../tutorials/voltage_mode.py
     :language: python
     :linenos:
