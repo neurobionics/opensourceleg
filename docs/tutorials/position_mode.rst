@@ -1,4 +1,4 @@
-Controlling Joint Position
+Position Mode Controller
 --------------------------
 In this tutorial, we'll show you how to control your open-source leg in position mode usin the `opensourceleg` library.
 

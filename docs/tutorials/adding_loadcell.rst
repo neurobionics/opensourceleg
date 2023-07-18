@@ -34,7 +34,7 @@ Here is an example of how you would add a load cell to the `osl` object if you w
 This method requires a joint to be added to the `osl` object first. This is because the load cell is connected to the Dephy actuator, which reads the load cell data and streams it to the Raspberry Pi. This joint object is passed to the `add_loadcell` method so that the load cell data can be read from the joint object.
 
 .. Note::
-    If you are using a different load cell amplifier, your amplifier gain and excitation voltage may be different. You can change these values by passing the ``amp_gain`` and ``exc`` arguments to the `add_loadcell` method. The default values for these arguments are ``amp_gain=128`` and ``exc=5``.
+    If you are using a different load cell amplifier, your amplifier gain and excitation voltage may be different. You can change these values by passing the ``amp_gain`` and ``exc`` arguments to the `add_loadcell` method. The default values for these arguments are ``amp_gain=125`` and ``exc=5``.
 
 .. rubric:: Here is the code for this tutorial:
 

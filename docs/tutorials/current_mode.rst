@@ -1,4 +1,4 @@
-Controlling Joint Current
+Current Mode Controller
 --------------------------
 
 In this tutorial, we'll show you how to use the `OpenSourceLeg` library to control the current of a joint.
