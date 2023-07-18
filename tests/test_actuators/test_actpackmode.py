@@ -4,6 +4,10 @@ from opensourceleg import actuators as act
 
 
 class MockDephyActpack:
+    """
+    Mocked DephyActpack class for testing the ActpackMode class.
+    """
+
     def __init__(self):
         pass
 
@@ -14,6 +18,12 @@ def mock_dephyactpack() -> MockDephyActpack:
 
 
 def test_ActpackMode(mock_dephyactpack):
+    """
+    Test function which initializes a MockDephyActpack object and tests the
+    ActpackMode constructor, equality, string representation, and properties.
+    It also overwrites the entry and exit callbacks and tests the enter, exit,
+    and transition methods.
+    """
     mock_dephyactpack = MockDephyActpack()
     control_mode1 = 1
     control_mode2 = 2
