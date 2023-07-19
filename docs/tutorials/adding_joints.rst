@@ -8,7 +8,7 @@ To get started, we need to import the ``OpenSourceLeg`` class, which provides an
 
 .. code-block:: python
 
-    from opensourceleg import OpenSourceLeg
+    from opensourceleg.osl import OpenSourceLeg
 
 .. rubric:: Step 2: Create an instance of the OpenSourceLeg Class
 

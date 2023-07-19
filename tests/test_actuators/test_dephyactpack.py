@@ -22,6 +22,16 @@ from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 # MockDephyActpack class definition for testing
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 class MockDephyActpack(DephyActpack):
+
+    """
+    MockDephyActpack class definition for testing.\n
+    This class inherits everything from the DephyActpack class but
+    deletes the super().__init__() call in the constructor so the
+    constructor does not try to connect to a device. It also overrides
+    some of the methods to allow for testing without a device, and adds
+    attributes used to determine if the methods were called properly.
+    """
+
     def __init__(
         self,
         port: str = "/dev/ttyACM0",
@@ -195,35 +205,60 @@ class Data:
         self.gyroz = gyroz
 
 
-# Fixture that returns a MockDephyActpack
 @pytest.fixture
 def dephyactpack_mock() -> MockDephyActpack:
+
+    """
+    Fixture that returns a MockDephyActpack object
+    """
+
     return MockDephyActpack()
 
 
-# Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
 @pytest.fixture
 def patch_dephyactpack(mocker, dephyactpack_mock: MockDephyActpack):
+
+    """
+    Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
+    """
+
     mocker.patch(
         "opensourceleg.actuators.DephyActpack.__new__", return_value=dephyactpack_mock
     )
 
 
-# Fixture that returns a MockDephyActpack instance when the DephyActpack class is called
 @pytest.fixture
 def dephyactpack_patched(patch_dephyactpack) -> DephyActpack:
+
+    """
+    Fixture that returns a MockDephyActpack object when the DephyActpack class is called
+    """
+
     obj = DephyActpack()
     return obj
 
 
-# Test which ensures the dephyactpack_patched fixture returns an instance of the MockDephyActpack class
 def test_patching(dephyactpack_patched: DephyActpack):
+
+    """
+    Initializes a DephyActpack object using the dephyactpack_patched fixture
+    and asserts that it is an instance of the MockDephyActpack class.
+    """
+
     patched_dap = dephyactpack_patched
     assert isinstance(patched_dap, MockDephyActpack)
 
 
-# Tests the open method
 def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
+
+    """
+    Tests the open method of the MockDephyActpack class.\n
+    This test initializes a MockDephyActpack object, creates a logger of
+    the lowest stream level, and calls the open method without and with
+    erroring arguments. It then asserts that the proper log messages were
+    written.
+    """
+
     mocked_dap = dephyactpack_mock
     mocked_dap._log = Logger(
         file_path="tests/test_actuators/test_mockdephyactpack_open_log"
@@ -239,8 +274,13 @@ def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
         mocked_dap.open(freq=100, log_level=5, log_enabled=True)
 
 
-# Tests the default properties of the MockDephyActpack class
 def test_properties_zero(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the default properties of the MockDephyActpack class.\n
+    This test initializes a MockDephyActpack object and asserts that the
+    properties are set to their default values.
+    """
 
     mock_dap = dephyactpack_patched
 
@@ -277,8 +317,15 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
     assert mock_dap.gyroz == 0
 
 
-# Tests the properties of the DephyActpack class when the data attribute has non-zero values
 def test_properties_nonzero(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the properties of the MockDephyActpack class when the data
+    attribute has non-zero values.\n This test initializes a MockDephyActpack
+    object, sets the data attribute to non-zero values, and asserts that
+    the properties are calulated correctly and set to the proper values.
+    """
+
     mock_dap1 = dephyactpack_patched
 
     mock_dap1._data = Data(
@@ -336,8 +383,15 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     assert mock_dap1.gyroz == 20 * float(np.pi / 180 / 32.8)
 
 
-# Tests the mode property of the DephyActpack class where the device is an instance of the MockDephyActpack class
 def test_mode_prop(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the mode property of the DephyActpack class where the device
+    is an instance of the MockDephyActpack class.\n This test initializes
+    a MockDephyActpack object and asserts that the mode property returns
+    the proper ActpackMode object.
+    """
+
     mock_dap1 = dephyactpack_patched
     mock_dap1._mode = VoltageMode(device=mock_dap1)
     assert mock_dap1.mode == VoltageMode(device=mock_dap1)
@@ -349,8 +403,15 @@ def test_mode_prop(dephyactpack_patched: DephyActpack):
     assert mock_dap1.mode == ImpedanceMode(device=mock_dap1)
 
 
-# Tests the set_mode method of the DephyActpack class
 def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the set_motor_zero_position method of the DephyActpack class.\n
+    This test initializes a MockDephyActpack object and asserts that the
+    _motor_zero_position attribute is set to the proper value when initialized
+    and when updated.
+    """
+
     mock_dap2 = dephyactpack_patched
     mock_dap2.set_motor_zero_position(10)
     assert mock_dap2._motor_zero_position == 10
@@ -358,8 +419,15 @@ def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
     assert mock_dap2._motor_zero_position == -20
 
 
-# Tests the set_joint_zero_position method of the DephyActpack class
 def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the set_joint_zero_position method of the DephyActpack class.\n
+    This test initializes a MockDephyActpack object and asserts that the
+    _joint_zero_position attribute is set to the proper value when initialized
+    and when updated.
+    """
+
     mock_dap3 = dephyactpack_patched
     mock_dap3.set_joint_zero_position(10)
     assert mock_dap3._joint_zero_position == 10
@@ -367,10 +435,16 @@ def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
     assert mock_dap3._joint_zero_position == -20
 
 
-# Tests the voltagemode class
 def test_voltagemode(dephyactpack_patched: DephyActpack):
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
+    """
+    Tests the VoltageMode class.\n This test initializes a MockDephyActpack
+    object, sets the _log attribute to a Logger of the lowest stream level,
+    and tests the entry and exit methods of the VoltageMode class. It then
+    asserts that the proper log messages were written and that the proper
+    motor command was sent.
+    """
+
     mock_dap4 = dephyactpack_patched
     mock_dap4._log = Logger(file_path="tests/test_actuators/test_voltagemode_log")
     mock_dap4._log.set_stream_level("DEBUG")

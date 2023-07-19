@@ -104,7 +104,7 @@ def test_data():
     with open("tests/test_logger/test_log_data.csv", "r", newline="") as f:
         reader = csv.reader(f)
         rows = list(reader)
-    assert rows == expected_rows
+        assert rows == expected_rows
 
     test_Logger_data.add_attributes(
         class_instance=test_class_instance2, attributes_str=["a", "b", "c"]
