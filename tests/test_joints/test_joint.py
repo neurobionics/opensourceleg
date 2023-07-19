@@ -493,8 +493,18 @@ def test_convert_to_pid_impedance(joint_patched: Joint):
     )
 
 
-# Test the update_set_points method
 def test_update_set_points(joint_patched: Joint):
+
+    """
+    Test the update_set_points method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the _control_mode_sp
+    attribute to "current". The update_set_points method is called. It then asserts the
+    proper mode is set. The _control_mode_sp attribute is set to "position". The
+    update_set_points method is called. It then asserts the proper mode is set. The
+    _control_mode_sp attribute is set to "impedance". The update_set_points method is
+    called. It then asserts the proper mode is set.
+    """
+
     jp12 = joint_patched
     # Assert the proper mode is set when the control mode is set to the correponding modes
     assert jp12._mode == VoltageMode(device=jp12)
@@ -509,8 +519,14 @@ def test_update_set_points(joint_patched: Joint):
     assert jp12._mode == ImpedanceMode(device=jp12)
 
 
-# Test the default properties of the MockJoint class
 def test_mockjoint_default_properties(joint_patched: Joint):
+
+    """
+    Test the default properties of the MockJoint class\n
+    This test creates an instance of the MockJoint class and asserts the default
+    properties are set properly.
+    """
+
     jp1 = joint_patched
     assert jp1.name == "knee"
     assert jp1.gear_ratio == 41.4999
@@ -529,8 +545,14 @@ def test_mockjoint_default_properties(joint_patched: Joint):
     assert jp1.control_mode_sp == "voltage"
 
 
-# Test the non-default properties of the MockJoint class
 def test_mockjoint_nondefaultproperties(joint_patched):
+
+    """
+    Test the non-default properties of the MockJoint class\n
+    This test creates an instance of the MockJoint class and sets the attributes
+    to non-default values. It then asserts the properties are set properly.
+    """
+
     jp2 = joint_patched
     jp2._data = Data(mot_ang=20, mot_vel=10, mot_cur=20)
     jp2._name = "ankle"
