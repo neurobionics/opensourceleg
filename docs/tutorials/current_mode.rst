@@ -17,7 +17,7 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 .. code-block:: python
 
-    osl = OpenSourceLeg(frequency=200) # 200 Hz
+    osl = OpenSourceLeg(frequency=200)  # 200 Hz
     osl.add_joint(gear_ratio=9.0)
 
 In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
@@ -43,7 +43,7 @@ To control the current of a joint, we can use a `with` block to ensure that the 
         osl.knee.set_mode("current")
         
         for t in osl.clock:
-            osl.knee.set_current(400) # 400 mA
+            osl.knee.set_current(400)  # 400 mA
             osl.log.info(osl.knee.motor_position)
             osl.update()
 

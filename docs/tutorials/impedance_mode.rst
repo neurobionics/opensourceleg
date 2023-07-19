@@ -17,7 +17,7 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 .. code-block:: python
 
-    osl = OpenSourceLeg(frequency=200) # 200 Hz
+    osl = OpenSourceLeg(frequency=200)  # 200 Hz
     osl.add_joint(gear_ratio=9.0)
 
 In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
@@ -39,9 +39,9 @@ To control the impedance of a joint, we can use a `with` block to ensure that th
 
 .. code-block:: python
 
-    test_stiffness_value = 20 # Nm/rad
-    test_damping_value = 20 # Nm/rad/s
-    set_point = 50 # deg
+    test_stiffness_value = 20  # Nm/rad
+    test_damping_value = 20  # Nm/rad/s
+    set_point = 50  # deg
 
     with osl:
         osl.knee.set_mode("impedance")

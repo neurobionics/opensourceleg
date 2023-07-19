@@ -1,12 +1,12 @@
 from opensourceleg.osl import OpenSourceLeg
 
-osl = OpenSourceLeg(frequency=200) # 200 Hz
+osl = OpenSourceLeg(frequency=200)  # 200 Hz
 osl.add_joint(gear_ratio=9.0)
 
 osl.units["position"] = "deg"
 osl.log.info(osl.units)
 
-set_point = 50 # deg
+set_point = 50  # deg
 
 with osl:
     osl.knee.set_mode("position")
