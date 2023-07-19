@@ -1,4 +1,4 @@
-Position Mode Controller
+Commanding Position
 --------------------------
 In this tutorial, we'll show you how to control your open-source leg in position mode usin the `opensourceleg` library.
 
@@ -16,10 +16,10 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 .. code-block:: python
 
-    osl = OpenSourceLeg(frequency=200)
+    osl = OpenSourceLeg(frequency=200) # 200 Hz
     osl.add_joint(gear_ratio=9.0)
 
-In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 and a joint with a gear ratio of 9.0.
+In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
 
 .. rubric:: Step 3: Setting Units for the `position` Attribute
 
@@ -38,7 +38,7 @@ To control the position of a joint, we can use a `with` block to ensure that the
 
 .. code-block:: python
 
-    set_point = 50
+    set_point = 50 # deg
 
     with osl:
         osl.knee.set_mode("position")

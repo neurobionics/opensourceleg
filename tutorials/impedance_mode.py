@@ -1,15 +1,15 @@
 from opensourceleg.osl import OpenSourceLeg
 
-osl = OpenSourceLeg(frequency=200)
+osl = OpenSourceLeg(frequency=200) # 200 Hz
 osl.add_joint(gear_ratio=9.0)
 
 osl.units["position"] = "deg"
 osl.log.info(osl.units)
 
-test_stiffness_value = 20
-test_damping_value = 20
+test_stiffness_value = 20 # Nm/rad
+test_damping_value = 20 # Nm/rad/s
 
-set_point = 70
+set_point = 50 # deg
 
 with osl:
 

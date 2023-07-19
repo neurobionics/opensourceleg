@@ -1,4 +1,4 @@
-Voltage Mode Controller
+Commanding Voltage
 --------------------------
 
 In this tutorial, we'll show you how to use the `OpenSourceLeg` library to control the voltage of a joint.
@@ -17,10 +17,10 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 .. code-block:: python
 
-    osl = OpenSourceLeg(frequency=200)
+    osl = OpenSourceLeg(frequency=200) # 200 Hz
     osl.add_joint(gear_ratio=9.0)
 
-In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 and a joint with a gear ratio of 9.0.
+In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
 
 .. rubric:: Step 3: Setting Units for the `position` Attribute
 
@@ -43,11 +43,11 @@ To control the voltage of a joint, we can use a `with` block to ensure that the 
         osl.knee.set_mode("voltage")
         
         for t in osl.clock:
-            osl.knee.set_voltage(1000)
+            osl.knee.set_voltage(1000) # mV
             osl.log.info(osl.knee.motor_position)
             osl.update()
 
-In this code, we enter a `with` block that sets the mode of the `knee` joint to "voltage". We then loop over the `osl.clock` generator, which generates a sequence of timestamps at the specified frequency, and set the voltage of the `knee` joint to 1000. We then log the motor position of the `knee` joint to the console at each timestamp. We then call the `osl.update()` method to update the state of the `OpenSourceLeg` object.
+In this code, we enter a `with` block that sets the mode of the `knee` joint to "voltage". We then loop over the `osl.clock` generator, which generates a sequence of timestamps at the specified frequency, and set the voltage of the `knee` joint to 1000 mV. We then log the motor position of the `knee` joint to the console at each timestamp. We then call the `osl.update()` method to update the state of the `OpenSourceLeg` object.
 
 Note that this code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the joint is properly connected and functioning.
 
