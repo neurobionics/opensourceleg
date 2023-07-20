@@ -50,11 +50,24 @@ test_model_specified = thermal.ThermalModel(
     ],
 )
 def test_init(test_model, class_variable, expected_value):
+
+    """
+    Tests the ThermalModel constructor\n
+    Asserts the class variables of the ThermalModel object are equal to the expected values.
+    """
+
     assert getattr(test_model, class_variable) == expected_value
 
 
-# Testing the ThermalModel update method
 def test_update():
+
+    """
+    Tests the ThermalModel update method\n
+    Calls the update method with no arguments and asserts the class variables are equal to the expected values.
+    Then calls the update method with a motor_current argument and asserts the class variables are equal to the expected values.
+    This is repeated once more to test the update method with a motor_current argument.
+    """
+
     # Testing the default ThermalModel update method with no args
     test_model_default.update()
     assert test_model_default.T_w == 21
@@ -112,6 +125,14 @@ test_mode_specified5.T_c = 10
 
 
 def test_update_and_get_scale():
+
+    """
+    Tests the ThermalModel update_and_get_scale method\n
+    Calls the update_and_get_scale method with a dt argument and asserts the class variables are equal to the expected values.
+    Then calls the update_and_get_scale method with a dt and motor_current argument and asserts the class variables are equal to the expected values.
+    This is repeated to trigger all of the if and elif statements in the update_and_get_scale method.
+    """
+
     # Testing the default ThermalModel update_and_get_scale method with no motor_current arg
     scale_default2_1 = test_model_default2.update_and_get_scale(dt=1 / 200)
     assert test_model_default2.T_w == 21

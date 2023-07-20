@@ -10,8 +10,13 @@ from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import MockJoint, patch_sleep
 
 
-# Create a mock SMBus class to test the StrainAmp class
 class MockSMBus:
+
+    """
+    Mocked SMBus class to test the StrainAmp class\n
+    This class has attributes and methods that mimic the SMBus class
+    but are implemented in a way to allow for testing.
+    """
 
     MEM_R_CH1_H = 8
     MEM_R_CH1_L = 9
@@ -53,9 +58,14 @@ class MockSMBus:
         return data
 
 
-# Create a mock StrainAmp class to test the StrainAmp and Loadcell classes
 class MockStrainAmp(StrainAmp):
-    # Initialize the same way but with a mock SMBus
+
+    """
+    Create a mock StrainAmp class to test the StrainAmp and Loadcell classes\n
+    This class inherits from the StrainAmp class but overrides the _SMBus atttribute
+    with a MockSMBus object.
+    """
+
     def __init__(self, bus: int = 1, I2C_addr=0x66) -> None:
         self._SMBus = MockSMBus(bus=bus)
         self.bus = bus
@@ -67,8 +77,14 @@ class MockStrainAmp(StrainAmp):
         self.failed_reads = 0
 
 
-# Create a mock Loadcell class to test the Loadcell class
 class MockLoadcell(Loadcell):
+
+    """
+    Create a mock Loadcell class to test the StrainAmp and Loadcell classes\n
+    This class inherits from the Loadcell class but overrides the _lc atttribute
+    with a MockStrainAmp object.
+    """
+
     # Initialize the same way but with a mock StrainAmp
     def __init__(
         self,
@@ -100,48 +116,77 @@ class MockLoadcell(Loadcell):
         self._log: Logger = logger
 
 
-# Fixture which returns a MockStrainAmp object
 @pytest.fixture
 def strainamp_mock() -> MockStrainAmp:
+
+    """
+    Fixture which returns a MockStrainAmp object
+    """
+
     return MockStrainAmp()
 
 
-# Fixture which patches the StrainAmp class to return a MockStrainAmp object
 @pytest.fixture
 def patch_strainamp(mocker, strainamp_mock: MockStrainAmp):
+
+    """
+    Fixture which patches the StrainAmp class to return a MockStrainAmp object
+    """
+
     mocker.patch(
         "opensourceleg.loadcell.StrainAmp.__new__", return_value=strainamp_mock
     )
 
 
-# Fixture which returns a patched StrainAmp object
 @pytest.fixture
 def strainamp_patched(patch_strainamp) -> StrainAmp:
+
+    """
+    Fixture which returns a patched StrainAmp object
+    """
+
     obj = StrainAmp(bus=1)
     return obj
 
 
-# Fixture which returns a MockLoadcell object
 @pytest.fixture
 def loadcell_mock() -> MockLoadcell:
+
+    """
+    Fixture which returns a MockLoadcell object
+    """
+
     return MockLoadcell()
 
 
-# Fixture which patches the Loadcell class to return a MockLoadcell object
 @pytest.fixture
 def patch_loadcell(mocker, loadcell_mock: MockLoadcell):
+
+    """
+    Fixture which patches the Loadcell class to return a MockLoadcell object
+    """
+
     mocker.patch("opensourceleg.loadcell.Loadcell.__new__", return_value=loadcell_mock)
 
 
-# Fixture which returns a patched Loadcell object
 @pytest.fixture
 def loadcell_patched(patch_loadcell) -> Loadcell:
+
+    """
+    Fixture which returns a patched Loadcell object
+    """
+
     obj = Loadcell()
     return obj
 
 
-# Test the MockStrainAmp constructor
 def test_mockstrainamp_init():
+
+    """
+    Test the MockStrainAmp constructor\n
+    This test initializes a MockStrainAmp object and asserts the attributes are initialized properly.
+    """
+
     test_mockstrainamp_default = MockStrainAmp(bus=1)
     # Assert the attributes are initialized properly
     assert test_mockstrainamp_default.MEM_R_CH1_H == 8
@@ -166,8 +211,14 @@ def test_mockstrainamp_init():
     assert test_mockstrainamp_default.failed_reads == 0
 
 
-# Test the StrainAmp read_byte_data method
 def test_strainamp_read_byte_data():
+
+    """
+    Test the StrainAmp read_byte_data method\n
+    This test initializes a MockSMBus object and calls the read_byte_data method
+    and asserts the proper values are returned.
+    """
+
     smbus_mock = MockSMBus()
     # Assert the default value is 0
     assert smbus_mock.read_byte_data() == 0
@@ -182,8 +233,14 @@ def test_strainamp_read_byte_data():
     assert smbus_mock.read_byte_data(register=3) == 4
 
 
-# Test the StrainAmp read_uncompressed_strain method
 def test_strainamp_read_uncompressed_strain(strainamp_patched: StrainAmp):
+
+    """
+    Test the StrainAmp read_uncompressed_strain method\n
+    This test initializes a StrainAmp object with byte array data and calls the
+    read_uncompressed_strain method and asserts the proper array is returned.
+    """
+
     # Initialize the StrainAmp object with byte array data
     msa_byte_data = strainamp_patched
     msa_byte_data._SMBus._byte_data = bytearray(
@@ -219,8 +276,14 @@ def test_strainamp_read_uncompressed_strain(strainamp_patched: StrainAmp):
     assert np.array_equal(uncompressed_strain, expected_data)
 
 
-# Test the StrainAmp read_compressed_strain method
 def test_strainamp_read_compressed_strain(strainamp_patched: StrainAmp):
+
+    """
+    Test the StrainAmp read_compressed_strain method\n
+    This test initializes a StrainAmp object with byte array data and calls the
+    read_compressed_strain method and asserts the proper array is returned.
+    """
+
     # Initialize the StrainAmp object with byte array data
     msa_rcs = strainamp_patched
     msa_rcs._SMBus._byte_data = bytearray(
@@ -233,8 +296,16 @@ def test_strainamp_read_compressed_strain(strainamp_patched: StrainAmp):
     assert np.array_equal(compressed_strain, expected_data)
 
 
-# Test the StrainAmp update method
 def test_strainamp_update(strainamp_patched: StrainAmp):
+
+    """
+    Test the StrainAmp update method\n
+    This test initializes a StrainAmp object with byte array data and calls the
+    update method and asserts the proper array is returned and the index is updated properly.
+    The update method is called again and the proper array is returned and the index is updated properly.
+    The update method is called again and the proper array is returned and the index is updated properly.
+    """
+
     # Initialize the StrainAmp object with byte array data
     msa_update = strainamp_patched
     msa_update._SMBus._byte_data = bytearray(
@@ -260,8 +331,14 @@ def test_strainamp_update(strainamp_patched: StrainAmp):
     assert msa_update.indx == new_indx3
 
 
-# Test the StrainAmp unpack_uncompressed_strain method
 def test_strainamp_unpack_uncompressed_strain():
+
+    """
+    Test the StrainAmp unpack_uncompressed_strain method\n
+    This test initializes a StrainAmp object with byte array data and calls the
+    unpack_uncompressed_strain method and asserts the proper array is returned.
+    """
+
     # Initialize the data to be unpacked
     byte_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C]
     # Call the static method and assert the proper array is returned
@@ -269,8 +346,14 @@ def test_strainamp_unpack_uncompressed_strain():
     assert np.array_equal(unpacked_strain, [258, 772, 1286, 1800, 2314, 2828])
 
 
-# Test the StrainAmp unpack_compressed_strain method
 def test_strainamp_unpack_compressed_strain():
+
+    """
+    Test the StrainAmp unpack_compressed_strain method\n
+    This test initializes byte_data and calls the unpack_compressed_strain
+    static method and asserts the proper array is returned.
+    """
+
     # Initialize the data to be unpacked
     byte_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]
     # Call the static method and assert the proper array is returned
@@ -278,8 +361,14 @@ def test_strainamp_unpack_compressed_strain():
     assert np.array_equal(unpacked_strain, [16, 515, 64, 1286, 112, 2057])
 
 
-# Test the StrainAmp strain_data_to_wrench method
 def test_strainamp_strain_data_to_wrench():
+
+    """
+    Test the StrainAmp strain_data_to_wrench method\n
+    This test initializes an unpacked strain array, a loadcell matrix, and a loadcell zero variable
+    and calls the strain_data_to_wrench static method and asserts the proper array is returned.
+    """
+
     # Initialize the test data
     test_unpacked_strain = np.array([1, 2, 3, 4, 5, 6])
     test_loadcell_matrix = np.array(
@@ -319,8 +408,14 @@ def test_strainamp_strain_data_to_wrench():
     assert round(result[5], 7) == round(expected_result[5], 7)
 
 
-# Test the StrainAmp wrench_to_strain_data method
 def test_strainamp_wrench_to_strain_data():
+
+    """
+    Test the StrainAmp wrench_to_strain_data method\n
+    This test initializes a loadcell matrix, and a measurement variable and calls the
+    wrench_to_strain_data static method and asserts the proper array is returned.
+    """
+
     # Initialize the test data
     test_measurement = 5.0
     test_loadcell_matrix = np.array(
@@ -357,8 +452,13 @@ def test_strainamp_wrench_to_strain_data():
     assert np.array_equal(result, expected_result)
 
 
-# Test the MockLoadcell constructor
 def test_mockloadcell_init():
+
+    """
+    Test the MockLoadcell constructor\n
+    This test initializes a MockLoadcell object and asserts the attributes are initialized properly.
+    """
+
     # Initialize the MockLoadcell object and assert the attributes are initialized properly
     test_loadcell_default = MockLoadcell(dephy_mode=True)
     assert test_loadcell_default._is_dephy == True
@@ -380,8 +480,13 @@ def test_mockloadcell_init():
     assert test_loadcell_default._log == None
 
 
-# Test the Loadcell default properties
 def test_loadcell_default_properties(loadcell_patched: Loadcell):
+
+    """
+    Test the Loadcell default properties\n
+    This test initializes a Loadcell object and asserts the default properties are all zero.
+    """
+
     # Initialize the Loadcell object and assert the default properties are all zero
     loadcell_default = loadcell_patched
     assert loadcell_default.is_zeroed == False
@@ -394,8 +499,14 @@ def test_loadcell_default_properties(loadcell_patched: Loadcell):
     assert loadcell_default.loadcell_data == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 
-# Test the Loadcell non-default properties
 def test_loadcell_nondefault_properties(loadcell_patched: Loadcell):
+
+    """
+    Test the Loadcell non-default properties\n
+    This test initializes a Loadcell object and passes non-zero data to the _loadcell_data attribute
+    and asserts the properties are correctly non-zero.
+    """
+
     # Initialize the Loadcell object and pass non-zero data to the _loadcell_data attribute
     loadcell_nondefault = loadcell_patched
     loadcell_nondefault._zeroed = True
@@ -418,8 +529,14 @@ def test_loadcell_nondefault_properties(loadcell_patched: Loadcell):
     assert loadcell_nondefault.loadcell_data == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 
-# Test the Loadcell reset method
 def test_loadcell_reset(loadcell_patched: Loadcell):
+
+    """
+    Test the Loadcell reset method\n
+    This test initializes a Loadcell object and passes non-zero data to the _loadcell_data attribute
+    and asserts the reset method correctly resets the attributes.
+    """
+
     # Initialize the Loadcell object and pass non-zero data to the _loadcell_data attribute
     loadcell_reset = loadcell_patched
     loadcell_reset._zeroed = True
@@ -432,8 +549,15 @@ def test_loadcell_reset(loadcell_patched: Loadcell):
     )
 
 
-# Test the Loadcell update method
 def test_loadcell_update(loadcell_patched: Loadcell):
+
+    """
+    Test the Loadcell update method\n
+    This test initializes a Loadcell object and passes data into attributes needed for testing
+    and calls the update method and asserts the proper values are returned. These expected
+    values are calculated by hand. This process is then repeated for both if/else statements.
+    """
+
     # Initialize the Loadcell object and pass data into attributes needed for testing
     loadcell_update = loadcell_patched
     loadcell_update._is_dephy = True
@@ -725,8 +849,16 @@ def test_loadcell_update(loadcell_patched: Loadcell):
     )
 
 
-# Test the Loadcell initialize method
 def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
+
+    """
+    Tests the Loadcell initialize method\n
+    This test initializes a Loadcell object and passes data into attributes needed for testing
+    and calls the initialize method and asserts the proper log messages are written for the
+    if statement in the if statement in the if statement. This process is then repeated for
+    the else statement in the if statement in the if statement.
+    """
+
     # Initialize the Loadcell object and pass data into attributes needed for testing
     lc_initialize = loadcell_patched
     lc_initialize._log = Logger(

@@ -8,17 +8,27 @@ import opensourceleg.units as units
     ("attribute", "unit", "expected"), [("force", "lbf", "lbf"), ("length", "in", "in")]
 )
 def test_setter(attribute, unit, expected):
+
+    """
+    Tests the UnitsDefinition setter method\n
+    Asserts the class variable of the UnitsDefinition object is equal to the expected value.
+    """
+
     default_units = units.DEFAULT_UNITS
     default_units[attribute] = unit
     assert default_units[attribute] == expected
 
 
-# Testing the UnitsDefinition getter method
 @pytest.mark.parametrize(
     ("attribute", "expected"),
     [("position", "rad"), ("acceleration", "rad/s^2"), ("temperature", "C")],
 )
 def test_getter(attribute, expected):
+
+    """
+    Tests the UnitsDefinition getter method\n
+    Asserts the class variable of the UnitsDefinition object is equal to the expected value.
+    """
     default_units = units.DEFAULT_UNITS
     assert default_units[attribute] == expected
 
@@ -34,6 +44,12 @@ def test_getter(attribute, expected):
     ],
 )
 def test_setter_error(attribute, unit, expected_output, expected_error):
+
+    """
+    Tests the UnitsDefinition setter method for errors\n
+    Asserts the error message and error type are equal to the expected values.
+    """
+
     default_units = units.DEFAULT_UNITS
 
     with pytest.raises(Exception) as e:
@@ -42,12 +58,17 @@ def test_setter_error(attribute, unit, expected_output, expected_error):
     assert type(e.value) == expected_error
 
 
-# Testing the UnitsDefinition getter method for errors
 @pytest.mark.parametrize(
     ("attribute", "expected_output", "expected_error"),
     [("tork", "'Invalid key: tork'", KeyError), ("", "'Invalid key: '", KeyError)],
 )
 def test_getter_error(attribute, expected_output, expected_error):
+
+    """
+    Tests the UnitsDefinition getter method for errors\n
+    Asserts the error message and error type are equal to the expected values.
+    """
+
     default_units = units.DEFAULT_UNITS
     with pytest.raises(Exception) as e:
         default_units[attribute]
@@ -55,7 +76,6 @@ def test_getter_error(attribute, expected_output, expected_error):
     assert type(e.value) == expected_error
 
 
-# Testing the UnitsDefinition convert_to_default_units method
 @pytest.mark.parametrize(
     ("value", "attribute", "unit", "expected"),
     [
@@ -140,12 +160,16 @@ def test_getter_error(attribute, expected_output, expected_error):
     ],
 )
 def test_convert_to_default_units(value, attribute, unit, expected):
+
+    """
+    Tests the UnitsDefinition convert_to_default_units method\n
+    Asserts the returned value is equal to the expected value.
+    """
     default_units = units.DEFAULT_UNITS
     default_units[attribute] = unit
     assert default_units.convert_to_default_units(value, attribute) == expected
 
 
-# Testing the UnitsDefinition convert_from_default_units method
 @pytest.mark.parametrize(
     ("value", "attribute", "unit", "expected"),
     [
@@ -230,6 +254,12 @@ def test_convert_to_default_units(value, attribute, unit, expected):
     ],
 )
 def test_convert_from_default_units(value, attribute, unit, expected):
+
+    """
+    Tests the UnitsDefinition convert_from_default_units method\n
+    Asserts the returned value is equal to the expected value.
+    """
+
     default_units = units.DEFAULT_UNITS
     default_units[attribute] = unit
     assert default_units.convert_from_default_units(value, attribute) == expected

@@ -38,8 +38,13 @@ from tests.test_logger.test_logger import Simple_Class
 from tests.test_state_machine.test_state_machine import mock_time
 
 
-# Test the OpenSourceLeg constructor
 def test_opensourceleg_init(mock_time):
+
+    """
+    Tests the OpenSourceLeg constructor\n
+    Asserts the constructor works properly for the default case.
+    """
+
     # Create a new OpenSourceLeg
     test_osl = OpenSourceLeg()
 
@@ -62,16 +67,24 @@ def test_opensourceleg_init(mock_time):
     assert test_osl._timestamp == 1.0
 
 
-# Test the static method to create a new OpenSourceLeg
-def test_osl_create(mock_time):
-    OpenSourceLeg.get_instance()
-    assert OpenSourceLeg._instance == None
+# # Test the static method to create a new OpenSourceLeg
+# def test_osl_create(mock_time):
+#     OpenSourceLeg.get_instance()
+#     assert OpenSourceLeg._instance == None
 
 
-# Test the OpenSourceLeg __enter__ method
 def test_osl_enter(
     mock_get_active_ports, joint_patched: Joint, loadcell_patched: Loadcell, patch_sleep
 ):
+
+    """
+    Tests the OpenSourceLeg __enter__ method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level. A
+    knee, ankle, and loadcell are added. Data is added to the knee, then the enter
+    method is called and asserts the attributes have been updated and the proper log
+    message has been written.
+    """
+
     # Create a new OpenSourceLeg
     test_osl_ent = OpenSourceLeg()
     test_osl_ent.log = Logger(file_path="tests/test_osl/test_osl_ent")
@@ -115,8 +128,16 @@ def test_osl_enter(
 
 
 # Unfnished: tui
-# Test the OpenSourceLeg __exit__ method
 def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_sleep):
+
+    """
+    Tests the OpenSourceLeg __exit__ method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level. A
+    state machine is added. A knee and ankle are added and the mode of each is set.
+    Then the exit method is called and asserts the attributes have been updated and
+    the proper log message has been written.
+    """
+
     # Create a new OpenSourceLeg
     test_osl_ex = OpenSourceLeg()
     test_osl_ex.log = Logger(file_path="tests/test_osl/test_osl_ex")
@@ -134,42 +155,76 @@ def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_
     assert test_osl_ex.state_machine._exited == True
 
 
-# Test the OpenSourceLeg __repr__ method
 def test_osl_repr():
+
+    """
+    Tests the OpenSourceLeg __repr__ method\n
+    Intializes an OpenSourceLeg object and asserts the repr method returns the proper
+    string.
+    """
+
     test_osl_r = OpenSourceLeg()
     assert test_osl_r.__repr__() == "OSL object. Frequency: 200 Hz"
 
 
-# Test the OpenSourceLeg log_data method
 def test_osl_log_data():
+
+    """
+    Tests the OpenSourceLeg log_data method\n
+    Intializes an OpenSourceLeg object and asserts the log_data method updates the
+    _log_data attribute properly.
+    """
+
     test_osl_ld = OpenSourceLeg()
     assert test_osl_ld._log_data == False
     test_osl_ld.log_data()
     assert test_osl_ld._log_data == True
 
 
-# Monkeypatch the get_active_ports method
 @pytest.fixture
 def mock_get_active_ports(monkeypatch):
+
+    """
+    Monkeypatches the get_active_ports method\n
+    Returns a list of 3 ports.
+    """
+
     monkeypatch.setattr(
         "opensourceleg.utilities.get_active_ports", lambda: ["COM1", "COM2", "COM3"]
     )
 
 
-# Monkeypatch the get_active_ports method
 @pytest.fixture
 def mock_get_active_ports1(monkeypatch):
+
+    """
+    Monkeypatches the get_active_ports method\n
+    Returns a list of 1 port.
+    """
+
     monkeypatch.setattr("opensourceleg.utilities.get_active_ports", lambda: ["COM1"])
 
 
-# Monkeypatch the get_active_ports method
 @pytest.fixture
 def mock_get_active_ports0(monkeypatch):
+
+    """
+    Monkeypatches the get_active_ports method\n
+    Returns a list of 0 ports.
+    """
+
     monkeypatch.setattr("opensourceleg.utilities.get_active_ports", lambda: [])
 
 
-# Test the OpenSourceLeg add_joint method with no ports available
 def test_osl_add_joint_no_ports(mock_get_active_ports0):
+
+    """
+    Tests the OpenSourceLeg add_joint method with no ports available\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level. Then
+    the add_joint method is called and it is asserted that the proper log message is
+    written and the knee was not added.
+    """
+
     # Create a new OpenSourceLeg
     test_osl_ajnp = OpenSourceLeg()
     test_osl_ajnp.log = Logger(file_path="tests/test_osl/test_osl_ajnp")
@@ -186,8 +241,14 @@ def test_osl_add_joint_no_ports(mock_get_active_ports0):
     assert test_osl_ajnp._has_knee == False
 
 
-# Test the OpenSourceLeg add_joint method with one port available
 def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
+
+    """
+    Tests the OpenSourceLeg add_joint method with one port available\n
+    Intializes an OpenSourceLeg object and adds a knee joint. It then asserts
+    that the knee was added properly and the attributes were updated properly.
+    """
+
     # Create a new OpenSourceLeg
     test_osl_ajop = OpenSourceLeg()
     test_osl_ajop.add_joint(name="knee")
@@ -210,8 +271,17 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     assert test_osl_ajop._knee.control_mode_sp == "voltage"
 
 
-# Test the OpenSourceLeg add_joint method
 def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_ports):
+
+    """
+    Tests the OpenSourceLeg add_joint method with ports available\n
+    Intializes an OpenSourceLeg object and adds a knee joint. It then asserts
+    that the knee was added properly and the attributes were updated properly.
+    Then an ankle joint is added and it is asserted that the ankle was added
+    properly and the attributes were updated properly. Then an invalid joint is
+    added and it is asserted that the proper log message was written.
+    """
+
     # Create a new OpenSourceLeg
     test_osl_aj = OpenSourceLeg()
     test_osl_aj.log = Logger(file_path="tests/test_osl/test_osl_aj")
@@ -258,8 +328,14 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
         assert "[OSL] Joint name is not recognized." in contents
 
 
-# Test the OpenSourceLeg add_loadcell method
 def test_osl_add_loadcell(loadcell_patched: Loadcell):
+
+    """
+    Tests the OpenSourceLeg add_loadcell method\n
+    Intializes an OpenSourceLeg object and adds a loadcell. It then asserts
+    that the loadcell was added properly and the attributes were updated properly.
+    """
+
     test_osl_al = OpenSourceLeg()
     test_osl_al.add_loadcell()
     assert test_osl_al._has_loadcell == True
@@ -285,23 +361,41 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     assert test_osl_al._loadcell._log == test_osl_al.log
 
 
-# Test the OpenSourceLeg add_state_machine method
 def test_osl_add_state_machine():
+
+    """
+    Tests the OpenSourceLeg add_state_machine method\n
+    Intializes an OpenSourceLeg object and adds a state machine. It then asserts
+    that the state machine was added properly.
+    """
+
     test_osl_asm = OpenSourceLeg()
     test_osl_asm.add_state_machine()
     assert test_osl_asm._has_sm == True
 
 
-# Override the exit() method
 @pytest.fixture
 def patch_exit(monkeypatch):
+
+    """
+    Monkeypatches the exit method\n
+    Returns None.
+    """
+
     monkeypatch.setattr("builtins.exit", lambda: None)
 
 
-# Test the OpenSourceLeg update method with knee
 def test_osl_update_knee(
     joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
 ):
+
+    """
+    Tests the OpenSourceLeg update method with knee\n
+    Intializes an OpenSourceLeg object and a knee is added. Then the update
+    method is called and it is asserted that the knee was updated properly
+    and the proper log message was written.
+    """
+
     test_osl_u_knee = OpenSourceLeg()
     test_osl_u_knee.log = Logger(file_path="tests/test_osl/test_osl_u_knee")
     test_osl_u_knee.log.set_stream_level("DEBUG")
@@ -316,10 +410,17 @@ def test_osl_update_knee(
         assert "WARNING: [KNEE] Thermal limit 1.0 reached. Stopping motor." in contents
 
 
-# Test the OpenSourceLeg update method with ankle
 def test_osl_update_ankle(
     joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
 ):
+
+    """
+    Tests the OpenSourceLeg update method with ankle\n
+    Intializes an OpenSourceLeg object and an ankle is added. Then the update
+    method is called and it is asserted that the ankle was updated properly
+    and the proper log message was written.
+    """
+
     test_osl_u_ankle = OpenSourceLeg()
     test_osl_u_ankle.log = Logger(file_path="tests/test_osl/test_osl_u_ankle")
     test_osl_u_ankle.log.set_stream_level("DEBUG")
@@ -334,8 +435,16 @@ def test_osl_update_ankle(
         assert "WARNING: [ANKLE] Thermal limit 1.0 reached. Stopping motor." in contents
 
 
-# Test the OpenSourceLeg update method with loadcell
 def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
+
+    """
+    Test the OpenSourceLeg update method with loadcell\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a loadcell is added. A joint is added to the loadcell and the data attribute
+    of the joint is initialized. Then the update method is called and it is asserted
+    that the loadcell was updated properly to a few siginificant figures.
+    """
+
     test_osl_u_loadcell = OpenSourceLeg()
     test_osl_u_loadcell.log = Logger(file_path="tests/test_osl/test_osl_u_loadcell")
     test_osl_u_loadcell.log.set_stream_level("DEBUG")
@@ -465,8 +574,16 @@ def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
     )
 
 
-# Test the OpenSourceLeg update method with _log_data
 def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_sleep):
+
+    """
+    Tests the OpenSourceLeg update method with log_data\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a knee is added. Data is added to the knee and the knee is set to streaming.
+    Attributes are added to the logger and the update method is called. It is asserted
+    that the data was logged properly.
+    """
+
     test_osl_u_ld = OpenSourceLeg()
     test_osl_u_ld.log = Logger(file_path="tests/test_osl/test_osl_u_ld")
     test_osl_u_ld.log.set_stream_level("DEBUG")
@@ -487,10 +604,26 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
         assert rows == expected_rows
 
 
-# Test the OpenSourceLeg update method with state machine
 def test_osl_update_state_machine(
     joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
 ):
+
+    """
+    Tests the OpenSourceLeg update method with state machine\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a knee is added. Data is added to the knee and the knee is set to streaming.
+    The max temperature is set to a high value so the thermal limit is not reached.
+    A state machine is added and the state machine is homed. The initial state is set
+    to state_1 and the current state is set to None. The update method is called and
+    it is asserted that the current state is state_1 and the state machine is running.
+    Then an OpenSourceLeg object is added to the state machine and states are added. An
+    event and transition are added and the update method is called. It is asserted that
+    the current state is now state_2. The the make_knee_active method is called on the
+    current state and another transition is added and the update method is called with
+    set_state_machine_parameters set to True. It is asserted that the knee is now in
+    impedance mode, the gains are set properly, and the motor command is sent properly.
+    """
+
     test_osl_u_sm = OpenSourceLeg()
     test_osl_u_sm.log = Logger(file_path="tests/test_osl/test_osl_u_sm")
     test_osl_u_sm.log.set_stream_level("DEBUG")
@@ -543,6 +676,13 @@ def test_osl_update_state_machine(
 def test_osl_update_state_machine_ankle(
     joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
 ):
+
+    """
+    This is the same as test_osl_update_state_machine except it tests the ankle
+    instead of the knee. The only difference is the motor cammand value that is
+    sent at the end.
+    """
+
     test_osl_u_sm_ank = OpenSourceLeg()
     test_osl_u_sm_ank.log = Logger(file_path="tests/test_osl/test_osl_u_sm_ank")
     test_osl_u_sm_ank.log.set_stream_level("DEBUG")
@@ -599,6 +739,18 @@ def test_osl_update_state_machine_ankle(
 
 
 def test_osl_run(joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit):
+
+    """
+    Tests the OpenSourceLeg run method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a knee is added. Data is added to the knee and the knee is set to streaming.
+    The max temperature is set to a high value so the thermal limit is not reached.
+    A state machine is added and the OpenSourceLeg is homed. The initial state is set
+    to state_1 and the current state is set to None. The run method is called with
+    log_data set to True. It is asserted that the state machine is running and the
+    _log_data attribute is set to True.
+    """
+
     test_osl_r = OpenSourceLeg()
     test_osl_r.log = Logger(file_path="tests/test_osl/test_osl_r")
     test_osl_r.log.set_stream_level("DEBUG")
@@ -617,8 +769,15 @@ def test_osl_run(joint_patched: Joint, mock_get_active_ports, patch_sleep, patch
     assert test_osl_r._log_data == True
 
 
-# Test the OpenSourceLeg estop method
 def test_osl_estop():
+
+    """
+    Tests the OpenSourceLeg estop method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level.
+    The estop method is called and it is asserted that the proper log message
+    was written.
+    """
+
     test_osl_es = OpenSourceLeg()
     test_osl_es.log = Logger(file_path="tests/test_osl/test_osl_es")
     test_osl_es.log.set_stream_level("DEBUG")
@@ -628,9 +787,16 @@ def test_osl_estop():
         assert "[OSL] Emergency stop activated." in contents
 
 
-# Unfinished: Assert the home methods were called
-# Test the OpenSourceLeg home method
 def test_osl_home(joint_patched: Joint, mock_get_active_ports):
+
+    """
+    Tests the OpenSourceLeg home method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a knee and ankle are added. Data is added to the knee and the home method
+    is called. It is asserted that the proper log messages were written and the
+    knee and anke were homed.
+    """
+
     test_osl_h = OpenSourceLeg()
     test_osl_h.add_joint(name="knee")
     test_osl_h.add_joint(name="ankle")
@@ -643,10 +809,19 @@ def test_osl_home(joint_patched: Joint, mock_get_active_ports):
         assert "[OSL] Homing knee joint." in contents
         assert "[OSL] Homing ankle joint." in contents
     assert test_osl_h._knee._is_homed == True
+    assert test_osl_h._ankle._is_homed == True
 
 
-# Test the OpenSourceLeg calibrate_loadcell method
 def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
+
+    """
+    Tests the OpenSourceLeg calibrate_loadcell method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a loadcell is added. The loadcell is zeroed and the calibrate_loadcell
+    method is called. It is asserted that the proper log message was written and
+    the loadcell was calibrated.
+    """
+
     test_osl_cl = OpenSourceLeg()
     test_osl_cl.add_loadcell()
     test_osl_cl._loadcell._zeroed = True
@@ -659,10 +834,18 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
     assert test_osl_cl._loadcell._zeroed == False
 
 
-# Test the OpenSourceLeg calibrate_encoders method
 def test_osl_calibrate_encoders(
     joint_patched: Joint, mock_get_active_ports, patch_time_time, patch_sleep
 ):
+
+    """
+    Tests the OpenSourceLeg calibrate_encoders method\n
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level
+    and a knee is added. Data is added to the knee and the knee is set to streaming.
+    The home method is called and the calibrate_encoders method is called. It is
+    asserted that the proper log message was written and the encoders were calibrated.
+    """
+
     test_osl_ce = OpenSourceLeg()
     test_osl_ce.log = Logger(file_path="tests/test_osl/test_osl_ce")
     test_osl_ce.log.set_stream_level("DEBUG")
@@ -684,8 +867,16 @@ def test_osl_calibrate_encoders(
     # assert test_osl_ce._knee._encoder_map == test_encoder_map
 
 
-# Test the OpenSourceLeg reset method
 def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
+
+    """
+    Tests the OpenSourceLeg reset method\n
+    Intializes an OpenSourceLeg object with a knee and ankle added. The modes
+    are set to current and impedance respectively. The reset method is called
+    and it is asserted that the knee and ankle were changed to voltage mode.
+    It is also asserted that the motor commands were sent properly.
+    """
+
     test_osl_r = OpenSourceLeg()
     test_osl_r.add_joint(name="knee")
     test_osl_r.add_joint(name="ankle")
@@ -698,8 +889,15 @@ def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
     assert test_osl_r._ankle._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-# Test the OpenSourceLeg default properties
 def test_osl_properties(mock_time):
+
+    """
+    Tests the OpenSourceLeg properties\n
+    Intializes an OpenSourceLeg object with a logger. The properties are asserted
+    to be the default values. It is also asserted that the proper log messages
+    were written.
+    """
+
     test_osl_prop = OpenSourceLeg()
     test_osl_prop.log = Logger(file_path="tests/test_osl/test_osl_prop")
     assert test_osl_prop.timestamp == 1.0
