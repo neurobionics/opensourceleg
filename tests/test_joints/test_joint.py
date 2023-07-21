@@ -24,13 +24,25 @@ from tests.test_actuators.test_dephyactpack import (
 )
 
 
-# Assert the fixtures were correctly imported from test_dephyactpack.py
 def test_patching(dephyactpack_patched: DephyActpack):
+
+    """
+    Test the patching of the DephyActpack class with the MockDephyActpack class\n
+    Assert the patched class is an instance of the MockDephyActpack class
+    """
+
     patched_dap = dephyactpack_patched
     assert isinstance(patched_dap, MockDephyActpack)
 
 
 class MockJoint(Joint, MockDephyActpack):
+
+    """
+    Mock Joint class for testing the Joint class\n
+    Inherits everything from the Joint class and the MockDephyActpack class
+    except for the Joint constructor.
+    """
+
     def __init__(
         self,
         name: str = "knee",
@@ -81,37 +93,72 @@ class MockJoint(Joint, MockDephyActpack):
         #     )
 
 
-# Fixture that returns a MockDephyActpack
 @pytest.fixture
 def joint_mock() -> MockJoint:
+
+    """
+    Fixture that returns a MockJoint instance when the Joint class is called
+    """
+
     return MockJoint()
 
 
-# Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
 @pytest.fixture
 def patch_joint(mocker, joint_mock: MockJoint):
+
+    """
+    Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
+    """
+
     mocker.patch("opensourceleg.joints.Joint.__new__", return_value=joint_mock)
 
 
-# Fixture that returns a MockDephyActpack instance when the DephyActpack class is called
 @pytest.fixture
 def joint_patched(patch_joint) -> Joint:
+
+    """
+    Fixture that returns a Joint instance when the Joint class is called
+    """
+
     obj = Joint()
     return obj
 
 
-# Fixture that returns a MockDephyActpack instance when the DephyActpack class is called
 def test_mockjoint(joint_patched: Joint):
+
+    """
+    Test the joint_patched fixture\n
+    Assert the joint_patched fixture returns an instance of the MockJoint class
+    """
+
     jp = joint_patched
     assert isinstance(jp, MockJoint)
 
 
 @pytest.fixture
 def patch_sleep(monkeypatch):
+
+    """
+    Fixture that patches the time.sleep function with a lambda function that does nothing
+    """
+
     monkeypatch.setattr(time, "sleep", lambda x: None)
 
 
 def test_home(joint_patched: Joint, patch_sleep):
+
+    """
+    Test the home method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the _log attribute
+    to a log of the lowest level. The _data attribute is set to a Data instance with
+    a mot_cur attribute of 4999. The is_streaming attribute is set to True. The home
+    methd is called for the default joint. It then asserts the joint is homed, the
+    mode is set to VoltageMode, the gear_ratio is set to 41.4999, the proper log messages
+    are written, and the proper motor command is sent, and the motor_zero_position is set
+    to 15 and the joint_zero_position is set to 15. The same is done for the ankle joint
+    with its respective zero positions.
+    """
+
     jp1 = joint_patched
     jp1._log = Logger(file_path="tests/test_joints/test_home_log")
     jp1._log.set_stream_level(level="DEBUG")
@@ -126,7 +173,7 @@ def test_home(joint_patched: Joint, patch_sleep):
         contents = f.read()
         assert "INFO: [knee] Homing complete." in contents
     assert jp1.motor_zero_position == 15
-    assert jp1.motor_zero_position == 15
+    assert jp1.joint_zero_position == 15
     jpa = joint_patched
     jpa._name = "ankle"
     jpa._log = Logger(file_path="tests/test_joints/test_home_ankle_log")
@@ -162,6 +209,15 @@ def test_home(joint_patched: Joint, patch_sleep):
 
 @pytest.fixture
 def patch_time_time(monkeypatch):
+
+    """
+    Fixture that patches the time.time function with a lambda function that returns
+    a list of values that are popped off the list each time the time.time function
+    is called. This will be used to simulate the time it takes to run the make_encoder_map
+    method. Many are needed because the time.time function is called each time a log
+    message is written.
+    """
+
     values = [
         0,
         0,
@@ -191,6 +247,18 @@ def patch_time_time(monkeypatch):
 
 
 def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_time):
+
+    """
+    Test the make_encoder_map method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the _log attribute
+    to a log of the lowest level. The _data attribute is set to a Data instance with
+    a mot_cur attribute of 4999. The make_encoder_map method is called for the unhomed
+    joint. It then asserts the proper log message is written for an unhomed joint. The
+    make_encoder_map method is called for the homed joint. It then asserts the proper
+    log messages are written, the mode is set to CurrentMode, the proper gains are set,
+    the proper motor command is sent, and the proper encoder map is created.
+    """
+
     jp2 = joint_patched
     jp2._log = Logger(file_path="tests/test_joints/test_make_knee_encoder_map_log")
     jp2._log.set_stream_level(level="DEBUG")
@@ -231,16 +299,30 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
     assert jp2._encoder_map == test_encoder_map
 
 
-# Test the set_max_temperature method
 def test_set_max_temperature(joint_patched: Joint):
+
+    """
+    Test the set_max_temperature method of the Joint class\n
+    This test creates an instance of the MockJoint class asserts the default max_temperature
+    is 80. The set_max_temperature method is called with a max_temperature of 100. It then
+    asserts the max_temperature is set to 100.
+    """
+
     jp4 = joint_patched
     assert jp4._max_temperature == 80
     jp4.set_max_temperature(100)
     assert jp4._max_temperature == 100
 
 
-# Test the set_output_torque method
 def test_set_output_torque(joint_patched: Joint):
+
+    """
+    Test the set_output_torque method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the gear ratio to 100,
+    and the mode to Current Mode. The set_output_torque method is called with a torque of
+    4.0. It then asserts the proper motor command is sent.
+    """
+
     # Sets up the proper joint conditions for the set_output_torque method
     jp5 = joint_patched
     jp5._gear_ratio = 100
@@ -253,8 +335,15 @@ def test_set_output_torque(joint_patched: Joint):
     )
 
 
-# Test the set_output_position method
 def test_set_output_position(joint_patched: Joint):
+
+    """
+    Test the set_output_position method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the gear ratio to 100,
+    and the mode to Position Mode. The set_output_position method is called with a position
+    of 6.0. It then asserts the proper motor command is sent.
+    """
+
     jp6 = joint_patched
     jp6._gear_ratio = 100
     jp6._mode = PositionMode(device=jp6)
@@ -265,8 +354,15 @@ def test_set_output_position(joint_patched: Joint):
     )
 
 
-# Test the set_motor_impedance method
 def test_set_motor_impedance(joint_patched: Joint):
+
+    """
+    Test the set_motor_impedance method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the gear ratio to 100,
+    and the mode to Impedance Mode. The set_motor_impedance method is called. It then
+    asserts the proper gains are set.
+    """
+
     # Sets up the proper joint conditions for the set_motor_impedance method
     jp7 = joint_patched
     jp7._mode = ImpedanceMode(device=jp7)
@@ -282,8 +378,15 @@ def test_set_motor_impedance(joint_patched: Joint):
     }
 
 
-# Test the set_joint_impedance method
 def test_set_joint_impedance(joint_patched: Joint):
+
+    """
+    Test the set_joint_impedance method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the gear ratio to 100,
+    and the mode to Impedance Mode. The set_joint_impedance method is called. It then
+    asserts the proper gains are set.
+    """
+
     # Sets up the proper joint conditions for the set_joint_impedance method
     jp8 = joint_patched
     jp8._gear_ratio = 100
@@ -300,8 +403,16 @@ def test_set_joint_impedance(joint_patched: Joint):
     }
 
 
-# Test the convert_to_joint_impedance method
 def test_convert_to_joint_impedance(joint_patched: Joint):
+
+    """
+    Test the convert_to_joint_impedance method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the gear ratio to 100.
+    The convert_to_joint_impedance method is called with no arguments. It then asserts
+    the proper gains are returned. The convert_to_joint_impedance method is called with
+    arguments. It then asserts the proper gains are returned.
+    """
+
     # Sets up the proper joint conditions for the convert_to_joint_impedance method
     jp9 = joint_patched
     jp9._gear_ratio = 100
@@ -323,8 +434,16 @@ def test_convert_to_joint_impedance(joint_patched: Joint):
     assert jp9_pid_damping == 80 / (np.pi / 180 / 0.00028444 * 1e3 / 0.1133) * 100**2
 
 
-# Test the convert_to_motor_impedance method
 def test_convert_to_motor_impedance(joint_patched: Joint):
+
+    """
+    Test the convert_to_motor_impedance method of the Joint class\n
+    This test creates an instance of the MockJoint class. The convert_to_motor_impedance
+    method is called with no arguments. It then asserts the proper stiffness and damping
+    values are returned. The convert_to_motor_impedance method is called with arguments.
+    It then asserts the proper stiffness and damping values are returned.
+    """
+
     jp10 = joint_patched
     # Call the convert_to_motor_impedance method with no arguments
     jp10_pid_stiffness, jp10_pid_damping = jp10.convert_to_motor_impedance()
@@ -338,8 +457,17 @@ def test_convert_to_motor_impedance(joint_patched: Joint):
     assert jp10_pid_damping == 80 / (np.pi / 180 / 0.00028444 * 1e3 / 0.1133)
 
 
-# Test the convert_to_pid_impedance method
 def test_convert_to_pid_impedance(joint_patched: Joint):
+
+    """
+    Test the convert_to_pid_impedance method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the gear ratio to 100.
+    The convert_to_pid_impedance method is called with no arguments. It then asserts
+    the proper stiffness and damping values are returned. The convert_to_pid_impedance
+    method is called with arguments. It then asserts the proper stiffness and damping
+    values are returned.
+    """
+
     # Sets up the proper joint conditions for the convert_to_pid_impedance method
     jp11 = joint_patched
     jp11._gear_ratio = 100
@@ -365,8 +493,18 @@ def test_convert_to_pid_impedance(joint_patched: Joint):
     )
 
 
-# Test the update_set_points method
 def test_update_set_points(joint_patched: Joint):
+
+    """
+    Test the update_set_points method of the Joint class\n
+    This test creates an instance of the MockJoint class and sets the _control_mode_sp
+    attribute to "current". The update_set_points method is called. It then asserts the
+    proper mode is set. The _control_mode_sp attribute is set to "position". The
+    update_set_points method is called. It then asserts the proper mode is set. The
+    _control_mode_sp attribute is set to "impedance". The update_set_points method is
+    called. It then asserts the proper mode is set.
+    """
+
     jp12 = joint_patched
     # Assert the proper mode is set when the control mode is set to the correponding modes
     assert jp12._mode == VoltageMode(device=jp12)
@@ -381,8 +519,14 @@ def test_update_set_points(joint_patched: Joint):
     assert jp12._mode == ImpedanceMode(device=jp12)
 
 
-# Test the default properties of the MockJoint class
 def test_mockjoint_default_properties(joint_patched: Joint):
+
+    """
+    Test the default properties of the MockJoint class\n
+    This test creates an instance of the MockJoint class and asserts the default
+    properties are set properly.
+    """
+
     jp1 = joint_patched
     assert jp1.name == "knee"
     assert jp1.gear_ratio == 41.4999
@@ -401,8 +545,14 @@ def test_mockjoint_default_properties(joint_patched: Joint):
     assert jp1.control_mode_sp == "voltage"
 
 
-# Test the non-default properties of the MockJoint class
 def test_mockjoint_nondefaultproperties(joint_patched):
+
+    """
+    Test the non-default properties of the MockJoint class\n
+    This test creates an instance of the MockJoint class and sets the attributes
+    to non-default values. It then asserts the properties are set properly.
+    """
+
     jp2 = joint_patched
     jp2._data = Data(mot_ang=20, mot_vel=10, mot_cur=20)
     jp2._name = "ankle"

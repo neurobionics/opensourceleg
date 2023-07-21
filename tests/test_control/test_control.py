@@ -18,8 +18,13 @@ negative_gains.K = -4
 negative_gains.B = -5
 
 
-# Testing the Gains repr method
 def test_gains():
+
+    """
+    Test the Gains class\n
+    Assert the repr method returns the correct string
+    """
+
     assert repr(zero_gains) == "kp=0, ki=0, kd=0, K=0, B=0, ff=0"
     assert repr(nonzero_gains) == "kp=1, ki=2, kd=3, K=4, B=5, ff=0"
     assert repr(negative_gains) == "kp=-1, ki=-2, kd=-3, K=-4, B=-5, ff=0"

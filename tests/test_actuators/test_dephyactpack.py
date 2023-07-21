@@ -438,11 +438,11 @@ def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
 def test_voltagemode(dephyactpack_patched: DephyActpack):
 
     """
-    Tests the VoltageMode class.\n This test initializes a MockDephyActpack
-    object, sets the _log attribute to a Logger of the lowest stream level,
-    and tests the entry and exit methods of the VoltageMode class. It then
-    asserts that the proper log messages were written and that the proper
-    motor command was sent.
+    Tests the VoltageMode class.\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, and tests the entry and exit
+    methods of the VoltageMode class. It then asserts that the proper log
+    messages were written and that the proper motor command was sent.
     """
 
     mock_dap4 = dephyactpack_patched
@@ -466,6 +466,15 @@ def test_voltagemode(dephyactpack_patched: DephyActpack):
 
 
 def test_currentmode(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the CurrentMode class.\n
+    This test initializes a MockDephyActpack object, sets the _log
+    attribute to a Logger of the lowest stream level, and tests the
+    entry and exit methods of the CurrentMode class. It then asserts
+    that the proper log messages were written, that the proper gains
+    were set, and that the proper motor command was sent.
+    """
 
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap5 = dephyactpack_patched
@@ -493,8 +502,17 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
     assert mock_dap5._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-# Tests the PositionMode class
 def test_positionmode(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the PositionMode class.\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, and tests the entry and exit
+    methods of the PositionMode class. It then asserts that the proper log
+    messages were written, that the proper gains were set, and that the
+    proper motor command was sent.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap6 = dephyactpack_patched
     mock_dap6._data = Data(
@@ -524,8 +542,17 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     assert mock_dap6._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-# Tests the ImpedanceMode class
 def test_impedancemode(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the ImpedanceMode class.\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, and tests the entry and exit
+    methods of the ImpedanceMode class. It then asserts that the proper log
+    messages were written, that the proper gains were set, and that the
+    proper motor command was sent.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap7 = dephyactpack_patched
     mock_dap7._data = Data(
@@ -562,8 +589,17 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     assert mock_dap7._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-# Tests the DephyActpack start method
 def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack start method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, sets the _data attribute to a
+    Data object with non-zero values, and calls the start method. It then
+    asserts that the proper log messages were written and that the _data
+    attribute was updated properly.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap8 = dephyactpack_patched
     mock_dap8._log = Logger(
@@ -639,8 +675,15 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     #         assert "Need admin previleges to open the port '/dev/ttyACM0'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n" in contents
 
 
-# Tests the DephyActpack stop method
 def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack stop method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, sets the mode to Current Mode,
+    and calls the stop method. It then asserts that the mode was set to
+    Voltage Mode and that the proper motor command was sent.
+    """
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap10 = dephyactpack_patched
     mock_dap10._log = Logger(
@@ -656,8 +699,17 @@ def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
     assert mock_dap10._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-# Tests the DephyActpack update method
 def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack update method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, sets the _data attribute to a
+    Data object with some non-zero values, and calls the update method. It then
+    asserts that the proper log messages were written and that the _data
+    attribute was updated properly.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap11 = dephyactpack_patched
     mock_dap11._log = Logger(
@@ -725,8 +777,17 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     )
 
 
-# Tests the DephyActpack set_mode method
 def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_mode method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Current Mode,
+    and calls the set_mode method with valid modes and invalid modes. It then
+    asserts that the mode was set properly for valid modes and that the proper
+    log messages were written for an invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap12 = dephyactpack_patched
     mock_dap12._log = Logger(
@@ -748,8 +809,17 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
         assert "WARNING: Mode badmode not found" in contents
 
 
-# Tests the DephyActpack set_position_gains method
 def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_position_gains method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Position Mode,
+    and calls the set_position_gains method with no arguments and with arguments.
+    It then asserts that the gains were set properly and that the proper log
+    messages were written for an invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap13 = dephyactpack_patched
     mock_dap13._log = Logger(
@@ -791,8 +861,17 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set position gains in mode c_int(2)" in contents
 
 
-# Tests the DephyActpack set_current_gains method
 def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_current_gains method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Current Mode,
+    and calls the set_current_gains method with no arguments and with arguments.
+    It then asserts that the gains were set properly and that the proper log
+    messages were written for an invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap14 = dephyactpack_patched
     mock_dap14._log = Logger(
@@ -834,8 +913,17 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set current gains in mode c_int(0)" in contents
 
 
-# Tests the DephyActpack set_impedance_gains method
 def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_impedance_gains method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Impedance Mode,
+    and calls the set_impedance_gains method with no arguments and with arguments.
+    It then asserts that the gains were set properly and that the proper log
+    messages were written for an invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap15 = dephyactpack_patched
     mock_dap15._log = Logger(
@@ -877,8 +965,17 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set impedance gains in mode c_int(2)" in contents
 
 
-# Tests the DephyActpack set_voltage method
 def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_voltage method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Voltage Mode,
+    and calls the set_voltage method. It then asserts that the proper motor
+    command was sent and that the proper log messages were written for an
+    invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap16 = dephyactpack_patched
     mock_dap16._log = Logger(
@@ -900,8 +997,17 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set voltage in mode c_int(0)" in contents
 
 
-# Tests the DephyActpack set_current method
 def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_current method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Current Mode,
+    and calls the set_current method. It then asserts that the proper motor
+    command was sent and that the proper log messages were written for an
+    invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap17 = dephyactpack_patched
     mock_dap17._log = Logger(
@@ -923,8 +1029,17 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set current in mode c_int(0)" in contents
 
 
-# Tests the DephyActpack set_motor_torque method
 def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_motor_torque method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Current Mode,
+    and calls the set_motor_torque method. It then asserts that the proper motor
+    command was sent and that the proper log messages were written for an
+    invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap18 = dephyactpack_patched
     mock_dap18._log = Logger(
@@ -949,8 +1064,17 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
         assert "WARNING: Cannot set motor_torque in mode c_int(0)" in contents
 
 
-# Tests the DephyActpack set_motor_position method
 def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
+
+    """
+    Tests the DephyActpack set_motor_position method\n
+    This test initializes a MockDephyActpack object, sets the _log attribute
+    to a Logger of the lowest stream level, changes the mode to Position Mode,
+    and calls the set_motor_position method. It then asserts that the proper motor
+    command was sent and that the proper log messages were written for an
+    invalid mode.
+    """
+
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap19 = dephyactpack_patched
     mock_dap19._log = Logger(
