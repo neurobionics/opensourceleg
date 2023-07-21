@@ -127,13 +127,31 @@ def test_osl_enter(
         )
 
 
+class MockTUI:
+
+    """
+    Mock TUI class\n
+    """
+
+    def __init__(self):
+        self._is_running = True
+
+    def quit(self):
+        self._is_running = False
+
+    @property
+    def is_running(self):
+        return self._is_running
+
+
 # Unfnished: tui
 def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_sleep):
 
     """
     Tests the OpenSourceLeg __exit__ method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level. A
-    state machine is added. A knee and ankle are added and the mode of each is set.
+    state machine is added and set to running. A knee and ankle are added and the
+    mode of each is set. The tui attribute is set to a MockTUI objectand set to running.
     Then the exit method is called and asserts the attributes have been updated and
     the proper log message has been written.
     """
@@ -148,11 +166,14 @@ def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_
     test_osl_ex.add_joint(name="knee")
     test_osl_ex._knee._mode = CurrentMode(device=test_osl_ex._knee)
     test_osl_ex.add_joint(name="ankle")
+    test_osl_ex._has_tui = True
+    test_osl_ex.tui = MockTUI()
     test_osl_ex._ankle._mode = ImpedanceMode(device=test_osl_ex._ankle)
     test_osl_ex.__exit__(type=None, value=None, tb=None)
     assert test_osl_ex._knee._mode == VoltageMode(device=test_osl_ex._knee)
     assert test_osl_ex._ankle._mode == VoltageMode(device=test_osl_ex._ankle)
     assert test_osl_ex.state_machine._exited == True
+    assert test_osl_ex.tui._is_running == False
 
 
 def test_osl_repr():
@@ -774,14 +795,18 @@ def test_osl_estop():
     """
     Tests the OpenSourceLeg estop method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level.
-    The estop method is called and it is asserted that the proper log message
-    was written.
+    The tui attribute is set to a MockTUI object and the _has_tui attribute is set
+    to True. The estop method is called and it is asserted that the tui is not running
+    and the proper log message was written.
     """
 
     test_osl_es = OpenSourceLeg()
     test_osl_es.log = Logger(file_path="tests/test_osl/test_osl_es")
     test_osl_es.log.set_stream_level("DEBUG")
+    test_osl_es.tui = MockTUI()
+    test_osl_es._has_tui = True
     test_osl_es.estop()
+    assert test_osl_es.tui.is_running == False
     with open("tests/test_osl/test_osl_es.log", "r") as f:
         contents = f.read()
         assert "[OSL] Emergency stop activated." in contents
