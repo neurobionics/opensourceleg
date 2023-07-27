@@ -113,6 +113,40 @@ def test_softrealtimeloop_init(patch_time_time2):
     assert srtl.report == False
 
 
+@pytest.fixture
+def patch_time_time3(monkeypatch):
+
+    """
+    Fixture to patch the time.time method\n
+    Patches the time.time method to return a list of values one at a time.
+    """
+
+    values = [0, 0, 1, 2, 3, 4, 5]
+    monkeypatch.setattr(time, "time", lambda: values.pop(0))
+
+
+def test_softrealtimeloop_del():
+    srtld = SoftRealtimeLoop(report=True)
+    srtld.n = 2
+    del srtld
+
+
+def test_softrealtimeloop_iter(patch_time_time2):
+    srtli = SoftRealtimeLoop()
+    iter_srtli = iter(srtli)
+    assert iter_srtli.t0 == 1.001
+    assert iter_srtli.t1 == 1.001
+
+def test_softrealtimeloop_fade_prop(patch_time_time3):
+
+    srtlf = SoftRealtimeLoop(fade=1.0)
+    assert srtlf.fade == 1.0
+    srtlf.killer._kill_soon = True
+    srtlf.killer._soft_kill_time = 0.0
+    assert srtlf.fade == 1.0
+    assert srtlf.fade == 0.0
+
+
 def test_softrealtimeloop_stop(patch_time_time2):
     srtls = SoftRealtimeLoop()
     srtls.killer._kill_soon = True
