@@ -92,6 +92,7 @@ class MockJoint(Joint, MockDephyActpack):
         #         msg=f"[{self._name}] No encoder map found. Please run the calibration routine."
         #     )
 
+
 def test_mockjoint_init():
 
     """
@@ -114,7 +115,7 @@ def test_mockjoint_init():
     assert mji._max_temperature == constants.MAX_CASE_TEMPERATURE
     assert mji._control_mode_sp == "voltage"
     assert mji._name == "knee"
-    
+
     # mji2 = MockJoint(name="invalid")
     # assert mji2._name == None
 

@@ -536,8 +536,6 @@ def test_transition_call():
         transition_call(test_data)
     except NotImplementedError:
         pass
-    # else:
-        # assert False
 
 
 def test_transition_add_criteria_and_add_action():

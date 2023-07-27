@@ -1,5 +1,6 @@
-import pytest
 import time
+
+import pytest
 
 from opensourceleg.utilities import LoopKiller, SoftRealtimeLoop
 from tests.test_joints.test_joint import patch_time_time
@@ -37,6 +38,7 @@ def test_loopkiller_handle_signal():
     assert lkhs.kill_now == False
     lkhs.handle_signal(signum=None, frame=None)
     assert lkhs.kill_now == True
+
 
 @pytest.fixture
 def patch_time_time2(monkeypatch):
@@ -91,15 +93,15 @@ def test_loopkiller_kill_now_setter(patch_time_time2):
     lkkns.kill_now = True
     assert lkkns._kill_soon == True
     assert lkkns._soft_kill_time == 0.0
-    assert lkkns._kill_now == False    
+    assert lkkns._kill_now == False
     lkkns.kill_now = True
     assert lkkns._kill_now == True
     lkkns.kill_now = False
     lkkns._fade_time = 0.0
     lkkns.kill_now = True
     assert lkkns._kill_now == True
-    
-    
+
+
 def test_softrealtimeloop_init(patch_time_time2):
     srtl = SoftRealtimeLoop()
     assert srtl.t0 == 0.0
@@ -137,6 +139,7 @@ def test_softrealtimeloop_iter(patch_time_time2):
     assert iter_srtli.t0 == 1.001
     assert iter_srtli.t1 == 1.001
 
+
 def test_softrealtimeloop_fade_prop(patch_time_time3):
 
     srtlf = SoftRealtimeLoop(fade=1.0)
@@ -153,12 +156,13 @@ def test_softrealtimeloop_stop(patch_time_time2):
     assert srtls.killer._kill_now == False
     srtls.stop()
     assert srtls.killer.kill_now == True
-    
+
 
 def test_softrealtimeloop_time(patch_time_time2):
     srtlt = SoftRealtimeLoop()
     assert srtlt.t0 == 0.0
     assert srtlt.time() == 1.0
+
 
 def test_softrealtimeloop_time_since(patch_time_time2):
     srtls = SoftRealtimeLoop()
