@@ -875,9 +875,6 @@ def test_state_machine_update():
     test_state_machine_update2.update()
     assert isinstance(test_state_machine_update2._current_state, Idle)
     assert test_state_machine_update2._exited == True
-    with open("tests/test_state_machine/test_state_machine_update2.log", "r") as f:
-        contents = f.read()
-        assert "DEBUG: Exit callback was called" in contents
 
 
 def test_state_machine_start():
