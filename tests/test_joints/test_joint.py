@@ -93,6 +93,33 @@ class MockJoint(Joint, MockDephyActpack):
         #     )
 
 
+def test_mockjoint_init():
+
+    """
+    Tests the Joint constructor\n
+    """
+
+    mji = MockJoint()
+    assert mji._gear_ratio == 41.4999
+    assert mji._is_homed == False
+    assert mji._has_loadcell == False
+    assert mji._encoder_map == None
+    assert mji._motor_zero_pos == 0.0
+    assert mji._joint_zero_pos == 0.0
+    assert mji._motor_voltage_sp == 0.0
+    assert mji._motor_current_sp == 0.0
+    assert mji._motor_position_sp == 0.0
+    assert mji._stiffness_sp == 200
+    assert mji._damping_sp == 400
+    assert mji._equilibrium_position_sp == 0.0
+    assert mji._max_temperature == constants.MAX_CASE_TEMPERATURE
+    assert mji._control_mode_sp == "voltage"
+    assert mji._name == "knee"
+
+    # mji2 = MockJoint(name="invalid")
+    # assert mji2._name == None
+
+
 @pytest.fixture
 def joint_mock() -> MockJoint:
 

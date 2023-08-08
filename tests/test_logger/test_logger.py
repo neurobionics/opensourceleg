@@ -5,23 +5,38 @@ import pytest
 from opensourceleg.logger import Logger
 
 
-# Defining a simple class for testing
 class Simple_Class:
+
+    """
+    Simple class to use for testing the Logger class
+    """
+
     def __init__(self):
         self.a = 1
         self.b = 2
         self.c = 3
 
 
-# Testing the Logger constructor
 def test_init():
+
+    """
+    Tests the Logger constrctor\n
+    Asserts the constructor works properly when passed a valid file_path
+    """
+
     test_Logger_default = Logger(file_path="tests/test_logger/test_log_default")
     assert test_Logger_default._class_instances == []
     assert test_Logger_default._attributes == []
 
 
-# Testing the Logger set_file_level method
 def test_set_file_level():
+
+    """
+    Tests the Logger set_file_level method\n
+    Asserts the proper level is set when a valid level is passed and the proper
+    error is raised when an invalid level is passed.
+    """
+
     # Asserts the proper level is set when a valid level is passed
     test_Logger_file_level = Logger(file_path="tests/test_logger/test_log_file_level")
     test_Logger_file_level.set_file_level(level="DEBUG")
@@ -39,8 +54,14 @@ def test_set_file_level():
         test_Logger_file_level.set_file_level(level="debug")
 
 
-# Testing the Logger set_stream_level method
 def test_set_stream_level():
+
+    """
+    Tests the Logger set_stream_level method\n
+    Asserts the proper level is set when a valid level is passed and the proper
+    error is raised when an invalid level is passed.
+    """
+
     # Asserts the proper level is set when a valid level is passed
     test_Logger_stream_level = Logger(
         file_path="tests/test_logger/test_log_stream_level"
@@ -60,8 +81,14 @@ def test_set_stream_level():
         test_Logger_stream_level.set_stream_level(level="BAD LEVEL")
 
 
-# Testing the Logger add_attributes method
 def test_add_attributes():
+
+    """
+    Tests the Logger add_attributes method\n
+    Asserts the method works properly when passed a single class instance and
+    when passed multiple class instances.
+    """
+
     # Initializes SimpleClass instances to use in the following tests
     test_class_instance = Simple_Class()
     test_class_instance2 = Simple_Class()
@@ -82,15 +109,29 @@ def test_add_attributes():
     assert test_Logger1._attributes == [["a", "b", "c"], ["a", "b", "c"]]
 
 
-# Testing the Logger close method
 def test_close():
+
+    """
+    Tests the Logger close method\n
+    This test initializes a Logger instance and then calls the close method then
+    asserts the file is closed after the close method is called.
+    """
+
     test_Logger3 = Logger(file_path="tests/test_logger/test_log3")
     test_Logger3.close()
     assert test_Logger3._file.closed == True
 
 
-# Testing the Logger data method
 def test_data():
+
+    """
+    Tests the Logger data method\n
+    This test initializes a Logger instance and then calls the add_attributes
+    method to add attributes to the Logger instance. Then the data method is
+    called and the data is asserted to be correct. This is then repeated to ensure
+    the method works properly when passed multiple class instances.
+    """
+
     # Initializes SimpleClass instances to use in the following tests
     test_class_instance = Simple_Class()
     test_class_instance2 = Simple_Class()

@@ -49,7 +49,8 @@ To control the voltage of a joint, we can use a `with` block to ensure that the 
 
 In this code, we enter a `with` block that sets the mode of the `knee` joint to "voltage". We then loop over the `osl.clock` generator, which generates a sequence of timestamps at the specified frequency, and set the voltage of the `knee` joint to 1000 mV. We then log the motor position of the `knee` joint to the console at each timestamp. We then call the `osl.update()` method to update the state of the `OpenSourceLeg` object.
 
-Note that this code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the joint is properly connected and functioning.
+.. warning::
+    This code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the joint is properly connected and functioning.
 
 .. rubric:: Here is the code for this tutorial:
 
