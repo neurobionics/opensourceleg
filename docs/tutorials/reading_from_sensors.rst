@@ -53,6 +53,6 @@ In this code, we enter a `with` block that sets the mode of the `knee` joint to 
 
 .. rubric:: Here is the code for this tutorial:
 
-.. literalinclude:: ../../tutorials/voltage_mode.py
+.. literalinclude:: ../../tutorials/reading_from_sensors.py
     :language: python
     :linenos:
