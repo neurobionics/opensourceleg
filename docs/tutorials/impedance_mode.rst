@@ -41,18 +41,18 @@ To control the impedance of a joint, we can use a `with` block to ensure that th
 
     test_stiffness_value = 20  # Nm/rad
     test_damping_value = 20  # Nm/rad/s
-    set_point = 50  # deg
+    set_point = 50  # motor ticks
 
     with osl:
         osl.knee.set_mode("impedance")
         osl.knee.set_joint_impedance(K=test_stiffness_value, B=test_damping_value)
+        osl.knee.set_motor_position(osl.knee.motor_position + set_point)
         
         for t in osl.clock:
-            osl.knee.set_motor_position(osl.knee.motor_position + set_point)
             osl.log.info(osl.knee.motor_position)
             osl.update()
 
-In this code, we enter a `with` block that sets the mode of the `knee` joint to "impedance". We then set the impedance of the `knee` joint using the `set_joint_impedance` method, with a stiffness of 20 Nm/rad and a damping of 20 Nm/rad/s. We then loop over the `osl.clock` generator, which generates a sequence of timestamps at the specified frequency, and set the motor position of the `knee` joint to the current position plus a set point of 50 degrees. We then log the motor position of the `knee` joint to the console at each timestamp. We then call the `osl.update()` method to update the state of the `OpenSourceLeg` object.
+In this code, we enter a `with` block that sets the mode of the `knee` joint to "impedance" and set the motor position of the `knee` joint to the current position plus a set point of 50 degrees. We then set the impedance of the `knee` joint using the `set_joint_impedance` method, with a stiffness of 20 Nm/rad and a damping of 20 Nm/rad/s. We then loop over the `osl.clock` generator, which generates a sequence of timestamps at the specified frequency, and log the motor position of the `knee` joint to the console at each timestamp. We then call the `osl.update()` method to update the state of the `OpenSourceLeg` object.
 
 .. Note::
     When setting the impedance gains, we can also use the `set_motor_impedance` method to set the impedance of the motor instead of the joint. The difference between the two methods is that the `set_joint_impedance` method first divides the initial value by the gear ratio squared then sets the gains, while the `set_motor_impedance` method simply sets the gains. The impedance of the joint is the impedance of the motor plus the impedance of the joint.
