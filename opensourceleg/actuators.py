@@ -161,8 +161,6 @@ class CurrentMode(ActpackMode):
         self._device.set_gains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff)
         self._has_gains = True
 
-        time.sleep(0.1)
-
     def _set_current(self, current: int) -> None:
         """Sets the Q-axis current of the motor
 
@@ -214,8 +212,6 @@ class PositionMode(ActpackMode):
 
         self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=0)
         self._has_gains = True
-
-        time.sleep(1 / self._device.frequency)
 
     def _set_motor_position(self, counts: int) -> None:
         """Sets the motor position
@@ -284,8 +280,6 @@ class ImpedanceMode(ActpackMode):
             kp=int(kp), ki=int(ki), kd=int(0), k=int(K), b=int(B), ff=int(ff)
         )
         self._has_gains = True
-
-        time.sleep(1 / self._device.frequency)
 
 
 class DephyActpack(Device):
