@@ -9,7 +9,7 @@ osl.log.info(osl.units)
 test_stiffness_value = 20  # Nm/rad
 test_damping_value = 20  # Nm/rad/s
 
-set_point = 50  # motor ticks
+set_point = 50  # deg
 
 with osl:
 

@@ -41,7 +41,7 @@ To control the impedance of a joint, we can use a `with` block to ensure that th
 
     test_stiffness_value = 20  # Nm/rad
     test_damping_value = 20  # Nm/rad/s
-    set_point = 50  # motor ticks
+    set_point = 50  # deg
 
     with osl:
         osl.knee.set_mode("impedance")

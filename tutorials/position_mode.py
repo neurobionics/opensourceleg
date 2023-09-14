@@ -6,7 +6,7 @@ osl.add_joint(gear_ratio=9.0)
 osl.units["position"] = "deg"
 osl.log.info(osl.units)
 
-set_point = 50  # motor ticks
+set_point = 50  # deg
 
 with osl:
     osl.knee.set_mode("position")
