@@ -199,52 +199,6 @@ class SoftRealtimeLoop:
         return self.t1 - self.t0
 
 
-class CSVLog:
-    """
-    Logging class to make writing to a CSV file easier.
-    See if __name__ == "__main__" for an example.
-    At instantiation, pass a list of lists corresponding to the variable names you wish to log, as well as the name of their containers.
-    The container name is prepended in the log so you know which object the variable came from.
-    These variables should live as attributes within some object accessible to the main loop.
-    To update the log, simply call log.update((obj1, obj2, ...)).
-
-    Author: Kevin Best
-    https://github.com/tkevinbest
-    """
-
-    def __init__(self, file_name, variable_name, container_names) -> None:
-        """
-        Args:
-            file_name (_type_): _description_
-            variable_name (_type_): _description_
-            container_names (_type_): _description_
-        """
-        self.file_name = file_name
-        self.var_names = variable_name
-        column_headers = [
-            cont_name + "_" + item
-            for (sublist, cont_name) in zip(variable_name, container_names)
-            for item in sublist
-        ]
-        self._write_row(column_headers)
-
-    def update(self, data_containers_in):
-        row = []
-        for (var_group, container) in zip(self.var_names, data_containers_in):
-            if type(container) is dict:
-                for var in var_group:
-                    row.append(container.get(var))
-            else:
-                for var in var_group:
-                    row.append(getattr(container, var))
-        self._write_row(row)
-
-    def _write_row(self, val_list):
-        with open(self.file_name, "a", newline="") as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(val_list)
-
-
 class EdgeDetector:
     """
     Used to calculate rising and falling edges of a digital signal in real time.
@@ -341,6 +295,22 @@ def get_active_ports():
             pass
 
     return serial_ports
+
+
+def clamp_within_vector_range(input_value, input_vector):
+    """
+    This function ensures that input_value remains within the range spanned by the input_vector.
+    If the input_value falls outside the vector's bounds, it'll return the appropriate max or min value from the vector.
+    E.g.:
+        clamp_within_vector_range(10, [0,1,2,3]) = 3
+        clamp_within_vector_range(-10, [0,1,2,3]) = 0
+
+    Author: Kevin Best, 8/7/2023
+    https://github.com/tkevinbest
+    """
+    min_allowed = min(input_vector)
+    max_allowed = max(input_vector)
+    return max(min(input_value, max_allowed), min_allowed)
 
 
 if __name__ == "__main__":
