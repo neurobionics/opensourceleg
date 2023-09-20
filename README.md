@@ -1,6 +1,6 @@
 <div align="center">
 
-# opensourceleg
+<h1>opensourceleg</h1>
 
 [![Build status](https://github.com/imsenthur/opensourceleg/workflows/build/badge.svg?branch=master&event=push)](https://github.com/imsenthur/opensourceleg/actions?query=workflow%3Abuild)
 [![Documentation Status](https://readthedocs.org/projects/opensourceleg/badge/?version=latest)](https://opensourceleg.readthedocs.io/en/latest/?badge=latest)
@@ -16,3 +16,5 @@
 An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
 
 <img src="assets/images/banner.gif" width="800" title="Open-Source Leg">
+
+</div>
