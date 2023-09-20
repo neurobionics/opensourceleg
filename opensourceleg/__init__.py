@@ -1,4 +1,4 @@
-"""An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prosthesis."""
+"""An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses."""
 
 import sys
 from importlib import metadata as importlib_metadata
@@ -11,4 +11,4 @@ def get_version() -> str:
         return "unknown"
 
 
-version: str = get_version()
+__version__: str = get_version()

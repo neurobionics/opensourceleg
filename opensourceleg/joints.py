@@ -140,14 +140,6 @@ class Joint(DephyActpack):
         self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos_joint))
 
         self._is_homed = True
-
-        # if self.encoder_map is None:
-        #     if (
-        #         input(f"[{self._name}] Would you like to make an encoder map? (y/n): ")
-        #         == "y"
-        #     ):
-        #         self.make_encoder_map()
-
         self._log.info(f"[{self._name}] Homing complete.")
 
     def make_encoder_map(self) -> None:
@@ -162,7 +154,7 @@ class Joint(DephyActpack):
         Eqn: position = sum from i=0^5 (a_i*counts^i)
 
         Author: Kevin Best, PhD
-                U-M Neurobionics Lab
+                U-M Locolab | Neurobionics Lab
                 Gitub: tkevinbest, https://github.com/tkevinbest
         """
 

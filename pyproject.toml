@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "opensourceleg"
-version = "1.2.12"
+version = "1.2.13"
 description = "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses."
 readme = "README.md"
 authors = ["Open-source Leg <opensourceleg@gmail.com>"]

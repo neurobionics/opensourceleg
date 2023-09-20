@@ -11,7 +11,6 @@ import opensourceleg.utilities as utilities
 from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
-from opensourceleg.state_machine import State, StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -55,10 +54,7 @@ class OpenSourceLeg:
         self._has_knee: bool = False
         self._has_ankle: bool = False
         self._has_loadcell: bool = False
-        self._has_tui: bool = False
-        self._has_sm: bool = False
 
-        self._is_sm_running: bool = False
         self._is_homed: bool = False
 
         self._knee: Joint = None  # type: ignore
@@ -74,9 +70,6 @@ class OpenSourceLeg:
         self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
         self._units: UnitsDefinition = DEFAULT_UNITS
 
-        self.tui = None
-        self.state_machine = None
-
         self._timestamp: float = time.time()
 
     def __enter__(self) -> None:
@@ -91,8 +84,6 @@ class OpenSourceLeg:
             self._loadcell.initialize()
 
     def __exit__(self, type, value, tb) -> None:
-        if self.has_state_machine and self.is_sm_running:
-            self.state_machine.stop()  # type: ignore
 
         if self.has_knee:
             self._knee.stop()
@@ -100,50 +91,8 @@ class OpenSourceLeg:
         if self.has_ankle:
             self._ankle.stop()
 
-        if self.has_tui:
-            if self.tui.is_running:  # type: ignore
-                self.tui.quit()  # type: ignore
-
     def __repr__(self) -> str:
         return f"OSL object. Frequency: {self._frequency} Hz"
-
-    def add_tui(
-        self,
-        configuration: str = "state_machine",
-        layout: str = "vertical",
-    ) -> None:
-        """
-        Add a Terminal User Interface (TUI) to the OSL object. The TUI is used
-        to visualize the data from the OSL and to send commands to the OSL. Additionally,
-        the TUI also has a timer built-in to govern the frequency of the control loop, which is
-        less accurate than the "osl.clock" (SoftRealTimeLoop) object but is more convenient.
-
-        Note
-        ----
-        The timer/interface runs in a separate thread, so it does not affect the control loop.
-        This causes the code to not respond to keyboard interrupts (Ctrl+C) when the TUI is running.
-
-        Parameters
-        ----------
-        configuration : str, optional
-            The configuration of the TUI, by default "state_machine"
-        layout : str, optional
-            The layout of the TUI, by default "vertical"
-        """
-        from opensourceleg.tui import TUI
-
-        self._has_tui = True
-        self.tui = TUI(
-            title="www.opensourceleg.com", frequency=self._frequency, layout=layout
-        )
-
-        if configuration == "state_machine":
-            if self.has_state_machine:
-                self.initialize_sm_tui()
-            else:
-                self.log.warn(
-                    msg="State machine not initialized. Please initialize the state machine before adding the TUI."
-                )
 
     def add_joint(
         self,
@@ -264,27 +213,9 @@ class OpenSourceLeg:
             logger=self.log,
         )
 
-    def add_state_machine(
-        self,
-        spoof: bool = False,
-    ) -> None:
-        """
-        Add a state machine to the OSL object.
-
-        Parameters
-        ----------
-        spoof : bool, optional
-            If True, the state machine will spoof the state transitions--ie, it will not
-            check the criteria for transitioning but will instead transition after the
-            minimum time spent in state has elapsed. This is useful for testing.
-            Defaults to False.
-        """
-        self.state_machine = StateMachine(osl=self, spoof=spoof)
-        self._has_sm = True
-
     def update(
         self,
-        set_state_machine_parameters: bool = False,
+        log_data: bool = False,
     ) -> None:
         if self.has_knee:
             self._knee.update()
@@ -309,157 +240,10 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.update()
 
-        if self._log_data:
+        if log_data:
             self.log.data()
 
-        if self.has_state_machine:
-
-            if self.is_homed and not self.is_sm_running:
-                self.state_machine.start()
-                self._is_sm_running = True
-
-            if self.is_sm_running:
-                self.state_machine.update()  # type: ignore
-
-            if set_state_machine_parameters:
-                if self.has_knee and self.state_machine.current_state.is_knee_active:  # type: ignore
-
-                    if self.knee.mode != self.knee.modes["impedance"]:  # type: ignore
-                        self.knee.set_mode(mode="impedance")  # type: ignore
-                        self.knee.set_impedance_gains()  # type: ignore
-
-                    self.knee.set_joint_impedance(  # type: ignore
-                        K=self.state_machine.current_state.knee_stiffness,  # type: ignore
-                        B=self.state_machine.current_state.knee_damping,  # type: ignore
-                    )
-
-                    self.knee.set_output_position(  # type: ignore
-                        position=self.state_machine.current_state.knee_theta  # type: ignore
-                    )
-
-                if self.has_ankle and self.state_machine.current_state.is_ankle_active:  # type: ignore
-
-                    if self.ankle.mode != self.ankle.modes["impedance"]:  # type: ignore
-                        self.ankle.set_mode(mode="impedance")  # type: ignore
-                        self.ankle.set_impedance_gains()  # type: ignore
-
-                    self.ankle.set_joint_impedance(  # type: ignore
-                        K=self.state_machine.current_state.ankle_stiffness,  # type: ignore
-                        B=self.state_machine.current_state.ankle_damping,  # type: ignore
-                    )
-
-                    self.ankle.set_output_position(  # type: ignore
-                        position=self.state_machine.current_state.ankle_theta  # type: ignore
-                    )
-
-            self._timestamp = time.time()
-
-    def run(
-        self, set_state_machine_parameters: bool = False, log_data: bool = False
-    ) -> None:
-        """
-        Run the OpenSourceLeg instance: update the joints, loadcell, and state machine.
-        If the instance has a TUI, run the TUI.
-        If the instance has a state machine and if set_state_machine_parameters is True,
-        set the joint impedance gains and equilibrium angles to the current state's values.
-
-        Parameters
-        ----------
-        set_state_machine_parameters : bool, optional
-            Whether to set the joint impedance gains and equilibrium angles to the current state's values, by default False
-        """
-
-        if self.is_homed:
-            if not self.is_sm_running:
-                self.state_machine.start()
-                self._is_sm_running = True
-        else:
-            osl.log.warn(
-                f"[OSL] Please run the homing routine by calling `osl.home()` before starting the state-machine."
-            )
-            exit()
-
-        if log_data:
-            self._log_data = True
-
-        self.update(set_state_machine_parameters=set_state_machine_parameters)
-
-        time.sleep(0.1)
-
-        if not self.has_tui:
-            self.update(set_state_machine_parameters=set_state_machine_parameters)
-
-        else:
-            self.tui.add_update_callback(callback=self.update, args=set_state_machine_parameters)  # type: ignore
-            self.tui.run()  # type: ignore
-
-    def initialize_sm_tui(self) -> None:
-
-        from opensourceleg.tui import COLORS
-
-        assert self.tui is not None
-        self.tui.add_panel(
-            name="top",
-            layout="horizontal",
-            border=False,
-        )
-
-        self.tui.add_panel(
-            name="bottom",
-            layout="horizontal",
-            border=False,
-        )
-
-        self.tui.add_panel(
-            name="fz",
-            parent="top",
-            show_title=True,
-        )
-
-        self.tui.add_panel(
-            name="knee_joint_position",
-            parent="top",
-            show_title=True,
-        )
-
-        self.tui.add_plot(
-            name="fz_plot",
-            parent="fz",
-            object=self.loadcell,
-            attribute="fz",
-            color=COLORS.cyan,
-        )
-
-        self.tui.add_plot(
-            name="joint_position_plot",
-            parent="knee_joint_position",
-            object=self.knee,
-            attribute="output_position",
-            color=COLORS.yellow,
-        )
-
-        self.tui.add_state_visualizer(
-            name="state_machine",
-            parent="bottom",
-            states=self.state_machine.states,  # type: ignore
-            object=self.state_machine,
-            attribute="current_state_name",
-            layout="horizontal",
-        )
-
-        self.tui.add_button(
-            name="emergency_stop",
-            parent="bottom",
-            callback=self.estop,
-            color=COLORS.red,
-            border=True,
-        )
-
-    def estop(self, **kwargs):
-        self.log.debug("[OSL] Emergency stop activated.")
-
-        if self.has_tui:
-            self.tui.quit()  # type: ignore
+        self._timestamp = time.time()
 
     def home(self) -> None:
         if self.has_knee:
@@ -500,9 +284,6 @@ class OpenSourceLeg:
             self.ankle.set_voltage(value=0)  # type: ignore
 
             time.sleep(0.1)
-
-    def log_data(self):
-        self._log_data = True
 
     @property
     def timestamp(self) -> float:
@@ -546,20 +327,8 @@ class OpenSourceLeg:
         return self._has_loadcell
 
     @property
-    def has_state_machine(self) -> bool:
-        return self._has_sm
-
-    @property
-    def has_tui(self) -> bool:
-        return self._has_tui
-
-    @property
     def is_homed(self) -> bool:
         return self._is_homed
-
-    @property
-    def is_sm_running(self) -> bool:
-        return self._is_sm_running
 
 
 if __name__ == "__main__":

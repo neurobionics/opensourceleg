@@ -83,7 +83,7 @@ class Logger(logging.Logger):
 
     def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
         """
-        Configures the logger to log the attributes of a class
+        Adds class instance and attributes to log
 
         Args:
             class_instance (object): Class instance to log the attributes of

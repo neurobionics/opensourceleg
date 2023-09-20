@@ -375,8 +375,6 @@ class StateMachine:
     ----------
     current_state : State
         The current state of the state machine.
-    current_state_name : str
-        The name of the current state of the state machine.
     states : list[State]
         The list of states in the state machine.
     is_spoofing : bool
@@ -515,10 +513,6 @@ class StateMachine:
     @property
     def states(self):
         return [state.name for state in self._states]
-
-    @property
-    def current_state_name(self):
-        return self.current_state.name  # type: ignore
 
     @property
     def is_spoofing(self):

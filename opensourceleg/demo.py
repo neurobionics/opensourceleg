@@ -1,7 +1,7 @@
 import time
 
 from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.state_machine import Event, State
+from opensourceleg.state_machine import Event, State, StateMachine
 
 # ------------- FSM PARAMETERS ---------------- #
 
@@ -135,7 +135,7 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
         return False
 
 
-def state_machine_controller():
+def finite_state_machine_controller():
     osl = OpenSourceLeg(frequency=200)
     osl.units["position"] = "deg"  # type: ignore
     osl.units["velocity"] = "deg/s"  # type: ignore
@@ -153,8 +153,6 @@ def state_machine_controller():
     osl.add_loadcell(
         dephy_mode=False,
     )
-
-    osl.add_state_machine(spoof=False)
 
     early_stance = State(name="e_stance")
     early_stance.set_knee_impedance_paramters(
@@ -207,48 +205,47 @@ def state_machine_controller():
     heel_strike = Event(name="heel_strike")
     misc = Event(name="misc")
 
-    assert osl.state_machine is not None
-    osl.state_machine.add_state(state=early_stance, initial_state=True)
-    osl.state_machine.add_state(state=late_stance)
-    osl.state_machine.add_state(state=early_swing)
-    osl.state_machine.add_state(state=late_swing)
+    osl_state_machine = StateMachine(osl=osl, spoof=False)
 
-    osl.state_machine.add_event(event=foot_flat)
-    osl.state_machine.add_event(event=heel_off)
-    osl.state_machine.add_event(event=toe_off)
-    osl.state_machine.add_event(event=pre_heel_strike)
-    osl.state_machine.add_event(event=heel_strike)
-    osl.state_machine.add_event(event=misc)
+    osl_state_machine.add_state(state=early_stance, initial_state=True)
+    osl_state_machine.add_state(state=late_stance)
+    osl_state_machine.add_state(state=early_swing)
+    osl_state_machine.add_state(state=late_swing)
 
-    osl.state_machine.add_transition(
+    osl_state_machine.add_event(event=foot_flat)
+    osl_state_machine.add_event(event=heel_off)
+    osl_state_machine.add_event(event=toe_off)
+    osl_state_machine.add_event(event=pre_heel_strike)
+    osl_state_machine.add_event(event=heel_strike)
+    osl_state_machine.add_event(event=misc)
+
+    osl_state_machine.add_transition(
         source=early_stance,
         destination=late_stance,
         event=foot_flat,
         callback=estance_to_lstance,
     )
 
-    osl.state_machine.add_transition(
+    osl_state_machine.add_transition(
         source=late_stance,
         destination=early_swing,
         event=heel_off,
         callback=lstance_to_eswing,
     )
 
-    osl.state_machine.add_transition(
+    osl_state_machine.add_transition(
         source=early_swing,
         destination=late_swing,
         event=toe_off,
         callback=eswing_to_lswing,
     )
 
-    osl.state_machine.add_transition(
+    osl_state_machine.add_transition(
         source=late_swing,
         destination=early_stance,
         event=heel_strike,
         callback=lswing_to_estance,
     )
-
-    osl.add_tui()
 
     osl.log.add_attributes(class_instance=osl, attributes_str=["timestamp"])
     osl.log.add_attributes(
@@ -274,13 +271,49 @@ def state_machine_controller():
     )
     osl.log.add_attributes(class_instance=osl.loadcell, attributes_str=["fz"])
     osl.log.add_attributes(
-        class_instance=osl.state_machine, attributes_str=["current_state_name"]
+        class_instance=osl_state_machine.current_state, attributes_str=["name"]
     )
 
     with osl:
         osl.home()
-        osl.run(set_state_machine_parameters=True, log_data=True)
+        osl_state_machine.start()
+
+        for t in osl.clock:
+            osl.update()
+            osl_state_machine.update()
+
+            if osl.has_knee and osl_state_machine.current_state.is_knee_active:  # type: ignore
+
+                if osl.knee.mode != osl.knee.modes["impedance"]:  # type: ignore
+                    osl.knee.set_mode(mode="impedance")  # type: ignore
+                    osl.knee.set_impedance_gains()  # type: ignore
+
+                osl.knee.set_joint_impedance(  # type: ignore
+                    K=osl_state_machine.current_state.knee_stiffness,  # type: ignore
+                    B=osl_state_machine.current_state.knee_damping,  # type: ignore
+                )
+
+                osl.knee.set_output_position(  # type: ignore
+                    position=osl_state_machine.current_state.knee_theta  # type: ignore
+                )
+
+            if osl.has_ankle and osl_state_machine.current_state.is_ankle_active:  # type: ignore
+
+                if osl.ankle.mode != osl.ankle.modes["impedance"]:  # type: ignore
+                    osl.ankle.set_mode(mode="impedance")  # type: ignore
+                    osl.ankle.set_impedance_gains()  # type: ignore
+
+                osl.ankle.set_joint_impedance(  # type: ignore
+                    K=osl_state_machine.current_state.ankle_stiffness,  # type: ignore
+                    B=osl_state_machine.current_state.ankle_damping,  # type: ignore
+                )
+
+                osl.ankle.set_output_position(  # type: ignore
+                    position=osl_state_machine.current_state.ankle_theta  # type: ignore
+                )
+
+        osl_state_machine.stop()
 
 
 if __name__ == "__main__":
-    state_machine_controller()
+    finite_state_machine_controller()

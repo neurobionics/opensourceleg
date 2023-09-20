@@ -6,7 +6,7 @@ default_context:
   organization: "Neurobionics Laboratory"
   license: "GNU GPL v3.0"
   minimal_python_version: 3.9
-  github_name: "imsenthur"
+  github_name: "neurobionics"
   email: "opensourceleg@gmail.com"
   version: "0.1.0"
   line_length: "88"
