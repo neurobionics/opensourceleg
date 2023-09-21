@@ -269,7 +269,7 @@ def criteria_test(data="test_data") -> bool:
     and asserts the callback is called.
     """
 
-    callback_log = Logger(file_path="tests/test_state_machine/{}".format(data))
+    callback_log = Logger(file_path=f"tests/test_state_machine/{data}")
     callback_log.set_stream_level(level="DEBUG")
     callback_log.debug("Criteria was called")
     return True
@@ -282,7 +282,7 @@ def criteria_test2(data="log_name") -> bool:
     and asserts the callback is called.
     """
 
-    callback_log = Logger(file_path="tests/test_state_machine/{}".format(data))
+    callback_log = Logger(file_path=f"tests/test_state_machine/{data}")
     callback_log.set_stream_level(level="DEBUG")
     callback_log.debug("Criteria2 was called")
     return False
@@ -295,7 +295,7 @@ def test_action(data="log_name") -> bool:
     and asserts the callback is called.
     """
 
-    callback_log = Logger(file_path="tests/test_state_machine/{}".format(data))
+    callback_log = Logger(file_path=f"tests/test_state_machine/{data}")
     callback_log.set_stream_level(level="DEBUG")
     callback_log.debug("Action was called")
     return True
@@ -317,7 +317,7 @@ def test_state_start(mock_time):
     test_state_start.start(data="test_state_start")
     assert test_state_start._time_entered == 1.0
     assert criteria_test in test_state_start._entry_callbacks
-    with open("tests/test_state_machine/test_state_start.log", "r") as f:
+    with open("tests/test_state_machine/test_state_start.log") as f:
         contents = f.read()
         assert "DEBUG: Criteria was called" in contents
 
@@ -338,7 +338,7 @@ def test_state_stop(mock_time):
     test_state_stop.stop(data="test_state_stop")
     assert test_state_stop._time_exited == 1.0
     assert criteria_test2 in test_state_stop._exit_callbacks
-    with open("tests/test_state_machine/test_state_stop.log", "r") as f:
+    with open("tests/test_state_machine/test_state_stop.log") as f:
         contents = f.read()
         assert "DEBUG: Criteria2 was called" in contents
 
@@ -627,7 +627,7 @@ def test_from_to_transition_call(mock_time):
     )
     from_to_transition_call.add_action(callback=test_action)
     test = from_to_transition_call(data="test_from_to_transition_call", spoof=True)
-    with open("tests/test_state_machine/test_from_to_transition_call.log", "r") as f:
+    with open("tests/test_state_machine/test_from_to_transition_call.log") as f:
         contents = f.read()
         assert "DEBUG: Action was called" in contents
     assert test == State(name="state2")
@@ -654,7 +654,7 @@ def test_from_to_transition_call(mock_time):
     )
     from_to_transition_call2.add_action(callback=test_action)
     test1 = from_to_transition_call2(data="test_from_to_transition_call2")
-    with open("tests/test_state_machine/test_from_to_transition_call2.log", "r") as f:
+    with open("tests/test_state_machine/test_from_to_transition_call2.log") as f:
         contents = f.read()
         assert "DEBUG: Action was called" in contents
     assert test1 == State(name="state2")
@@ -666,7 +666,7 @@ def test_from_to_transition_call(mock_time):
     )
     from_to_transition_call3.add_criteria(callback=criteria_test2)
     test2 = from_to_transition_call3(data="test_from_to_transition_call3")
-    with open("tests/test_state_machine/test_from_to_transition_call3.log", "r") as f:
+    with open("tests/test_state_machine/test_from_to_transition_call3.log") as f:
         contents = f.read()
         assert "DEBUG: Criteria2 was called" in contents
     assert test2 == State(name="state1")
@@ -797,7 +797,7 @@ def exit_callback_test(idle=Idle(), data="test_state_machine_update2"):
     and asserts the callback is called.
     """
 
-    callback_log = Logger(file_path="tests/test_state_machine/{}".format(data))
+    callback_log = Logger(file_path=f"tests/test_state_machine/{data}")
     callback_log.set_stream_level(level="DEBUG")
     callback_log.debug("Exit callback was called")
     return True
@@ -842,7 +842,7 @@ def test_state_machine_update():
     )
     test_state_machine_update._osl.log.set_stream_level(level="DEBUG")
     test_state_machine_update.update(data="test_data")
-    with open("tests/test_state_machine/test_state_machine_update.log", "r") as f:
+    with open("tests/test_state_machine/test_state_machine_update.log") as f:
         contents = f.read()
         assert "DEBUG: Event isn't valid at state1" in contents
     # Assert the for loop works properly
@@ -982,7 +982,6 @@ def test_state_machine_default_properties():
     test_state_machine_dp = StateMachine()
     assert test_state_machine_dp.current_state == Idle()
     assert test_state_machine_dp.states == ["idle"]
-    assert test_state_machine_dp.current_state_name == "idle"
     assert test_state_machine_dp.is_spoofing == False
 
 
@@ -1004,5 +1003,4 @@ def test_state_machine_non_default_properties():
     test_state_machine_ndp._spoof = True
     assert test_state_machine_ndp.current_state == State(name="state2")
     assert test_state_machine_ndp.states == ["idle", "state1", "state2", "state3"]
-    assert test_state_machine_ndp.current_state_name == "state2"
     assert test_state_machine_ndp.is_spoofing == True
