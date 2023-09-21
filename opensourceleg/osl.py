@@ -61,8 +61,6 @@ class OpenSourceLeg:
         self._ankle: Joint = None  # type: ignore
         self._loadcell: Loadcell = None  # type: ignore
 
-        self._log_data: bool = False
-
         self.log = Logger(
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
         )
@@ -129,7 +127,7 @@ class OpenSourceLeg:
             ports = utilities.get_active_ports()
 
             if len(ports) == 0:
-                self.log.warn(
+                self.log.warning(
                     msg="No active ports found, please ensure that the joint is connected and powered on."
                 )
 
@@ -221,7 +219,7 @@ class OpenSourceLeg:
             self._knee.update()
 
             if self.knee.case_temperature > self.knee.max_temperature:  # type: ignore
-                self.log.warn(
+                self.log.warning(
                     msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
                 )
                 self.__exit__(type=None, value=None, tb=None)
@@ -231,7 +229,7 @@ class OpenSourceLeg:
             self._ankle.update()
 
             if self.ankle.case_temperature > self.ankle.max_temperature:  # type: ignore
-                self.log.warn(
+                self.log.warning(
                     msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
                 )
                 self.__exit__(type=None, value=None, tb=None)

@@ -16,7 +16,6 @@ from opensourceleg.joints import Joint
 from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
 from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.state_machine import Event, State, StateMachine
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
@@ -45,7 +44,6 @@ def test_opensourceleg_init(mock_time):
     Asserts the constructor works properly for the default case.
     """
 
-    # Create a new OpenSourceLeg
     test_osl = OpenSourceLeg()
 
     # Check that the OpenSourceLeg was initialized properly
@@ -53,17 +51,12 @@ def test_opensourceleg_init(mock_time):
     assert test_osl._has_knee == False
     assert test_osl._has_ankle == False
     assert test_osl._has_loadcell == False
-    assert test_osl._has_tui == False
-    assert test_osl._has_sm == False
     assert test_osl._is_homed == False
     assert test_osl._knee == None
     assert test_osl._ankle == None
     assert test_osl._loadcell == None
-    assert test_osl._log_data == False
     # assert test_osl.clock
     assert test_osl._units == DEFAULT_UNITS
-    assert test_osl.tui == None
-    assert test_osl.state_machine == None
     assert test_osl._timestamp == 1.0
 
 
@@ -85,7 +78,6 @@ def test_osl_enter(
     message has been written.
     """
 
-    # Create a new OpenSourceLeg
     test_osl_ent = OpenSourceLeg()
     test_osl_ent.log = Logger(file_path="tests/test_osl/test_osl_ent")
     test_osl_ent.log.set_stream_level("DEBUG")
@@ -119,7 +111,7 @@ def test_osl_enter(
     assert test_osl_ent._knee._data.batt_volt == 10
     test_osl_ent.__enter__()
     assert test_osl_ent._knee._data.batt_volt == 40
-    with open("tests/test_osl/test_osl_ent.log", "r") as f1:
+    with open("tests/test_osl/test_osl_ent.log") as f1:
         contents1 = f1.read()
         assert (
             "INFO: [LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
@@ -127,53 +119,24 @@ def test_osl_enter(
         )
 
 
-class MockTUI:
-
-    """
-    Mock TUI class\n
-    """
-
-    def __init__(self):
-        self._is_running = True
-
-    def quit(self):
-        self._is_running = False
-
-    @property
-    def is_running(self):
-        return self._is_running
-
-
-# Unfnished: tui
 def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_sleep):
 
     """
     Tests the OpenSourceLeg __exit__ method\n
-    Intializes an OpenSourceLeg object with a logger of the lowest stream level. A
-    state machine is added and set to running. A knee and ankle are added and the
-    mode of each is set. The tui attribute is set to a MockTUI objectand set to running.
-    Then the exit method is called and asserts the attributes have been updated and
-    the proper log message has been written.
+    Intializes an OpenSourceLeg object with a logger of the lowest stream level.
+    A knee and ankle are added and the mode of each is set.
     """
 
-    # Create a new OpenSourceLeg
     test_osl_ex = OpenSourceLeg()
     test_osl_ex.log = Logger(file_path="tests/test_osl/test_osl_ex")
     test_osl_ex.log.set_stream_level("DEBUG")
-    test_osl_ex.add_state_machine()
-    test_osl_ex.state_machine._current_state = State(name="test_state")
-    test_osl_ex._is_sm_running = True
     test_osl_ex.add_joint(name="knee")
     test_osl_ex._knee._mode = CurrentMode(device=test_osl_ex._knee)
     test_osl_ex.add_joint(name="ankle")
-    test_osl_ex._has_tui = True
-    test_osl_ex.tui = MockTUI()
     test_osl_ex._ankle._mode = ImpedanceMode(device=test_osl_ex._ankle)
     test_osl_ex.__exit__(type=None, value=None, tb=None)
     assert test_osl_ex._knee._mode == VoltageMode(device=test_osl_ex._knee)
     assert test_osl_ex._ankle._mode == VoltageMode(device=test_osl_ex._ankle)
-    assert test_osl_ex.state_machine._exited == True
-    assert test_osl_ex.tui._is_running == False
 
 
 def test_osl_repr():
@@ -186,20 +149,6 @@ def test_osl_repr():
 
     test_osl_r = OpenSourceLeg()
     assert test_osl_r.__repr__() == "OSL object. Frequency: 200 Hz"
-
-
-def test_osl_log_data():
-
-    """
-    Tests the OpenSourceLeg log_data method\n
-    Intializes an OpenSourceLeg object and asserts the log_data method updates the
-    _log_data attribute properly.
-    """
-
-    test_osl_ld = OpenSourceLeg()
-    assert test_osl_ld._log_data == False
-    test_osl_ld.log_data()
-    assert test_osl_ld._log_data == True
 
 
 @pytest.fixture
@@ -246,14 +195,13 @@ def test_osl_add_joint_no_ports(mock_get_active_ports0):
     written and the knee was not added.
     """
 
-    # Create a new OpenSourceLeg
     test_osl_ajnp = OpenSourceLeg()
     test_osl_ajnp.log = Logger(file_path="tests/test_osl/test_osl_ajnp")
     test_osl_ajnp.log.set_stream_level("DEBUG")
     try:
         test_osl_ajnp.add_joint(name="knee")
     except SystemExit:
-        with open("tests/test_osl/test_osl_ajnp.log", "r") as f:
+        with open("tests/test_osl/test_osl_ajnp.log") as f:
             contents = f.read()
             assert (
                 "WARNING: No active ports found, please ensure that the joint is connected and powered on."
@@ -270,7 +218,6 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     that the knee was added properly and the attributes were updated properly.
     """
 
-    # Create a new OpenSourceLeg
     test_osl_ajop = OpenSourceLeg()
     test_osl_ajop.add_joint(name="knee")
     assert test_osl_ajop._has_knee == True
@@ -303,7 +250,6 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     added and it is asserted that the proper log message was written.
     """
 
-    # Create a new OpenSourceLeg
     test_osl_aj = OpenSourceLeg()
     test_osl_aj.log = Logger(file_path="tests/test_osl/test_osl_aj")
     test_osl_aj.log.set_stream_level("DEBUG")
@@ -344,7 +290,7 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._ankle.equilibirum_position_sp == 0.0
     assert test_osl_aj._ankle.control_mode_sp == "voltage"
     test_osl_aj.add_joint(name="loadcell")
-    with open("tests/test_osl/test_osl_aj.log", "r") as f:
+    with open("tests/test_osl/test_osl_aj.log") as f:
         contents = f.read()
         assert "[OSL] Joint name is not recognized." in contents
 
@@ -382,19 +328,6 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     assert test_osl_al._loadcell._log == test_osl_al.log
 
 
-def test_osl_add_state_machine():
-
-    """
-    Tests the OpenSourceLeg add_state_machine method\n
-    Intializes an OpenSourceLeg object and adds a state machine. It then asserts
-    that the state machine was added properly.
-    """
-
-    test_osl_asm = OpenSourceLeg()
-    test_osl_asm.add_state_machine()
-    assert test_osl_asm._has_sm == True
-
-
 @pytest.fixture
 def patch_exit(monkeypatch):
 
@@ -426,7 +359,7 @@ def test_osl_update_knee(
     test_osl_u_knee._knee._max_temperature = 1
     test_osl_u_knee.update()
     assert test_osl_u_knee._knee._data.batt_volt == 15
-    with open("tests/test_osl/test_osl_u_knee.log", "r") as f:
+    with open("tests/test_osl/test_osl_u_knee.log") as f:
         contents = f.read()
         assert "WARNING: [KNEE] Thermal limit 1.0 reached. Stopping motor." in contents
 
@@ -451,7 +384,7 @@ def test_osl_update_ankle(
     test_osl_u_ankle._ankle._max_temperature = 1
     test_osl_u_ankle.update()
     assert test_osl_u_ankle._ankle._data.batt_volt == 15
-    with open("tests/test_osl/test_osl_u_ankle.log", "r") as f:
+    with open("tests/test_osl/test_osl_u_ankle.log") as f:
         contents = f.read()
         assert "WARNING: [ANKLE] Thermal limit 1.0 reached. Stopping motor." in contents
 
@@ -609,207 +542,18 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
     test_osl_u_ld.log = Logger(file_path="tests/test_osl/test_osl_u_ld")
     test_osl_u_ld.log.set_stream_level("DEBUG")
     test_osl_u_ld.add_joint(name="knee")
-    test_osl_u_ld._log_data = True
     test_osl_u_ld._knee._data = Data()
     test_osl_u_ld._knee.is_streaming = True
-    assert test_osl_u_ld._log_data == True
     test_class_instance = Simple_Class()
     test_osl_u_ld.log.add_attributes(
         class_instance=test_class_instance, attributes_str=["a", "b", "c"]
     )
-    test_osl_u_ld.update()
+    test_osl_u_ld.update(log_data=True)
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
-    with open("tests/test_osl/test_osl_u_ld.csv", "r", newline="") as f:
+    with open("tests/test_osl/test_osl_u_ld.csv", newline="") as f:
         reader = csv.reader(f)
         rows = list(reader)
         assert rows == expected_rows
-
-
-def test_osl_update_state_machine(
-    joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
-):
-
-    """
-    Tests the OpenSourceLeg update method with state machine\n
-    Intializes an OpenSourceLeg object with a logger of the lowest stream level
-    and a knee is added. Data is added to the knee and the knee is set to streaming.
-    The max temperature is set to a high value so the thermal limit is not reached.
-    A state machine is added and the state machine is homed. The initial state is set
-    to state_1 and the current state is set to None. The update method is called and
-    it is asserted that the current state is state_1 and the state machine is running.
-    Then an OpenSourceLeg object is added to the state machine and states are added. An
-    event and transition are added and the update method is called. It is asserted that
-    the current state is now state_2. The the make_knee_active method is called on the
-    current state and another transition is added and the update method is called with
-    set_state_machine_parameters set to True. It is asserted that the knee is now in
-    impedance mode, the gains are set properly, and the motor command is sent properly.
-    """
-
-    test_osl_u_sm = OpenSourceLeg()
-    test_osl_u_sm.log = Logger(file_path="tests/test_osl/test_osl_u_sm")
-    test_osl_u_sm.log.set_stream_level("DEBUG")
-    test_osl_u_sm.add_joint(name="knee")
-    test_osl_u_sm._knee._data = Data()
-    test_osl_u_sm._knee.is_streaming = True
-    test_osl_u_sm._knee._max_temperature = 10000
-    test_osl_u_sm.add_state_machine()
-    assert test_osl_u_sm.has_state_machine == True
-    test_osl_u_sm.home()
-    assert test_osl_u_sm.is_sm_running == False
-    test_osl_u_sm.state_machine._initial_state = State(name="state_1")
-    test_osl_u_sm.state_machine._current_state = None
-    test_osl_u_sm.update()
-    assert test_osl_u_sm.state_machine._current_state.name == "state_1"
-    assert test_osl_u_sm.is_sm_running == True
-    test_osl_u_sm.state_machine._exited = False
-    test_osl_u_sm.state_machine._osl = OpenSourceLeg()
-    test_osl_u_sm.state_machine.add_state(state=State(name="state_1"))
-    test_osl_u_sm.state_machine.add_state(state=State(name="state_2"))
-    test_osl_u_sm.state_machine.add_event(event=Event(name="test_event_1"))
-    transition1 = test_osl_u_sm.state_machine.add_transition(
-        source=State(name="state_1"),
-        destination=State(name="state_2"),
-        event=Event(name="test_event_1"),
-    )
-    assert test_osl_u_sm.state_machine._transitions == [transition1]
-    test_osl_u_sm.update()
-    assert test_osl_u_sm.state_machine._current_state.name == "state_2"
-    test_osl_u_sm.state_machine._current_state.make_knee_active()
-    assert test_osl_u_sm._knee._mode == VoltageMode(device=test_osl_u_sm._knee)
-    transition2 = test_osl_u_sm.state_machine.add_transition(
-        source=State(name="state_2"),
-        destination=State(name="state_1"),
-        event=Event(name="test_event_2"),
-    )
-    test_osl_u_sm.update(set_state_machine_parameters=True)
-    assert test_osl_u_sm._knee._mode == ImpedanceMode(device=test_osl_u_sm._knee)
-    assert test_osl_u_sm._knee._gains == {
-        "kp": 40,
-        "ki": 400,
-        "kd": 0,
-        "k": 0,
-        "b": 0,
-        "ff": 128,
-    }
-    assert test_osl_u_sm._knee._motor_command == "Control Mode: c_int(3), Value: 5010"
-
-
-def test_osl_update_state_machine_ankle(
-    joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
-):
-
-    """
-    This is the same as test_osl_update_state_machine except it tests the ankle
-    instead of the knee. The only difference is the motor cammand value that is
-    sent at the end.
-    """
-
-    test_osl_u_sm_ank = OpenSourceLeg()
-    test_osl_u_sm_ank.log = Logger(file_path="tests/test_osl/test_osl_u_sm_ank")
-    test_osl_u_sm_ank.log.set_stream_level("DEBUG")
-    test_osl_u_sm_ank.add_joint(name="ankle")
-    test_osl_u_sm_ank._ankle._data = Data()
-    test_osl_u_sm_ank._ankle.is_streaming = True
-    test_osl_u_sm_ank._ankle._max_temperature = 10000
-    test_osl_u_sm_ank.add_state_machine()
-    assert test_osl_u_sm_ank.has_state_machine == True
-    test_osl_u_sm_ank.home()
-    assert test_osl_u_sm_ank.is_sm_running == False
-    test_osl_u_sm_ank.state_machine._initial_state = State(name="state_1")
-    test_osl_u_sm_ank.state_machine._current_state = None
-    test_osl_u_sm_ank.update()
-    assert test_osl_u_sm_ank.state_machine._current_state.name == "state_1"
-    assert test_osl_u_sm_ank.is_sm_running == True
-    test_osl_u_sm_ank.state_machine._exited = False
-    test_osl_u_sm_ank.state_machine._osl = OpenSourceLeg()
-    test_osl_u_sm_ank.state_machine.add_state(state=State(name="state_1"))
-    test_osl_u_sm_ank.state_machine.add_state(state=State(name="state_2"))
-    test_osl_u_sm_ank.state_machine.add_event(event=Event(name="test_event_1"))
-    transition1 = test_osl_u_sm_ank.state_machine.add_transition(
-        source=State(name="state_1"),
-        destination=State(name="state_2"),
-        event=Event(name="test_event_1"),
-    )
-    assert test_osl_u_sm_ank.state_machine._transitions == [transition1]
-    test_osl_u_sm_ank.update()
-    assert test_osl_u_sm_ank.state_machine._current_state.name == "state_2"
-    test_osl_u_sm_ank.state_machine._current_state.make_ankle_active()
-    assert test_osl_u_sm_ank._ankle._mode == VoltageMode(
-        device=test_osl_u_sm_ank._ankle
-    )
-    transition2 = test_osl_u_sm_ank.state_machine.add_transition(
-        source=State(name="state_2"),
-        destination=State(name="state_1"),
-        event=Event(name="test_event_2"),
-    )
-    test_osl_u_sm_ank.update(set_state_machine_parameters=True)
-    assert test_osl_u_sm_ank._ankle._mode == ImpedanceMode(
-        device=test_osl_u_sm_ank._ankle
-    )
-    assert test_osl_u_sm_ank._ankle._gains == {
-        "kp": 40,
-        "ki": 400,
-        "kd": 0,
-        "k": 0,
-        "b": 0,
-        "ff": 128,
-    }
-    assert (
-        test_osl_u_sm_ank._ankle._motor_command == "Control Mode: c_int(3), Value: 6375"
-    )
-
-
-def test_osl_run(joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit):
-
-    """
-    Tests the OpenSourceLeg run method\n
-    Intializes an OpenSourceLeg object with a logger of the lowest stream level
-    and a knee is added. Data is added to the knee and the knee is set to streaming.
-    The max temperature is set to a high value so the thermal limit is not reached.
-    A state machine is added and the OpenSourceLeg is homed. The initial state is set
-    to state_1 and the current state is set to None. The run method is called with
-    log_data set to True. It is asserted that the state machine is running and the
-    _log_data attribute is set to True.
-    """
-
-    test_osl_r = OpenSourceLeg()
-    test_osl_r.log = Logger(file_path="tests/test_osl/test_osl_r")
-    test_osl_r.log.set_stream_level("DEBUG")
-    test_osl_r.add_joint(name="knee")
-    test_osl_r._knee._data = Data()
-    test_osl_r._knee.is_streaming = True
-    test_osl_r._knee._max_temperature = 10000
-    test_osl_r.add_state_machine()
-    test_osl_r.home()
-    assert test_osl_r.is_sm_running == False
-    test_osl_r.state_machine._initial_state = State(name="state_1")
-    test_osl_r.state_machine._current_state = None
-    assert test_osl_r._log_data == False
-    test_osl_r.run(log_data=True)
-    assert test_osl_r.is_sm_running == True
-    assert test_osl_r._log_data == True
-
-
-def test_osl_estop():
-
-    """
-    Tests the OpenSourceLeg estop method\n
-    Intializes an OpenSourceLeg object with a logger of the lowest stream level.
-    The tui attribute is set to a MockTUI object and the _has_tui attribute is set
-    to True. The estop method is called and it is asserted that the tui is not running
-    and the proper log message was written.
-    """
-
-    test_osl_es = OpenSourceLeg()
-    test_osl_es.log = Logger(file_path="tests/test_osl/test_osl_es")
-    test_osl_es.log.set_stream_level("DEBUG")
-    test_osl_es.tui = MockTUI()
-    test_osl_es._has_tui = True
-    test_osl_es.estop()
-    assert test_osl_es.tui.is_running == False
-    with open("tests/test_osl/test_osl_es.log", "r") as f:
-        contents = f.read()
-        assert "[OSL] Emergency stop activated." in contents
 
 
 def test_osl_home(joint_patched: Joint, mock_get_active_ports):
@@ -829,7 +573,7 @@ def test_osl_home(joint_patched: Joint, mock_get_active_ports):
     test_osl_h.log = Logger(file_path="tests/test_osl/test_osl_h")
     test_osl_h.log.set_stream_level("DEBUG")
     test_osl_h.home()
-    with open("tests/test_osl/test_osl_h.log", "r") as f:
+    with open("tests/test_osl/test_osl_h.log") as f:
         contents = f.read()
         assert "[OSL] Homing knee joint." in contents
         assert "[OSL] Homing ankle joint." in contents
@@ -853,7 +597,7 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
     test_osl_cl.log = Logger(file_path="tests/test_osl/test_osl_cl")
     test_osl_cl.log.set_stream_level("DEBUG")
     test_osl_cl.calibrate_loadcell()
-    with open("tests/test_osl/test_osl_cl.log", "r") as f:
+    with open("tests/test_osl/test_osl_cl.log") as f:
         contents = f.read()
         assert "[OSL] Calibrating loadcell." in contents
     assert test_osl_cl._loadcell._zeroed == False
@@ -879,7 +623,7 @@ def test_osl_calibrate_encoders(
     test_osl_ce._knee.is_streaming = True
     test_osl_ce._knee.home()
     test_osl_ce.calibrate_encoders()
-    with open("tests/test_osl/test_osl_ce.log", "r") as f:
+    with open("tests/test_osl/test_osl_ce.log") as f:
         contents = f.read()
         assert "[OSL] Calibrating encoders." in contents
     test_joint_position_array = [0.005752427954571154, 0.011504855909142308]
@@ -928,24 +672,21 @@ def test_osl_properties(mock_time):
     assert test_osl_prop.timestamp == 1.0
     knee_prop = test_osl_prop.knee
     assert knee_prop == None
-    with open("tests/test_osl/test_osl_prop.log", "r") as f:
+    with open("tests/test_osl/test_osl_prop.log") as f:
         contents = f.read()
         assert "WARNING: [OSL] Knee is not connected." in contents
     ankle_prop = test_osl_prop.ankle
     assert ankle_prop == None
-    with open("tests/test_osl/test_osl_prop.log", "r") as f:
+    with open("tests/test_osl/test_osl_prop.log") as f:
         contents = f.read()
         assert "WARNING: [OSL] Ankle is not connected." in contents
     loadcell_prop = test_osl_prop.loadcell
     assert loadcell_prop == None
-    with open("tests/test_osl/test_osl_prop.log", "r") as f:
+    with open("tests/test_osl/test_osl_prop.log") as f:
         contents = f.read()
         assert "WARNING: [OSL] Loadcell is not connected." in contents
     assert test_osl_prop.units == DEFAULT_UNITS
     assert test_osl_prop.has_knee == False
     assert test_osl_prop.has_ankle == False
     assert test_osl_prop.has_loadcell == False
-    assert test_osl_prop.has_state_machine == False
-    assert test_osl_prop.has_tui == False
     assert test_osl_prop.is_homed == False
-    assert test_osl_prop.is_sm_running == False
