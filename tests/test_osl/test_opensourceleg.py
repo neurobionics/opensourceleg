@@ -13,9 +13,9 @@ from opensourceleg.actuators import (
     VoltageMode,
 )
 from opensourceleg.joints import Joint
-from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
 from opensourceleg.osl import OpenSourceLeg
+from opensourceleg.sensors import Loadcell
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
@@ -27,13 +27,13 @@ from tests.test_joints.test_joint import (
     patch_sleep,
     patch_time_time,
 )
-from tests.test_loadcell.test_loadcell import (
+from tests.test_logger.test_logger import Simple_Class
+from tests.test_sensors.test_sensors import (
     MockStrainAmp,
     loadcell_mock,
     loadcell_patched,
     patch_loadcell,
 )
-from tests.test_logger.test_logger import Simple_Class
 from tests.test_state_machine.test_state_machine import mock_time
 
 

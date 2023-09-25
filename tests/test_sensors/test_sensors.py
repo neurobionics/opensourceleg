@@ -133,9 +133,7 @@ def patch_strainamp(mocker, strainamp_mock: MockStrainAmp):
     Fixture which patches the StrainAmp class to return a MockStrainAmp object
     """
 
-    mocker.patch(
-        "opensourceleg.loadcell.StrainAmp.__new__", return_value=strainamp_mock
-    )
+    mocker.patch("opensourceleg.sensors.StrainAmp.__new__", return_value=strainamp_mock)
 
 
 @pytest.fixture
@@ -166,7 +164,7 @@ def patch_loadcell(mocker, loadcell_mock: MockLoadcell):
     Fixture which patches the Loadcell class to return a MockLoadcell object
     """
 
-    mocker.patch("opensourceleg.loadcell.Loadcell.__new__", return_value=loadcell_mock)
+    mocker.patch("opensourceleg.sensors.Loadcell.__new__", return_value=loadcell_mock)
 
 
 @pytest.fixture
@@ -460,14 +458,14 @@ def test_mockloadcell_init():
     """
 
     # Initialize the MockLoadcell object and assert the attributes are initialized properly
-    test_loadcell_default = MockLoadcell(dephy_mode=True)
-    assert test_loadcell_default._is_dephy == True
+    test_loadcell_default = MockLoadcell()
+    assert test_loadcell_default._is_dephy == False
     assert test_loadcell_default._joint == None
     assert test_loadcell_default._amp_gain == 125.0
     assert test_loadcell_default._exc == 5.0
     assert test_loadcell_default._adc_range == 2**12 - 1
     assert test_loadcell_default._offset == (2**12) / 2
-    assert test_loadcell_default._lc == None
+    assert test_loadcell_default._lc != None
     assert np.array_equal(
         test_loadcell_default._loadcell_matrix, constants.LOADCELL_MATRIX
     )
@@ -862,7 +860,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
     # Initialize the Loadcell object and pass data into attributes needed for testing
     lc_initialize = loadcell_patched
     lc_initialize._log = Logger(
-        file_path="tests/test_loadcell/test_loadcell_initialize_log"
+        file_path="tests/test_sensors/test_loadcell_initialize_log"
     )
     lc_initialize._log.set_stream_level("DEBUG")
     lc_initialize._joint = MockJoint()
@@ -873,7 +871,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
     mocker.patch("builtins.input", return_value="y")
     lc_initialize.initialize()
     # Assert the proper log messages are written for the else statement in the if statement in the if statement
-    with open("tests/test_loadcell/test_loadcell_initialize_log.log") as f:
+    with open("tests/test_sensors/test_loadcell_initialize_log.log") as f:
         contents = f.read()
         assert (
             "INFO: [LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."

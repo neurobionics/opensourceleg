@@ -3,7 +3,6 @@ import sys
 import time
 from dataclasses import dataclass
 
-import mscl as ms
 import numpy as np
 from smbus2 import SMBus
 
@@ -296,6 +295,8 @@ class IMULordMicrostrain:
     def __init__(
         self, port=r"/dev/ttyUSB0", baud_rate=921600, timeout=500, sample_rate=100
     ):
+        import mscl as ms
+
         self.port = port
         self.baud_rate = baud_rate
         self.connection = ms.Connection.Serial(
