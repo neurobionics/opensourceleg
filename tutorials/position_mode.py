@@ -11,6 +11,8 @@ set_point = 50  # deg
 with osl:
     osl.knee.set_mode("position")
 
+    osl.update()
+    
     osl.knee.set_motor_position(osl.knee.motor_position + set_point)
 
     for t in osl.clock:

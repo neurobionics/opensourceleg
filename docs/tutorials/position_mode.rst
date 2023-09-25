@@ -42,6 +42,9 @@ To control the position of a joint, we can use a `with` block to ensure that the
 
     with osl:
         osl.knee.set_mode("position")
+        
+        osl.update()
+        
         osl.knee.set_motor_position(osl.knee.motor_position + set_point)
         
         for t in osl.clock:

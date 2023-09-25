@@ -45,6 +45,9 @@ To control the impedance of a joint, we can use a `with` block to ensure that th
 
     with osl:
         osl.knee.set_mode("impedance")
+        
+        osl.update()
+        
         osl.knee.set_joint_impedance(K=test_stiffness_value, B=test_damping_value)
         osl.knee.set_motor_position(osl.knee.motor_position + set_point)
         
