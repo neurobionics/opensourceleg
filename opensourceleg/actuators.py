@@ -5,7 +5,6 @@ import time
 from ctypes import c_int
 from dataclasses import dataclass
 
-import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
@@ -14,25 +13,11 @@ from opensourceleg.control import (
     DEFAULT_CURRENT_GAINS,
     DEFAULT_IMPEDANCE_GAINS,
     DEFAULT_POSITION_GAINS,
+    ControlModes,
 )
 from opensourceleg.logger import Logger
 from opensourceleg.thermal import ThermalModel
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
-
-
-@dataclass
-class ControlModes:
-    """
-    Control modes for the Dephy Actpack.
-
-    Available modes are Voltage, Current, Position, Impedance.
-    """
-
-    voltage: c_int = fxe.FX_VOLTAGE
-    current: c_int = fxe.FX_CURRENT
-    position: c_int = fxe.FX_POSITION
-    impedance: c_int = fxe.FX_IMPEDANCE
-
 
 CONTROL_MODE = ControlModes()
 

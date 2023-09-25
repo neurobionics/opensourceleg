@@ -15,7 +15,7 @@
 
 An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
 
-<img src="https://github.com/neurobionics/opensourceleg/raw/66ad4289ef9ba8701fac9337778f87b657286484/assets/images/banner.gif" width="800" title="Open-Source Leg">
+<img src="https://github.com/neurobionics/opensourceleg/blob/66ad4289ef9ba8701fac9337778f87b657286484/assets/images/banner.gif?raw=true" width="800" title="Open-Source Leg">
 
 </div>
 
