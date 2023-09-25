@@ -4,8 +4,8 @@ from pytest_mock import mocker
 
 import opensourceleg.constants as constants
 from opensourceleg.joints import Joint
-from opensourceleg.loadcell import Loadcell, StrainAmp
 from opensourceleg.logger import Logger
+from opensourceleg.sensors import Loadcell, StrainAmp
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import MockJoint, patch_sleep
 
@@ -873,7 +873,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
     mocker.patch("builtins.input", return_value="y")
     lc_initialize.initialize()
     # Assert the proper log messages are written for the else statement in the if statement in the if statement
-    with open("tests/test_loadcell/test_loadcell_initialize_log.log", "r") as f:
+    with open("tests/test_loadcell/test_loadcell_initialize_log.log") as f:
         contents = f.read()
         assert (
             "INFO: [LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."

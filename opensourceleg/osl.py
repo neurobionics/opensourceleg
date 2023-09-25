@@ -9,8 +9,8 @@ sys.path.append("../")
 import opensourceleg.constants as constants
 import opensourceleg.utilities as utilities
 from opensourceleg.joints import Joint
-from opensourceleg.loadcell import Loadcell
 from opensourceleg.logger import Logger
+from opensourceleg.sensors import Loadcell
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 
