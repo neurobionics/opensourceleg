@@ -18,10 +18,10 @@ class ControlModes:
     Available modes are Voltage, Current, Position, Impedance.
     """
 
-    voltage: c_int = fxe.FX_VOLTAGE
-    current: c_int = fxe.FX_CURRENT
-    position: c_int = fxe.FX_POSITION
-    impedance: c_int = fxe.FX_IMPEDANCE
+    voltage: ctypes.c_int = fxe.FX_VOLTAGE
+    current: ctypes.c_int = fxe.FX_CURRENT
+    position: ctypes.c_int = fxe.FX_POSITION
+    impedance: ctypes.c_int = fxe.FX_IMPEDANCE
 
 
 CONTROL_MODE = ControlModes()
