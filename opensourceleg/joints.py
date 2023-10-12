@@ -346,4 +346,3 @@ class Joint(DephyActpack):
     @property
     def joint_torque(self) -> float:
         return self.motor_torque * self.gear_ratio
-

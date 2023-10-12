@@ -247,10 +247,10 @@ def finite_state_machine_controller():
         callback=lswing_to_estance,
     )
 
-    osl.log.add_attributes(class_instance=osl, attributes_str=["timestamp"])
+    osl.log.add_attributes(class_instance=osl, attributes=["timestamp"])
     osl.log.add_attributes(
         class_instance=osl.knee,
-        attributes_str=[
+        attributes=[
             "output_position",
             "motor_current",
             "joint_torque",
@@ -261,7 +261,7 @@ def finite_state_machine_controller():
 
     osl.log.add_attributes(
         class_instance=osl.ankle,
-        attributes_str=[
+        attributes=[
             "output_position",
             "motor_current",
             "joint_torque",
@@ -269,9 +269,9 @@ def finite_state_machine_controller():
             "accelx",
         ],
     )
-    osl.log.add_attributes(class_instance=osl.loadcell, attributes_str=["fz"])
+    osl.log.add_attributes(class_instance=osl.loadcell, attributes=["fz"])
     osl.log.add_attributes(
-        class_instance=osl_state_machine.current_state, attributes_str=["name"]
+        class_instance=osl_state_machine.current_state, attributes=["name"]
     )
 
     with osl:

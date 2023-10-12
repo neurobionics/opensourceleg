@@ -502,6 +502,7 @@ def test_convert_to_pid_impedance(joint_patched: Joint):
         0.01 / (100.0**2) * np.pi / 180 / 0.00028444 * 1e3 / 0.1133, 15
     )
 
+
 def test_mockjoint_default_properties(joint_patched: Joint):
 
     """

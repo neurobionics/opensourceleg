@@ -81,16 +81,23 @@ class Logger(logging.Logger):
 
         self._stream_handler.setLevel(level=self._log_levels[level])
 
-    def add_attributes(self, class_instance: object, attributes_str: list[str]) -> None:
+    def add_attributes(self, class_instance: object, attributes: list[str]) -> None:
         """
         Adds class instance and attributes to log
 
         Args:
             class_instance (object): Class instance to log the attributes of
-            attributes_str (list[str]): List of attributes to log
+            attributes (list[str]): List of attributes to log
         """
         self._class_instances.append(class_instance)
-        self._attributes.append(attributes_str)
+
+        if not isinstance(attributes, list):
+            self.warning(
+                msg=f"[LOGGER] attributes argument must be a list of strings (example: ['a','b']), not {type(attributes)}"
+            )
+            exit()
+
+        self._attributes.append(attributes)
 
     def data(self) -> None:
         """

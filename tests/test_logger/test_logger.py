@@ -96,14 +96,14 @@ def test_add_attributes():
     # Asserts the add_attributes method works properly when passed a single class instance
     test_Logger1 = Logger(file_path="tests/test_logger/test_log1")
     test_Logger1.add_attributes(
-        class_instance=test_class_instance, attributes_str=["a", "b", "c"]
+        class_instance=test_class_instance, attributes=["a", "b", "c"]
     )
 
     # Asserts the add_attributes method works properly when a class instance is passed multiple times
     assert test_Logger1._class_instances == [test_class_instance]
     assert test_Logger1._attributes == [["a", "b", "c"]]
     test_Logger1.add_attributes(
-        class_instance=test_class_instance2, attributes_str=["a", "b", "c"]
+        class_instance=test_class_instance2, attributes=["a", "b", "c"]
     )
     assert test_Logger1._class_instances == [test_class_instance, test_class_instance2]
     assert test_Logger1._attributes == [["a", "b", "c"], ["a", "b", "c"]]
@@ -137,7 +137,7 @@ def test_data():
     test_class_instance2 = Simple_Class()
     test_Logger_data = Logger(file_path="tests/test_logger/test_log_data")
     test_Logger_data.add_attributes(
-        class_instance=test_class_instance, attributes_str=["a", "b", "c"]
+        class_instance=test_class_instance, attributes=["a", "b", "c"]
     )
     # Asserts the data method works properly when passed a single class instance
     test_Logger_data.data()
@@ -148,7 +148,7 @@ def test_data():
         assert rows == expected_rows
 
     test_Logger_data.add_attributes(
-        class_instance=test_class_instance2, attributes_str=["a", "b", "c"]
+        class_instance=test_class_instance2, attributes=["a", "b", "c"]
     )
     # Asserts the data method works properly when passed multiple class instances
     test_Logger_data.data()
