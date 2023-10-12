@@ -36,6 +36,23 @@ from tests.test_sensors.test_sensors import (
 )
 from tests.test_state_machine.test_state_machine import mock_time
 
+LOADCELL_MATRIX = np.array(
+    [
+        (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
+        (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
+        (
+            -1047.16800,
+            8.63900,
+            -1047.28200,
+            -20.70000,
+            -1073.08800,
+            -8.92300,
+        ),
+        (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
+        (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
+        (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
+    ]
+)
 
 def test_opensourceleg_init(mock_time):
 
@@ -83,7 +100,7 @@ def test_osl_enter(
     test_osl_ent.log.set_stream_level("DEBUG")
     test_osl_ent.add_joint(name="knee")
     test_osl_ent.add_joint(name="ankle")
-    test_osl_ent.add_loadcell()
+    test_osl_ent.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_ent._knee._data = Data(
         batt_volt=10,
         batt_curr=10,
@@ -283,7 +300,7 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     """
 
     test_osl_al = OpenSourceLeg()
-    test_osl_al.add_loadcell()
+    test_osl_al.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     assert test_osl_al._has_loadcell == True
     assert test_osl_al._loadcell._is_dephy == False
     assert test_osl_al._loadcell._joint == None
@@ -296,7 +313,7 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     assert test_osl_al._loadcell._lc.indx == 0
     assert test_osl_al._loadcell._lc.is_streaming == True
     assert np.array_equal(
-        test_osl_al._loadcell._loadcell_matrix, constants.LOADCELL_MATRIX
+        test_osl_al._loadcell._loadcell_matrix, LOADCELL_MATRIX
     )
     assert test_osl_al._loadcell._loadcell_data == None
     assert test_osl_al._loadcell._prev_loadcell_data == None
@@ -305,7 +322,6 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     )
     assert test_osl_al._loadcell._zeroed == False
     assert test_osl_al._loadcell._log == test_osl_al.log
-
 
 @pytest.fixture
 def patch_exit(monkeypatch):
@@ -381,7 +397,7 @@ def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
     test_osl_u_loadcell = OpenSourceLeg()
     test_osl_u_loadcell.log = Logger(file_path="tests/test_osl/test_osl_u_loadcell")
     test_osl_u_loadcell.log.set_stream_level("DEBUG")
-    test_osl_u_loadcell.add_loadcell()
+    test_osl_u_loadcell.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_u_loadcell._loadcell._joint = joint_patched
     test_osl_u_loadcell._loadcell._joint._data = Data(
         genvar_0=1, genvar_1=2, genvar_2=3, genvar_3=4, genvar_4=5, genvar_5=6
@@ -571,7 +587,7 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
     """
 
     test_osl_cl = OpenSourceLeg()
-    test_osl_cl.add_loadcell()
+    test_osl_cl.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_cl._loadcell._zeroed = True
     test_osl_cl.log = Logger(file_path="tests/test_osl/test_osl_cl")
     test_osl_cl.log.set_stream_level("DEBUG")

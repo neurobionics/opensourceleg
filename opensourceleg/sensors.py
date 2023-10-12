@@ -132,7 +132,7 @@ class Loadcell:
         joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix: np.ndarray = constants.LOADCELL_MATRIX,
+        loadcell_matrix: np.ndarray = None,
         logger: "Logger" = None,  # type: ignore
     ) -> None:
         self._is_dephy: bool = dephy_mode

@@ -247,7 +247,7 @@ class OpenSourceLeg:
         joint: Joint = None,  # type: ignore
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix=constants.LOADCELL_MATRIX,
+        loadcell_matrix=None,
     ) -> None:
         """
         Add a loadcell to the OSL object.
@@ -265,15 +265,22 @@ class OpenSourceLeg:
         loadcell_matrix : np.ndarray, optional
             The loadcell calibration matrix, by default None
         """
-        self._has_loadcell = True
-        self._loadcell = Loadcell(
-            dephy_mode=dephy_mode,
-            joint=joint,
-            amp_gain=amp_gain,
-            exc=exc,
-            loadcell_matrix=loadcell_matrix,  # type: ignore
-            logger=self.log,
-        )
+        
+        if loadcell_matrix is None:
+            self.log.warning(msg="[OSL] Loadcell matrix is not specified. Please provide the loadcell calibration matrix to the add_loadcell method.")
+
+            exit()
+            
+        else:
+            self._loadcell = Loadcell(
+                dephy_mode=dephy_mode,
+                joint=joint,
+                amp_gain=amp_gain,
+                exc=exc,
+                loadcell_matrix=loadcell_matrix,  # type: ignore
+                logger=self.log,
+            )
+            self._has_loadcell = True
 
     def update(
         self,
