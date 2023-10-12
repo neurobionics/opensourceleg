@@ -230,13 +230,6 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     assert test_osl_ajop._knee.output_position == 0.0
     assert test_osl_ajop._knee.output_velocity == 0.0
     assert test_osl_ajop._knee.joint_torque == 0.0
-    assert test_osl_ajop._knee.motor_current_sp == 0.0
-    assert test_osl_ajop._knee.motor_voltage_sp == 0.0
-    assert test_osl_ajop._knee.motor_position_sp == 0.0
-    assert test_osl_ajop._knee.stiffness_sp == 200
-    assert test_osl_ajop._knee.damping_sp == 400
-    assert test_osl_ajop._knee.equilibirum_position_sp == 0.0
-    assert test_osl_ajop._knee.control_mode_sp == "voltage"
 
 
 def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_ports):
@@ -264,13 +257,6 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._knee.output_position == 0.0
     assert test_osl_aj._knee.output_velocity == 0.0
     assert test_osl_aj._knee.joint_torque == 0.0
-    assert test_osl_aj._knee.motor_current_sp == 0.0
-    assert test_osl_aj._knee.motor_voltage_sp == 0.0
-    assert test_osl_aj._knee.motor_position_sp == 0.0
-    assert test_osl_aj._knee.stiffness_sp == 200
-    assert test_osl_aj._knee.damping_sp == 400
-    assert test_osl_aj._knee.equilibirum_position_sp == 0.0
-    assert test_osl_aj._knee.control_mode_sp == "voltage"
     test_osl_aj.add_joint(name="ankle")
     assert test_osl_aj._has_ankle == True
     assert test_osl_aj._ankle.name == "ankle"
@@ -282,13 +268,6 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._ankle.output_position == 0.0
     assert test_osl_aj._ankle.output_velocity == 0.0
     assert test_osl_aj._ankle.joint_torque == 0.0
-    assert test_osl_aj._ankle.motor_current_sp == 0.0
-    assert test_osl_aj._ankle.motor_voltage_sp == 0.0
-    assert test_osl_aj._ankle.motor_position_sp == 0.0
-    assert test_osl_aj._ankle.stiffness_sp == 200
-    assert test_osl_aj._ankle.damping_sp == 400
-    assert test_osl_aj._ankle.equilibirum_position_sp == 0.0
-    assert test_osl_aj._ankle.control_mode_sp == "voltage"
     test_osl_aj.add_joint(name="loadcell")
     with open("tests/test_osl/test_osl_aj.log") as f:
         contents = f.read()

@@ -296,7 +296,7 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
     assert mock_dap.motor_zero_position == 0
     assert mock_dap.joint_zero_position == 0
     assert mock_dap.battery_voltage == 0
-    assert mock_dap.batter_current == 0
+    assert mock_dap.battery_current == 0
     assert mock_dap.motor_voltage == 0
     assert mock_dap.motor_current == 0
     assert mock_dap.motor_torque == 0
@@ -360,7 +360,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
         "impedance": ImpedanceMode(device=mock_dap1),
     }
     assert mock_dap1.battery_voltage == 10
-    assert mock_dap1.batter_current == 20
+    assert mock_dap1.battery_current == 20
     assert mock_dap1.motor_voltage == 10
     assert mock_dap1.motor_current == 20
     assert mock_dap1.motor_torque == 20 * 0.1133 / 1000

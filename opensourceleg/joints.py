@@ -42,17 +42,7 @@ class Joint(DephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._motor_voltage_sp = 0.0
-        self._motor_current_sp = 0.0
-        self._motor_position_sp = 0.0
-
-        self._stiffness_sp: int = 200
-        self._damping_sp: int = 400
-        self._equilibrium_position_sp = 0.0
-
         self._max_temperature: float = constants.MAX_CASE_TEMPERATURE
-
-        self._control_mode_sp: str = "voltage"
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -323,9 +313,6 @@ class Joint(DephyActpack):
 
         return pid_stiffness, pid_damping
 
-    def update_set_points(self) -> None:
-        self.set_mode(mode=self.control_mode_sp)
-
     @property
     def name(self) -> str:
         return self._name
@@ -360,30 +347,3 @@ class Joint(DephyActpack):
     def joint_torque(self) -> float:
         return self.motor_torque * self.gear_ratio
 
-    @property
-    def motor_current_sp(self) -> float:
-        return self._motor_current_sp
-
-    @property
-    def motor_voltage_sp(self) -> float:
-        return self._motor_voltage_sp
-
-    @property
-    def motor_position_sp(self) -> float:
-        return self._motor_position_sp
-
-    @property
-    def stiffness_sp(self) -> int:
-        return self._stiffness_sp
-
-    @property
-    def damping_sp(self) -> int:
-        return self._damping_sp
-
-    @property
-    def equilibirum_position_sp(self) -> float:
-        return self._equilibrium_position_sp
-
-    @property
-    def control_mode_sp(self) -> str:
-        return self._control_mode_sp

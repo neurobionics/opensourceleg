@@ -524,8 +524,6 @@ class DephyActpack(Device):
             ),
         )
 
-    # Read only properties from the actpack
-
     @property
     def units(self) -> UnitsDefinition:
         return self._units
@@ -561,7 +559,7 @@ class DephyActpack(Device):
             return 0.0
 
     @property
-    def batter_current(self) -> float:
+    def battery_current(self) -> float:
         if self._data is not None:
             return self._units.convert_from_default_units(
                 value=self._data.batt_curr,

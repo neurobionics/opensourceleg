@@ -8,31 +8,20 @@ ALL_UNITS = {
     "torque": {
         "N-m": 1.0,
         "lbf-in": 0.1129848290276167,
-        "lbf-ft": 1.3558179483314004,
         "kgf-cm": 0.0980665,
-        "kgf-m": 0.980665,
     },
     "stiffness": {
-        "N/rad": 1.0,
-        "N/deg": 0.017453292519943295,
-        "lbf/rad": 0.224809,
-        "lbf/deg": 0.003490659,
-        "kgf/rad": 1.8518518518518519,
-        "kgf/deg": 0.031746031746031744,
+        "N-m/rad": 1.0,
+        "N-m/deg": 0.017453292519943295,
     },
     "damping": {
-        "N/(rad/s)": 1.0,
-        "N/(deg/s)": 0.017453292519943295,
-        "lbf/(rad/s)": 0.224809,
-        "lbf/(deg/s)": 0.003490659,
-        "kgf/(rad/s)": 1.8518518518518519,
-        "kgf/(deg/s)": 0.031746031746031744,
+        "N-m/(rad/s)": 1.0,
+        "N-m/(deg/s)": 0.017453292519943295,
     },
     "length": {
         "m": 1.0,
         "cm": 0.01,
         "in": 0.0254,
-        "ft": 0.3048,
     },
     "position": {
         "rad": 1.0,
@@ -55,7 +44,6 @@ ALL_UNITS = {
     "time": {
         "s": 1.0,
         "ms": 0.001,
-        "us": 0.000001,
     },
     "current": {
         "mA": 1,
@@ -149,8 +137,8 @@ DEFAULT_UNITS = UnitsDefinition(
     {
         "force": "N",
         "torque": "N-m",
-        "stiffness": "N/rad",
-        "damping": "N/(rad/s)",
+        "stiffness": "Nm/rad",
+        "damping": "Nm/(rad/s)",
         "length": "m",
         "position": "rad",
         "mass": "kg",
