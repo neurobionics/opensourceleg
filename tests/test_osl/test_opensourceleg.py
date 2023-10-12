@@ -204,7 +204,7 @@ def test_osl_add_joint_no_ports(mock_get_active_ports0):
         with open("tests/test_osl/test_osl_ajnp.log") as f:
             contents = f.read()
             assert (
-                "WARNING: No active ports found, please ensure that the joint is connected and powered on."
+                "WARNING: No active ports found, please ensure that the motor is connected and powered on."
                 in contents
             )
     assert test_osl_ajnp._has_knee == False

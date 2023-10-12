@@ -188,6 +188,8 @@ class OpenSourceLeg:
                     dephy_log=dephy_log,
                 )
                 self._has_ankle = True
+            else:
+                self.log.warning(msg="[OSL] Joint name is not recognized.")
 
         else:
             if "knee" in name.lower():
