@@ -54,6 +54,7 @@ LOADCELL_MATRIX = np.array(
     ]
 )
 
+
 def test_opensourceleg_init(mock_time):
 
     """
@@ -312,9 +313,7 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     assert test_osl_al._loadcell._lc.addr == 0x66
     assert test_osl_al._loadcell._lc.indx == 0
     assert test_osl_al._loadcell._lc.is_streaming == True
-    assert np.array_equal(
-        test_osl_al._loadcell._loadcell_matrix, LOADCELL_MATRIX
-    )
+    assert np.array_equal(test_osl_al._loadcell._loadcell_matrix, LOADCELL_MATRIX)
     assert test_osl_al._loadcell._loadcell_data == None
     assert test_osl_al._loadcell._prev_loadcell_data == None
     assert np.array_equal(
@@ -322,6 +321,7 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     )
     assert test_osl_al._loadcell._zeroed == False
     assert test_osl_al._loadcell._log == test_osl_al.log
+
 
 @pytest.fixture
 def patch_exit(monkeypatch):

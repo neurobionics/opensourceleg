@@ -27,6 +27,7 @@ LOADCELL_MATRIX = np.array(
     ]
 )
 
+
 class MockSMBus:
 
     """
@@ -483,9 +484,7 @@ def test_mockloadcell_init():
     assert test_loadcell_default._adc_range == 2**12 - 1
     assert test_loadcell_default._offset == (2**12) / 2
     assert test_loadcell_default._lc != None
-    assert np.array_equal(
-        test_loadcell_default._loadcell_matrix, LOADCELL_MATRIX
-    )
+    assert np.array_equal(test_loadcell_default._loadcell_matrix, LOADCELL_MATRIX)
     assert test_loadcell_default._loadcell_data == None
     assert test_loadcell_default._prev_loadcell_data == None
     assert np.array_equal(

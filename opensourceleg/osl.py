@@ -265,12 +265,14 @@ class OpenSourceLeg:
         loadcell_matrix : np.ndarray, optional
             The loadcell calibration matrix, by default None
         """
-        
+
         if loadcell_matrix is None:
-            self.log.warning(msg="[OSL] Loadcell matrix is not specified. Please provide the loadcell calibration matrix to the add_loadcell method.")
+            self.log.warning(
+                msg="[OSL] Loadcell matrix is not specified. Please provide the loadcell calibration matrix to the add_loadcell method."
+            )
 
             exit()
-            
+
         else:
             self._loadcell = Loadcell(
                 dephy_mode=dephy_mode,
