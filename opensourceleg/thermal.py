@@ -85,14 +85,14 @@ class ThermalModel:
 
         Args:
             dt (float): Time step in seconds. Defaults to 1/200.
-            motor_current (float): Current in mA. Defaults to 0.
+            motor_current (float): Motor current in mA. Defaults to 0.
 
         Dynamics:
             1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
             2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
         """
 
-        I_q_des: float = motor_current * 1e-3
+        I_q_des: float = motor_current
 
         I2R = (
             I_q_des**2 * self.R_ϕ_0 * (1 + self.α * (self.T_w - self.R_T_0))
@@ -105,13 +105,13 @@ class ThermalModel:
         self.T_w += dt * dTw_dt
         self.T_c += dt * dTc_dt
 
-    def update_and_get_scale(self, dt, motor_current: float = 0, FOS=3.0):
+    def update_and_get_scale(self, dt, motor_current: float = 0, FOS: float = 1.0):
         """
         Updates the temperature of the winding and the case based on the current and the ambient temperature and returns the scale factor for the torque.
 
         Args:
             dt (float): Time step in seconds.
-            motor_current (float): Current in mA. Defaults to 0.
+            motor_current (float): Motor current in mA. Defaults to 0.
             FOS (float): Factor of safety. Defaults to 3.0.
 
         Returns:
@@ -122,7 +122,7 @@ class ThermalModel:
             2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
         """
 
-        I_q_des: float = motor_current * 1e-3
+        I_q_des: float = motor_current
 
         I2R_des = (
             FOS * I_q_des**2 * self.R_ϕ_0 * (1 + self.α * (self.T_w - self.R_T_0))

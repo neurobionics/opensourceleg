@@ -323,6 +323,7 @@ class DephyActpack(Device):
             temp_limit_case=70,
             soft_border_C_case=10,
         )
+        self._thermal_scale: float = 1.0
 
         self._modes: dict[str, ActpackMode] = {
             "voltage": VoltageMode(device=self),
@@ -364,8 +365,11 @@ class DephyActpack(Device):
             self._thermal_model.T_c = self._units.convert_to_default_units(
                 value=self.case_temperature, attribute="temperature"
             )
-            self._thermal_model.update(
-                dt=(1 / self._frequency), motor_current=self.motor_current
+            self._thermal_scale = self._thermal_model.update_and_get_scale(
+                dt=(1 / self._frequency),
+                motor_current=self._units.convert_to_default_units(
+                    value=self.motor_current, attribute="current"
+                ),
             )
         else:
             self._log.warning(
@@ -677,6 +681,10 @@ class DephyActpack(Device):
             )
         else:
             return 0.0
+
+    @property
+    def thermal_scaling_factor(self) -> float:
+        return self._thermal_scale
 
     @property
     def genvars(self):
