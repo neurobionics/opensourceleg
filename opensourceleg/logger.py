@@ -1,3 +1,5 @@
+from typing import Union
+
 import csv
 import logging
 from logging.handlers import RotatingFileHandler
@@ -8,7 +10,7 @@ class Logger(logging.Logger):
     Logger class is a class that logs attributes from a class to a csv file
 
     Methods:
-        __init__(self, class_instance: object, file_path: str, logger: logging.Logger = None) -> None
+        __init__(self, container: object, file_path: str, logger: logging.Logger = None) -> None
         log(self) -> None
     """
 
@@ -20,7 +22,7 @@ class Logger(logging.Logger):
 
         self._file_path: str = file_path + ".log"
 
-        self._class_instances = []
+        self._containers = []
         self._attributes = []
 
         self._file = open(file_path + ".csv", "w")
@@ -81,15 +83,18 @@ class Logger(logging.Logger):
 
         self._stream_handler.setLevel(level=self._log_levels[level])
 
-    def add_attributes(self, class_instance: object, attributes: list[str]) -> None:
+    def add_attributes(
+        self, container: Union[object, dict], attributes: list[str]
+    ) -> None:
         """
         Adds class instance and attributes to log
 
         Args:
-            class_instance (object): Class instance to log the attributes of
+            container (object, dict): Container can either be an object (instance of a class)
+                or a Dict containing the attributes to be logged.
             attributes (list[str]): List of attributes to log
         """
-        self._class_instances.append(class_instance)
+        self._containers.append(container)
 
         if not isinstance(attributes, list):
             self.warning(
@@ -107,18 +112,20 @@ class Logger(logging.Logger):
         data = []
 
         if not self._is_logging:
-            for class_instance, attributes in zip(
-                self._class_instances, self._attributes
-            ):
+            for container, attributes in zip(self._containers, self._attributes):
                 for attribute in attributes:
                     header_data.append(f"{attribute}")
 
             self._writer.writerow(header_data)
             self._is_logging = True
 
-        for class_instance, attributes in zip(self._class_instances, self._attributes):
-            for attribute in attributes:
-                data.append(getattr(class_instance, attribute))
+        for container, attributes in zip(self._containers, self._attributes):
+            if isinstance(container, dict):
+                for attribute in attributes:
+                    data.append(container.get(attribute))
+            else:
+                for attribute in attributes:
+                    data.append(getattr(container, attribute))
 
         self._writer.writerow(data)
         self._file.flush()
@@ -128,3 +135,21 @@ class Logger(logging.Logger):
         Closes the csv file
         """
         self._file.close()
+
+
+if __name__ == "__main__":
+    local_logger = Logger(file_path="./test_log")
+    local_variable_1 = 100
+    local_variable_2 = 101200
+
+    class SimpleClass:
+        def __init__(self):
+            self.a = 1
+            self.b = 2
+            self.c = 3
+
+    simple_class = SimpleClass()
+
+    local_logger.add_attributes(locals(), ["local_variable_1", "local_variable_2"])
+    local_logger.add_attributes(simple_class, ["a", "b", "c"])
+    local_logger.data()

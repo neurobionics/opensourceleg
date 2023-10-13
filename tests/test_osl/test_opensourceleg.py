@@ -541,7 +541,7 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
     test_osl_u_ld._knee.is_streaming = True
     test_class_instance = Simple_Class()
     test_osl_u_ld.log.add_attributes(
-        class_instance=test_class_instance, attributes=["a", "b", "c"]
+        container=test_class_instance, attributes=["a", "b", "c"]
     )
     test_osl_u_ld.update(log_data=True)
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]

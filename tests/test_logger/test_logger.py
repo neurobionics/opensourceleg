@@ -25,7 +25,7 @@ def test_init():
     """
 
     test_Logger_default = Logger(file_path="tests/test_logger/test_log_default")
-    assert test_Logger_default._class_instances == []
+    assert test_Logger_default._containers == []
     assert test_Logger_default._attributes == []
 
 
@@ -90,22 +90,18 @@ def test_add_attributes():
     """
 
     # Initializes SimpleClass instances to use in the following tests
-    test_class_instance = Simple_Class()
-    test_class_instance2 = Simple_Class()
+    test_container = Simple_Class()
+    test_container2 = Simple_Class()
 
     # Asserts the add_attributes method works properly when passed a single class instance
     test_Logger1 = Logger(file_path="tests/test_logger/test_log1")
-    test_Logger1.add_attributes(
-        class_instance=test_class_instance, attributes=["a", "b", "c"]
-    )
+    test_Logger1.add_attributes(container=test_container, attributes=["a", "b", "c"])
 
     # Asserts the add_attributes method works properly when a class instance is passed multiple times
-    assert test_Logger1._class_instances == [test_class_instance]
+    assert test_Logger1._containers == [test_container]
     assert test_Logger1._attributes == [["a", "b", "c"]]
-    test_Logger1.add_attributes(
-        class_instance=test_class_instance2, attributes=["a", "b", "c"]
-    )
-    assert test_Logger1._class_instances == [test_class_instance, test_class_instance2]
+    test_Logger1.add_attributes(container=test_container2, attributes=["a", "b", "c"])
+    assert test_Logger1._containers == [test_container, test_container2]
     assert test_Logger1._attributes == [["a", "b", "c"], ["a", "b", "c"]]
 
 
@@ -133,11 +129,11 @@ def test_data():
     """
 
     # Initializes SimpleClass instances to use in the following tests
-    test_class_instance = Simple_Class()
-    test_class_instance2 = Simple_Class()
+    test_container = Simple_Class()
+    test_container2 = Simple_Class()
     test_Logger_data = Logger(file_path="tests/test_logger/test_log_data")
     test_Logger_data.add_attributes(
-        class_instance=test_class_instance, attributes=["a", "b", "c"]
+        container=test_container, attributes=["a", "b", "c"]
     )
     # Asserts the data method works properly when passed a single class instance
     test_Logger_data.data()
@@ -148,7 +144,7 @@ def test_data():
         assert rows == expected_rows
 
     test_Logger_data.add_attributes(
-        class_instance=test_class_instance2, attributes=["a", "b", "c"]
+        container=test_container2, attributes=["a", "b", "c"]
     )
     # Asserts the data method works properly when passed multiple class instances
     test_Logger_data.data()
