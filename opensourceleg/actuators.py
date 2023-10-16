@@ -9,17 +9,18 @@ import numpy as np
 from flexsea.device import Device
 
 import opensourceleg.constants as constants
-from opensourceleg.control import (
-    DEFAULT_CURRENT_GAINS,
-    DEFAULT_IMPEDANCE_GAINS,
-    DEFAULT_POSITION_GAINS,
-    ControlModes,
-)
+from opensourceleg.control import ControlModes, Gains
 from opensourceleg.logger import Logger
 from opensourceleg.thermal import ThermalModel
 from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 CONTROL_MODE = ControlModes()
+
+DEFAULT_POSITION_GAINS = Gains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
+
+DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
+
+DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
 class ActpackMode:
