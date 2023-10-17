@@ -17,6 +17,7 @@ from opensourceleg.actuators import (
 from opensourceleg.logger import Logger
 from opensourceleg.thermal import ThermalModel
 
+
 # MockDephyActpack class definition for testing
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 class MockDephyActpack(DephyActpack):
@@ -57,7 +58,7 @@ class MockDephyActpack(DephyActpack):
 
         self._log: Logger = logger
         self._state = None
-        
+
         # New attributes to be used for testing
 
         # This is used in the open() method to display the port the device should be connected to

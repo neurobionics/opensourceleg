@@ -551,7 +551,7 @@ class DephyActpack(Device):
     @property
     def motor_torque(self) -> float:
         if self._data is not None:
-            return (self._data.mot_cur * constants.NM_PER_MILLIAMP)
+            return self._data.mot_cur * constants.NM_PER_MILLIAMP
         else:
             return 0.0
 
