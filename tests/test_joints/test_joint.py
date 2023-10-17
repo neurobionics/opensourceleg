@@ -14,7 +14,6 @@ from opensourceleg.actuators import (
 )
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from tests.test_actuators.test_dephyactpack import (
     Data,
     MockDephyActpack,
@@ -52,7 +51,6 @@ class MockJoint(Joint, MockDephyActpack):
         gear_ratio: float = 41.4999,
         has_loadcell: bool = False,
         logger: Logger = Logger(),
-        units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:

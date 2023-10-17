@@ -16,8 +16,6 @@ from opensourceleg.actuators import (
 )
 from opensourceleg.logger import Logger
 from opensourceleg.thermal import ThermalModel
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
-
 
 # MockDephyActpack class definition for testing
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
@@ -38,7 +36,6 @@ class MockDephyActpack(DephyActpack):
         baud_rate: int = 230400,
         frequency: int = 500,
         logger: Logger = Logger(),
-        units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -50,7 +47,6 @@ class MockDephyActpack(DephyActpack):
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
             logger (Logger): _description_
-            units (UnitsDefinition): _description_
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
         """
@@ -61,8 +57,7 @@ class MockDephyActpack(DephyActpack):
 
         self._log: Logger = logger
         self._state = None
-        self._units: UnitsDefinition = units if units else DEFAULT_UNITS
-
+        
         # New attributes to be used for testing
 
         # This is used in the open() method to display the port the device should be connected to
@@ -284,7 +279,6 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
 
     mock_dap = dephyactpack_patched
 
-    assert mock_dap.units == DEFAULT_UNITS
     assert mock_dap.frequency == 500
     assert mock_dap.mode == VoltageMode(device=mock_dap)
     assert mock_dap.modes == {

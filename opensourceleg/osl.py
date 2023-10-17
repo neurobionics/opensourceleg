@@ -11,7 +11,6 @@ import opensourceleg.utilities as utilities
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 from opensourceleg.sensors import Loadcell
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 
 
@@ -66,7 +65,6 @@ class OpenSourceLeg:
         )
 
         self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
-        self._units: UnitsDefinition = DEFAULT_UNITS
 
         self._timestamp: float = time.time()
 
@@ -160,7 +158,6 @@ class OpenSourceLeg:
                     gear_ratio=gear_ratio,
                     has_loadcell=has_loadcell,
                     logger=self.log,
-                    units=self.units,
                     debug_level=debug_level,
                     dephy_log=dephy_log,
                 )
@@ -183,7 +180,6 @@ class OpenSourceLeg:
                     gear_ratio=gear_ratio,
                     has_loadcell=has_loadcell,
                     logger=self.log,
-                    units=self.units,
                     debug_level=debug_level,
                     dephy_log=dephy_log,
                 )
@@ -209,7 +205,6 @@ class OpenSourceLeg:
                     gear_ratio=gear_ratio,
                     has_loadcell=has_loadcell,
                     logger=self.log,
-                    units=self.units,
                     debug_level=debug_level,
                     dephy_log=dephy_log,
                 )
@@ -232,7 +227,6 @@ class OpenSourceLeg:
                     gear_ratio=gear_ratio,
                     has_loadcell=has_loadcell,
                     logger=self.log,
-                    units=self.units,
                     debug_level=debug_level,
                     dephy_log=dephy_log,
                 )
@@ -382,10 +376,6 @@ class OpenSourceLeg:
             self.log.warning(msg="[OSL] Loadcell is not connected.")
 
     @property
-    def units(self) -> UnitsDefinition:
-        return self._units
-
-    @property
     def has_knee(self) -> bool:
         return self._has_knee
 
@@ -404,8 +394,6 @@ class OpenSourceLeg:
 
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=200)
-
-    osl.units["position"] = "deg"  # type: ignore
 
     osl.add_joint(
         name="knee",

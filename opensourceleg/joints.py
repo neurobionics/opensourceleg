@@ -6,7 +6,6 @@ import numpy as np
 import opensourceleg.constants as constants
 from opensourceleg.actuators import DephyActpack
 from opensourceleg.logger import Logger
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 
 class Joint(DephyActpack):
@@ -19,7 +18,6 @@ class Joint(DephyActpack):
         gear_ratio: float = 41.4999,
         has_loadcell: bool = False,
         logger: Logger = Logger(),
-        units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -29,7 +27,6 @@ class Joint(DephyActpack):
             baud_rate=baud_rate,
             frequency=frequency,
             logger=logger,
-            units=units,
             debug_level=debug_level,
             dephy_log=dephy_log,
         )
@@ -203,9 +200,7 @@ class Joint(DephyActpack):
         Args:
             temperature (float): temperature in degrees Celsius
         """
-        self._max_temperature = self._units.convert_to_default_units(
-            value=temperature, attribute="temperature"
-        )
+        self._max_temperature = temperature
 
     def set_output_torque(self, torque: float) -> None:
         """
@@ -213,7 +208,7 @@ class Joint(DephyActpack):
         This is the torque that is applied to the joint, not the motor.
 
         Args:
-            torque (float): torque in user-defined units
+            torque (float): torque in N_m
         """
         self.set_motor_torque(torque=torque / self.gear_ratio)
 
@@ -223,7 +218,7 @@ class Joint(DephyActpack):
         This is the desired position of the joint, not the motor.
 
         Args:
-            position (float): position in user-defined units
+            position (float): position in radians
         """
         self.set_motor_position(position=position * self.gear_ratio)
 
@@ -323,9 +318,7 @@ class Joint(DephyActpack):
 
     @property
     def max_temperature(self) -> float:
-        return self._units.convert_from_default_units(
-            value=self._max_temperature, attribute="temperature"
-        )
+        return self._max_temperature
 
     @property
     def is_homed(self) -> bool:

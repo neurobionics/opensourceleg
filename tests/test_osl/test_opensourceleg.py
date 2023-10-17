@@ -16,7 +16,6 @@ from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.sensors import Loadcell
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import (
@@ -74,7 +73,6 @@ def test_opensourceleg_init(mock_time):
     assert test_osl._ankle == None
     assert test_osl._loadcell == None
     # assert test_osl.clock
-    assert test_osl._units == DEFAULT_UNITS
     assert test_osl._timestamp == 1.0
 
 
@@ -351,7 +349,7 @@ def test_osl_update_knee(
     test_osl_u_knee.add_joint(name="knee")
     test_osl_u_knee._knee._data = Data()
     test_osl_u_knee._knee.is_streaming = True
-    test_osl_u_knee._knee._max_temperature = 1
+    test_osl_u_knee._knee._max_temperature = 1.0
     test_osl_u_knee.update()
     assert test_osl_u_knee._knee._data.batt_volt == 15
     with open("tests/test_osl/test_osl_u_knee.log") as f:
@@ -376,7 +374,7 @@ def test_osl_update_ankle(
     test_osl_u_ankle.add_joint(name="ankle")
     test_osl_u_ankle._ankle._data = Data()
     test_osl_u_ankle._ankle.is_streaming = True
-    test_osl_u_ankle._ankle._max_temperature = 1
+    test_osl_u_ankle._ankle._max_temperature = 1.0
     test_osl_u_ankle.update()
     assert test_osl_u_ankle._ankle._data.batt_volt == 15
     with open("tests/test_osl/test_osl_u_ankle.log") as f:
@@ -680,7 +678,6 @@ def test_osl_properties(mock_time):
     with open("tests/test_osl/test_osl_prop.log") as f:
         contents = f.read()
         assert "WARNING: [OSL] Loadcell is not connected." in contents
-    assert test_osl_prop.units == DEFAULT_UNITS
     assert test_osl_prop.has_knee == False
     assert test_osl_prop.has_ankle == False
     assert test_osl_prop.has_loadcell == False

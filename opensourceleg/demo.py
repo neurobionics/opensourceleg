@@ -137,8 +137,6 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
 
 def finite_state_machine_controller():
     osl = OpenSourceLeg(frequency=200)
-    osl.units["position"] = "deg"  # type: ignore
-    osl.units["velocity"] = "deg/s"  # type: ignore
 
     osl.add_joint(
         name="knee",
