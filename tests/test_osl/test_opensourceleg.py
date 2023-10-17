@@ -16,7 +16,6 @@ from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.sensors import Loadcell
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from opensourceleg.utilities import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import (
@@ -35,6 +34,24 @@ from tests.test_sensors.test_sensors import (
     patch_loadcell,
 )
 from tests.test_state_machine.test_state_machine import mock_time
+
+LOADCELL_MATRIX = np.array(
+    [
+        (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
+        (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
+        (
+            -1047.16800,
+            8.63900,
+            -1047.28200,
+            -20.70000,
+            -1073.08800,
+            -8.92300,
+        ),
+        (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
+        (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
+        (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
+    ]
+)
 
 
 def test_opensourceleg_init(mock_time):
@@ -56,7 +73,6 @@ def test_opensourceleg_init(mock_time):
     assert test_osl._ankle == None
     assert test_osl._loadcell == None
     # assert test_osl.clock
-    assert test_osl._units == DEFAULT_UNITS
     assert test_osl._timestamp == 1.0
 
 
@@ -83,7 +99,7 @@ def test_osl_enter(
     test_osl_ent.log.set_stream_level("DEBUG")
     test_osl_ent.add_joint(name="knee")
     test_osl_ent.add_joint(name="ankle")
-    test_osl_ent.add_loadcell()
+    test_osl_ent.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_ent._knee._data = Data(
         batt_volt=10,
         batt_curr=10,
@@ -204,7 +220,7 @@ def test_osl_add_joint_no_ports(mock_get_active_ports0):
         with open("tests/test_osl/test_osl_ajnp.log") as f:
             contents = f.read()
             assert (
-                "WARNING: No active ports found, please ensure that the joint is connected and powered on."
+                "WARNING: No active ports found, please ensure that the motor is connected and powered on."
                 in contents
             )
     assert test_osl_ajnp._has_knee == False
@@ -230,13 +246,6 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     assert test_osl_ajop._knee.output_position == 0.0
     assert test_osl_ajop._knee.output_velocity == 0.0
     assert test_osl_ajop._knee.joint_torque == 0.0
-    assert test_osl_ajop._knee.motor_current_sp == 0.0
-    assert test_osl_ajop._knee.motor_voltage_sp == 0.0
-    assert test_osl_ajop._knee.motor_position_sp == 0.0
-    assert test_osl_ajop._knee.stiffness_sp == 200
-    assert test_osl_ajop._knee.damping_sp == 400
-    assert test_osl_ajop._knee.equilibirum_position_sp == 0.0
-    assert test_osl_ajop._knee.control_mode_sp == "voltage"
 
 
 def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_ports):
@@ -264,13 +273,6 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._knee.output_position == 0.0
     assert test_osl_aj._knee.output_velocity == 0.0
     assert test_osl_aj._knee.joint_torque == 0.0
-    assert test_osl_aj._knee.motor_current_sp == 0.0
-    assert test_osl_aj._knee.motor_voltage_sp == 0.0
-    assert test_osl_aj._knee.motor_position_sp == 0.0
-    assert test_osl_aj._knee.stiffness_sp == 200
-    assert test_osl_aj._knee.damping_sp == 400
-    assert test_osl_aj._knee.equilibirum_position_sp == 0.0
-    assert test_osl_aj._knee.control_mode_sp == "voltage"
     test_osl_aj.add_joint(name="ankle")
     assert test_osl_aj._has_ankle == True
     assert test_osl_aj._ankle.name == "ankle"
@@ -282,13 +284,6 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._ankle.output_position == 0.0
     assert test_osl_aj._ankle.output_velocity == 0.0
     assert test_osl_aj._ankle.joint_torque == 0.0
-    assert test_osl_aj._ankle.motor_current_sp == 0.0
-    assert test_osl_aj._ankle.motor_voltage_sp == 0.0
-    assert test_osl_aj._ankle.motor_position_sp == 0.0
-    assert test_osl_aj._ankle.stiffness_sp == 200
-    assert test_osl_aj._ankle.damping_sp == 400
-    assert test_osl_aj._ankle.equilibirum_position_sp == 0.0
-    assert test_osl_aj._ankle.control_mode_sp == "voltage"
     test_osl_aj.add_joint(name="loadcell")
     with open("tests/test_osl/test_osl_aj.log") as f:
         contents = f.read()
@@ -304,7 +299,7 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     """
 
     test_osl_al = OpenSourceLeg()
-    test_osl_al.add_loadcell()
+    test_osl_al.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     assert test_osl_al._has_loadcell == True
     assert test_osl_al._loadcell._is_dephy == False
     assert test_osl_al._loadcell._joint == None
@@ -316,9 +311,7 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
     assert test_osl_al._loadcell._lc.addr == 0x66
     assert test_osl_al._loadcell._lc.indx == 0
     assert test_osl_al._loadcell._lc.is_streaming == True
-    assert np.array_equal(
-        test_osl_al._loadcell._loadcell_matrix, constants.LOADCELL_MATRIX
-    )
+    assert np.array_equal(test_osl_al._loadcell._loadcell_matrix, LOADCELL_MATRIX)
     assert test_osl_al._loadcell._loadcell_data == None
     assert test_osl_al._loadcell._prev_loadcell_data == None
     assert np.array_equal(
@@ -356,7 +349,7 @@ def test_osl_update_knee(
     test_osl_u_knee.add_joint(name="knee")
     test_osl_u_knee._knee._data = Data()
     test_osl_u_knee._knee.is_streaming = True
-    test_osl_u_knee._knee._max_temperature = 1
+    test_osl_u_knee._knee._max_temperature = 1.0
     test_osl_u_knee.update()
     assert test_osl_u_knee._knee._data.batt_volt == 15
     with open("tests/test_osl/test_osl_u_knee.log") as f:
@@ -381,7 +374,7 @@ def test_osl_update_ankle(
     test_osl_u_ankle.add_joint(name="ankle")
     test_osl_u_ankle._ankle._data = Data()
     test_osl_u_ankle._ankle.is_streaming = True
-    test_osl_u_ankle._ankle._max_temperature = 1
+    test_osl_u_ankle._ankle._max_temperature = 1.0
     test_osl_u_ankle.update()
     assert test_osl_u_ankle._ankle._data.batt_volt == 15
     with open("tests/test_osl/test_osl_u_ankle.log") as f:
@@ -402,7 +395,7 @@ def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
     test_osl_u_loadcell = OpenSourceLeg()
     test_osl_u_loadcell.log = Logger(file_path="tests/test_osl/test_osl_u_loadcell")
     test_osl_u_loadcell.log.set_stream_level("DEBUG")
-    test_osl_u_loadcell.add_loadcell()
+    test_osl_u_loadcell.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_u_loadcell._loadcell._joint = joint_patched
     test_osl_u_loadcell._loadcell._joint._data = Data(
         genvar_0=1, genvar_1=2, genvar_2=3, genvar_3=4, genvar_4=5, genvar_5=6
@@ -546,7 +539,7 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
     test_osl_u_ld._knee.is_streaming = True
     test_class_instance = Simple_Class()
     test_osl_u_ld.log.add_attributes(
-        class_instance=test_class_instance, attributes_str=["a", "b", "c"]
+        container=test_class_instance, attributes=["a", "b", "c"]
     )
     test_osl_u_ld.update(log_data=True)
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
@@ -592,7 +585,7 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
     """
 
     test_osl_cl = OpenSourceLeg()
-    test_osl_cl.add_loadcell()
+    test_osl_cl.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_cl._loadcell._zeroed = True
     test_osl_cl.log = Logger(file_path="tests/test_osl/test_osl_cl")
     test_osl_cl.log.set_stream_level("DEBUG")
@@ -685,7 +678,6 @@ def test_osl_properties(mock_time):
     with open("tests/test_osl/test_osl_prop.log") as f:
         contents = f.read()
         assert "WARNING: [OSL] Loadcell is not connected." in contents
-    assert test_osl_prop.units == DEFAULT_UNITS
     assert test_osl_prop.has_knee == False
     assert test_osl_prop.has_ankle == False
     assert test_osl_prop.has_loadcell == False

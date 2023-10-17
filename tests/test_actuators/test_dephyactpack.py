@@ -16,7 +16,6 @@ from opensourceleg.actuators import (
 )
 from opensourceleg.logger import Logger
 from opensourceleg.thermal import ThermalModel
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 
 
 # MockDephyActpack class definition for testing
@@ -38,7 +37,6 @@ class MockDephyActpack(DephyActpack):
         baud_rate: int = 230400,
         frequency: int = 500,
         logger: Logger = Logger(),
-        units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -50,7 +48,6 @@ class MockDephyActpack(DephyActpack):
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
             logger (Logger): _description_
-            units (UnitsDefinition): _description_
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
         """
@@ -61,7 +58,6 @@ class MockDephyActpack(DephyActpack):
 
         self._log: Logger = logger
         self._state = None
-        self._units: UnitsDefinition = units if units else DEFAULT_UNITS
 
         # New attributes to be used for testing
 
@@ -284,7 +280,6 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
 
     mock_dap = dephyactpack_patched
 
-    assert mock_dap.units == DEFAULT_UNITS
     assert mock_dap.frequency == 500
     assert mock_dap.mode == VoltageMode(device=mock_dap)
     assert mock_dap.modes == {
@@ -296,7 +291,7 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
     assert mock_dap.motor_zero_position == 0
     assert mock_dap.joint_zero_position == 0
     assert mock_dap.battery_voltage == 0
-    assert mock_dap.batter_current == 0
+    assert mock_dap.battery_current == 0
     assert mock_dap.motor_voltage == 0
     assert mock_dap.motor_current == 0
     assert mock_dap.motor_torque == 0
@@ -360,7 +355,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
         "impedance": ImpedanceMode(device=mock_dap1),
     }
     assert mock_dap1.battery_voltage == 10
-    assert mock_dap1.batter_current == 20
+    assert mock_dap1.battery_current == 20
     assert mock_dap1.motor_voltage == 10
     assert mock_dap1.motor_current == 20
     assert mock_dap1.motor_torque == 20 * 0.1133 / 1000
@@ -760,7 +755,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
         mock_dap11._thermal_model.T_w
         == (
             (
-                (((28e-3) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
+                (((28) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
                 + (27 - 21) / 1.0702867186480716
             )
             / (0.20 * 81.46202695970649)

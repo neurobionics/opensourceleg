@@ -14,7 +14,6 @@ from opensourceleg.actuators import (
 )
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
-from opensourceleg.units import DEFAULT_UNITS, UnitsDefinition
 from tests.test_actuators.test_dephyactpack import (
     Data,
     MockDephyActpack,
@@ -52,7 +51,6 @@ class MockJoint(Joint, MockDephyActpack):
         gear_ratio: float = 41.4999,
         has_loadcell: bool = False,
         logger: Logger = Logger(),
-        units: UnitsDefinition = DEFAULT_UNITS,
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -66,17 +64,7 @@ class MockJoint(Joint, MockDephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._motor_voltage_sp = 0.0
-        self._motor_current_sp = 0.0
-        self._motor_position_sp = 0.0
-
-        self._stiffness_sp: int = 200
-        self._damping_sp: int = 400
-        self._equilibrium_position_sp = 0.0
-
         self._max_temperature: float = constants.MAX_CASE_TEMPERATURE
-
-        self._control_mode_sp: str = "voltage"
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -106,14 +94,7 @@ def test_mockjoint_init():
     assert mji._encoder_map == None
     assert mji._motor_zero_pos == 0.0
     assert mji._joint_zero_pos == 0.0
-    assert mji._motor_voltage_sp == 0.0
-    assert mji._motor_current_sp == 0.0
-    assert mji._motor_position_sp == 0.0
-    assert mji._stiffness_sp == 200
-    assert mji._damping_sp == 400
-    assert mji._equilibrium_position_sp == 0.0
     assert mji._max_temperature == constants.MAX_CASE_TEMPERATURE
-    assert mji._control_mode_sp == "voltage"
     assert mji._name == "knee"
 
     # mji2 = MockJoint(name="invalid")
@@ -520,32 +501,6 @@ def test_convert_to_pid_impedance(joint_patched: Joint):
     )
 
 
-def test_update_set_points(joint_patched: Joint):
-
-    """
-    Test the update_set_points method of the Joint class\n
-    This test creates an instance of the MockJoint class and sets the _control_mode_sp
-    attribute to "current". The update_set_points method is called. It then asserts the
-    proper mode is set. The _control_mode_sp attribute is set to "position". The
-    update_set_points method is called. It then asserts the proper mode is set. The
-    _control_mode_sp attribute is set to "impedance". The update_set_points method is
-    called. It then asserts the proper mode is set.
-    """
-
-    jp12 = joint_patched
-    # Assert the proper mode is set when the control mode is set to the correponding modes
-    assert jp12._mode == VoltageMode(device=jp12)
-    jp12._control_mode_sp = "current"
-    jp12.update_set_points()
-    assert jp12._mode == CurrentMode(device=jp12)
-    jp12._control_mode_sp = "position"
-    jp12.update_set_points()
-    assert jp12._mode == PositionMode(device=jp12)
-    jp12._control_mode_sp = "impedance"
-    jp12.update_set_points()
-    assert jp12._mode == ImpedanceMode(device=jp12)
-
-
 def test_mockjoint_default_properties(joint_patched: Joint):
 
     """
@@ -563,13 +518,6 @@ def test_mockjoint_default_properties(joint_patched: Joint):
     assert jp1.output_position == 0.0
     assert jp1.output_velocity == 0.0
     assert jp1.joint_torque == 0.0
-    assert jp1.motor_current_sp == 0.0
-    assert jp1.motor_voltage_sp == 0.0
-    assert jp1.motor_position_sp == 0.0
-    assert jp1.stiffness_sp == 200
-    assert jp1.damping_sp == 400
-    assert jp1.equilibirum_position_sp == 0.0
-    assert jp1.control_mode_sp == "voltage"
 
 
 def test_mockjoint_nondefaultproperties(joint_patched):
@@ -587,13 +535,6 @@ def test_mockjoint_nondefaultproperties(joint_patched):
     jp2._max_temperature = 100.0
     jp2._is_homed = True
     # jp2._encoder_map = np.polynomial.polynomial.Polynomial(coef=[1, 2, 3])
-    jp2._motor_current_sp = 2.0
-    jp2._motor_voltage_sp = 3.0
-    jp2._motor_position_sp = 4.0
-    jp2._stiffness_sp = 300
-    jp2._damping_sp = 500
-    jp2._equilibrium_position_sp = 6.0
-    jp2._control_mode_sp = "current"
 
     assert jp2.name == "ankle"
     assert jp2.gear_ratio == 50.0
@@ -603,10 +544,3 @@ def test_mockjoint_nondefaultproperties(joint_patched):
     assert jp2.output_position == 20 * 2 * np.pi / 16384 / 50
     assert jp2.output_velocity == 10 * 2 * np.pi / 16384 / 50
     assert jp2.joint_torque == 20 * 0.1133 / 1000 * 50
-    assert jp2.motor_current_sp == 2.0
-    assert jp2.motor_voltage_sp == 3.0
-    assert jp2.motor_position_sp == 4.0
-    assert jp2.stiffness_sp == 300
-    assert jp2.damping_sp == 500
-    assert jp2.equilibirum_position_sp == 6.0
-    assert jp2.control_mode_sp == "current"
