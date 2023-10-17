@@ -3,8 +3,13 @@ import time
 
 import numpy as np
 
-import opensourceleg.constants as constants
-from opensourceleg.actuators import DephyActpack
+from opensourceleg.actuators import (
+    MAX_CASE_TEMPERATURE,
+    NM_PER_RAD_TO_K,
+    NM_S_PER_RAD_TO_B,
+    RAD_PER_COUNT,
+    DephyActpack,
+)
 from opensourceleg.logger import Logger
 
 
@@ -39,7 +44,7 @@ class Joint(DephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = constants.MAX_CASE_TEMPERATURE
+        self._max_temperature: float = MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -115,10 +120,8 @@ class Joint(DephyActpack):
         time.sleep(0.1)
 
         if "ankle" in self._name.lower():
-            _zero_pos: int = int(
-                (np.deg2rad(30) * self.gear_ratio) / constants.RAD_PER_COUNT
-            )
-            _zero_pos_joint: int = int(np.deg2rad(30) / constants.RAD_PER_COUNT)
+            _zero_pos: int = int((np.deg2rad(30) * self.gear_ratio) / RAD_PER_COUNT)
+            _zero_pos_joint: int = int(np.deg2rad(30) / RAD_PER_COUNT)
         else:
             _zero_pos: int = 0
             _zero_pos_joint: int = 0
@@ -243,8 +246,8 @@ class Joint(DephyActpack):
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
-            K=int(K * constants.NM_PER_RAD_TO_K),
-            B=int(B * constants.NM_S_PER_RAD_TO_B),
+            K=int(K * NM_PER_RAD_TO_K),
+            B=int(B * NM_S_PER_RAD_TO_B),
             ff=ff,
         )
 
@@ -283,8 +286,8 @@ class Joint(DephyActpack):
         K: float = 100,
         B: float = 40,
     ):
-        joint_stiffness = (K / constants.NM_PER_RAD_TO_K) * self.gear_ratio**2
-        joint_damping = (B / constants.NM_S_PER_RAD_TO_B) * self.gear_ratio**2
+        joint_stiffness = (K / NM_PER_RAD_TO_K) * self.gear_ratio**2
+        joint_damping = (B / NM_S_PER_RAD_TO_B) * self.gear_ratio**2
 
         return joint_stiffness, joint_damping
 
@@ -293,8 +296,8 @@ class Joint(DephyActpack):
         K: float = 100,
         B: float = 40,
     ):
-        motor_stiffness = K / constants.NM_PER_RAD_TO_K
-        motor_damping = B / constants.NM_S_PER_RAD_TO_B
+        motor_stiffness = K / NM_PER_RAD_TO_K
+        motor_damping = B / NM_S_PER_RAD_TO_B
 
         return motor_stiffness, motor_damping
 
@@ -303,8 +306,8 @@ class Joint(DephyActpack):
         K: float = 0.08922,
         B: float = 0.0038070,
     ):
-        pid_stiffness = (K / self.gear_ratio**2) * constants.NM_PER_RAD_TO_K
-        pid_damping = (B / self.gear_ratio**2) * constants.NM_S_PER_RAD_TO_B
+        pid_stiffness = (K / self.gear_ratio**2) * NM_PER_RAD_TO_K
+        pid_damping = (B / self.gear_ratio**2) * NM_S_PER_RAD_TO_B
 
         return pid_stiffness, pid_damping
 

@@ -5,7 +5,6 @@ import pytest
 from flexsea.device import Device
 from pytest_mock import mocker
 
-import opensourceleg.constants as constants
 from opensourceleg.actuators import (
     ActpackMode,
     CurrentMode,
