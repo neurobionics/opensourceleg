@@ -9,6 +9,7 @@ from opensourceleg.actuators import (
     NM_S_PER_RAD_TO_B,
     RAD_PER_COUNT,
     DephyActpack,
+    MockDephyActpack,
 )
 from opensourceleg.logger import Logger
 
@@ -342,3 +343,42 @@ class Joint(DephyActpack):
     @property
     def joint_torque(self) -> float:
         return self.motor_torque * self.gear_ratio
+
+
+class MockJoint(Joint, MockDephyActpack):
+
+    """
+    Mock Joint class for testing the Joint class\n
+    Inherits everything from the Joint class and the MockDephyActpack class
+    except for the Joint constructor.
+    """
+
+    def __init__(
+        self,
+        name: str = "knee",
+        port: str = "/dev/ttyACM0",
+        baud_rate: int = 230400,
+        frequency: int = 500,
+        gear_ratio: float = 41.4999,
+        has_loadcell: bool = False,
+        logger: Logger = Logger(),
+        debug_level: int = 0,
+        dephy_log: bool = False,
+    ) -> None:
+
+        MockDephyActpack.__init__(self, port)
+        self._gear_ratio: float = gear_ratio
+        self._is_homed: bool = False
+        self._has_loadcell: bool = has_loadcell
+        self._encoder_map = None
+
+        self._motor_zero_pos = 0.0
+        self._joint_zero_pos = 0.0
+
+        self._max_temperature: float = MAX_CASE_TEMPERATURE
+
+        if "knee" in name.lower() or "ankle" in name.lower():
+            self._name: str = name
+        else:
+            self._log.warning(msg=f"Invalid joint name: {name}")
+            return
