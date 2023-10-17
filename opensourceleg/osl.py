@@ -6,7 +6,6 @@ import numpy as np
 
 sys.path.append("../")
 
-import opensourceleg.constants as constants
 import opensourceleg.utilities as utilities
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger

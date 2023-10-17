@@ -6,7 +6,6 @@ from dataclasses import dataclass
 import numpy as np
 from smbus2 import SMBus
 
-import opensourceleg.constants as constants
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 

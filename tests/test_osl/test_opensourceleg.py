@@ -4,7 +4,6 @@ import time
 import numpy as np
 import pytest
 
-import opensourceleg.constants as constants
 import opensourceleg.utilities as utilities
 from opensourceleg.actuators import (
     CurrentMode,

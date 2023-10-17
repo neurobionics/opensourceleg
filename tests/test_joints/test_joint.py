@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from pytest_mock import mocker
 
-from opensourceleg import constants
 from opensourceleg.actuators import (
+    MAX_CASE_TEMPERATURE,
     CurrentMode,
     DephyActpack,
     ImpedanceMode,
@@ -64,7 +64,7 @@ class MockJoint(Joint, MockDephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = constants.MAX_CASE_TEMPERATURE
+        self._max_temperature: float = MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -94,7 +94,7 @@ def test_mockjoint_init():
     assert mji._encoder_map == None
     assert mji._motor_zero_pos == 0.0
     assert mji._joint_zero_pos == 0.0
-    assert mji._max_temperature == constants.MAX_CASE_TEMPERATURE
+    assert mji._max_temperature == MAX_CASE_TEMPERATURE
     assert mji._name == "knee"
 
     # mji2 = MockJoint(name="invalid")

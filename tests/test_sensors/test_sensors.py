@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from pytest_mock import mocker
 
-import opensourceleg.constants as constants
 from opensourceleg.joints import Joint
 from opensourceleg.logger import Logger
 from opensourceleg.sensors import Loadcell, StrainAmp
