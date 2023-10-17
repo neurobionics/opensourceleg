@@ -268,6 +268,111 @@ class Loadcell:
             return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 
+class MockSMBus:
+
+    """
+    Mocked SMBus class to test the StrainAmp class\n
+    This class has attributes and methods that mimic the SMBus class
+    but are implemented in a way to allow for testing.
+    """
+
+    MEM_R_CH1_H = 8
+    MEM_R_CH1_L = 9
+    MEM_R_CH2_H = 10
+    MEM_R_CH2_L = 11
+    MEM_R_CH3_H = 12
+    MEM_R_CH3_L = 13
+    MEM_R_CH4_H = 14
+    MEM_R_CH4_L = 15
+    MEM_R_CH5_H = 16
+    MEM_R_CH5_L = 17
+    MEM_R_CH6_H = 18
+    MEM_R_CH6_L = 19
+
+    # Initialize attributes needed for testing
+    def __init__(self, bus: int = 1) -> None:
+        self._bus = bus
+        self._byte_data = bytearray(
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        )
+
+    # Override the read_byte_data method to return the byte data
+    def read_byte_data(
+        self, I2C_addr: int = 1, register: int = 0, force: bool = False
+    ) -> int:
+        return self._byte_data[register]
+
+    # Override the read_i2c_block_data method to return the byte data
+    def read_i2c_block_data(
+        self,
+        I2C_addr: int = 1,
+        register: int = 0,
+        length: int = 10,
+        force: bool = False,
+    ) -> list[int]:
+        data = []
+        for i in range(length):
+            data.append(int(self._byte_data[i]))
+        return data
+
+
+class MockStrainAmp(StrainAmp):
+
+    """
+    Create a mock StrainAmp class to test the StrainAmp and Loadcell classes\n
+    This class inherits from the StrainAmp class but overrides the _SMBus atttribute
+    with a MockSMBus object.
+    """
+
+    def __init__(self, bus: int = 1, I2C_addr=0x66) -> None:
+        self._SMBus = MockSMBus(bus=bus)
+        self.bus = bus
+        self.addr = I2C_addr
+        self.genvars = np.zeros((3, 6))
+        self.indx = 0
+        self.is_streaming = True
+        self.data = []
+        self.failed_reads = 0
+
+
+class MockLoadcell(Loadcell):
+
+    """
+    Create a mock Loadcell class to test the StrainAmp and Loadcell classes\n
+    This class inherits from the Loadcell class but overrides the _lc atttribute
+    with a MockStrainAmp object.
+    """
+
+    # Initialize the same way but with a mock StrainAmp
+    def __init__(
+        self,
+        dephy_mode: bool = False,
+        joint: Joint = None,  # type: ignore
+        amp_gain: float = 125.0,
+        exc: float = 5.0,
+        loadcell_matrix: np.ndarray = None,
+        logger: "Logger" = None,  # type: ignore
+    ) -> None:
+        self._is_dephy: bool = dephy_mode
+        self._joint: Joint = joint
+        self._amp_gain: float = amp_gain
+        self._exc: float = exc
+        self._adc_range: int = 2**12 - 1
+        self._offset: float = (2**12) / 2
+        self._lc = None
+
+        if not self._is_dephy:
+            self._lc = MockStrainAmp()
+
+        self._loadcell_matrix = loadcell_matrix
+        self._loadcell_data = None
+        self._prev_loadcell_data = None
+
+        self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
+        self._zeroed = False
+        self._log: Logger = logger
+
+
 @dataclass
 class IMUDataClass:
     """

@@ -7,9 +7,9 @@ import numpy as np
 sys.path.append("../")
 
 import opensourceleg.utilities as utilities
-from opensourceleg.joints import Joint
+from opensourceleg.joints import Joint, MockJoint
 from opensourceleg.logger import Logger
-from opensourceleg.sensors import Loadcell
+from opensourceleg.sensors import Loadcell, MockLoadcell
 from opensourceleg.utilities import SoftRealtimeLoop
 
 
@@ -98,6 +98,7 @@ class OpenSourceLeg:
         has_loadcell: bool = False,
         debug_level: int = 0,
         dephy_log: bool = False,
+        offline_mode: bool = False,
     ) -> None:
         """
         Add a joint to the OSL object.
@@ -120,73 +121,7 @@ class OpenSourceLeg:
         dephy_log : bool, optional
             Whether to log the joint data to the dephy log, by default False
         """
-        if port is None:
-            ports = utilities.get_active_ports()
-
-            port_1 = None
-            port_2 = None
-
-            if len(ports) == 0:
-                self.log.warning(
-                    msg="No active ports found, please ensure that the motor is connected and powered on."
-                )
-
-                exit()
-
-            elif len(ports) == 1:
-                port_1 = ports[-1]
-
-            else:
-                port_1 = ports[-1]
-                port_2 = ports[-2]
-
-            if "knee" in name.lower():
-                if self.has_ankle:
-                    if self.ankle.port == port_1:
-                        port = port_2
-                    else:
-                        port = port_1
-                else:
-                    port = port_1
-
-                self._knee = Joint(
-                    name=name,
-                    port=port,
-                    baud_rate=baud_rate,
-                    frequency=self._frequency,
-                    gear_ratio=gear_ratio,
-                    has_loadcell=has_loadcell,
-                    logger=self.log,
-                    debug_level=debug_level,
-                    dephy_log=dephy_log,
-                )
-                self._has_knee = True
-
-            elif "ankle" in name.lower():
-                if self.has_knee:
-                    if self.knee.port == port_1:
-                        port = port_2
-                    else:
-                        port = port_1
-                else:
-                    port = port_1
-
-                self._ankle = Joint(
-                    name=name,
-                    port=port,
-                    baud_rate=baud_rate,
-                    frequency=self._frequency,
-                    gear_ratio=gear_ratio,
-                    has_loadcell=has_loadcell,
-                    logger=self.log,
-                    debug_level=debug_level,
-                    dephy_log=dephy_log,
-                )
-                self._has_ankle = True
-            else:
-                self.log.warning(msg="[OSL] Joint name is not recognized.")
-
-        else:
+        if offline_mode:
             if "knee" in name.lower():
                 if self.has_ankle:
                     if self.ankle.port == port:
@@ -196,7 +131,7 @@ class OpenSourceLeg:
 
                         exit()
 
-                self._knee = Joint(
+                self._knee = MockJoint(
                     name=name,
                     port=port,
                     baud_rate=baud_rate,
@@ -218,7 +153,7 @@ class OpenSourceLeg:
 
                         exit()
 
-                self._ankle = Joint(
+                self._ankle = MockJoint(
                     name=name,
                     port=port,
                     baud_rate=baud_rate,
@@ -234,6 +169,122 @@ class OpenSourceLeg:
             else:
                 self.log.warning(msg="[OSL] Joint name is not recognized.")
 
+        else:
+            if port is None:
+                ports = utilities.get_active_ports()
+
+                port_1 = None
+                port_2 = None
+
+                if len(ports) == 0:
+                    self.log.warning(
+                        msg="No active ports found, please ensure that the motor is connected and powered on."
+                    )
+
+                    exit()
+
+                elif len(ports) == 1:
+                    port_1 = ports[-1]
+
+                else:
+                    port_1 = ports[-1]
+                    port_2 = ports[-2]
+
+                if "knee" in name.lower():
+                    if self.has_ankle:
+                        if self.ankle.port == port_1:
+                            port = port_2
+                        else:
+                            port = port_1
+                    else:
+                        port = port_1
+
+                    self._knee = Joint(
+                        name=name,
+                        port=port,
+                        baud_rate=baud_rate,
+                        frequency=self._frequency,
+                        gear_ratio=gear_ratio,
+                        has_loadcell=has_loadcell,
+                        logger=self.log,
+                        debug_level=debug_level,
+                        dephy_log=dephy_log,
+                    )
+                    self._has_knee = True
+
+                elif "ankle" in name.lower():
+                    if self.has_knee:
+                        if self.knee.port == port_1:
+                            port = port_2
+                        else:
+                            port = port_1
+                    else:
+                        port = port_1
+
+                    self._ankle = Joint(
+                        name=name,
+                        port=port,
+                        baud_rate=baud_rate,
+                        frequency=self._frequency,
+                        gear_ratio=gear_ratio,
+                        has_loadcell=has_loadcell,
+                        logger=self.log,
+                        debug_level=debug_level,
+                        dephy_log=dephy_log,
+                    )
+                    self._has_ankle = True
+                else:
+                    self.log.warning(msg="[OSL] Joint name is not recognized.")
+
+            else:
+
+                if "knee" in name.lower():
+                    if self.has_ankle:
+                        if self.ankle.port == port:
+                            self.log.warning(
+                                msg="[OSL] Knee and Ankle joints cant have the same port. Please specify a different port for the knee joint."
+                            )
+
+                            exit()
+
+                    self._knee = Joint(
+                        name=name,
+                        port=port,
+                        baud_rate=baud_rate,
+                        frequency=self._frequency,
+                        gear_ratio=gear_ratio,
+                        has_loadcell=has_loadcell,
+                        logger=self.log,
+                        debug_level=debug_level,
+                        dephy_log=dephy_log,
+                    )
+                    self._has_knee = True
+
+                elif "ankle" in name.lower():
+                    if self.has_knee:
+                        if self.knee.port == port:
+                            self.log.warning(
+                                msg="[OSL] Knee and Ankle joints cant have the same port. Please specify a different port for the ankle joint."
+                            )
+
+                            exit()
+
+                    self._ankle = Joint(
+                        name=name,
+                        port=port,
+                        baud_rate=baud_rate,
+                        frequency=self._frequency,
+                        gear_ratio=gear_ratio,
+                        has_loadcell=has_loadcell,
+                        logger=self.log,
+                        debug_level=debug_level,
+                        dephy_log=dephy_log,
+                    )
+                    self._has_ankle = True
+
+                else:
+                    self.log.warning(msg="[OSL] Joint name is not recognized.")
+
     def add_loadcell(
         self,
         dephy_mode: bool = False,
@@ -241,6 +292,7 @@ class OpenSourceLeg:
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
+        offline_mode: bool = False,
     ) -> None:
         """
         Add a loadcell to the OSL object.
@@ -267,14 +319,25 @@ class OpenSourceLeg:
             exit()
 
         else:
-            self._loadcell = Loadcell(
-                dephy_mode=dephy_mode,
-                joint=joint,
-                amp_gain=amp_gain,
-                exc=exc,
-                loadcell_matrix=loadcell_matrix,  # type: ignore
-                logger=self.log,
-            )
+            if offline_mode:
+                self._loadcell = MockLoadcell(
+                    dephy_mode=dephy_mode,
+                    joint=joint,
+                    amp_gain=amp_gain,
+                    exc=exc,
+                    loadcell_matrix=loadcell_matrix,  # type: ignore
+                    logger=self.log,
+                )
+            else:
+                self._loadcell = Loadcell(
+                    dephy_mode=dephy_mode,
+                    joint=joint,
+                    amp_gain=amp_gain,
+                    exc=exc,
+                    loadcell_matrix=loadcell_matrix,  # type: ignore
+                    logger=self.log,
+                )
+
             self._has_loadcell = True
 
     def update(
