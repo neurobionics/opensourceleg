@@ -12,6 +12,7 @@ October 9, 2023
 import os
 import sys
 import inspect
+import numpy as np
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -22,35 +23,65 @@ import opensourceleg.control as control
 # Initialization
 osl = OpenSourceLeg(frequency=200)
 use_offline_mode = True
-osl.add_joint('knee', gear_ratio=9*83/18, port=None, use_offline_mode=True)
-osl.add_joint('ankle',gear_ratio=9*83/18, port=None, use_offline_mode=True)
-osl.add_loadcell(joint=osl.knee, use_offline_mode=True)
-osl.units["position"] = "deg"  # type: ignore
-osl.units["velocity"] = "deg/s"  # type: ignore
+osl.add_joint('knee', gear_ratio=9*83/18, port=None, offline_mode=use_offline_mode)
+osl.add_joint('ankle',gear_ratio=9*83/18, port='todo', offline_mode=use_offline_mode)
+LOADCELL_MATRIX = np.array(
+    [
+        (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
+        (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
+        (-1047.16800, 8.63900, -1047.28200, -20.70000, -1073.08800, -8.92300),
+        (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
+        (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
+        (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
+    ]
+)
+osl.add_loadcell(joint=osl.knee, offline_mode=use_offline_mode, loadcell_matrix=LOADCELL_MATRIX)
 
 # Instantiate a compiled controller wrapper object
-controller = control.CompiledController(main_function_name = 'FSM_Walking_Controller.so',
-                                        controller_path = currentdir, 
-                                        initialization_function_name = None,
-                                        cleanup_function_name = None)
-
+controller = control.CompiledController(library_name = 'FSM_WalkingController',
+                                        library_path = currentdir, 
+                                        main_function_name = 'FSMController',
+                                        initialization_function_name = 'FSMController_initialize',
+                                        cleanup_function_name = 'FSMController_terminate')
 
 # Define custom types for parameters and outputs as list of tuples
-controller.Define_Type('impedance_param_type',[('stiffness',controller.types.c_double),
+controller.Define_Type('impedance_param_type',
+                       [('stiffness',controller.types.c_double),
                         ('damping',controller.types.c_double),
                         ('eq_angle',controller.types.c_double)])
-controller.Define_Type('joint_impedances', [('early_stance', controller.types.impedance_param_type), 
-                    ('late_stance', controller.types.impedance_param_type), 
-                    ('early_swing', controller.types.impedance_param_type), 
-                    ('late_swing', controller.types.impedance_param_type)])
-controller.Define_Type('UserParameters', [('knee_impedance', controller.types.joint_impedances),('ankle_impedance', controller.types.joint_impedances)])
+controller.Define_Type('joint_impedance_set', 
+                       [('early_stance', controller.types.impedance_param_type), 
+                        ('late_stance', controller.types.impedance_param_type), 
+                        ('early_swing', controller.types.impedance_param_type), 
+                        ('late_swing', controller.types.impedance_param_type)])
+controller.Define_Type('transition_parameters',
+                       [('min_time_in_state', controller.types.c_double),
+                        ('loadLStance', controller.types.c_double),
+                        ('ankleThetaEstanceToLstance', controller.types.c_double),
+                        ('kneeThetaESwingToLSwing', controller.types.c_double),
+                        ('kneeDthetaESwingToLSwing', controller.types.c_double),
+                        ('loadESwing', controller.types.c_double),
+                        ('loadEStance', controller.types.c_double),
+                        ('kneeThetaLSwingToEStance', controller.types.c_double)])
+controller.Define_Type('UserParameters', 
+                       [('body_weight',controller.types.c_double),
+                        ('knee_impedance', controller.types.joint_impedance_set),
+                        ('ankle_impedance', controller.types.joint_impedance_set), 
+                        ('transition_parameters',controller.types.transition_parameters)])
 controller.Define_Type('sensors', controller.DEFAULT_SENSOR_LIST)
 
-controller.Define_Inputs([('parameters',controller.types.UserParameters), ('sensors',controller.types.sensors)])
-controller.Define_Outputs([('knee_impedance', controller.types.impedance_param_type), ('ankle_impedance', controller.types.impedance_param_type)])
+# Define the function interface of the external library
+controller.Define_Inputs([('parameters',controller.types.UserParameters), 
+                          ('sensors',controller.types.sensors), 
+                          ('time',controller.types.c_double)])
+controller.Define_Outputs([('current_state', controller.types.c_uint8),
+                           ('time_in_current_state', controller.types.c_double),
+                           ('knee_impedance', controller.types.impedance_param_type), 
+                           ('ankle_impedance', controller.types.impedance_param_type)])
 
 # Populate Controller inputs as needed
 controller.inputs.parameters.knee_impedance.early_stance.stiffness = 5
+# TODO: Finish defining controller parameters
 
 # Configure state machine
 
@@ -64,11 +95,15 @@ with osl:
     for t in osl.clock:
         # Read from the hardware
         osl.update()
+        controller.inputs.sensors.knee_angle = osl.knee.output_position # Default is in radians
+        controller.inputs.sensors.ankle_angle = osl.ankle.output_position
+        controller.inputs.sensors.Fz = osl.loadcell.fz # Newtons?
 
-        # sensors = 
+        # Update any control inputs that change every loop
+        outputs = controller.inputs.time = t
 
         # Call the controller
-        # outputs = controller.run(sensors, params)
+        outputs = controller.run()
 
         # Write to the hardware
         osl.knee.set_joint_impedance(K = outputs.knee_impedance.stiffness,
