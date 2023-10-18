@@ -83,7 +83,7 @@ class Joint(DephyActpack):
         CURRENT_THRESHOLD = 5000
         VELOCITY_THRESHOLD = 0.001
 
-        self.set_mode(mode="voltage")
+        self.set_mode(mode=self.control_modes.voltage)
         homing_direction = -1.0
 
         self.set_voltage(
@@ -155,7 +155,7 @@ class Joint(DephyActpack):
             )
             return
 
-        self.set_mode(mode="current")
+        self.set_mode(mode=self.control_modes.current)
         self.set_current_gains()
         time.sleep(0.1)
         self.set_current_gains()

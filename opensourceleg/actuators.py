@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 import os
 import time
@@ -273,6 +273,30 @@ class ImpedanceMode(ActpackMode):
         self._has_gains = True
 
 
+@dataclass(init=False)
+class ActpackControlModes:
+    """
+    Actpack modes
+
+    Args:
+        voltage (VoltageMode): Voltage mode
+        current (CurrentMode): Current mode
+        position (PositionMode): Position mode
+        impedance (ImpedanceMode): Impedance mode
+    """
+
+    voltage: VoltageMode
+    current: CurrentMode
+    position: PositionMode
+    impedance: ImpedanceMode
+
+    def __init__(self, device: "DephyActpack") -> None:
+        self.voltage = VoltageMode(device=device)
+        self.current = CurrentMode(device=device)
+        self.position = PositionMode(device=device)
+        self.impedance = ImpedanceMode(device=device)
+
+
 class DephyActpack(Device):
     """Class for the Dephy Actpack
 
@@ -328,14 +352,9 @@ class DephyActpack(Device):
         )
         self._thermal_scale: float = 1.0
 
-        self._modes: dict[str, ActpackMode] = {
-            "voltage": VoltageMode(device=self),
-            "position": PositionMode(device=self),
-            "current": CurrentMode(device=self),
-            "impedance": ImpedanceMode(device=self),
-        }
+        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: ActpackMode = self._modes["voltage"]
+        self._mode: ActpackMode = self.control_modes.voltage
 
     def start(self) -> None:
         try:
@@ -356,7 +375,7 @@ class DephyActpack(Device):
         self._mode.enter()
 
     def stop(self) -> None:
-        self.set_mode(mode="voltage")
+        self.set_mode(mode=self.control_modes.voltage)
         self.set_voltage(value=0)
 
         time.sleep(0.1)
@@ -375,10 +394,10 @@ class DephyActpack(Device):
                 msg=f"[Actpack] Please open() the device before streaming data."
             )
 
-    def set_mode(self, mode: str) -> None:
-        if mode in self._modes:
-            self._mode.transition(to_state=self._modes[mode])
-            self._mode = self._modes[mode]
+    def set_mode(self, mode: ActpackMode) -> None:
+        if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
+            self._mode.transition(to_state=mode)
+            self._mode = mode
 
         else:
             self._log.warning(msg=f"Mode {mode} not found")
@@ -405,7 +424,7 @@ class DephyActpack(Device):
             ki (int): The integral gain
             kd (int): The derivative gain
         """
-        if self._mode != self._modes["position"]:
+        if self._mode != self.control_modes.position:
             self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
             return
 
@@ -426,7 +445,7 @@ class DephyActpack(Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        if self._mode != self._modes["current"]:
+        if self._mode != self.control_modes.current:
             self._log.warning(f"Cannot set current gains in mode {self._mode}")
             return
 
@@ -450,7 +469,7 @@ class DephyActpack(Device):
             B (int): The damping constant
             ff (int): The feedforward gain
         """
-        if self._mode != self._modes["impedance"]:
+        if self._mode != self.control_modes.impedance:
             self._log.warning(msg=f"Cannot set impedance gains in mode {self._mode}")
             return
 
@@ -463,7 +482,7 @@ class DephyActpack(Device):
         Args:
             value (float): The voltage to set
         """
-        if self._mode != self._modes["voltage"]:
+        if self._mode != self.control_modes.voltage:
             self._log.warning(msg=f"Cannot set voltage in mode {self._mode}")
             return
 
@@ -478,7 +497,7 @@ class DephyActpack(Device):
         Args:
             value (float): The current to set
         """
-        if self._mode != self._modes["current"]:
+        if self._mode != self.control_modes.current:
             self._log.warning(msg=f"Cannot set current in mode {self._mode}")
             return
 
@@ -493,7 +512,7 @@ class DephyActpack(Device):
         Args:
             torque (float): The torque to set
         """
-        if self._mode != self._modes["current"]:
+        if self._mode != self.control_modes.current:
             self._log.warning(msg=f"Cannot set motor_torque in mode {self._mode}")
             return
 
@@ -508,7 +527,10 @@ class DephyActpack(Device):
         Args:
             position (float): The position to set
         """
-        if self._mode not in [self._modes["position"], self._modes["impedance"]]:
+        if self._mode not in [
+            self.control_modes.position,
+            self.control_modes.impedance,
+        ]:
             self._log.warning(msg=f"Cannot set motor position in mode {self._mode}")
             return
 
@@ -523,10 +545,6 @@ class DephyActpack(Device):
     @property
     def mode(self) -> ActpackMode:
         return self._mode
-
-    @property
-    def modes(self) -> dict[str, ActpackMode]:
-        return self._modes
 
     @property
     def motor_zero_position(self) -> float:
@@ -814,14 +832,8 @@ class MockDephyActpack(DephyActpack):
             soft_border_C_case=10,
         )
 
-        self._modes: dict[str, ActpackMode] = {
-            "voltage": VoltageMode(device=self),
-            "position": PositionMode(device=self),
-            "current": CurrentMode(device=self),
-            "impedance": ImpedanceMode(device=self),
-        }
-
-        self._mode: ActpackMode = self._modes["voltage"]
+        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
+        self._mode: ActpackMode = self.control_modes.voltage
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
