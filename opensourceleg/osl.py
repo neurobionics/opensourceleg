@@ -123,14 +123,6 @@ class OpenSourceLeg:
         """
         if offline_mode:
             if "knee" in name.lower():
-                if self.has_ankle:
-                    if self.ankle.port == port:
-                        self.log.warning(
-                            msg="[OSL] Knee and Ankle joints cant have the same port. Please specify a different port for the knee joint."
-                        )
-
-                        exit()
-
                 self._knee = MockJoint(
                     name=name,
                     port=port,
@@ -145,14 +137,6 @@ class OpenSourceLeg:
                 self._has_knee = True
 
             elif "ankle" in name.lower():
-                if self.has_knee:
-                    if self.knee.port == port:
-                        self.log.warning(
-                            msg="[OSL] Knee and Ankle joints cant have the same port. Please specify a different port for the ankle joint."
-                        )
-
-                        exit()
-
                 self._ankle = MockJoint(
                     name=name,
                     port=port,
