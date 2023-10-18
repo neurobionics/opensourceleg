@@ -855,8 +855,7 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
-        small_noise = np.random.normal(0, 0.1)
-        medium_noise = np.random.normal(0, 1)
+        small_noise = np.random.normal(0, 0.01)
 
         self._data.batt_volt += small_noise
         self._data.batt_curr += 0.0
@@ -867,7 +866,7 @@ class MockDephyActpack(DephyActpack):
         self._data.mot_vel += small_noise
         self._data.mot_acc += small_noise
         self._data.ank_vel += small_noise
-        self._data.temperature += medium_noise
+        self._data.temperature += small_noise
         self._data.genvar_0 += 0.0
         self._data.genvar_1 += 0.0
         self._data.genvar_2 += 0.0
