@@ -14,9 +14,12 @@ import sys
 import inspect
 import numpy as np
 
+# Path fixes to handle running directly from cloned repo instead of pip installed. 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
+
+# Import OSL packages
 from opensourceleg.osl import OpenSourceLeg
 import opensourceleg.control as control
 
@@ -81,22 +84,28 @@ controller.Define_Outputs([('current_state', controller.types.c_uint8),
 
 # Populate Controller inputs as needed
 controller.inputs.parameters.knee_impedance.early_stance.stiffness = 5
-# TODO: Finish defining controller parameters
+# TODO: Finish defining imipedance parameters for each state
 
 # Configure state machine
+controller.inputs.parameters.transition_parameters.min_time_in_state = 2.0
+# TODO: Finish defining transition parameters
 
 with osl:
     osl.home()
     osl.calibrate_loadcell()
-    osl.knee.set_mode('impedance')
-    osl.ankle.set_mode('impedance')
+    osl.knee.set_mode(osl.knee.control_modes.impedance)
+    osl.ankle.set_mode(osl.knee.control_modes.impedance)
 
     # Main Loop
     for t in osl.clock:
-        # Read from the hardware
+        # Read from the hardware and update the inputs object
         osl.update()
+        
+        # TODO: Make this automated for standard inputs list
         controller.inputs.sensors.knee_angle = osl.knee.output_position # Default is in radians
         controller.inputs.sensors.ankle_angle = osl.ankle.output_position
+        controller.inputs.sensors.knee_velocity = osl.knee.output_velocity
+        controller.inputs.sensors.ankle_velocity = osl.ankle.output_velocity
         controller.inputs.sensors.Fz = osl.loadcell.fz # Newtons?
 
         # Update any control inputs that change every loop
