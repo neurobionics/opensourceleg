@@ -401,13 +401,13 @@ class OpenSourceLeg:
         self.log.debug(msg="[OSL] Resetting OSL.")
 
         if self.has_knee:
-            self.knee.set_mode(mode="voltage")  # type: ignore
+            self.knee.set_mode(mode=self.knee.control_modes.voltage)  # type: ignore
             self.knee.set_voltage(value=0)  # type: ignore
 
             time.sleep(0.1)
 
         if self.has_ankle:
-            self.ankle.set_mode(mode="voltage")  # type: ignore
+            self.ankle.set_mode(mode=self.ankle.control_modes.voltage)  # type: ignore
             self.ankle.set_voltage(value=0)  # type: ignore
 
             time.sleep(0.1)

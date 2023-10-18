@@ -6,6 +6,7 @@ from flexsea.device import Device
 from pytest_mock import mocker
 
 from opensourceleg.actuators import (
+    ActpackControlModes,
     ActpackMode,
     CurrentMode,
     DephyActpack,
@@ -89,14 +90,9 @@ class MockDephyActpack(DephyActpack):
             soft_border_C_case=10,
         )
 
-        self._modes: dict[str, ActpackMode] = {
-            "voltage": VoltageMode(device=self),
-            "position": PositionMode(device=self),
-            "current": CurrentMode(device=self),
-            "impedance": ImpedanceMode(device=self),
-        }
+        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: ActpackMode = self._modes["voltage"]
+        self._mode: ActpackMode = self.control_modes.voltage
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
@@ -281,12 +277,7 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
 
     assert mock_dap.frequency == 500
     assert mock_dap.mode == VoltageMode(device=mock_dap)
-    assert mock_dap.modes == {
-        "voltage": VoltageMode(device=mock_dap),
-        "position": PositionMode(device=mock_dap),
-        "current": CurrentMode(device=mock_dap),
-        "impedance": ImpedanceMode(device=mock_dap),
-    }
+    assert mock_dap.control_modes == ActpackControlModes(device=mock_dap)
     assert mock_dap.motor_zero_position == 0
     assert mock_dap.joint_zero_position == 0
     assert mock_dap.battery_voltage == 0
@@ -347,12 +338,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
         gyroz=20,
     )
     assert mock_dap1.mode == VoltageMode(device=mock_dap1)
-    assert mock_dap1.modes == {
-        "voltage": VoltageMode(device=mock_dap1),
-        "position": PositionMode(device=mock_dap1),
-        "current": CurrentMode(device=mock_dap1),
-        "impedance": ImpedanceMode(device=mock_dap1),
-    }
+    assert mock_dap1.control_modes == ActpackControlModes(device=mock_dap1)
     assert mock_dap1.battery_voltage == 10
     assert mock_dap1.battery_current == 20
     assert mock_dap1.motor_voltage == 10
@@ -789,10 +775,10 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     )
     mock_dap12._log.set_stream_level("DEBUG")
     mock_dap12._mode = CurrentMode(device=mock_dap12)
-    mock_dap12.set_mode("voltage")
+    mock_dap12.set_mode(mock_dap12.control_modes.voltage)
     # Asserts the mode was properly set
     assert mock_dap12._mode == VoltageMode(device=mock_dap12)
-    mock_dap12.set_mode("current")
+    mock_dap12.set_mode(mock_dap12.control_modes.current)
     # Asserts the mode was properly set
     assert mock_dap12._mode == CurrentMode(device=mock_dap12)
     # Calls the set_mode method with invalid mode
