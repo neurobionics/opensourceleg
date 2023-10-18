@@ -714,7 +714,7 @@ class DephyActpack(Device):
 class MockData:
     def __init__(
         self,
-        batt_volt=0,
+        batt_volt=30,
         batt_curr=0,
         mot_volt=0,
         mot_cur=0,
@@ -723,7 +723,7 @@ class MockData:
         mot_vel=0,
         mot_acc=0,
         ank_vel=0,
-        temperature=0,
+        temperature=25,
         genvar_0=0,
         genvar_1=0,
         genvar_2=0,
@@ -855,28 +855,31 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
-        self._data.batt_volt += 15
-        self._data.batt_curr += 15
-        self._data.mot_volt += 15
-        self._data.mot_cur += 15
-        self._data.mot_ang += 15
-        self._data.ank_ang += 15
-        self._data.mot_vel += 15
-        self._data.mot_acc += 15
-        self._data.ank_vel += 15
-        self._data.temperature += 15
-        self._data.genvar_0 += 15
-        self._data.genvar_1 += 15
-        self._data.genvar_2 += 15
-        self._data.genvar_3 += 15
-        self._data.genvar_4 += 15
-        self._data.genvar_5 += 15
-        self._data.accelx += 15
-        self._data.accely += 15
-        self._data.accelz += 15
-        self._data.gyrox += 15
-        self._data.gyroy += 15
-        self._data.gyroz += 15
+        small_noise = np.random.normal(0, 0.1)
+        medium_noise = np.random.normal(0, 1)
+
+        self._data.batt_volt += small_noise
+        self._data.batt_curr += 0.0
+        self._data.mot_volt += 0.0
+        self._data.mot_cur += 0.0
+        self._data.mot_ang += 0.0
+        self._data.ank_ang += 0.0
+        self._data.mot_vel += small_noise
+        self._data.mot_acc += small_noise
+        self._data.ank_vel += small_noise
+        self._data.temperature += medium_noise
+        self._data.genvar_0 += 0.0
+        self._data.genvar_1 += 0.0
+        self._data.genvar_2 += 0.0
+        self._data.genvar_3 += 0.0
+        self._data.genvar_4 += 0.0
+        self._data.genvar_5 += 0.0
+        self._data.accelx += small_noise
+        self._data.accely += small_noise
+        self._data.accelz += small_noise
+        self._data.gyrox += small_noise
+        self._data.gyroy += small_noise
+        self._data.gyroz += small_noise
         return self._data
 
     # Overrides the close method to do nothing
