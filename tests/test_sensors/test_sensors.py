@@ -937,7 +937,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
         lc_initialize._joint._thermal_model.T_w
         == (
             (
-                (((28) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
+                (((28 * 1e-3) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
                 + (27 - 21) / 1.0702867186480716
             )
             / (0.20 * 81.46202695970649)

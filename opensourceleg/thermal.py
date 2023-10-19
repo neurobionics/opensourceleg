@@ -92,7 +92,7 @@ class ThermalModel:
             2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
         """
 
-        I_q_des: float = motor_current
+        I_q_des: float = motor_current * 1e-3
 
         I2R = (
             I_q_des**2 * self.R_ϕ_0 * (1 + self.α * (self.T_w - self.R_T_0))
@@ -122,7 +122,7 @@ class ThermalModel:
             2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
         """
 
-        I_q_des: float = motor_current
+        I_q_des: float = motor_current * 1e-3
 
         I2R_des = (
             FOS * I_q_des**2 * self.R_ϕ_0 * (1 + self.α * (self.T_w - self.R_T_0))

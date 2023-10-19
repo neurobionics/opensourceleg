@@ -103,7 +103,7 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
-        self._motor_command = "Control Mode: {}, Value: {}".format(ctrl_mode, value)
+        self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
 
     # Overrides the set_gains method to set the gains in the new _gains attribute
     def set_gains(self, kp, ki, kd, k, b, ff):
@@ -257,7 +257,7 @@ def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
     mocked_dap._log.set_stream_level("DEBUG")
     # Tests the open method with non-erroring arguments
     mocked_dap.open(freq=10, log_level=4, log_enabled=False)
-    with open("tests/test_actuators/test_mockdephyactpack_open_log.log", "r") as f:
+    with open("tests/test_actuators/test_mockdephyactpack_open_log.log") as f:
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
     # Tests the open method with erroring arguments
@@ -432,13 +432,13 @@ def test_voltagemode(dephyactpack_patched: DephyActpack):
     # Tests the entry method of the VoltageMode class
     mock_dap4._mode._entry()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_voltagemode_log.log", "r") as f:
+    with open("tests/test_actuators/test_voltagemode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
     # Tests the exit method of the VoltageMode class
     mock_dap4._mode._exit()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_voltagemode_log.log", "r") as f:
+    with open("tests/test_actuators/test_voltagemode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Voltage mode." in contents
     # Asserts the proper motor command is sent
@@ -464,7 +464,7 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
     # Tests the entry method of the VoltageMode class
     mock_dap5._mode._entry()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_currentmode_log.log", "r") as f:
+    with open("tests/test_actuators/test_currentmode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Current mode." in contents
     # Asserts the set_gains method works properly
@@ -475,7 +475,7 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
     # Tests the exit method of the VoltageMode class
     mock_dap5._mode._exit()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_currentmode_log.log", "r") as f:
+    with open("tests/test_actuators/test_currentmode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Current mode." in contents
     # Asserts the proper motor command is sent
@@ -504,7 +504,7 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     # Tests the entry method of the PositionMode class
     mock_dap6._mode._entry()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_positionmode_log.log", "r") as f:
+    with open("tests/test_actuators/test_positionmode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Position mode." in contents
     # Asserts the set_gains method works properly
@@ -515,7 +515,7 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     # Tests the exit method of the PositionMode class
     mock_dap6._mode._exit()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_positionmode_log.log", "r") as f:
+    with open("tests/test_actuators/test_positionmode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Position mode." in contents
     # Asserts the proper motor command is sent
@@ -544,7 +544,7 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     # Tests the entry method of the ImpedanceMode class
     mock_dap7._mode._entry()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_impedancemode_log.log", "r") as f:
+    with open("tests/test_actuators/test_impedancemode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Entering Impedance mode." in contents
     # Asserts the set_gains method works properly
@@ -562,7 +562,7 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     # Tests the exit method of the ImpedanceMode class
     mock_dap7._mode._exit()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_positionmode_log.log", "r") as f:
+    with open("tests/test_actuators/test_positionmode_log.log") as f:
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Position mode." in contents
     # Asserts the proper motor command is sent
@@ -614,7 +614,7 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     # Calls the start method of the MockDephyActpack instance
     mock_dap8.start()
     # Asserts the proper log messages are written
-    with open("tests/test_actuators/test_dephyactpack_start8_log.log", "r") as f:
+    with open("tests/test_actuators/test_dephyactpack_start8_log.log") as f:
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
@@ -701,7 +701,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     # Calls the update method of the MockDephyActpack instance
     mock_dap11.update()
     # Asserts the proper log messages are written for an unopened device
-    with open("tests/test_actuators/test_dephyactpack_update_log.log", "r") as f:
+    with open("tests/test_actuators/test_dephyactpack_update_log.log") as f:
         contents = f.read()
         assert (
             "WARNING: [Actpack] Please open() the device before streaming data."
@@ -740,7 +740,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
         mock_dap11._thermal_model.T_w
         == (
             (
-                (((28) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
+                (((28 * 1e-3) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
                 + (27 - 21) / 1.0702867186480716
             )
             / (0.20 * 81.46202695970649)
@@ -784,7 +784,7 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     # Calls the set_mode method with invalid mode
     mock_dap12.set_mode("badmode")
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_mode_log.log", "r") as f:
+    with open("tests/test_actuators/test_dephyactpack_set_mode_log.log") as f:
         contents = f.read()
         assert "WARNING: Mode badmode not found" in contents
 
@@ -834,9 +834,7 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
     # Calls the set_position_gains method with no arguments in CurrentMode
     mock_dap13.set_position_gains()
     # Asserts the proper log messages are written for an invalid mode
-    with open(
-        "tests/test_actuators/test_dephyactpack_set_position_gains_log.log", "r"
-    ) as f:
+    with open("tests/test_actuators/test_dephyactpack_set_position_gains_log.log") as f:
         contents = f.read()
         assert "WARNING: Cannot set position gains in mode c_int(2)" in contents
 
@@ -886,9 +884,7 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
     # Calls the set_current_gains method with no arguments in PositionMode
     mock_dap14.set_current_gains()
     # Asserts the proper log messages are written for an invalid mode
-    with open(
-        "tests/test_actuators/test_dephyactpack_set_current_gains_log.log", "r"
-    ) as f:
+    with open("tests/test_actuators/test_dephyactpack_set_current_gains_log.log") as f:
         contents = f.read()
         assert "WARNING: Cannot set current gains in mode c_int(0)" in contents
 
@@ -939,7 +935,7 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
     mock_dap15.set_impedance_gains()
     # Asserts the proper log messages are written for an invalid mode
     with open(
-        "tests/test_actuators/test_dephyactpack_set_impedance_gains_log.log", "r"
+        "tests/test_actuators/test_dephyactpack_set_impedance_gains_log.log"
     ) as f:
         contents = f.read()
         assert "WARNING: Cannot set impedance gains in mode c_int(2)" in contents
@@ -972,7 +968,7 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     # Calls the set_voltage method in PositionMode
     mock_dap16.set_voltage(value=4.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log", "r") as f:
+    with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log") as f:
         contents = f.read()
         assert "WARNING: Cannot set voltage in mode c_int(0)" in contents
 
@@ -1004,7 +1000,7 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     # Calls the set_current method in PositionMode
     mock_dap17.set_current(value=6.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_current_log.log", "r") as f:
+    with open("tests/test_actuators/test_dephyactpack_set_current_log.log") as f:
         contents = f.read()
         assert "WARNING: Cannot set current in mode c_int(0)" in contents
 
@@ -1037,9 +1033,7 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     # Calls the set_motor_torque method in PositionMode
     mock_dap18.set_motor_torque(torque=7.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open(
-        "tests/test_actuators/test_dephyactpack_set_motor_torque_log.log", "r"
-    ) as f:
+    with open("tests/test_actuators/test_dephyactpack_set_motor_torque_log.log") as f:
         contents = f.read()
         assert "WARNING: Cannot set motor_torque in mode c_int(0)" in contents
 
@@ -1079,8 +1073,6 @@ def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     # Calls the set_motor_position method in CurrentMode
     mock_dap19.set_motor_position(position=10.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open(
-        "tests/test_actuators/test_dephyactpack_set_motor_position_log.log", "r"
-    ) as f:
+    with open("tests/test_actuators/test_dephyactpack_set_motor_position_log.log") as f:
         contents = f.read()
         assert "WARNING: Cannot set motor position in mode c_int(2)" in contents
