@@ -49,7 +49,7 @@ class ThermalModel:
     def __init__(
         self,
         ambient: float = 21,
-        params: dict = dict(),
+        params: dict = {},
         temp_limit_windings: float = 115,
         soft_border_C_windings: float = 15,
         temp_limit_case: float = 80,

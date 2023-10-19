@@ -55,9 +55,9 @@ class OpenSourceLeg:
 
         self._is_homed: bool = False
 
-        self._knee: Joint = None  # type: ignore
-        self._ankle: Joint = None  # type: ignore
-        self._loadcell: Loadcell = None  # type: ignore
+        self._knee: Joint = None
+        self._ankle: Joint = None
+        self._loadcell: Loadcell = None
 
         self.log = Logger(
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
@@ -92,7 +92,7 @@ class OpenSourceLeg:
     def add_joint(
         self,
         name: str = "knee",
-        port: str = None,  # type: ignore
+        port: str = None,
         baud_rate: int = 230400,
         gear_ratio: float = 1.0,
         has_loadcell: bool = False,
@@ -272,7 +272,7 @@ class OpenSourceLeg:
     def add_loadcell(
         self,
         dephy_mode: bool = False,
-        joint: Joint = None,  # type: ignore
+        joint: Joint = None,
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
@@ -309,7 +309,7 @@ class OpenSourceLeg:
                     joint=joint,
                     amp_gain=amp_gain,
                     exc=exc,
-                    loadcell_matrix=loadcell_matrix,  # type: ignore
+                    loadcell_matrix=loadcell_matrix,
                     logger=self.log,
                 )
             else:
@@ -318,7 +318,7 @@ class OpenSourceLeg:
                     joint=joint,
                     amp_gain=amp_gain,
                     exc=exc,
-                    loadcell_matrix=loadcell_matrix,  # type: ignore
+                    loadcell_matrix=loadcell_matrix,
                     logger=self.log,
                 )
 
@@ -331,7 +331,7 @@ class OpenSourceLeg:
         if self.has_knee:
             self._knee.update()
 
-            if self.knee.case_temperature > self.knee.max_temperature:  # type: ignore
+            if self.knee.case_temperature > self.knee.max_temperature:
                 self.log.warning(
                     msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
                 )
@@ -341,7 +341,7 @@ class OpenSourceLeg:
         if self.has_ankle:
             self._ankle.update()
 
-            if self.ankle.case_temperature > self.ankle.max_temperature:  # type: ignore
+            if self.ankle.case_temperature > self.ankle.max_temperature:
                 self.log.warning(
                     msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
                 )
@@ -359,40 +359,40 @@ class OpenSourceLeg:
     def home(self) -> None:
         if self.has_knee:
             self.log.info(msg="[OSL] Homing knee joint.")
-            self.knee.home()  # type: ignore
+            self.knee.home()
 
         if self.has_ankle:
             self.log.info(msg="[OSL] Homing ankle joint.")
-            self.ankle.home()  # type: ignore
+            self.ankle.home()
 
         self._is_homed = True
 
     def calibrate_loadcell(self) -> None:
         self.log.debug(msg="[OSL] Calibrating loadcell.")
         if self.has_loadcell:
-            self.loadcell.reset()  # type: ignore
+            self.loadcell.reset()
 
     def calibrate_encoders(self) -> None:
         self.log.debug(msg="[OSL] Calibrating encoders.")
 
         if self.has_knee:
-            self.knee.make_encoder_map()  # type: ignore
+            self.knee.make_encoder_map()
 
         if self.has_ankle:
-            self.ankle.make_encoder_map()  # type: ignore
+            self.ankle.make_encoder_map()
 
     def reset(self) -> None:
         self.log.debug(msg="[OSL] Resetting OSL.")
 
         if self.has_knee:
-            self.knee.set_mode(mode=self.knee.control_modes.voltage)  # type: ignore
-            self.knee.set_voltage(value=0)  # type: ignore
+            self.knee.set_mode(mode=self.knee.control_modes.voltage)
+            self.knee.set_voltage(value=0)
 
             time.sleep(0.1)
 
         if self.has_ankle:
-            self.ankle.set_mode(mode=self.ankle.control_modes.voltage)  # type: ignore
-            self.ankle.set_voltage(value=0)  # type: ignore
+            self.ankle.set_mode(mode=self.ankle.control_modes.voltage)
+            self.ankle.set_voltage(value=0)
 
             time.sleep(0.1)
 

@@ -128,11 +128,11 @@ class Loadcell:
     def __init__(
         self,
         dephy_mode: bool = False,
-        joint: Joint = None,  # type: ignore
+        joint: Joint = None,
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix: np.ndarray = None,
-        logger: "Logger" = None,  # type: ignore
+        logger: "Logger" = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
         self._joint: Joint = joint
@@ -220,7 +220,7 @@ class Loadcell:
             for _ in range(number_of_iterations):
                 self.update(ideal_loadcell_zero)
                 loadcell_offset = self._loadcell_data
-                self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0  # type: ignore
+                self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
             self._zeroed = True
             self._log.info(f"[LOADCELL] Zeroing routine complete.")
@@ -347,11 +347,11 @@ class MockLoadcell(Loadcell):
     def __init__(
         self,
         dephy_mode: bool = False,
-        joint: Joint = None,  # type: ignore
+        joint: Joint = None,
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix: np.ndarray = None,
-        logger: "Logger" = None,  # type: ignore
+        logger: "Logger" = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
         self._joint: Joint = joint

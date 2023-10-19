@@ -280,34 +280,34 @@ def finite_state_machine_controller():
             osl.update()
             osl_state_machine.update()
 
-            if osl.has_knee and osl_state_machine.current_state.is_knee_active:  # type: ignore
+            if osl.has_knee and osl_state_machine.current_state.is_knee_active:
 
-                if osl.knee.mode != osl.knee.modes["impedance"]:  # type: ignore
-                    osl.knee.set_mode(mode="impedance")  # type: ignore
-                    osl.knee.set_impedance_gains()  # type: ignore
+                if osl.knee.mode != osl.knee.modes["impedance"]:
+                    osl.knee.set_mode(mode="impedance")
+                    osl.knee.set_impedance_gains()
 
-                osl.knee.set_joint_impedance(  # type: ignore
-                    K=osl_state_machine.current_state.knee_stiffness,  # type: ignore
-                    B=osl_state_machine.current_state.knee_damping,  # type: ignore
+                osl.knee.set_joint_impedance(
+                    K=osl_state_machine.current_state.knee_stiffness,
+                    B=osl_state_machine.current_state.knee_damping,
                 )
 
-                osl.knee.set_output_position(  # type: ignore
-                    position=osl_state_machine.current_state.knee_theta  # type: ignore
+                osl.knee.set_output_position(
+                    position=osl_state_machine.current_state.knee_theta
                 )
 
-            if osl.has_ankle and osl_state_machine.current_state.is_ankle_active:  # type: ignore
+            if osl.has_ankle and osl_state_machine.current_state.is_ankle_active:
 
-                if osl.ankle.mode != osl.ankle.modes["impedance"]:  # type: ignore
-                    osl.ankle.set_mode(mode="impedance")  # type: ignore
-                    osl.ankle.set_impedance_gains()  # type: ignore
+                if osl.ankle.mode != osl.ankle.modes["impedance"]:
+                    osl.ankle.set_mode(mode="impedance")
+                    osl.ankle.set_impedance_gains()
 
-                osl.ankle.set_joint_impedance(  # type: ignore
-                    K=osl_state_machine.current_state.ankle_stiffness,  # type: ignore
-                    B=osl_state_machine.current_state.ankle_damping,  # type: ignore
+                osl.ankle.set_joint_impedance(
+                    K=osl_state_machine.current_state.ankle_stiffness,
+                    B=osl_state_machine.current_state.ankle_damping,
                 )
 
-                osl.ankle.set_output_position(  # type: ignore
-                    position=osl_state_machine.current_state.ankle_theta  # type: ignore
+                osl.ankle.set_output_position(
+                    position=osl_state_machine.current_state.ankle_theta
                 )
 
         osl_state_machine.stop()

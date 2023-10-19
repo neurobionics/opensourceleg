@@ -107,6 +107,30 @@ class ActpackMode:
         self.exit()
         to_state.enter()
 
+    def _set_gains(self, **kwargs) -> None:
+        """
+        This method should be implemented by the child class. It should set the gains of the controller.
+        """
+        pass
+
+    def _set_voltage(self, voltage: int) -> None:
+        """
+        This method should be implemented by the child class. It should set the q axis voltage.
+        """
+        pass
+
+    def _set_current(self, current: int) -> None:
+        """
+        This method should be implemented by the child class. It should set the q axis current.
+        """
+        pass
+
+    def _set_motor_position(self, counts: int) -> None:
+        """
+        This method should be implemented by the child class. It should set the motor position.
+        """
+        pass
+
 
 class VoltageMode(ActpackMode):
     def __init__(self, device: "DephyActpack") -> None:
@@ -428,7 +452,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
+        self._mode._set_gains(kp=kp, ki=ki, kd=kd)
 
     def set_current_gains(
         self,
@@ -449,7 +473,7 @@ class DephyActpack(Device):
             self._log.warning(f"Cannot set current gains in mode {self._mode}")
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, ff=ff)  # type: ignore
+        self._mode._set_gains(kp=kp, ki=ki, ff=ff)
 
     def set_impedance_gains(
         self,
@@ -473,7 +497,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set impedance gains in mode {self._mode}")
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
+        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)
 
     def set_voltage(self, value: float) -> None:
         """
@@ -486,7 +510,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set voltage in mode {self._mode}")
             return
 
-        self._mode._set_voltage(  # type: ignore
+        self._mode._set_voltage(
             int(value),
         )
 
@@ -501,7 +525,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set current in mode {self._mode}")
             return
 
-        self._mode._set_current(  # type: ignore
+        self._mode._set_current(
             int(value),
         )
 
@@ -516,7 +540,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set motor_torque in mode {self._mode}")
             return
 
-        self._mode._set_current(  # type: ignore
+        self._mode._set_current(
             int(torque / NM_PER_MILLIAMP),
         )
 
@@ -534,7 +558,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set motor position in mode {self._mode}")
             return
 
-        self._mode._set_motor_position(  # type: ignore
+        self._mode._set_motor_position(
             int((position / RAD_PER_COUNT) + self.motor_zero_position),
         )
 

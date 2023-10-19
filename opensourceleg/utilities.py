@@ -46,7 +46,7 @@ class LoopKiller:
     def get_fade(self):
         # interpolates from 1 to zero with soft fade out
         if self._kill_soon:
-            t = time.time() - self._soft_kill_time  # type: ignore
+            t = time.time() - self._soft_kill_time
             if t >= self._fade_time:
                 return 0.0
             return 1.0 - (t / self._fade_time)
@@ -60,7 +60,7 @@ class LoopKiller:
         if self._kill_now:
             return True
         if self._kill_soon:
-            t = time.time() - self._soft_kill_time  # type: ignore
+            t = time.time() - self._soft_kill_time
             if t > self._fade_time:
                 self._kill_now = True
         return self._kill_now
@@ -143,7 +143,7 @@ class SoftRealtimeLoop:
             if ret == 0:
                 self.stop()
             while time.time() < self.t1 and not self.killer.kill_now:
-                if signal.sigtimedwait(  # type: ignore
+                if signal.sigtimedwait(
                     [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
                 ):
                     self.stop()
@@ -177,7 +177,7 @@ class SoftRealtimeLoop:
 
         while time.time() < self.t1 and not self.killer.kill_now:
             try:
-                if signal.sigtimedwait(  # type: ignore
+                if signal.sigtimedwait(
                     [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
                 ):
                     self.stop()

@@ -281,7 +281,7 @@ class Transition:
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,  # type: ignore
+        callback: Callable[[Any], bool] = None,
     ) -> None:
         self._event: Event = event
         self._source_state: State = source
@@ -318,7 +318,7 @@ class FromToTransition(Transition):
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,  # type: ignore
+        callback: Callable[[Any], bool] = None,
     ) -> None:
         super().__init__(
             event=event, source=source, destination=destination, callback=callback
@@ -394,7 +394,7 @@ class StateMachine:
         self._initial_state = self._exit_state
 
         self._exited = True
-        self._osl: Any = osl  # type: ignore
+        self._osl: Any = osl
 
         self._spoof: bool = spoof
 
@@ -425,7 +425,7 @@ class StateMachine:
         source: State,
         destination: State,
         event: Event,
-        callback: Callable[[Any], bool] = None,  # type: ignore
+        callback: Callable[[Any], bool] = None,
     ) -> Optional[Transition]:
         """
         Add a transition to the state machine.
@@ -476,7 +476,7 @@ class StateMachine:
 
         if not validity:
             assert self._osl is not None
-            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")  # type: ignore
+            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any = None) -> None:
         if not self._initial_state:
@@ -490,7 +490,7 @@ class StateMachine:
         if not (self._initial_state or self._current_state):
             raise ValueError("OSL isn't active.")
 
-        self._current_state.stop(data=data)  # type: ignore
+        self._current_state.stop(data=data)
         self._current_state = self._exit_state
         self._exited = True
 

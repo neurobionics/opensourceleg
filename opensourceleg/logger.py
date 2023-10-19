@@ -22,8 +22,8 @@ class Logger(logging.Logger):
 
         self._file_path: str = file_path + ".log"
 
-        self._containers = []
-        self._attributes = []
+        self._containers: list = []
+        self._attributes: list = []
 
         self._file = open(file_path + ".csv", "w")
         self._writer = csv.writer(self._file)

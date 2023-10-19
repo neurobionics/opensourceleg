@@ -206,6 +206,9 @@ class CompiledController:
 
         Returns:
             The output structure as defined by the Define_Outputs() method.
+
+        Raises:
+            ValueError: If Define_Inputs() or Define_Outputs() have not been called.
         """
         if self.inputs is None:
             raise ValueError(
