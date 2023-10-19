@@ -428,10 +428,10 @@ class DephyActpack(Device):
             return
 
     def set_motor_zero_position(self, position: float) -> None:
-        self._motor_zero_position: float = position
+        self._motor_zero_position = position
 
     def set_joint_zero_position(self, position: float) -> None:
-        self._joint_zero_position: float = position
+        self._joint_zero_position = position
 
     def set_position_gains(
         self,
@@ -581,101 +581,105 @@ class DephyActpack(Device):
     @property
     def battery_voltage(self) -> float:
         if self._data is not None:
-            return self._data.batt_volt
+            return float(self._data.batt_volt)
         else:
             return 0.0
 
     @property
     def battery_current(self) -> float:
         if self._data is not None:
-            return self._data.batt_curr
+            return float(self._data.batt_curr)
         else:
             return 0.0
 
     @property
     def motor_voltage(self) -> float:
         if self._data is not None:
-            return self._data.mot_volt
+            return float(self._data.mot_volt)
         else:
             return 0.0
 
     @property
     def motor_current(self) -> float:
         if self._data is not None:
-            return self._data.mot_cur
+            return float(self._data.mot_cur)
         else:
             return 0.0
 
     @property
     def motor_torque(self) -> float:
         if self._data is not None:
-            return self._data.mot_cur * NM_PER_MILLIAMP
+            return float(self._data.mot_cur * NM_PER_MILLIAMP)
         else:
             return 0.0
 
     @property
     def motor_position(self) -> float:
         if self._data is not None:
-            return int(self._data.mot_ang - self.motor_zero_position) * RAD_PER_COUNT
+            return float(
+                int(self._data.mot_ang - self.motor_zero_position) * RAD_PER_COUNT
+            )
         else:
             return 0.0
 
     @property
-    def motor_encoder_counts(self):
-        return self._data.mot_ang
+    def motor_encoder_counts(self) -> int:
+        return int(self._data.mot_ang)
 
     @property
-    def joint_encoder_counts(self):
-        return self._data.ank_ang
+    def joint_encoder_counts(self) -> int:
+        return int(self._data.ank_ang)
 
     @property
     def motor_velocity(self) -> float:
         if self._data is not None:
-            return int(self._data.mot_vel) * RAD_PER_COUNT
+            return float(int(self._data.mot_vel) * RAD_PER_COUNT)
         else:
             return 0.0
 
     @property
     def motor_acceleration(self) -> float:
         if self._data is not None:
-            return self._data.mot_acc
+            return float(self._data.mot_acc)
         else:
             return 0.0
 
     @property
     def joint_position(self) -> float:
         if self._data is not None:
-            return int(self._data.ank_ang - self._joint_zero_position) * RAD_PER_COUNT
+            return float(
+                int(self._data.ank_ang - self._joint_zero_position) * RAD_PER_COUNT
+            )
         else:
             return 0.0
 
     @property
     def joint_velocity(self) -> float:
         if self._data is not None:
-            return self._data.ank_vel * RAD_PER_COUNT
+            return float(self._data.ank_vel * RAD_PER_COUNT)
         else:
             return 0.0
 
     @property
     def case_temperature(self) -> float:
         if self._data is not None:
-            return self._data.temperature
+            return float(self._data.temperature)
         else:
             return 0.0
 
     @property
     def winding_temperature(self) -> float:
         if self._data is not None:
-            return self._thermal_model.T_w
+            return float(self._thermal_model.T_w)
         else:
             return 0.0
 
     @property
     def thermal_scaling_factor(self) -> float:
-        return self._thermal_scale
+        return float(self._thermal_scale)
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         if self._data is not None:
             return np.array(
                 object=[
@@ -693,42 +697,42 @@ class DephyActpack(Device):
     @property
     def accelx(self) -> float:
         if self._data is not None:
-            return self._data.accelx * M_PER_SEC_SQUARED_ACCLSB
+            return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
     @property
     def accely(self) -> float:
         if self._data is not None:
-            return self._data.accely * M_PER_SEC_SQUARED_ACCLSB
+            return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
     @property
     def accelz(self) -> float:
         if self._data is not None:
-            return self._data.accelz * M_PER_SEC_SQUARED_ACCLSB
+            return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
     @property
     def gyrox(self) -> float:
         if self._data is not None:
-            return self._data.gyrox * RAD_PER_SEC_GYROLSB
+            return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
     @property
     def gyroy(self) -> float:
         if self._data is not None:
-            return self._data.gyroy * RAD_PER_SEC_GYROLSB
+            return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
     @property
     def gyroz(self) -> float:
         if self._data is not None:
-            return self._data.gyroz * RAD_PER_SEC_GYROLSB
+            return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 

@@ -2,6 +2,8 @@
 # @U-M Locomotion Lab, directed by Dr. Robert Gregg
 # Authors: Jianping Lin and Gray C. Thomas
 
+from typing import Any, Callable, List, Optional
+
 import numpy as np
 
 
@@ -49,7 +51,7 @@ class ThermalModel:
     def __init__(
         self,
         ambient: float = 21,
-        params: dict = {},
+        params: dict[Any, Any] = {},
         temp_limit_windings: float = 115,
         soft_border_C_windings: float = 15,
         temp_limit_case: float = 80,

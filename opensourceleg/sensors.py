@@ -1,3 +1,5 @@
+from typing import Union
+
 import os
 import sys
 import time
@@ -34,7 +36,7 @@ class StrainAmp:
     def __init__(self, bus, I2C_addr=0x66) -> None:
         """Create a strainamp object, to talk over I2C"""
         # self._I2CMan = I2CManager(bus)
-        self._SMBus = SMBus(bus=bus)
+        self._SMBus: Union[SMBus, MockSMBus] = SMBus(bus)
         time.sleep(1)
         self.bus = bus
         self.addr = I2C_addr
@@ -131,8 +133,8 @@ class Loadcell:
         joint: Joint = None,
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix: np.ndarray = None,
-        logger: "Logger" = None,
+        loadcell_matrix: np.ndarray[float] = None,
+        logger: Logger = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
         self._joint: Joint = joint

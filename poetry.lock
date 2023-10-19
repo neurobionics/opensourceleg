@@ -1570,13 +1570,13 @@ pytest = ">=3.0.0,<8.0.0"
 
 [[package]]
 name = "pytest-mock"
-version = "3.11.1"
+version = "3.12.0"
 description = "Thin-wrapper around the mock package for easier use with pytest"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-mock-3.11.1.tar.gz", hash = "sha256:7f6b125602ac6d743e523ae0bfa71e1a697a2f5534064528c6ff84c2f7c2fc7f"},
-    {file = "pytest_mock-3.11.1-py3-none-any.whl", hash = "sha256:21c279fff83d70763b05f8874cc9cfb3fcacd6d354247a976f9529d19f9acf39"},
+    {file = "pytest-mock-3.12.0.tar.gz", hash = "sha256:31a40f038c22cad32287bb43932054451ff5583ff094bca6f675df2f8bc1a6e9"},
+    {file = "pytest_mock-3.12.0-py3-none-any.whl", hash = "sha256:0972719a7263072da3a21c7f4773069bcc7486027d7e8e1f81d98a47e701bc4f"},
 ]
 
 [package.dependencies]
@@ -1713,13 +1713,13 @@ jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
 name = "ruamel-yaml"
-version = "0.17.38"
+version = "0.17.39"
 description = "ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation of comments, seq/map flow style, and map key order"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "ruamel.yaml-0.17.38-py3-none-any.whl", hash = "sha256:c29d92cd41897d3a4d74c69e5014955c08f8e7aef49fb35c2215993db057c0e0"},
-    {file = "ruamel.yaml-0.17.38.tar.gz", hash = "sha256:a1d740449e96e9a43330f0b8448dc206d090fc9d10a384be68275ac18e0bc9ae"},
+    {file = "ruamel.yaml-0.17.39-py3-none-any.whl", hash = "sha256:8df81a51384f2e6af73d88bede63ec437df4854a5a74841f40e7622471298457"},
+    {file = "ruamel.yaml-0.17.39.tar.gz", hash = "sha256:ee9a9178a231306d2b260e67ba497c136d4639d58b08775ab67f5fb0f21e73f0"},
 ]
 
 [package.dependencies]

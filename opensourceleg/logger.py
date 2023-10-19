@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Callable, List, Union
 
 import csv
 import logging
@@ -22,8 +22,8 @@ class Logger(logging.Logger):
 
         self._file_path: str = file_path + ".log"
 
-        self._containers: list = []
-        self._attributes: list = []
+        self._containers: list[Union[object, dict[Any, Any]]] = []
+        self._attributes: list[list[str]] = []
 
         self._file = open(file_path + ".csv", "w")
         self._writer = csv.writer(self._file)
@@ -84,7 +84,7 @@ class Logger(logging.Logger):
         self._stream_handler.setLevel(level=self._log_levels[level])
 
     def add_attributes(
-        self, container: Union[object, dict], attributes: list[str]
+        self, container: Union[object, dict[Any, Any]], attributes: list[str]
     ) -> None:
         """
         Adds class instance and attributes to log
@@ -95,13 +95,6 @@ class Logger(logging.Logger):
             attributes (list[str]): List of attributes to log
         """
         self._containers.append(container)
-
-        if not isinstance(attributes, list):
-            self.warning(
-                msg=f"[LOGGER] attributes argument must be a list of strings (example: ['a','b']), not {type(attributes)}"
-            )
-            exit()
-
         self._attributes.append(attributes)
 
     def data(self) -> None:

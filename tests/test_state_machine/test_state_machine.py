@@ -684,12 +684,10 @@ def test_state_machine_init():
     assert test_state_machine._states == [Idle()]
     assert test_state_machine._events == []
     assert test_state_machine._transitions == []
-    assert test_state_machine._current_state == None
-    assert test_state_machine._initial_state == Idle()
-    assert test_state_machine._current_state == None
     assert test_state_machine._exit_callback == None
     assert test_state_machine._exit_state == Idle()
     assert test_state_machine._initial_state == Idle()
+    assert test_state_machine._current_state == Idle()
     assert test_state_machine._exited == True
     assert test_state_machine._osl == None
     assert test_state_machine._spoof == False

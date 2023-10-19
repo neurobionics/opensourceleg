@@ -1,14 +1,14 @@
+import opensourceleg.units as units
 from opensourceleg.osl import OpenSourceLeg
 
 osl = OpenSourceLeg(frequency=200)
 osl.add_joint(gear_ratio=9.0)
 
-osl.units["position"] = "deg"
-osl.log.info(osl.units)
-
 with osl:
-    osl.knee.set_mode("voltage")
+    osl.knee.set_mode(osl.knee.control_modes.position)
 
     for t in osl.clock:
-        osl.log.info(osl.knee.motor_position)
+        osl.log.info(
+            units.convert_from_default(osl.knee.motor_position, units.position.deg)
+        )
         osl.update()

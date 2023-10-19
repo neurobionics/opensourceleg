@@ -57,7 +57,7 @@ controller = control.CompiledController(
 )
 
 # Define custom types for parameters and outputs as list of tuples
-controller.Define_Type(
+controller.define_type(
     "impedance_param_type",
     [
         ("stiffness", controller.types.c_double),
@@ -65,7 +65,7 @@ controller.Define_Type(
         ("eq_angle", controller.types.c_double),
     ],
 )
-controller.Define_Type(
+controller.define_type(
     "joint_impedance_set",
     [
         ("early_stance", controller.types.impedance_param_type),
@@ -74,7 +74,7 @@ controller.Define_Type(
         ("late_swing", controller.types.impedance_param_type),
     ],
 )
-controller.Define_Type(
+controller.define_type(
     "transition_parameters",
     [
         ("min_time_in_state", controller.types.c_double),
@@ -87,7 +87,7 @@ controller.Define_Type(
         ("kneeThetaLSwingToEStance", controller.types.c_double),
     ],
 )
-controller.Define_Type(
+controller.define_type(
     "UserParameters",
     [
         ("body_weight", controller.types.c_double),
@@ -96,17 +96,17 @@ controller.Define_Type(
         ("transition_parameters", controller.types.transition_parameters),
     ],
 )
-controller.Define_Type("sensors", controller.DEFAULT_SENSOR_LIST)
+controller.define_type("sensors", controller.DEFAULT_SENSOR_LIST)
 
 # Define the function interface of the external library
-controller.Define_Inputs(
+controller.define_inputs(
     [
         ("parameters", controller.types.UserParameters),
         ("sensors", controller.types.sensors),
         ("time", controller.types.c_double),
     ]
 )
-controller.Define_Outputs(
+controller.define_outputs(
     [
         ("current_state", controller.types.c_uint8),
         ("time_in_current_state", controller.types.c_double),

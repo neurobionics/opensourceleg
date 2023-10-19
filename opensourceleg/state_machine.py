@@ -385,13 +385,12 @@ class StateMachine:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
-        self._transitions: list[Transition] = []
-        self._initial_state: Optional[State] = None
-        self._current_state: Optional[State] = None
+        self._transitions: list[FromToTransition] = []
         self._exit_callback: Optional[Callable[[Idle, Any], None]] = None
-        self._exit_state = Idle()
+        self._exit_state: State = Idle()
         self.add_state(state=self._exit_state)
-        self._initial_state = self._exit_state
+        self._initial_state: State = self._exit_state
+        self._current_state: State = self._exit_state
 
         self._exited = True
         self._osl: Any = osl

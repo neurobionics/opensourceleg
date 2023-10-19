@@ -1,3 +1,5 @@
+from typing import Any, Callable, List, Union
+
 import ctypes
 from dataclasses import dataclass
 
@@ -97,12 +99,12 @@ class CompiledController:
         # Load functions
         self.lib = ctl.load_library(library_name, library_path)
         self.cleanup_func = self._load_function(cleanup_function_name)
-        self.main_func = self._load_function(main_function_name)
-        self.init_func = self._load_function(initialization_function_name)
+        self.main_function = self._load_function(main_function_name)
+        self.init_function = self._load_function(initialization_function_name)
 
         # Call init function if there is one
-        if not self.init_func == None:
-            self.init_func()
+        if not self.init_function == None:
+            self.init_function()
 
         # Alias the ctypes class as member of this class
         self.types = ctypes
@@ -132,7 +134,7 @@ class CompiledController:
         else:
             return getattr(self.lib, function_name)
 
-    def Define_Inputs(self, input_list: list) -> None:
+    def define_inputs(self, input_list: list[Any]) -> None:
         """
         This method defines the input structure to your function.
         See example folder and tutorials for help on using this method.
@@ -142,13 +144,13 @@ class CompiledController:
         input_list: Input parameters given as a list of [('field_name', field_type)...]
             field_name is a string you choose as the title of the field.
             field_type is a type either given by a native c_types value or
-                a custom type defined via the Define_Type() method.
+                a custom type defined via the define_type() method.
                 All types can be accessed as CompiledController.types.(type_name)
         """
-        self._input_type = self.Define_Type("inputs", input_list)
+        self._input_type = self.define_type("inputs", input_list)
         self.inputs = self._input_type()
 
-    def Define_Outputs(self, output_list: list) -> None:
+    def define_outputs(self, output_list: list[Any]) -> None:
         """
         This method defines the output structure to your function.
         See example folder and tutorials for help on using this method.
@@ -158,13 +160,13 @@ class CompiledController:
         output_list: Output parameters given as a list of [('field_name', field_type)...]
             field_name is a string you choose as the title of the field.
             field_type is a type either given by a native c_types value or
-                a custom type defined via the Define_Type() method.
+                a custom type defined via the define_type() method.
                 All types can be accessed as CompiledController.types.(type_name)
         """
-        self._output_type = self.Define_Type("outputs", output_list)
+        self._output_type = self.define_type("outputs", output_list)
         self.outputs = self._output_type()
 
-    def Define_Type(self, type_name: str, parameter_list: list):
+    def define_type(self, type_name: str, parameter_list: list):
         """
         This method defines a new type to be used in the compiled controller.
         After calling this method, the datatype with name type_name will be
@@ -177,7 +179,7 @@ class CompiledController:
         parameter_list: A list of [('field_name', field_type)...]
             field_name is a string you choose as the title of the field.
             field_type is a type either given by a native c_types value or
-                a custom type defined via the Define_Type() method.
+                a custom type defined via the define_type() method.
                 All types can be accessed as CompiledController.types.(type_name)
 
         Example Usage:
@@ -205,23 +207,22 @@ class CompiledController:
         Parameters -> None
 
         Returns:
-            The output structure as defined by the Define_Outputs() method.
+            The output structure as defined by the define_outputs() method.
 
         Raises:
-            ValueError: If Define_Inputs() or Define_Outputs() have not been called.
+            ValueError: If define_inputs() or define_outputs() have not been called.
         """
         if self.inputs is None:
             raise ValueError(
-                "Must define input type before calling controller.run(). Use Define_Inputs() method."
+                "Must define input type before calling controller.run(). Use define_inputs() method."
             )
         if self.outputs is None:
             raise ValueError(
-                "Must define output type before calling controller.run(). Use Define_Outputs() method."
+                "Must define output type before calling controller.run(). Use define_outputs() method."
             )
-        self.main_func(ctypes.byref(self.inputs), ctypes.byref(self.outputs))
+        self.main_function(ctypes.byref(self.inputs), ctypes.byref(self.outputs))
         return self.outputs
 
 
 if __name__ == "__main__":
-
     pass

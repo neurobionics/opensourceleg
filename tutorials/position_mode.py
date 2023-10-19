@@ -1,16 +1,13 @@
+import opensourceleg.units as units
 from opensourceleg.osl import OpenSourceLeg
 
 osl = OpenSourceLeg(frequency=200)  # 200 Hz
 osl.add_joint(gear_ratio=9.0)
 
-osl.units["position"] = "deg"
-osl.log.info(osl.units)
-
-set_point = 50  # motor ticks
+set_point = units.convert_to_default(45, units.position.deg)
 
 with osl:
-    osl.knee.set_mode("position")
-
+    osl.knee.set_mode(osl.knee.control_modes.position)
     osl.knee.set_motor_position(osl.knee.motor_position + set_point)
 
     for t in osl.clock:
