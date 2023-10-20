@@ -10,8 +10,8 @@ import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.hardware.thermal import ThermalModel
-from opensourceleg.tools.logger import Logger
+from ..tools.logger import Logger
+from .thermal import ThermalModel
 
 
 @dataclass
