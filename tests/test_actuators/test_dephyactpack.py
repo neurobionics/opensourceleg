@@ -5,7 +5,7 @@ import pytest
 from flexsea.device import Device
 from pytest_mock import mocker
 
-from opensourceleg.actuators import (
+from opensourceleg.hardware.actuators import (
     ActpackControlModes,
     ActpackMode,
     CurrentMode,
@@ -14,8 +14,8 @@ from opensourceleg.actuators import (
     PositionMode,
     VoltageMode,
 )
-from opensourceleg.logger import Logger
-from opensourceleg.thermal import ThermalModel
+from opensourceleg.hardware.thermal import ThermalModel
+from opensourceleg.tools.logger import Logger
 
 
 # MockDephyActpack class definition for testing
@@ -214,7 +214,8 @@ def patch_dephyactpack(mocker, dephyactpack_mock: MockDephyActpack):
     """
 
     mocker.patch(
-        "opensourceleg.actuators.DephyActpack.__new__", return_value=dephyactpack_mock
+        "opensourceleg.hardware.actuators.DephyActpack.__new__",
+        return_value=dephyactpack_mock,
     )
 
 

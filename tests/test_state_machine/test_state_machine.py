@@ -5,9 +5,7 @@ from dataclasses import field
 
 import pytest
 
-from opensourceleg.logger import Logger
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.state_machine import (
+from opensourceleg.control.state_machine import (
     Event,
     FromToTransition,
     Idle,
@@ -15,6 +13,8 @@ from opensourceleg.state_machine import (
     StateMachine,
     Transition,
 )
+from opensourceleg.osl import OpenSourceLeg
+from opensourceleg.tools.logger import Logger
 
 
 def test_state_init():

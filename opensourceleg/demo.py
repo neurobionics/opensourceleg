@@ -1,7 +1,7 @@
 import time
 
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.state_machine import Event, State, StateMachine
+from .control.state_machine import Event, State, StateMachine
+from .osl import OpenSourceLeg
 
 # ------------- FSM PARAMETERS ---------------- #
 

@@ -1,16 +1,57 @@
 from typing import Any, Callable, Union, overload
 
+import ctypes
 import os
 import time
 from ctypes import c_int
 from dataclasses import dataclass
 
+import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.control import ControlModes, Gains
-from opensourceleg.logger import Logger
-from opensourceleg.thermal import ThermalModel
+from ..tools.logger import Logger
+from .thermal import ThermalModel
+
+
+@dataclass
+class ControlModes:
+    """
+    Control modes for the Dephy Actpack.
+
+    Available modes are Voltage, Current, Position, Impedance.
+    """
+
+    voltage: ctypes.c_int = fxe.FX_VOLTAGE
+    current: ctypes.c_int = fxe.FX_CURRENT
+    position: ctypes.c_int = fxe.FX_POSITION
+    impedance: ctypes.c_int = fxe.FX_IMPEDANCE
+
+
+@dataclass
+class Gains:
+    """
+    Dataclass for controller gains
+
+    Args:
+        kp (int): Proportional gain
+        ki (int): Integral gain
+        kd (int): Derivative gain
+        K (int): Stiffness of the impedance controller
+        B (int): Damping of the impedance controller
+        ff (int): Feedforward gain
+    """
+
+    kp: int = 0
+    ki: int = 0
+    kd: int = 0
+    K: int = 0
+    B: int = 0
+    ff: int = 0
+
+    def __repr__(self) -> str:
+        return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, K={self.K}, B={self.B}, ff={self.ff}"
+
 
 CONTROL_MODE = ControlModes()
 

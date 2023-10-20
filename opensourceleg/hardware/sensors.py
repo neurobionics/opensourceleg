@@ -9,8 +9,8 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from opensourceleg.joints import Joint
-from opensourceleg.logger import Logger
+from ..tools.logger import Logger
+from .joints import Joint
 
 
 class StrainAmp:

@@ -1,6 +1,6 @@
 import pytest
 
-from opensourceleg import actuators as act
+from opensourceleg.hardware import actuators as act
 
 
 class MockDephyActpack:

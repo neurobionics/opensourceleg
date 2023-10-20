@@ -2,7 +2,7 @@ import csv
 
 import pytest
 
-from opensourceleg.logger import Logger
+from opensourceleg.tools.logger import Logger
 
 
 class Simple_Class:
@@ -138,7 +138,7 @@ def test_data():
     # Asserts the data method works properly when passed a single class instance
     test_Logger_data.data()
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
-    with open("tests/test_logger/test_log_data.csv", "r", newline="") as f:
+    with open("tests/test_logger/test_log_data.csv", newline="") as f:
         reader = csv.reader(f)
         rows = list(reader)
         assert rows == expected_rows
@@ -149,7 +149,7 @@ def test_data():
     # Asserts the data method works properly when passed multiple class instances
     test_Logger_data.data()
     expected_rows2 = [["a", "b", "c"], ["1", "2", "3"], ["1", "2", "3", "1", "2", "3"]]
-    with open("tests/test_logger/test_log_data.csv", "r", newline="") as f:
+    with open("tests/test_logger/test_log_data.csv", newline="") as f:
         reader = csv.reader(f)
         rows2 = list(reader)
     assert rows2 == expected_rows2

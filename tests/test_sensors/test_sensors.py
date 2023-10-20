@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from pytest_mock import mocker
 
-from opensourceleg.joints import Joint
-from opensourceleg.logger import Logger
-from opensourceleg.sensors import Loadcell, StrainAmp
+from opensourceleg.hardware.joints import Joint
+from opensourceleg.hardware.sensors import Loadcell, StrainAmp
+from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import MockJoint, patch_sleep
 
@@ -150,7 +150,9 @@ def patch_strainamp(mocker, strainamp_mock: MockStrainAmp):
     Fixture which patches the StrainAmp class to return a MockStrainAmp object
     """
 
-    mocker.patch("opensourceleg.sensors.StrainAmp.__new__", return_value=strainamp_mock)
+    mocker.patch(
+        "opensourceleg.hardware.sensors.StrainAmp.__new__", return_value=strainamp_mock
+    )
 
 
 @pytest.fixture
@@ -181,7 +183,9 @@ def patch_loadcell(mocker, loadcell_mock: MockLoadcell):
     Fixture which patches the Loadcell class to return a MockLoadcell object
     """
 
-    mocker.patch("opensourceleg.sensors.Loadcell.__new__", return_value=loadcell_mock)
+    mocker.patch(
+        "opensourceleg.hardware.sensors.Loadcell.__new__", return_value=loadcell_mock
+    )
 
 
 @pytest.fixture

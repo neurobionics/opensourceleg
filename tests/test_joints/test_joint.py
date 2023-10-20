@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from pytest_mock import mocker
 
-from opensourceleg.actuators import (
+from opensourceleg.hardware.actuators import (
     MAX_CASE_TEMPERATURE,
     CurrentMode,
     DephyActpack,
@@ -12,8 +12,8 @@ from opensourceleg.actuators import (
     PositionMode,
     VoltageMode,
 )
-from opensourceleg.joints import Joint
-from opensourceleg.logger import Logger
+from opensourceleg.hardware.joints import Joint
+from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import (
     Data,
     MockDephyActpack,
@@ -118,7 +118,7 @@ def patch_joint(mocker, joint_mock: MockJoint):
     Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
     """
 
-    mocker.patch("opensourceleg.joints.Joint.__new__", return_value=joint_mock)
+    mocker.patch("opensourceleg.hardware.joints.Joint.__new__", return_value=joint_mock)
 
 
 @pytest.fixture
@@ -177,7 +177,7 @@ def test_home(joint_patched: Joint, patch_sleep):
     assert jp1._mode == VoltageMode(device=jp1)
     assert jp1.gear_ratio == 41.4999
     assert jp1._motor_command == "Control Mode: c_int(1), Value: 0"
-    with open(file="tests/test_joints/test_home_log.log", mode="r") as f:
+    with open(file="tests/test_joints/test_home_log.log") as f:
         contents = f.read()
         assert "INFO: [knee] Homing complete." in contents
     assert jp1.motor_zero_position == 15
@@ -193,7 +193,7 @@ def test_home(joint_patched: Joint, patch_sleep):
     assert jpa._mode == VoltageMode(device=jpa)
     assert jpa.gear_ratio == 41.4999
     assert jpa._motor_command == "Control Mode: c_int(1), Value: 0"
-    with open(file="tests/test_joints/test_home_ankle_log.log", mode="r") as f:
+    with open(file="tests/test_joints/test_home_ankle_log.log") as f:
         contents = f.read()
         assert "INFO: [ankle] Homing complete." in contents
     assert jpa.motor_zero_position == 56676
@@ -272,17 +272,13 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
     jp2._log.set_stream_level(level="DEBUG")
     jp2._data = Data(mot_cur=4999)
     jp2.make_encoder_map()
-    with open(
-        file="tests/test_joints/test_make_knee_encoder_map_log.log", mode="r"
-    ) as f:
+    with open(file="tests/test_joints/test_make_knee_encoder_map_log.log") as f:
         contents = f.read()
         assert "Please home the joint before making the encoder map." in contents
     jp2.is_streaming = True
     jp2.home()
     jp2.make_encoder_map()
-    with open(
-        file="tests/test_joints/test_make_knee_encoder_map_log.log", mode="r"
-    ) as f:
+    with open(file="tests/test_joints/test_make_knee_encoder_map_log.log") as f:
         contents = f.read()
         assert "Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
         assert "INFO: [knee] You may now stop moving the joint." in contents

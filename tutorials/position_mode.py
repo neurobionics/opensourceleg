@@ -1,4 +1,4 @@
-import opensourceleg.units as units
+import opensourceleg.tools.units as units
 from opensourceleg.osl import OpenSourceLeg
 
 osl = OpenSourceLeg(frequency=200)  # 200 Hz
