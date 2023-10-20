@@ -3,7 +3,8 @@ import time
 
 import numpy as np
 
-from opensourceleg.hardware.actuators import (
+from ..tools.logger import Logger
+from .actuators import (
     MAX_CASE_TEMPERATURE,
     NM_PER_RAD_TO_K,
     NM_S_PER_RAD_TO_B,
@@ -11,7 +12,6 @@ from opensourceleg.hardware.actuators import (
     DephyActpack,
     MockDephyActpack,
 )
-from opensourceleg.tools.logger import Logger
 
 
 class Joint(DephyActpack):
