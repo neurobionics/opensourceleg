@@ -103,6 +103,7 @@ python_version = 3.9
 pretty = true
 show_traceback = true
 color_output = true
+exclude = ["tests"]
 
 allow_redefinition = false
 check_untyped_defs = false

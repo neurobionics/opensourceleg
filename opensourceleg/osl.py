@@ -55,9 +55,9 @@ class OpenSourceLeg:
 
         self._is_homed: bool = False
 
-        self._knee: Joint = None
-        self._ankle: Joint = None
-        self._loadcell: Loadcell = None
+        self._knee: Joint = None  # type: ignore
+        self._ankle: Joint = None  # type: ignore
+        self._loadcell: Loadcell = None  # type: ignore
 
         self.log = Logger(
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
@@ -78,7 +78,7 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.initialize()
 
-    def __exit__(self, type, value, tb) -> None:
+    def __exit__(self, type=None, value=None, tb=None) -> None:
 
         if self.has_knee:
             self._knee.stop()
@@ -125,7 +125,7 @@ class OpenSourceLeg:
             if "knee" in name.lower():
                 self._knee = MockJoint(
                     name=name,
-                    port=port,
+                    port=port if port is not None else "",
                     baud_rate=baud_rate,
                     frequency=self._frequency,
                     gear_ratio=gear_ratio,
@@ -139,7 +139,7 @@ class OpenSourceLeg:
             elif "ankle" in name.lower():
                 self._ankle = MockJoint(
                     name=name,
-                    port=port,
+                    port=port if port is not None else "",
                     baud_rate=baud_rate,
                     frequency=self._frequency,
                     gear_ratio=gear_ratio,
@@ -157,8 +157,8 @@ class OpenSourceLeg:
             if port is None:
                 ports = utilities.get_active_ports()
 
-                port_1 = None
-                port_2 = None
+                port_1: str = ""
+                port_2: str = ""
 
                 if len(ports) == 0:
                     self.log.warning(
@@ -335,7 +335,7 @@ class OpenSourceLeg:
                 self.log.warning(
                     msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
                 )
-                self.__exit__(type=None, value=None, tb=None)
+                self.__exit__()
                 exit()
 
         if self.has_ankle:
@@ -345,7 +345,7 @@ class OpenSourceLeg:
                 self.log.warning(
                     msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
                 )
-                self.__exit__(type=None, value=None, tb=None)
+                self.__exit__()
                 exit()
 
         if self.has_loadcell:

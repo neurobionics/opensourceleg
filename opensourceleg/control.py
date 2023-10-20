@@ -140,7 +140,7 @@ class CompiledController:
         See example folder and tutorials for help on using this method.
 
         Parameters
-        ------------
+        -----------
         input_list: Input parameters given as a list of [('field_name', field_type)...]
             field_name is a string you choose as the title of the field.
             field_type is a type either given by a native c_types value or
@@ -148,7 +148,7 @@ class CompiledController:
                 All types can be accessed as CompiledController.types.(type_name)
         """
         self._input_type = self.define_type("inputs", input_list)
-        self.inputs = self._input_type()
+        self.inputs = self._input_type()  # type: ignore
 
     def define_outputs(self, output_list: list[Any]) -> None:
         """
@@ -164,9 +164,9 @@ class CompiledController:
                 All types can be accessed as CompiledController.types.(type_name)
         """
         self._output_type = self.define_type("outputs", output_list)
-        self.outputs = self._output_type()
+        self.outputs = self._output_type()  # type: ignore
 
-    def define_type(self, type_name: str, parameter_list: list):
+    def define_type(self, type_name: str, parameter_list: list[Any]):
         """
         This method defines a new type to be used in the compiled controller.
         After calling this method, the datatype with name type_name will be

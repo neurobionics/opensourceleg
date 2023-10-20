@@ -1,3 +1,5 @@
+import numpy as np
+
 import opensourceleg.constants as constants
 from opensourceleg.osl import OpenSourceLeg
 

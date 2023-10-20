@@ -17,7 +17,7 @@ import sys
 import numpy as np
 
 # Path fixes to handle running directly from cloned repo instead of pip installed.
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))  # type: ignore
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
@@ -116,11 +116,11 @@ controller.define_outputs(
 )
 
 # Populate Controller inputs as needed
-controller.inputs.parameters.knee_impedance.early_stance.stiffness = 5
+controller.inputs.parameters.knee_impedance.early_stance.stiffness = 5  # type: ignore
 # TODO: Finish defining imipedance parameters for each state
 
 # Configure state machine
-controller.inputs.parameters.transition_parameters.min_time_in_state = 2.0
+controller.inputs.parameters.transition_parameters.min_time_in_state = 2.0  # type: ignore
 # TODO: Finish defining transition parameters
 
 with osl:
@@ -135,16 +135,16 @@ with osl:
         osl.update()
 
         # TODO: Make this automated for standard inputs list
-        controller.inputs.sensors.knee_angle = (
+        controller.inputs.sensors.knee_angle = (  # type: ignore
             osl.knee.output_position
-        )  # Default is in radians
-        controller.inputs.sensors.ankle_angle = osl.ankle.output_position
-        controller.inputs.sensors.knee_velocity = osl.knee.output_velocity
-        controller.inputs.sensors.ankle_velocity = osl.ankle.output_velocity
-        controller.inputs.sensors.Fz = osl.loadcell.fz  # Newtons?
+        )  # in radians
+        controller.inputs.sensors.ankle_angle = osl.ankle.output_position  # type: ignore
+        controller.inputs.sensors.knee_velocity = osl.knee.output_velocity  # type: ignore
+        controller.inputs.sensors.ankle_velocity = osl.ankle.output_velocity  # type: ignore
+        controller.inputs.sensors.Fz = osl.loadcell.fz  # type: ignore
 
         # Update any control inputs that change every loop
-        outputs = controller.inputs.time = t
+        outputs = controller.inputs.time = t  # type: ignore
 
         # Call the controller
         outputs = controller.run()

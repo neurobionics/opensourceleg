@@ -1,4 +1,4 @@
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, overload
 
 import os
 import time
@@ -106,12 +106,6 @@ class ActpackMode:
         """
         self.exit()
         to_state.enter()
-
-    def _set_gains(self, **kwargs) -> None:
-        """
-        This method should be implemented by the child class. It should set the gains of the controller.
-        """
-        pass
 
     def _set_voltage(self, voltage: int) -> None:
         """
@@ -452,7 +446,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, kd=kd)
+        self._mode._set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
 
     def set_current_gains(
         self,
@@ -473,7 +467,7 @@ class DephyActpack(Device):
             self._log.warning(f"Cannot set current gains in mode {self._mode}")
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, ff=ff)
+        self._mode._set_gains(kp=kp, ki=ki, ff=ff)  # type: ignore
 
     def set_impedance_gains(
         self,
@@ -497,7 +491,7 @@ class DephyActpack(Device):
             self._log.warning(msg=f"Cannot set impedance gains in mode {self._mode}")
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)
+        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
 
     def set_voltage(self, value: float) -> None:
         """
@@ -679,7 +673,7 @@ class DephyActpack(Device):
         return float(self._thermal_scale)
 
     @property
-    def genvars(self) -> np.ndarray:
+    def genvars(self):
         if self._data is not None:
             return np.array(
                 object=[

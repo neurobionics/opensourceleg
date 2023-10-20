@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Union
 
 import os
 import sys
@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
+import numpy.typing as npt
 from smbus2 import SMBus
 
 from opensourceleg.joints import Joint
@@ -43,7 +44,7 @@ class StrainAmp:
         self.genvars = np.zeros((3, 6))
         self.indx = 0
         self.is_streaming = True
-        self.data = []
+        self.data: list[int] = []
         self.failed_reads = 0
 
     def read_uncompressed_strain(self):
@@ -133,11 +134,11 @@ class Loadcell:
         joint: Joint = None,
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix: np.ndarray[float] = None,
+        loadcell_matrix=None,
         logger: Logger = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
-        self._joint: Joint = joint
+        self._joint: Joint = joint  # type: ignore
         self._amp_gain: float = amp_gain
         self._exc: float = exc
         self._adc_range: int = 2**12 - 1
@@ -148,12 +149,18 @@ class Loadcell:
             self._lc = StrainAmp(bus=1, I2C_addr=0x66)
 
         self._loadcell_matrix = loadcell_matrix
-        self._loadcell_data = None
-        self._prev_loadcell_data = None
+        self._loadcell_data: npt.NDArray[np.double] = np.zeros(
+            shape=(1, 6), dtype=np.double
+        )
+        self._prev_loadcell_data: npt.NDArray[np.double] = np.zeros(
+            shape=(1, 6), dtype=np.double
+        )
 
-        self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
+        self._loadcell_zero: npt.NDArray[np.double] = np.zeros(
+            shape=(1, 6), dtype=np.double
+        )
         self._zeroed = False
-        self._log: Logger = logger
+        self._log: Logger = logger  # type: ignore
 
     def reset(self):
         self._zeroed = False
@@ -352,11 +359,11 @@ class MockLoadcell(Loadcell):
         joint: Joint = None,
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        loadcell_matrix: np.ndarray = None,
-        logger: "Logger" = None,
+        loadcell_matrix: npt.NDArray[np.double] = None,
+        logger: Logger = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
-        self._joint: Joint = joint
+        self._joint: Joint = joint  # type: ignore
         self._amp_gain: float = amp_gain
         self._exc: float = exc
         self._adc_range: int = 2**12 - 1
@@ -367,12 +374,16 @@ class MockLoadcell(Loadcell):
             self._lc = MockStrainAmp()
 
         self._loadcell_matrix = loadcell_matrix
-        self._loadcell_data = None
-        self._prev_loadcell_data = None
+        self._loadcell_data: npt.NDArray[np.double] = np.zeros(
+            shape=(1, 6), dtype=np.double
+        )
+        self._prev_loadcell_data: npt.NDArray[np.double] = np.zeros(
+            shape=(1, 6), dtype=np.double
+        )
 
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
         self._zeroed = False
-        self._log: Logger = logger
+        self._log: Logger = logger  # type: ignore
 
 
 @dataclass

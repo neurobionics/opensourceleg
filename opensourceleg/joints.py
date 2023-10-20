@@ -120,12 +120,12 @@ class Joint(DephyActpack):
 
         time.sleep(0.1)
 
+        _zero_pos: int = 0
+        _zero_pos_joint: int = 0
+
         if "ankle" in self._name.lower():
-            _zero_pos: int = int((np.deg2rad(30) * self.gear_ratio) / RAD_PER_COUNT)
-            _zero_pos_joint: int = int(np.deg2rad(30) / RAD_PER_COUNT)
-        else:
-            _zero_pos: int = 0
-            _zero_pos_joint: int = 0
+            _zero_pos = int((np.deg2rad(30) * self.gear_ratio) / RAD_PER_COUNT)
+            _zero_pos_joint = int(np.deg2rad(30) / RAD_PER_COUNT)
 
         self.set_motor_zero_position(position=(_motor_zero_pos + _zero_pos))
         self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos_joint))

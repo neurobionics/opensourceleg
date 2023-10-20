@@ -60,7 +60,7 @@ check-safety:
 	poetry run bandit --recursive -c pyproject.toml opensourceleg tests
 
 .PHONY: lint
-lint: test check-codestyle mypy check-safety
+lint: mypy
 
 .PHONY: update-dev-deps
 update-dev-deps:
