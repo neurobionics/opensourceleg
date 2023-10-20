@@ -8,9 +8,8 @@ University of Michigan
 October 9, 2023
 """
 
-import inspect
-
 # Imports
+import inspect
 import os
 import sys
 
@@ -21,9 +20,8 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-import opensourceleg.control as control
-
 # Import OSL packages
+from opensourceleg.control.compiled_controller import CompiledController
 from opensourceleg.osl import OpenSourceLeg
 
 # Initialization
@@ -48,7 +46,7 @@ osl.add_loadcell(
 )
 
 # Instantiate a compiled controller wrapper object
-controller = control.CompiledController(
+controller = CompiledController(
     library_name="FSM_WalkingController",
     library_path=currentdir,
     main_function_name="FSMController",

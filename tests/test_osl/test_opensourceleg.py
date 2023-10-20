@@ -4,18 +4,18 @@ import time
 import numpy as np
 import pytest
 
-import opensourceleg.utilities as utilities
-from opensourceleg.actuators import (
+import opensourceleg.tools.utilities as utilities
+from opensourceleg.hardware.actuators import (
     CurrentMode,
     ImpedanceMode,
     PositionMode,
     VoltageMode,
 )
-from opensourceleg.joints import Joint
-from opensourceleg.logger import Logger
+from opensourceleg.hardware.joints import Joint
+from opensourceleg.hardware.sensors import Loadcell
 from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.sensors import Loadcell
-from opensourceleg.utilities import SoftRealtimeLoop
+from opensourceleg.tools.logger import Logger
+from opensourceleg.tools.utilities import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import (
     MockJoint,
@@ -175,7 +175,8 @@ def mock_get_active_ports(monkeypatch):
     """
 
     monkeypatch.setattr(
-        "opensourceleg.utilities.get_active_ports", lambda: ["COM1", "COM2", "COM3"]
+        "opensourceleg.tools.utilities.get_active_ports",
+        lambda: ["COM1", "COM2", "COM3"],
     )
 
 
@@ -187,7 +188,9 @@ def mock_get_active_ports1(monkeypatch):
     Returns a list of 1 port.
     """
 
-    monkeypatch.setattr("opensourceleg.utilities.get_active_ports", lambda: ["COM1"])
+    monkeypatch.setattr(
+        "opensourceleg.tools.utilities.get_active_ports", lambda: ["COM1"]
+    )
 
 
 @pytest.fixture
@@ -198,7 +201,7 @@ def mock_get_active_ports0(monkeypatch):
     Returns a list of 0 ports.
     """
 
-    monkeypatch.setattr("opensourceleg.utilities.get_active_ports", lambda: [])
+    monkeypatch.setattr("opensourceleg.tools.utilities.get_active_ports", lambda: [])
 
 
 def test_osl_add_joint_no_ports(mock_get_active_ports0):

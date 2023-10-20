@@ -1,6 +1,6 @@
 import pytest
 
-from opensourceleg import thermal
+from opensourceleg.hardware import thermal
 
 # Initializing the ThermalModel objects
 test_model_default = thermal.ThermalModel()

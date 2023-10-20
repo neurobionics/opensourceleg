@@ -1,6 +1,6 @@
 import pytest
 
-from opensourceleg.utilities import EdgeDetector, SaturatingRamp
+from opensourceleg.tools.utilities import EdgeDetector, SaturatingRamp
 
 
 def test_edge_detector_init():

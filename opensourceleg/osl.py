@@ -6,11 +6,11 @@ import numpy as np
 
 sys.path.append("../")
 
-import opensourceleg.utilities as utilities
-from opensourceleg.joints import Joint, MockJoint
-from opensourceleg.logger import Logger
-from opensourceleg.sensors import Loadcell, MockLoadcell
-from opensourceleg.utilities import SoftRealtimeLoop
+import opensourceleg.tools.utilities as utilities
+from opensourceleg.hardware.joints import Joint, MockJoint
+from opensourceleg.hardware.sensors import Loadcell, MockLoadcell
+from opensourceleg.tools.logger import Logger
+from opensourceleg.tools.utilities import SoftRealtimeLoop
 
 
 class OpenSourceLeg:
