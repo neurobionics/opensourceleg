@@ -1,7 +1,14 @@
+import inspect
+import os
+import sys
 import time
 
-from .control.state_machine import Event, State, StateMachine
-from .osl import OpenSourceLeg
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))  # type: ignore
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
+
+from opensourceleg.control.state_machine import Event, State, StateMachine
+from opensourceleg.osl import OpenSourceLeg
 
 # ------------- FSM PARAMETERS ---------------- #
 
