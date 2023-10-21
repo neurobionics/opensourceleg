@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Union
+from typing import Any
 
 import ctypes
 
@@ -7,6 +7,8 @@ import numpy.ctypeslib as ctl
 
 class CompiledController:
     """
+    Summary
+    ----------
     Controller class to handle using compiled controllers.
     This class expects that your function has the form:
         myFunction(*inputs, *outputs)
@@ -15,6 +17,27 @@ class CompiledController:
     You can define these input and output structures however you please.
     See examples folder of repo for examples.
 
+    Parameters
+    ----------
+    library_name : string
+        The name of the compiled library file, without the *.so
+    library_path : string
+        The path to the directory containing the library.
+        See examples for how to get working directory of parent script.
+    main_function_name : string
+        Name of the main function to call within the library.
+        This is the function that will get called via the run() method
+    initialization_function_name : string
+        Name of an initialization function for your library. This gets
+        called only once when the library is loaded.
+        If you don't have an initialization function, pass None.
+    cleanup_function_name : string
+        Name of a cleanup function for your library. This gets called when
+        the CompiledController class has gone out of scope and is
+        garbage collected. Again, pass None if you don't need this functionality.
+
+    Authors
+    -----------
     Kevin Best, Senthur Raj Ayyappan
     Neurobionics Lab
     Robotics Department
@@ -30,42 +53,18 @@ class CompiledController:
         initialization_function_name,
         cleanup_function_name,
     ) -> None:
-        """
-        Initialize the Controller class.
-
-        Parameters
-        ----------
-        library_name : string
-            The name of the compiled library file, without the *.so
-        library_path : string
-            The path to the directory containing the library.
-            See examples for how to get working directory of parent script.
-        main_function_name : string
-            Name of the main function to call within the library.
-            This is the function that will get called via the run() method
-        initialization_function_name : string
-            Name of an initialization function for your library. This gets
-            called only once when the library is loaded.
-            If you don't have an initialization function, pass None.
-        cleanup_function_name : string
-            Name of a cleanup function for your library. This gets called when
-            the CompiledController class has gone out of scope and is
-            garbage collected. Again, pass None if you don't need this functionality.
-        """
-        # Load functions
         self.lib = ctl.load_library(library_name, library_path)
         self.cleanup_func = self._load_function(cleanup_function_name)
         self.main_function = self._load_function(main_function_name)
         self.init_function = self._load_function(initialization_function_name)
+        # Note if requested function name is None, returned handle is also none
 
-        # Call init function if there is one
         if not self.init_function == None:
             self.init_function()
 
-        # Alias the ctypes class as member of this class
+        # This alias makes defining types from top script easier without second import
         self.types = ctypes
 
-        # Define default sensor list
         self.DEFAULT_SENSOR_LIST = [
             ("knee_angle", self.types.c_double),
             ("ankle_angle", self.types.c_double),
@@ -74,7 +73,6 @@ class CompiledController:
             ("Fz", self.types.c_double),
         ]
 
-        # Initialize input and output lists
         self._input_type = None
         self.inputs = None
         self._output_type = None
@@ -138,7 +136,8 @@ class CompiledController:
                 a custom type defined via the define_type() method.
                 All types can be accessed as CompiledController.types.(type_name)
 
-        Example Usage:
+        Example Usage
+        ------------
             my_controller.DefineType('vector3D', [('x', my_controller.types.c_double),
                                                   ('y', my_controller.types.c_double),
                                                   ('z', my_controller.types.c_double)])
