@@ -51,7 +51,7 @@ class Joint(DephyActpack):
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
         else:
-            self._log.warning(msg=f"Invalid joint name: {name}")
+            self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return
 
         if os.path.isfile(path=f"./{self._name}_encoder_map.npy"):
@@ -152,7 +152,7 @@ class Joint(DephyActpack):
 
         if not self.is_homed:
             self._log.warning(
-                msg=f"[{self._name.capitalize}] Please home the joint before making the encoder map."
+                msg=f"[{self.__repr__()}] Please home the joint before making the encoder map."
             )
             return
 
@@ -169,7 +169,7 @@ class Joint(DephyActpack):
         _output_position_array = []
 
         self._log.info(
-            msg=f"[{self._name.capitalize}] Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
+            msg=f"[{self.__repr__()}] Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
         )
 
         _start_time: float = time.time()
@@ -186,7 +186,7 @@ class Joint(DephyActpack):
             self._log.warning(msg="Encoder map interrupted.")
             return
 
-        self._log.info(msg=f"[{self._name}] You may now stop moving the joint.")
+        self._log.info(msg=f"[{self.__repr__()}] You may now stop moving the joint.")
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_position_array).reshape(-1, 1) ** _power
@@ -196,7 +196,7 @@ class Joint(DephyActpack):
         self._encoder_map = np.polynomial.polynomial.Polynomial(coef=_coeffs)
 
         np.save(file=f"./{self._name}_encoder_map.npy", arr=_coeffs)
-        self._log.info(msg=f"[{self._name}] Encoder map saved.")
+        self._log.info(msg=f"[{self.__repr__()}] Encoder map saved.")
 
     def set_max_temperature(self, temperature: float) -> None:
         """
@@ -381,7 +381,7 @@ class MockJoint(Joint, MockDephyActpack):
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
         else:
-            self._log.warning(msg=f"Invalid joint name: {name}")
+            self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return
 
 

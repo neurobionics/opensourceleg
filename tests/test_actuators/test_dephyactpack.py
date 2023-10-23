@@ -33,6 +33,7 @@ class MockDephyActpack(DephyActpack):
 
     def __init__(
         self,
+        name: str = "MockDephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -55,6 +56,7 @@ class MockDephyActpack(DephyActpack):
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
         self._data: Any = None
+        self._name: str = name
 
         self._log: Logger = logger
         self._state = None
@@ -705,7 +707,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_update_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [Actpack] Please open() the device before streaming data."
+            "WARNING: [DephyActpack[MockDephyActpack]] Please open() the device before streaming data."
             in contents
         )
     # Set the is_streaming attribute to True to simulate an open device
@@ -787,7 +789,10 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_mode_log.log") as f:
         contents = f.read()
-        assert "WARNING: Mode badmode not found" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Mode badmode not found"
+            in contents
+        )
 
 
 def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
@@ -837,7 +842,10 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_position_gains_log.log") as f:
         contents = f.read()
-        assert "WARNING: Cannot set position gains in mode c_int(2)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set position gains in mode c_int(2)"
+            in contents
+        )
 
 
 def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
@@ -887,7 +895,10 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_current_gains_log.log") as f:
         contents = f.read()
-        assert "WARNING: Cannot set current gains in mode c_int(0)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current gains in mode c_int(0)"
+            in contents
+        )
 
 
 def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
@@ -939,7 +950,10 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
         "tests/test_actuators/test_dephyactpack_set_impedance_gains_log.log"
     ) as f:
         contents = f.read()
-        assert "WARNING: Cannot set impedance gains in mode c_int(2)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set impedance gains in mode c_int(2)"
+            in contents
+        )
 
 
 def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
@@ -971,7 +985,10 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log") as f:
         contents = f.read()
-        assert "WARNING: Cannot set voltage in mode c_int(0)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set voltage in mode c_int(0)"
+            in contents
+        )
 
 
 def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
@@ -1003,7 +1020,10 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_current_log.log") as f:
         contents = f.read()
-        assert "WARNING: Cannot set current in mode c_int(0)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current in mode c_int(0)"
+            in contents
+        )
 
 
 def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
@@ -1036,7 +1056,10 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_motor_torque_log.log") as f:
         contents = f.read()
-        assert "WARNING: Cannot set motor_torque in mode c_int(0)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor_torque in mode c_int(0)"
+            in contents
+        )
 
 
 def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
@@ -1076,4 +1099,7 @@ def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_dephyactpack_set_motor_position_log.log") as f:
         contents = f.read()
-        assert "WARNING: Cannot set motor position in mode c_int(2)" in contents
+        assert (
+            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor position in mode c_int(2)"
+            in contents
+        )

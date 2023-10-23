@@ -439,7 +439,7 @@ class DephyActpack(Device):
         except OSError as e:
             print("\n")
             self._log.error(
-                msg=f"Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -464,7 +464,7 @@ class DephyActpack(Device):
             )
         else:
             self._log.warning(
-                msg=f"[Actpack] Please open() the device before streaming data."
+                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
     def set_mode(self, mode: ActpackMode) -> None:
@@ -473,7 +473,7 @@ class DephyActpack(Device):
             self._mode = mode
 
         else:
-            self._log.warning(msg=f"Mode {mode} not found")
+            self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
             return
 
     def set_motor_zero_position(self, position: float) -> None:
@@ -498,7 +498,9 @@ class DephyActpack(Device):
             kd (int): The derivative gain
         """
         if self._mode != self.control_modes.position:
-            self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set position gains in mode {self._mode}"
+            )
             return
 
         self._mode._set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
@@ -519,7 +521,9 @@ class DephyActpack(Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(f"Cannot set current gains in mode {self._mode}")
+            self._log.warning(
+                f"[{self.__repr__()}] Cannot set current gains in mode {self._mode}"
+            )
             return
 
         self._mode._set_gains(kp=kp, ki=ki, ff=ff)  # type: ignore
@@ -543,7 +547,9 @@ class DephyActpack(Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.impedance:
-            self._log.warning(msg=f"Cannot set impedance gains in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
+            )
             return
 
         self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
@@ -556,7 +562,9 @@ class DephyActpack(Device):
             value (float): The voltage to set
         """
         if self._mode != self.control_modes.voltage:
-            self._log.warning(msg=f"Cannot set voltage in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
+            )
             return
 
         self._mode._set_voltage(
@@ -571,7 +579,9 @@ class DephyActpack(Device):
             value (float): The current to set
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(msg=f"Cannot set current in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set current in mode {self._mode}"
+            )
             return
 
         self._mode._set_current(
@@ -586,7 +596,9 @@ class DephyActpack(Device):
             torque (float): The torque to set
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(msg=f"Cannot set motor_torque in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set motor_torque in mode {self._mode}"
+            )
             return
 
         self._mode._set_current(
@@ -604,7 +616,9 @@ class DephyActpack(Device):
             self.control_modes.position,
             self.control_modes.impedance,
         ]:
-            self._log.warning(msg=f"Cannot set motor position in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
+            )
             return
 
         self._mode._set_motor_position(
@@ -920,12 +934,14 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
-        self._log.debug(msg=f"Opening Device at {self.port}")
+        self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
         self.is_streaming = True
 
     # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
-        self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
+        self._motor_command = (
+            f"[{self.__repr__()}] Control Mode: {ctrl_mode}, Value: {value}"
+        )
 
     # Overrides the set_gains method to set the gains in the new _gains attribute
     def set_gains(self, kp, ki, kd, k, b, ff):

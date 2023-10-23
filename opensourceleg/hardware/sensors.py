@@ -214,7 +214,7 @@ class Loadcell:
 
         if not self._zeroed:
             self._log.info(
-                f"[LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
+                f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force."
             )
             time.sleep(1)
 
@@ -224,7 +224,7 @@ class Loadcell:
                     self.update()
                 else:
                     self._log.warning(
-                        msg=f"[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
+                        msg=f"[{self.__repr__()}] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
                     )
                     return
             else:
@@ -238,10 +238,12 @@ class Loadcell:
                 self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
             self._zeroed = True
-            self._log.info(f"[LOADCELL] Zeroing routine complete.")
+            self._log.info(f"[{self.__repr__()}] Zeroing routine complete.")
 
         elif (
-            input(f"[Loadcell] Would you like to re-initialize loadcell? (y/n): ")
+            input(
+                f"[{self.__repr__()}] Would you like to re-initialize loadcell? (y/n): "
+            )
             == "y"
         ):
             self.reset()
