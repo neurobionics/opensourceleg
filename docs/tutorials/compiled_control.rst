@@ -28,11 +28,11 @@ Then we'll make an instance of the ``CompiledController`` wrapper and have it lo
 .. code-block:: python
     
     my_linalg = CompiledController(
-    library_name="lin_alg.so",
-    library_path=os.path.dirname(__file__),
-    main_function_name="dot_product_3d",
-    initialization_function_name=None,
-    cleanup_function_name=None,
+        library_name="lin_alg.so",
+        library_path=os.path.dirname(__file__),
+        main_function_name="dot_product_3d",
+        initialization_function_name=None,
+        cleanup_function_name=None,
     )   
 
 .. Note::
@@ -51,11 +51,11 @@ of the field and the second entry is the type. For example, the code to define `
     
     my_linalg.define_type(
     "Vector3D",
-    [
-    ("x", my_linalg.types.c_double),
-    ("y", my_linalg.types.c_double),
-    ("z", my_linalg.types.c_double),
-    ],
+        [
+            ("x", my_linalg.types.c_double),
+            ("y", my_linalg.types.c_double),
+            ("z", my_linalg.types.c_double),
+        ],
     )
 
 Now the wrapper knows how `Vector3D` is defined, we can use it in other type definitions, the same way as any other basic type. 
@@ -76,13 +76,12 @@ First, we declare two vectors and populate their fields with the appropriate val
 
     vector1 = my_linalg.types.Vector3D()
     vector2 = my_linalg.types.Vector3D()
-
-vector1.x = 0.6651
-vector1.y = 0.7395
-vector1.z = 0.1037
-vector2.x = -0.7395
-vector2.y = 0.6716
-vector2.z = -0.0460
+    vector1.x = 0.6651
+    vector1.y = 0.7395
+    vector1.z = 0.1037
+    vector2.x = -0.7395
+    vector2.y = 0.6716
+    vector2.z = -0.0460
 
 Then we can assign those vectors to the input structure. 
 
