@@ -10,7 +10,7 @@ This very simple function will allow us to show how to define input and output s
 The ``CompiledController`` class assumes that you have a compiled dynamic library (with extension ``*.so`` on linux) with the function prototype ``myFunction(Inputs* inputs, Outputs* outputs)``, where ``Inputs`` and ``Outputs`` are structures holding all of the input and output data. Thus, we first need to write and compile our library. 
 
 .. literalinclude:: ../../tutorials/compiled_control/dot_product_3d.cpp
-    :language: python
+    :language: cpp
     :linenos:
 
 First, navigate to the directory ``opensourceleg/tutorials/compiled_control/``. Then run ``make`` to build the library. If succesful, a new library named ``lin_alg.so`` should be created. 
