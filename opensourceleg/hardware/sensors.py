@@ -462,19 +462,16 @@ class IMULordMicrostrain:
 
     As configured, this class returns euler angles (deg), angular rates (deg/s), and accelerations (g).
 
-    Example Usage::
-    -------------
+    Example:
         imu = IMULordMicrostrain()
         imu.start_streaming()
         while in loop:
             imu.get_data()
         imu.stop_streaming()
 
-    Resources
-    --------
-    * To install, download the pre-built package for raspian at https://github.com/LORD-MicroStrain/MSCL/tree/master
-    * Full documentation for their library can be found at:
-        https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html.
+    Resources:
+        * To install, download the pre-built package for raspian at https://github.com/LORD-MicroStrain/MSCL/tree/master
+        * Full documentation for their library can be found at https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html.
     """
 
     def __init__(

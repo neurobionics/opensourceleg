@@ -23,7 +23,7 @@ An open-source software library for numerical computation, data acquisition, <br
 
 ## Installation
 
-The easiest and quickest way to install the *opensourceleg* library via [pip](https://pip.pypa.io/en/stable/):
+The easiest and quickest way to install the *opensourceleg* library is via [pip](https://pip.pypa.io/en/stable/):
 
 ```bash
 pip install opensourceleg
