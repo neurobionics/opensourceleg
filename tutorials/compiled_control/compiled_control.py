@@ -4,7 +4,7 @@ from opensourceleg.control.compiled_controller import CompiledController
 
 my_linalg = CompiledController(
     library_name="lin_alg.so",
-    library_path=os.getcwd(),
+    library_path=os.path.dirname(__file__),
     main_function_name="dot_product_3d",
     initialization_function_name=None,
     cleanup_function_name=None,
@@ -33,8 +33,8 @@ vector2.x = 4.2
 vector2.y = 3.2
 vector2.z = 8.0
 
-my_linalg.inputs.vector1 = vector1
-my_linalg.inputs.vector2 = vector2
+my_linalg.inputs.vector1 = vector1  # type: ignore
+my_linalg.inputs.vector2 = vector2  # type: ignore
 
 outputs = my_linalg.run()
 
