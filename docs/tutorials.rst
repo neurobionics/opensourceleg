@@ -14,3 +14,4 @@ In this section you will find tutorials on how to use the **opensourceleg** libr
     /tutorials/current_mode
     /tutorials/position_mode
     /tutorials/impedance_mode
+    /tutorials/compiled_control

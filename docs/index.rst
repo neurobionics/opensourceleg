@@ -33,6 +33,7 @@ An open-source software library for numerical computation, data acquisition, and
 
     installation
     tutorials
+    examples
 
 
 .. toctree::
