@@ -8,8 +8,8 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from ..tools.logger import Logger
-from .joints import Joint
+from opensourceleg.hardware.joints import Joint
+from opensourceleg.tools.logger import Logger
 
 
 class StrainAmp:
@@ -46,7 +46,10 @@ class StrainAmp:
         self.data: list[int] = []
         self.failed_reads = 0
 
-    def _read_uncompressed_strain(self):
+    def __repr__(self) -> str:
+        return f"StrainAmp"
+
+    def read_uncompressed_strain(self):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         data = []
         for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L + 1):
@@ -156,6 +159,9 @@ class Loadcell:
         self._zeroed = False
         self._log: Logger = logger  # type: ignore
 
+    def __repr__(self) -> str:
+        return f"Loadcell"
+
     def reset(self):
         self._zeroed = False
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
@@ -203,7 +209,7 @@ class Loadcell:
 
         if not self._zeroed:
             self._log.info(
-                f"[LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
+                f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force."
             )
             time.sleep(1)
 
@@ -213,7 +219,7 @@ class Loadcell:
                     self.update()
                 else:
                     self._log.warning(
-                        msg=f"[Loadcell] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
+                        msg=f"[{self.__repr__()}] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
                     )
                     return
             else:
@@ -227,10 +233,12 @@ class Loadcell:
                 self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
             self._zeroed = True
-            self._log.info(f"[LOADCELL] Zeroing routine complete.")
+            self._log.info(f"[{self.__repr__()}] Zeroing routine complete.")
 
         elif (
-            input(f"[Loadcell] Would you like to re-initialize loadcell? (y/n): ")
+            input(
+                f"[{self.__repr__()}] Would you like to re-initialize loadcell? (y/n): "
+            )
             == "y"
         ):
             self.reset()
@@ -331,6 +339,9 @@ class MockSMBus:
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         )
 
+    def __repr__(self) -> str:
+        return f"MockSMBus"
+
     # Override the read_byte_data method to return the byte data
     def read_byte_data(
         self, I2C_addr: int = 1, register: int = 0, force: bool = False
@@ -368,6 +379,9 @@ class MockStrainAmp(StrainAmp):
         self.is_streaming = True
         self.data = []
         self.failed_reads = 0
+
+    def __repr__(self) -> str:
+        return f"MockStrainAmp"
 
 
 class MockLoadcell(Loadcell):
@@ -410,6 +424,9 @@ class MockLoadcell(Loadcell):
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
         self._zeroed = False
         self._log: Logger = logger  # type: ignore
+
+    def __repr__(self) -> str:
+        return f"MockLoadcell"
 
 
 @dataclass
@@ -510,6 +527,9 @@ class IMULordMicrostrain:
         )  # Clean the internal circular buffer.
         self.imu_data = IMUDataClass()
 
+    def __repr__(self) -> str:
+        return f"IMULordMicrostrain"
+
     def start_streaming(self):
         self.imu.resume()
 
@@ -545,9 +565,4 @@ class IMULordMicrostrain:
 
 
 if __name__ == "__main__":
-    imu = IMULordMicrostrain(r"/dev/ttyS0", timeout=0, sample_rate=100)
-    imu.start_streaming()
-
-    for i in range(500):
-        imu_data = imu.get_data()
-        time.sleep(0.01)
+    pass

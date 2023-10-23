@@ -129,7 +129,7 @@ def test_osl_enter(
     with open("tests/test_osl/test_osl_ent.log") as f1:
         contents1 = f1.read()
         assert (
-            "INFO: [LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
+            "INFO: [Loadcell] Initiating zeroing routine, please ensure that there is no ground contact force."
             in contents1
         )
 
@@ -163,7 +163,7 @@ def test_osl_repr():
     """
 
     test_osl_r = OpenSourceLeg()
-    assert test_osl_r.__repr__() == "OSL object. Frequency: 200 Hz"
+    assert test_osl_r.__repr__() == "OSL"
 
 
 @pytest.fixture
@@ -240,7 +240,7 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     test_osl_ajop.add_joint(name="knee")
     assert test_osl_ajop._has_knee == True
     assert test_osl_ajop._knee.name == "knee"
-    assert test_osl_ajop._knee.port == "COM1"
+    assert test_osl_ajop._knee.port == "/dev/ttyACM0"
     assert test_osl_ajop._knee.gear_ratio == 1.0
     assert test_osl_ajop._knee.max_temperature == 80
     assert test_osl_ajop._knee.is_homed == False
@@ -267,7 +267,7 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     test_osl_aj.add_joint(name="knee")
     assert test_osl_aj._has_knee == True
     assert test_osl_aj._knee.name == "knee"
-    assert test_osl_aj._knee.port == "COM3"
+    assert test_osl_aj._knee.port == "/dev/ttyACM0"
     assert test_osl_aj._knee.gear_ratio == 1.0
     assert test_osl_aj._knee.max_temperature == 80
     assert test_osl_aj._knee.is_homed == False
@@ -278,7 +278,7 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     test_osl_aj.add_joint(name="ankle")
     assert test_osl_aj._has_ankle == True
     assert test_osl_aj._ankle.name == "ankle"
-    assert test_osl_aj._ankle.port == "COM2"
+    assert test_osl_aj._ankle.port == "/dev/ttyACM0"
     assert test_osl_aj._ankle.gear_ratio == 1.0
     assert test_osl_aj._ankle.max_temperature == 80
     assert test_osl_aj._ankle.is_homed == False

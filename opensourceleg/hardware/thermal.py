@@ -81,6 +81,9 @@ class ThermalModel:
         self.abs_max_temp_case: float = temp_limit_case
         self.soft_border_case: float = soft_border_C_case
 
+    def __repr__(self) -> str:
+        return f"ThermalModel"
+
     def update(self, dt: float = 1 / 200, motor_current: float = 0) -> None:
         """
         Updates the temperature of the winding and the case based on the current and the ambient temperature.

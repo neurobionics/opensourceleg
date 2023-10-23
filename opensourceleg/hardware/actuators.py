@@ -27,6 +27,9 @@ class ControlModes:
     position: ctypes.c_int = fxe.FX_POSITION
     impedance: ctypes.c_int = fxe.FX_IMPEDANCE
 
+    def __repr__(self) -> str:
+        return f"ControlModes"
+
 
 @dataclass
 class Gains:
@@ -104,6 +107,9 @@ class ActpackMode:
 
     def __str__(self) -> str:
         return str(object=self._control_mode)
+
+    def __repr__(self) -> str:
+        return f"ActpackMode[{self._control_mode}]"
 
     @property
     def mode(self) -> c_int:
@@ -355,6 +361,9 @@ class ActpackControlModes:
         self.position = PositionMode(device=device)
         self.impedance = ImpedanceMode(device=device)
 
+    def __repr__(self) -> str:
+        return f"ActpackControlModes"
+
 
 class DephyActpack(Device):
     """Class for the Dephy Actpack
@@ -373,6 +382,7 @@ class DephyActpack(Device):
 
     def __init__(
         self,
+        name: str = "DephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -384,6 +394,7 @@ class DephyActpack(Device):
         Initializes the Actpack class
 
         Args:
+            name (str): _description_. Defaults to "DephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -396,6 +407,7 @@ class DephyActpack(Device):
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
         self._data: Any = None
+        self._name: str = name
 
         self._log: Logger = logger
         self._state = None
@@ -415,6 +427,9 @@ class DephyActpack(Device):
 
         self._mode: ActpackMode = self.control_modes.voltage
 
+    def __repr__(self) -> str:
+        return f"DephyActpack[{self._name}]"
+
     def start(self) -> None:
         try:
             self.open(
@@ -425,7 +440,7 @@ class DephyActpack(Device):
         except OSError as e:
             print("\n")
             self._log.error(
-                msg=f"Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -454,7 +469,7 @@ class DephyActpack(Device):
             )
         else:
             self._log.warning(
-                msg=f"[Actpack] Please open() the device before streaming data."
+                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
     def set_mode(self, mode: ActpackMode) -> None:
@@ -463,7 +478,7 @@ class DephyActpack(Device):
             self._mode = mode
 
         else:
-            self._log.warning(msg=f"Mode {mode} not found")
+            self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
             return
 
     def set_motor_zero_position(self, position: float) -> None:
@@ -490,7 +505,9 @@ class DephyActpack(Device):
             kd (int): The derivative gain
         """
         if self._mode != self.control_modes.position:
-            self._log.warning(msg=f"Cannot set position gains in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set position gains in mode {self._mode}"
+            )
             return
 
         self._mode._set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
@@ -511,7 +528,9 @@ class DephyActpack(Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(f"Cannot set current gains in mode {self._mode}")
+            self._log.warning(
+                f"[{self.__repr__()}] Cannot set current gains in mode {self._mode}"
+            )
             return
 
         self._mode._set_gains(kp=kp, ki=ki, ff=ff)  # type: ignore
@@ -536,7 +555,9 @@ class DephyActpack(Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.impedance:
-            self._log.warning(msg=f"Cannot set impedance gains in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
+            )
             return
 
         self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
@@ -549,7 +570,9 @@ class DephyActpack(Device):
             value (float): The voltage to set in mv
         """
         if self._mode != self.control_modes.voltage:
-            self._log.warning(msg=f"Cannot set voltage in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
+            )
             return
 
         self._mode._set_voltage(
@@ -564,7 +587,9 @@ class DephyActpack(Device):
             value (float): The current to set in mA
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(msg=f"Cannot set current in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set current in mode {self._mode}"
+            )
             return
 
         self._mode._set_current(
@@ -579,7 +604,9 @@ class DephyActpack(Device):
             torque (float): The torque to set in Nm.
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(msg=f"Cannot set motor_torque in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set motor_torque in mode {self._mode}"
+            )
             return
 
         self._mode._set_current(
@@ -598,7 +625,9 @@ class DephyActpack(Device):
             self.control_modes.position,
             self.control_modes.impedance,
         ]:
-            self._log.warning(msg=f"Cannot set motor position in mode {self._mode}")
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
+            )
             return
 
         self._mode._set_motor_position(
@@ -883,6 +912,9 @@ class MockData:
         self.gyroy = gyroy
         self.gyroz = gyroz
 
+    def __repr__(self):
+        return f"MockData"
+
 
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 class MockDephyActpack(DephyActpack):
@@ -898,6 +930,7 @@ class MockDephyActpack(DephyActpack):
 
     def __init__(
         self,
+        name: str = "MockDephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -909,6 +942,7 @@ class MockDephyActpack(DephyActpack):
         Initializes the MockDephyActpack class
 
         Args:
+            name (str): _description_. Defaults to "MockDephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -920,6 +954,7 @@ class MockDephyActpack(DephyActpack):
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
         self._data: MockData = MockData()
+        self._name: str = name
 
         self._log: Logger = logger
         self._state = None
@@ -960,12 +995,14 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
-        self._log.debug(msg=f"Opening Device at {self.port}")
+        self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
         self.is_streaming = True
 
     # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
-        self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
+        self._motor_command = (
+            f"[{self.__repr__()}] Control Mode: {ctrl_mode}, Value: {value}"
+        )
 
     # Overrides the set_gains method to set the gains in the new _gains attribute
     def set_gains(self, kp, ki, kd, k, b, ff):
@@ -1007,3 +1044,7 @@ class MockDephyActpack(DephyActpack):
     # Overrides the close method to do nothing
     def close(self):
         pass
+
+
+if __name__ == "__main__":
+    pass

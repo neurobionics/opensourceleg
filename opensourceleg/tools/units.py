@@ -9,6 +9,9 @@ class force:
     lbf = 4.4482216152605
     kgf = 9.80665
 
+    def __repr__(self) -> str:
+        return f"force"
+
 
 @dataclass
 class torque:
@@ -16,17 +19,26 @@ class torque:
     lbf_inch = 0.1129848290276167
     kgf_cm = 0.0980665
 
+    def __repr__(self) -> str:
+        return f"torque"
+
 
 @dataclass
 class stiffness:
     N_m_per_rad = 1.0
     N_m_per_deg = 0.017453292519943295
 
+    def __repr__(self) -> str:
+        return f"stiffness"
+
 
 @dataclass
 class damping:
     N_m_per_rad_per_s = 1.0
     N_m_per_deg_per_s = 0.017453292519943295
+
+    def __repr__(self) -> str:
+        return f"damping"
 
 
 @dataclass
@@ -35,11 +47,17 @@ class length:
     cm = 0.01
     inch = 0.0254
 
+    def __repr__(self) -> str:
+        return f"length"
+
 
 @dataclass
 class position:
     rad = 1.0
     deg = 0.017453292519943295
+
+    def __repr__(self) -> str:
+        return f"position"
 
 
 @dataclass
@@ -48,6 +66,9 @@ class mass:
     g = 0.001
     lb = 0.45359237
 
+    def __repr__(self) -> str:
+        return f"mass"
+
 
 @dataclass
 class velocity:
@@ -55,11 +76,17 @@ class velocity:
     deg_per_s = 0.017453292519943295
     rpm = 0.10471975511965977
 
+    def __repr__(self) -> str:
+        return f"velocity"
+
 
 @dataclass
 class acceleration:
     rad_per_s2 = 1.0
     deg_per_s2 = 0.017453292519943295
+
+    def __repr__(self) -> str:
+        return f"acceleration"
 
 
 @dataclass
@@ -67,17 +94,26 @@ class time:
     s = 1.0
     ms = 0.001
 
+    def __repr__(self) -> str:
+        return f"time"
+
 
 @dataclass
 class current:
     mA = 1
     A = 1000
 
+    def __repr__(self) -> str:
+        return f"current"
+
 
 @dataclass
 class voltage:
     mV = 1
     V = 1000
+
+    def __repr__(self) -> str:
+        return f"voltage"
 
 
 def convert_to_default(value: float, from_unit: float) -> float:

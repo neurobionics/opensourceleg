@@ -893,7 +893,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
     with open("tests/test_sensors/test_loadcell_initialize_log.log") as f:
         contents = f.read()
         assert (
-            "INFO: [LOADCELL] Initiating zeroing routine, please ensure that there is no ground contact force."
+            "INFO: [Loadcell] Initiating zeroing routine, please ensure that there is no ground contact force."
             in contents
         )
         assert (

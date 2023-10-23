@@ -82,11 +82,20 @@ class CompiledController:
         if not self.cleanup_func == None:
             self.cleanup_func()
 
+    def __repr__(self):
+        return f"CompiledController"
+
     def _load_function(self, function_name):
         if function_name == None:
             return None
         else:
-            return getattr(self.lib, function_name)
+            try:
+                function_handle = getattr(self.lib, function_name)
+            except AttributeError:
+                raise AttributeError(
+                    f"Function {function_name} not found in library {self.lib}"
+                )
+            return function_handle
 
     def define_inputs(self, input_list: list[Any]) -> None:
         """
