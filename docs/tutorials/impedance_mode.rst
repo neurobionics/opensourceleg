@@ -1,9 +1,9 @@
 Commanding Impedance
---------------------------
+====================
 
 In this tutorial, we'll show you how to use the `OpenSourceLeg` library to control the impedance of a joint.
 
-.. rubric:: Step 1: Importing the `OpenSourceLeg` Class
+.. rubric:: Step 1: Import the OpenSourceLeg Class
 
 To use the `OpenSourceLeg` class, we first need to import it from the `opensourceleg.osl` module:
 
@@ -22,7 +22,7 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
 
-.. rubric:: Step 3: Setting Units for the `position` Attribute
+.. rubric:: Step 3: Setting Units for the position Attribute
 
 We can set the units for the `position` attribute of the `osl` object using the `units` dictionary:
 

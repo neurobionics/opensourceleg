@@ -1,8 +1,9 @@
-Adding Joints
-==============
+Adding an Actuator
+==================
 In this tutorial, we'll show you how to add a joint to your open-source leg using the **opensourceleg** library.
 
-.. rubric:: Step 1: Import the OpenSourceLeg Class
+Import the OpenSourceLeg Class
+------------------------------
 
 To get started, we need to import the ``OpenSourceLeg`` class, which provides an interface for controlling the open-source leg.
 
@@ -10,7 +11,8 @@ To get started, we need to import the ``OpenSourceLeg`` class, which provides an
 
     from opensourceleg.osl import OpenSourceLeg
 
-.. rubric:: Step 2: Create an instance of the OpenSourceLeg Class
+Create an instance of the OpenSourceLeg Class
+---------------------------------------------
 
 Next, we need to create an OpenSourceLeg object. This object represents the open-source leg, provides methods for controlling its joint, and provides methods for a variety of other tasks.
 
@@ -20,7 +22,8 @@ Next, we need to create an OpenSourceLeg object. This object represents the open
 
 This will create an OpenSourceLeg object with a `frequency of 200 Hz` and a log file named ``getting_started.log``.
 
-.. rubric:: Step 3: Add a Joint Object
+Add a Joint Object
+-------------------
 
 To add a joint to the open-source leg, we can use the ``add_joint`` method of the OpenSourceLeg object. 
 
@@ -47,7 +50,8 @@ You can also add the ankle joint to the open-source leg by calling the ``add_joi
     Please ensure that you are powering-on the actuators in the order of initialization, i.e. if you are initializing the knee joint first, then the knee joint should be powered-on first.
 
 
-.. rubric:: Here is the code for this tutorial:
+Code for this tutorial
+----------------------
 
 .. literalinclude:: ../../tutorials/adding_joints.py
     :language: python

@@ -1,8 +1,8 @@
 Commanding Position
---------------------------
+===================
 In this tutorial, we'll show you how to control your open-source leg in position mode usin the `opensourceleg` library.
 
-.. rubric:: Step 1: Importing the `OpenSourceLeg` Class
+.. rubric:: Step 1: Import the OpenSourceLeg Class
 
 To use the `OpenSourceLeg` class, we first need to import it from the `opensourceleg.osl` module:
 
@@ -10,7 +10,7 @@ To use the `OpenSourceLeg` class, we first need to import it from the `opensourc
 
     from opensourceleg.osl import OpenSourceLeg
 
-.. rubric:: Step 2: Creating an `OpenSourceLeg` Object
+.. rubric:: Step 2: Creating an OpenSourceLeg Object
 
 Once we have imported the `OpenSourceLeg` class, we can create an instance of the class with the desired frequency and joint configuration:
 
@@ -21,7 +21,7 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
 
-.. rubric:: Step 3: Setting Units for the `position` Attribute
+.. rubric:: Step 3: Setting Units for the position Attribute
 
 We can set the units for the `position` attribute of the `osl` object using the `units` dictionary:
 

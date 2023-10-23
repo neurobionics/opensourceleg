@@ -2,16 +2,16 @@
 
 <h1>opensourceleg</h1>
 
-[![Build status](https://github.com/imsenthur/opensourceleg/workflows/build/badge.svg?branch=master&event=push)](https://github.com/imsenthur/opensourceleg/actions?query=workflow%3Abuild)
+[![Build status](https://github.com/imsenthur/opensourceleg/workflows/build/badge.svg?branch=main&event=push)](https://github.com/imsenthur/opensourceleg/actions?query=workflow%3Abuild)
 [![Documentation Status](https://readthedocs.org/projects/opensourceleg/badge/?version=latest)](https://opensourceleg.readthedocs.io/en/latest/?badge=latest)
 [![Python Version](https://img.shields.io/pypi/pyversions/opensourceleg.svg)](https://pypi.org/project/opensourceleg/)
 [![Dependencies Status](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg)](https://github.com/imsenthur/opensourceleg/pulls?utf8=%E2%9C%93&q=is%3Apr%20author%3Aapp%2Fdependabot)
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Security: bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/imsenthur/opensourceleg/blob/master/.pre-commit-config.yaml)
-[![License](https://img.shields.io/github/license/imsenthur/opensourceleg)](https://github.com/imsenthur/opensourceleg/blob/master/LICENSE)
-![Coverage Report](https://github.com/neurobionics/opensourceleg/raw/66ad4289ef9ba8701fac9337778f87b657286484/assets/images/coverage.svg)
+[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/imsenthur/opensourceleg/blob/main/.pre-commit-config.yaml)
+[![License](https://img.shields.io/github/license/imsenthur/opensourceleg)](https://github.com/imsenthur/opensourceleg/blob/main/LICENSE)
+![Coverage Report](https://github.com/neurobionics/opensourceleg/blob/6112694880e01a02307a81c44d49a74b58183b25/assets/images/coverage.svg)
 
 An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
 
@@ -48,7 +48,7 @@ You can find tutorials and API documentation at [opensourceleg.readthedocs.io](h
 
 ## License
 
-The *opensourceleg* library is licensed under the terms of the [GPL-3.0 license](https://github.com/imsenthur/opensourceleg/raw/master/LICENSE). This license grants users a number of freedoms:
+The *opensourceleg* library is licensed under the terms of the [GPL-3.0 license](https://github.com/imsenthur/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
 
 * You are free to use the *opensourceleg* library for any purpose.
 * You are free to modify the *opensourceleg* library to suit your needs.

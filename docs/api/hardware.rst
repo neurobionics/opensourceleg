@@ -1,3 +1,7 @@
+========
+Hardware
+========
+
 Actuators
 ---------
 
@@ -20,7 +24,7 @@ Actuators
 
 
 Joints
--------
+------
 
 .. automodule:: opensourceleg.hardware.joints
    :members:
@@ -33,44 +37,8 @@ Sensors
    :members:
 
 
-Open-Source Leg
-----------------
-
-.. automodule:: opensourceleg.osl
-   :members:
-   :show-inheritance:
-
-
-Control
--------
-
-.. automodule:: opensourceleg.control.compiled_controller
-   :members:   
-
-.. automodule:: opensourceleg.control.state_machine
-   :members:   
-
 Thermal
---------
+-------
 
 .. automodule:: opensourceleg.hardware.thermal
    :members:
-
-Units
-------
-
-.. automodule:: opensourceleg.tools.units
-   :members:
-
-Utilities
----------
-
-.. automodule:: opensourceleg.tools.utilities
-   :members: 
-
-Logger
--------
-
-.. automodule:: opensourceleg.tools.logger
-   :members:
-   :show-inheritance:

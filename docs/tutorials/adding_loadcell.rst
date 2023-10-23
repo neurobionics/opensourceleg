@@ -1,5 +1,5 @@
 Adding a Loadcell
------------------
+=================
 In this tutorial, we'll show you how to add a load cell to your open-source leg using the `opensourceleg` library.
 
 .. rubric:: Step 1: Create an OpenSourceLeg Object
