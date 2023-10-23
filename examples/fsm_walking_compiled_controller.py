@@ -142,7 +142,7 @@ with osl:
         controller.inputs.sensors.Fz = osl.loadcell.fz  # type: ignore
 
         # Update any control inputs that change every loop
-        outputs = controller.inputs.time = t  # type: ignore
+        controller.inputs.time = t  # type: ignore
 
         # Call the controller
         outputs = controller.run()

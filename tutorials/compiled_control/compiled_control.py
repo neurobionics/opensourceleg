@@ -26,12 +26,12 @@ my_linalg.define_outputs([("result", my_linalg.types.c_double)])
 vector1 = my_linalg.types.Vector3D()
 vector2 = my_linalg.types.Vector3D()
 
-vector1.x = 2.5
-vector1.y = 5.3
-vector1.z = 7.3
-vector2.x = 4.2
-vector2.y = 3.2
-vector2.z = 8.0
+vector1.x = 0.6651
+vector1.y = 0.7395
+vector1.z = 0.1037
+vector2.x = -0.7395
+vector2.y = 0.6716
+vector2.z = -0.0460
 
 my_linalg.inputs.vector1 = vector1  # type: ignore
 my_linalg.inputs.vector2 = vector2  # type: ignore
