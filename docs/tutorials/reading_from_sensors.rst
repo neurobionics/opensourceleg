@@ -3,7 +3,8 @@ Reading from Sensors
 
 In this tutorial, we'll show you how to read from the sensors of your open-source leg using the **opensourceleg** library.
 
-.. rubric:: Step 1: Import the OpenSourceLeg Class
+Import the OpenSourceLeg Class
+------------------------------
 
 To use the `OpenSourceLeg` class, we first need to import it from the `opensourceleg.osl` module:
 
@@ -11,7 +12,8 @@ To use the `OpenSourceLeg` class, we first need to import it from the `opensourc
 
     from opensourceleg.osl import OpenSourceLeg
 
-.. rubric:: Step 2: Create an OpenSourceLeg Object
+Add a Joint Object
+------------------
 
 Once we have imported the `OpenSourceLeg` class, we can create an instance of the class with the desired frequency and joint configuration:
 
@@ -33,14 +35,15 @@ We can set the units for the `position` attribute of the `osl` object using the 
 
 In this code, we set the units for the `position` attribute to "deg" and log the units to the console.
 
-.. rubric:: Step 4: Reading from Sensors
+Reading from Sensors
+--------------------
 
 To read from sensors, we can use a `with` block to ensure that the `OpenSourceLeg` object is properly opened and cleaned up after use:
 
 .. code-block:: python
 
     with osl:
-        osl.knee.set_mode("voltage")
+        osl.knee.set_mode(osl.knee.control_modes.voltage)
         
         for t in osl.clock:
             osl.log.info(osl.knee.motor_position)
@@ -51,7 +54,8 @@ In this code, we enter a `with` block that sets the mode of the `knee` joint to 
 .. warning:: 
     This code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the sensors are properly connected and functioning.
 
-.. rubric:: Here is the code for this tutorial:
+Code for this tutorial
+----------------------
 
 .. literalinclude:: ../../tutorials/reading_from_sensors.py
     :language: python

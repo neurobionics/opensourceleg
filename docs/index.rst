@@ -1,15 +1,10 @@
-.. Open-Source Leg documentation master file, created by
-   sphinx-quickstart on Wed Apr 20 11:05:43 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 ===========================================================================================================================
 An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.
 ===========================================================================================================================
 
 |build| |docs| |python| |license|
 
-.. |build| image:: https://github.com/imsenthur/opensourceleg/workflows/build/badge.svg?branch=main&event=push
+.. |build| image:: https://github.com/imsenthur/opensourceleg/workflows/build/badge.svg?branch=master&event=push
     :target: https://github.com/imsenthur/opensourceleg/actions?query=workflow%3Abuild
     :alt: Build Status
 .. |docs| image:: https://readthedocs.org/projects/opensourceleg/badge/?version=latest
@@ -22,9 +17,10 @@ An open-source software library for numerical computation, data acquisition, and
     :target: https://github.com/imsenthur/opensourceleg/blob/main/LICENSE
     :alt: License
 
+|
+
 .. image:: ../assets/images/banner.gif
-    :align: center
-    :width: 75%
+    :width: 80%
 
 Prerequisites
 =============
@@ -96,4 +92,6 @@ The GPL license ensures that all these freedoms are protected, now and in the fu
     :hidden:
     :caption: Contributing
 
-    contributing    
+    /contributing/reporting_bugs
+    /contributing/contributing_code
+    /contributing/code_of_conduct    

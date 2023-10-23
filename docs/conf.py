@@ -20,8 +20,10 @@ sys.path.insert(0, os.path.abspath("../opensourceleg"))
 # -- Project information -----------------------------------------------------
 
 project = "Open-Source Leg"
-copyright = "2022, Open-Source Leg"
-author = "Senthur Raj Ayyappan"
+copyright = (
+    "2022, Open-Source Leg Project (https://opensourceleg.com), Michigan Robotics"
+)
+author = "Senthur Ayyappan, Kevin Best, Jace Derosia, and Prof. Elliott Rouse"
 
 # The full version, including alpha/beta/rc tags
 release = "2.0.0"

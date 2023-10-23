@@ -3,7 +3,8 @@ Commanding Impedance
 
 In this tutorial, we'll show you how to use the `OpenSourceLeg` library to control the impedance of a joint.
 
-.. rubric:: Step 1: Import the OpenSourceLeg Class
+Import the OpenSourceLeg Class
+------------------------------
 
 To use the `OpenSourceLeg` class, we first need to import it from the `opensourceleg.osl` module:
 
@@ -11,7 +12,8 @@ To use the `OpenSourceLeg` class, we first need to import it from the `opensourc
 
     from opensourceleg.osl import OpenSourceLeg
 
-.. rubric:: Step 2: Creating an `OpenSourceLeg` Object
+Add a Joint Object
+-------------------
 
 Once we have imported the `OpenSourceLeg` class, we can create an instance of the class with the desired frequency and joint configuration:
 
@@ -20,20 +22,8 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
     osl = OpenSourceLeg(frequency=200)  # 200 Hz
     osl.add_joint(gear_ratio=9.0)
 
-In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
-
-.. rubric:: Step 3: Setting Units for the position Attribute
-
-We can set the units for the `position` attribute of the `osl` object using the `units` dictionary:
-
-.. code-block:: python
-
-    osl.units["position"] = "deg"
-    osl.log.info(osl.units)
-
-In this code, we set the units for the `position` attribute to "deg" and log the units to the console.
-
-.. rubric:: Step 4: Controlling Joint Impedance
+Controlling Joint Impedance
+---------------------------
 
 To control the impedance of a joint, we can use a `with` block to ensure that the `OpenSourceLeg` object is properly opened and cleaned up after use:
 
@@ -44,7 +34,7 @@ To control the impedance of a joint, we can use a `with` block to ensure that th
     set_point = 50  # motor ticks
 
     with osl:
-        osl.knee.set_mode("impedance")
+        osl.knee.set_mode(osl.knee.control_modes.impedance)
         osl.knee.set_joint_impedance(K=test_stiffness_value, B=test_damping_value)
         osl.knee.set_motor_position(osl.knee.motor_position + set_point)
         
@@ -63,7 +53,8 @@ In this code, we enter a `with` block that sets the mode of the `knee` joint to 
 .. Warning::
     This code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the joint is properly connected and functioning.
 
-.. rubric:: Here is the code for this tutorial:
+Code for this tutorial:
+-----------------------
 
 .. literalinclude:: ../../tutorials/impedance_mode.py
     :language: python

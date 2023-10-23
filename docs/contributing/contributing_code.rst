@@ -1,16 +1,4 @@
-We welcome contributions to the **opensourceleg** library! Whether you want to report a bug, request a feature, or submit a pull request, we appreciate your help in making this library better.
-
-Reporting Bugs
-==============
-
-If you encounter a bug or have a feature request, please open an issue on the **opensourceleg** GitHub repository. When reporting an issue, please include as much detail as possible, including:
-
-- A clear and descriptive title
-- A detailed description of the issue or feature request
-- Steps to reproduce the issue (if applicable)
-- Any error messages or stack traces (if applicable)
-- Your operating system and Python version
-
+=================
 Contributing Code
 =================
 
@@ -40,10 +28,3 @@ Testing
 =======
 
 Please ensure that your code changes include tests to cover the new functionality or bug fix. We use ``pytest`` for testing, and you can run the tests locally by running ``pytest`` in the root directory of the repository.
-
-Code of Conduct
-===============
-
-Please note that **opensourceleg** has a code of conduct, and we expect all contributors to follow it. You can find the code of conduct in the ``CODE_OF_CONDUCT.md`` file in the root directory of the repository.
-
-That's it! Thank you for your interest in contributing to **opensourceleg**. We appreciate your help in making this library better.
