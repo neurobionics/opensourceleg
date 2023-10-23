@@ -394,6 +394,7 @@ class DephyActpack(Device):
         Initializes the Actpack class
 
         Args:
+            name (str): _description_. Defaults to "DephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
