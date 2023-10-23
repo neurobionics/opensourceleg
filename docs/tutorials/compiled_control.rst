@@ -24,6 +24,8 @@ Next, we need to write a python script to call our newly compiled library. First
     from opensourceleg.control.compiled_controller import CompiledController
 
 Then we'll make an instance of the ``CompiledController`` wrapper and have it load our linear algebra library.
+We need to pass it both the name of the library (without an extension) and the directory in which to find the library. 
+We also give it the name of our main function as well as any initialization and cleanup functions. 
 
 .. code-block:: python
     
@@ -36,9 +38,9 @@ Then we'll make an instance of the ``CompiledController`` wrapper and have it lo
     )   
 
 .. Note::
-    The wrapper takes arguments for the names of initialization and cleanup functions.
-    If your library proivdes these, add them here to be called upon loading and cleanup, respectively. 
-    If your library does not need these functions, the default argument is `None`. 
+
+    If your library provides initialization and cleanup functions, they will be called upon loading and cleanup, respectively. 
+    If your library does not need these functions, pass the default argument of `None`. 
 
 Our library uses a `Vector3D` structure, which we need to define so that the python code can pass the data to the library 
 in the right format. Every structure is built using basic types from ``my_linalg.types``,
@@ -100,3 +102,9 @@ As our input vectors were orthogonal, we get the expected result of zero.
     print(f"Dot product: {outputs.result}")
 
     Dot product: 3.6549999999971154e-05
+
+.. rubric:: Here is the full code for this tutorial:
+
+.. literalinclude:: ../../tutorials/compiled_control/compiled_control.py
+    :language: python
+    :linenos:
