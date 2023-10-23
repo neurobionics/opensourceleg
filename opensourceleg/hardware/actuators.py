@@ -27,6 +27,9 @@ class ControlModes:
     position: ctypes.c_int = fxe.FX_POSITION
     impedance: ctypes.c_int = fxe.FX_IMPEDANCE
 
+    def __repr__(self) -> str:
+        return f"ControlModes"
+
 
 @dataclass
 class Gains:
@@ -104,6 +107,9 @@ class ActpackMode:
 
     def __str__(self) -> str:
         return str(object=self._control_mode)
+
+    def __repr__(self) -> str:
+        return f"ActpackMode[{self._control_mode}]"
 
     @property
     def mode(self) -> c_int:
@@ -355,6 +361,9 @@ class ActpackControlModes:
         self.position = PositionMode(device=device)
         self.impedance = ImpedanceMode(device=device)
 
+    def __repr__(self) -> str:
+        return f"ActpackControlModes"
+
 
 class DephyActpack(Device):
     """Class for the Dephy Actpack
@@ -373,6 +382,7 @@ class DephyActpack(Device):
 
     def __init__(
         self,
+        name: str = "DephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -396,6 +406,7 @@ class DephyActpack(Device):
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
         self._data: Any = None
+        self._name: str = name
 
         self._log: Logger = logger
         self._state = None
@@ -414,6 +425,9 @@ class DephyActpack(Device):
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: ActpackMode = self.control_modes.voltage
+
+    def __repr__(self) -> str:
+        return f"DephyActpack[{self._name}]"
 
     def start(self) -> None:
         try:
@@ -823,6 +837,9 @@ class MockData:
         self.gyroy = gyroy
         self.gyroz = gyroz
 
+    def __repr__(self):
+        return f"MockData"
+
 
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 class MockDephyActpack(DephyActpack):
@@ -838,6 +855,7 @@ class MockDephyActpack(DephyActpack):
 
     def __init__(
         self,
+        name: str = "MockDephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -849,6 +867,7 @@ class MockDephyActpack(DephyActpack):
         Initializes the MockDephyActpack class
 
         Args:
+            name (str): _description_. Defaults to "MockDephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -860,6 +879,7 @@ class MockDephyActpack(DephyActpack):
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
         self._data: MockData = MockData()
+        self._name: str = name
 
         self._log: Logger = logger
         self._state = None
@@ -947,3 +967,7 @@ class MockDephyActpack(DephyActpack):
     # Overrides the close method to do nothing
     def close(self):
         pass
+
+
+if __name__ == "__main__":
+    pass

@@ -40,6 +40,9 @@ class LoopKiller:
         self._fade_time = fade_time
         self._soft_kill_time = None
 
+    def __repr__(self) -> str:
+        return f"LoopKiller"
+
     def handle_signal(self, signum, frame):
         self.kill_now = True
 
@@ -113,6 +116,9 @@ class SoftRealtimeLoop:
         self.sleep_t_agg = 0.0
         self.n = 0
         self.report = report
+
+    def __repr__(self) -> str:
+        return f"SoftRealtimeLoop"
 
     def __del__(self):
         if self.report:
@@ -215,6 +221,9 @@ class EdgeDetector:
         self.rising_edge = False
         self.falling_edge = False
 
+    def __repr__(self) -> str:
+        return f"EdgeDetector"
+
     def update(self, bool_in):
         self.rising_edge = bool_in and not self.cur_state
         self.falling_edge = not bool_in and self.cur_state
@@ -247,6 +256,9 @@ class SaturatingRamp:
         """
         self.delta_per_update = 1.0 / (loop_frequency * ramp_time)
         self.value = 0.0
+
+    def __repr__(self) -> str:
+        return f"SaturatingRamp"
 
     def update(self, enable_ramp=False):
         """

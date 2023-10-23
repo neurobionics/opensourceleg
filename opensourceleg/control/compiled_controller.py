@@ -53,6 +53,7 @@ class CompiledController:
             garbage collected. Again, pass None if you don't need this functionality.
         """
         # Load functions
+        self.cleanup_func = None
         self.lib = ctl.load_library(library_name, library_path)
         self.cleanup_func = self._load_function(cleanup_function_name)
         self.main_function = self._load_function(main_function_name)
@@ -84,11 +85,20 @@ class CompiledController:
         if not self.cleanup_func == None:
             self.cleanup_func()
 
+    def __repr__(self):
+        return f"CompiledController"
+
     def _load_function(self, function_name):
         if function_name == None:
             return None
         else:
-            return getattr(self.lib, function_name)
+            try:
+                function_handle = getattr(self.lib, function_name)
+            except AttributeError:
+                raise AttributeError(
+                    f"Function {function_name} not found in library {self.lib}"
+                )
+            return function_handle
 
     def define_inputs(self, input_list: list[Any]) -> None:
         """

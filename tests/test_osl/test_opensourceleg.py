@@ -163,7 +163,7 @@ def test_osl_repr():
     """
 
     test_osl_r = OpenSourceLeg()
-    assert test_osl_r.__repr__() == "OSL object. Frequency: 200 Hz"
+    assert test_osl_r.__repr__() == "OSL"
 
 
 @pytest.fixture

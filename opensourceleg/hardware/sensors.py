@@ -9,8 +9,8 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from ..tools.logger import Logger
-from .joints import Joint
+from opensourceleg.hardware.joints import Joint
+from opensourceleg.tools.logger import Logger
 
 
 class StrainAmp:
@@ -46,6 +46,9 @@ class StrainAmp:
         self.is_streaming = True
         self.data: list[int] = []
         self.failed_reads = 0
+
+    def __repr__(self) -> str:
+        return f"StrainAmp"
 
     def read_uncompressed_strain(self):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
@@ -161,6 +164,9 @@ class Loadcell:
         )
         self._zeroed = False
         self._log: Logger = logger  # type: ignore
+
+    def __repr__(self) -> str:
+        return f"Loadcell"
 
     def reset(self):
         self._zeroed = False
@@ -305,6 +311,9 @@ class MockSMBus:
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         )
 
+    def __repr__(self) -> str:
+        return f"MockSMBus"
+
     # Override the read_byte_data method to return the byte data
     def read_byte_data(
         self, I2C_addr: int = 1, register: int = 0, force: bool = False
@@ -342,6 +351,9 @@ class MockStrainAmp(StrainAmp):
         self.is_streaming = True
         self.data = []
         self.failed_reads = 0
+
+    def __repr__(self) -> str:
+        return f"MockStrainAmp"
 
 
 class MockLoadcell(Loadcell):
@@ -384,6 +396,9 @@ class MockLoadcell(Loadcell):
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
         self._zeroed = False
         self._log: Logger = logger  # type: ignore
+
+    def __repr__(self) -> str:
+        return f"MockLoadcell"
 
 
 @dataclass
@@ -459,6 +474,9 @@ class IMULordMicrostrain:
         )  # Clean the internal circular buffer.
         self.imu_data = IMUDataClass()
 
+    def __repr__(self) -> str:
+        return f"IMULordMicrostrain"
+
     def start_streaming(self):
         self.imu.resume()
 
@@ -494,9 +512,4 @@ class IMULordMicrostrain:
 
 
 if __name__ == "__main__":
-    imu = IMULordMicrostrain(r"/dev/ttyS0", timeout=0, sample_rate=100)
-    imu.start_streaming()
-
-    for i in range(500):
-        imu_data = imu.get_data()
-        time.sleep(0.01)
+    pass

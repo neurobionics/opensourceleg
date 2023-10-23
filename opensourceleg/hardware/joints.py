@@ -29,6 +29,7 @@ class Joint(DephyActpack):
     ) -> None:
 
         super().__init__(
+            name=name,
             port=port,
             baud_rate=baud_rate,
             frequency=frequency,
@@ -366,7 +367,7 @@ class MockJoint(Joint, MockDephyActpack):
         dephy_log: bool = False,
     ) -> None:
 
-        MockDephyActpack.__init__(self, port)
+        MockDephyActpack.__init__(self, name, port)
         self._gear_ratio: float = gear_ratio
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell
@@ -382,3 +383,8 @@ class MockJoint(Joint, MockDephyActpack):
         else:
             self._log.warning(msg=f"Invalid joint name: {name}")
             return
+
+
+if __name__ == "__main__":
+    joint = MockJoint()
+    print(joint)

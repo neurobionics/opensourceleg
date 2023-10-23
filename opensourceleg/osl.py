@@ -87,7 +87,7 @@ class OpenSourceLeg:
             self._ankle.stop()
 
     def __repr__(self) -> str:
-        return f"OSL object. Frequency: {self._frequency} Hz"
+        return f"OSL"
 
     def add_joint(
         self,
@@ -444,4 +444,5 @@ if __name__ == "__main__":
     osl.add_joint(
         name="knee",
         gear_ratio=41.61,
+        offline_mode=True,
     )

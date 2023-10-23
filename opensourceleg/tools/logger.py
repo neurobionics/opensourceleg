@@ -59,6 +59,9 @@ class Logger(logging.Logger):
 
         self._is_logging = False
 
+    def __repr__(self) -> str:
+        return f"Logger"
+
     def set_file_level(self, level: str = "DEBUG") -> None:
         """
         Sets the level of the logger
@@ -107,7 +110,16 @@ class Logger(logging.Logger):
         if not self._is_logging:
             for container, attributes in zip(self._containers, self._attributes):
                 for attribute in attributes:
-                    header_data.append(f"{attribute}")
+                    if type(container) is dict:
+                        if "__main__" in container.values():
+                            header_data.append(f"{attribute}")
+                        else:
+                            header_data.append(f"{container}:{attribute}")
+                    else:
+                        if type(container).__repr__ is not object.__repr__:
+                            header_data.append(f"{container}:{attribute}")
+                        else:
+                            header_data.append(f"{attribute}")
 
             self._writer.writerow(header_data)
             self._is_logging = True
@@ -141,8 +153,13 @@ if __name__ == "__main__":
             self.b = 2
             self.c = 3
 
+        def __repr__(self) -> str:
+            return f"SimpleClass"
+
     simple_class = SimpleClass()
 
-    local_logger.add_attributes(locals(), ["local_variable_1", "local_variable_2"])
-    local_logger.add_attributes(simple_class, ["a", "b", "c"])
+    local_logger.add_attributes(locals(), ["local_variable_1"])
+    # local_logger.add_attributes(simple_class, ["a", "b", "c"])
     local_logger.data()
+
+    print(locals().__eq__)

@@ -77,6 +77,9 @@ class State:
     def __call__(self, data: Any) -> Any:
         pass
 
+    def __repr__(self) -> str:
+        return f"State[{self._name}]"
+
     def set_minimum_time_spent_in_state(self, time: float) -> None:
         """
         Set the minimum time spent in the state
@@ -266,6 +269,9 @@ class Event:
     def __ne__(self, __o) -> bool:
         return not self.__eq__
 
+    def __repr__(self) -> str:
+        return f"Event[{self._name}]"
+
     @property
     def name(self):
         return self._name
@@ -292,6 +298,11 @@ class Transition:
 
     def __call__(self, data: Any) -> Any:
         raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return (
+            f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
+        )
 
     def add_criteria(self, callback: Callable[[Any], bool]) -> None:
         self._criteria = callback
@@ -396,6 +407,9 @@ class StateMachine:
         self._osl: Any = osl
 
         self._spoof: bool = spoof
+
+    def __repr__(self) -> str:
+        return f"StateMachine"
 
     def add_state(self, state: State, initial_state: bool = False) -> None:
         """
@@ -516,3 +530,7 @@ class StateMachine:
     @property
     def is_spoofing(self):
         return self._spoof
+
+
+if __name__ == "__main__":
+    pass
