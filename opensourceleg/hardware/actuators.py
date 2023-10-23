@@ -456,6 +456,10 @@ class DephyActpack(Device):
         self.close()
 
     def update(self) -> None:
+        """
+        Queries the latest values from the actpack.
+        Also updates thermal model.
+        """
         if self.is_streaming:
             self._data = self.read()
             self._thermal_model.T_c = self.case_temperature
@@ -478,9 +482,11 @@ class DephyActpack(Device):
             return
 
     def set_motor_zero_position(self, position: float) -> None:
+        """Sets motor zero position in counts"""
         self._motor_zero_position = position
 
     def set_joint_zero_position(self, position: float) -> None:
+        """Sets joint zero position in counts"""
         self._joint_zero_position = position
 
     def set_position_gains(
@@ -491,7 +497,7 @@ class DephyActpack(Device):
     ) -> None:
 
         """
-        Sets the position gains
+        Sets the position gains in arbitrary Dephy units.
 
         Args:
             kp (int): The proportional gain
@@ -514,7 +520,7 @@ class DephyActpack(Device):
     ) -> None:
 
         """
-        Sets the current gains
+        Sets the current gains in arbitrary Dephy units.
 
         Args:
             kp (int): The proportional gain
@@ -538,7 +544,8 @@ class DephyActpack(Device):
         ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
-        Sets the impedance gains
+        Sets the impedance gains in arbitrary actpack units.
+        See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
         Args:
             kp (int): The proportional gain
@@ -557,10 +564,10 @@ class DephyActpack(Device):
 
     def set_voltage(self, value: float) -> None:
         """
-        Sets the q axis voltage
+        Sets the q axis voltage in mV
 
         Args:
-            value (float): The voltage to set
+            value (float): The voltage to set in mv
         """
         if self._mode != self.control_modes.voltage:
             self._log.warning(
@@ -574,10 +581,10 @@ class DephyActpack(Device):
 
     def set_current(self, value: float) -> None:
         """
-        Sets the q axis current
+        Sets the q axis current in mA
 
         Args:
-            value (float): The current to set
+            value (float): The current to set in mA
         """
         if self._mode != self.control_modes.current:
             self._log.warning(
@@ -591,10 +598,10 @@ class DephyActpack(Device):
 
     def set_motor_torque(self, torque: float) -> None:
         """
-        Sets the motor torque
+        Sets the motor torque in Nm.
 
         Args:
-            torque (float): The torque to set
+            torque (float): The torque to set in Nm.
         """
         if self._mode != self.control_modes.current:
             self._log.warning(
@@ -608,7 +615,8 @@ class DephyActpack(Device):
 
     def set_motor_position(self, position: float) -> None:
         """
-        Sets the motor position
+        Sets the motor position in radians.
+        If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
             position (float): The position to set
@@ -636,14 +644,17 @@ class DephyActpack(Device):
 
     @property
     def motor_zero_position(self) -> float:
+        """Motor encoder offset in radians."""
         return self._motor_zero_position
 
     @property
     def joint_zero_position(self) -> float:
+        """Joint encoder offset in radians."""
         return self._joint_zero_position
 
     @property
     def battery_voltage(self) -> float:
+        """Battery voltage in mV."""
         if self._data is not None:
             return float(self._data.batt_volt)
         else:
@@ -651,6 +662,7 @@ class DephyActpack(Device):
 
     @property
     def battery_current(self) -> float:
+        """Battery current in mA."""
         if self._data is not None:
             return float(self._data.batt_curr)
         else:
@@ -658,6 +670,7 @@ class DephyActpack(Device):
 
     @property
     def motor_voltage(self) -> float:
+        """Q-axis motor voltage in mV."""
         if self._data is not None:
             return float(self._data.mot_volt)
         else:
@@ -665,6 +678,7 @@ class DephyActpack(Device):
 
     @property
     def motor_current(self) -> float:
+        """Q-axis motor current in mA."""
         if self._data is not None:
             return float(self._data.mot_cur)
         else:
@@ -672,6 +686,10 @@ class DephyActpack(Device):
 
     @property
     def motor_torque(self) -> float:
+        """
+        Torque at motor output in Nm.
+        This is calculated using the motor current and torque constant.
+        """
         if self._data is not None:
             return float(self._data.mot_cur * NM_PER_MILLIAMP)
         else:
@@ -679,6 +697,7 @@ class DephyActpack(Device):
 
     @property
     def motor_position(self) -> float:
+        """Angle of the motor in radians."""
         if self._data is not None:
             return float(
                 int(self._data.mot_ang - self.motor_zero_position) * RAD_PER_COUNT
@@ -688,14 +707,17 @@ class DephyActpack(Device):
 
     @property
     def motor_encoder_counts(self) -> int:
+        """Raw reading from motor encoder in counts."""
         return int(self._data.mot_ang)
 
     @property
     def joint_encoder_counts(self) -> int:
+        """Raw reading from joint encoder in counts."""
         return int(self._data.ank_ang)
 
     @property
     def motor_velocity(self) -> float:
+        """Motor velocity in rad/s."""
         if self._data is not None:
             return float(int(self._data.mot_vel) * RAD_PER_COUNT)
         else:
@@ -703,6 +725,7 @@ class DephyActpack(Device):
 
     @property
     def motor_acceleration(self) -> float:
+        """Motor acceleration in rad/s^2."""
         if self._data is not None:
             return float(self._data.mot_acc)
         else:
@@ -710,6 +733,7 @@ class DephyActpack(Device):
 
     @property
     def joint_position(self) -> float:
+        """Measured angle from the joint encoder in radians."""
         if self._data is not None:
             return float(
                 int(self._data.ank_ang - self._joint_zero_position) * RAD_PER_COUNT
@@ -719,6 +743,7 @@ class DephyActpack(Device):
 
     @property
     def joint_velocity(self) -> float:
+        """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
             return float(self._data.ank_vel * RAD_PER_COUNT)
         else:
@@ -726,6 +751,7 @@ class DephyActpack(Device):
 
     @property
     def case_temperature(self) -> float:
+        """Case temperature in celsius."""
         if self._data is not None:
             return float(self._data.temperature)
         else:
@@ -733,6 +759,10 @@ class DephyActpack(Device):
 
     @property
     def winding_temperature(self) -> float:
+        """
+        ESTIMATED temperature of the windings in celsius.
+        This is calculated based on the thermal model using motor current.
+        """
         if self._data is not None:
             return float(self._thermal_model.T_w)
         else:
@@ -740,10 +770,16 @@ class DephyActpack(Device):
 
     @property
     def thermal_scaling_factor(self) -> float:
+        """
+        Scale factor to use in torque control, in [0,1].
+        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        For a proof, see paper referenced in thermal model.
+        """
         return float(self._thermal_scale)
 
     @property
     def genvars(self):
+        """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
                 object=[
@@ -760,6 +796,10 @@ class DephyActpack(Device):
 
     @property
     def accelx(self) -> float:
+        """
+        Acceleration in x direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
         if self._data is not None:
             return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
         else:
@@ -767,6 +807,10 @@ class DephyActpack(Device):
 
     @property
     def accely(self) -> float:
+        """
+        Acceleration in y direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
         if self._data is not None:
             return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
         else:
@@ -774,6 +818,10 @@ class DephyActpack(Device):
 
     @property
     def accelz(self) -> float:
+        """
+        Acceleration in z direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
         if self._data is not None:
             return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
         else:
@@ -781,6 +829,10 @@ class DephyActpack(Device):
 
     @property
     def gyrox(self) -> float:
+        """
+        Angular velocity in x direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
         if self._data is not None:
             return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
         else:
@@ -788,6 +840,10 @@ class DephyActpack(Device):
 
     @property
     def gyroy(self) -> float:
+        """
+        Angular velocity in y direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
         if self._data is not None:
             return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
         else:
@@ -795,6 +851,10 @@ class DephyActpack(Device):
 
     @property
     def gyroz(self) -> float:
+        """
+        Angular velocity in z direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
         if self._data is not None:
             return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
         else:

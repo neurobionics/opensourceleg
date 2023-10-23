@@ -145,7 +145,7 @@ class Joint(DephyActpack):
 
         Eqn: position = sum from i=0^5 (a_i*counts^i)
 
-        Author: Kevin Best, PhD
+        Author: Kevin Best
                 U-M Locolab | Neurobionics Lab
                 Gitub: tkevinbest, https://github.com/tkevinbest
         """
@@ -221,6 +221,7 @@ class Joint(DephyActpack):
         """
         Set the output position of the joint.
         This is the desired position of the joint, not the motor.
+        This method automatically handles scaling by the gear raito.
 
         Args:
             position (float): position in radians
@@ -257,12 +258,13 @@ class Joint(DephyActpack):
         self,
         kp: int = 40,
         ki: int = 400,
-        K: float = 0.08922,
-        B: float = 0.0038070,
+        K: float = 100.0,
+        B: float = 3.0,
         ff: int = 128,
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
+        This sets the impedance at the output and automatically scales based on gear raitos.
 
         Conversion:
             K_motor = K_joint / (gear_ratio ** 2)
@@ -271,8 +273,8 @@ class Joint(DephyActpack):
         Args:
             kp (int): Proportional gain. Defaults to 40.
             ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            K (float): Spring constant. Defaults to 100 Nm/rad.
+            B (float): Damping constant. Defaults to 3.0 Nm/rad/s.
             ff (int): Feedforward gain. Defaults to 128.
         """
         self.set_motor_impedance(
@@ -323,26 +325,43 @@ class Joint(DephyActpack):
 
     @property
     def max_temperature(self) -> float:
+        """Max allowed temperature of the actuator case in celsius."""
         return self._max_temperature
 
     @property
     def is_homed(self) -> bool:
+        """Indicates if the homing routine has been called yet."""
         return self._is_homed
 
     @property
     def encoder_map(self):
+        """Polynomial coefficients defining the joint encoder map from counts to radians."""
         return self._encoder_map
 
     @property
     def output_position(self) -> float:
+        """
+        Position of the output in radians.
+        This is calculated by scaling the motor angle with the gear ratio.
+        Note that this method does not consider compliance from an SEA.
+        """
         return self.motor_position / self.gear_ratio
 
     @property
     def output_velocity(self) -> float:
+        """
+        Velocity of the output in radians.
+        This is calculated by scaling the motor angle with the gear ratio.
+        Note that this method does not consider compliance from an SEA.
+        """
         return self.motor_velocity / self.gear_ratio
 
     @property
     def joint_torque(self) -> float:
+        """
+        Torque at the joint output in Nm.
+        This is calculated using motor current, k_t, and the gear ratio.
+        """
         return self.motor_torque * self.gear_ratio
 
 

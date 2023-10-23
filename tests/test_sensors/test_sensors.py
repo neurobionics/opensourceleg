@@ -290,7 +290,7 @@ def test_strainamp_read_uncompressed_strain(strainamp_patched: StrainAmp):
     # data = [0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15]
     # Calculate the expected values by hand
     expected_data = [2314, 2828, 3342, 3856, 4370, 4884]
-    uncompressed_strain = msa_byte_data.read_uncompressed_strain()
+    uncompressed_strain = msa_byte_data._read_uncompressed_strain()
     # Assert the proper array is returned
     assert np.array_equal(uncompressed_strain, expected_data)
 
@@ -310,7 +310,7 @@ def test_strainamp_read_compressed_strain(strainamp_patched: StrainAmp):
     )
     # Calculate the expected values by hand
     expected_data = [16, 515, 64, 1286, 112, 2057]
-    compressed_strain = msa_rcs.read_compressed_strain()
+    compressed_strain = msa_rcs._read_compressed_strain()
     # Assert the proper array is returned
     assert np.array_equal(compressed_strain, expected_data)
 
@@ -361,7 +361,7 @@ def test_strainamp_unpack_uncompressed_strain():
     # Initialize the data to be unpacked
     byte_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C]
     # Call the static method and assert the proper array is returned
-    unpacked_strain = MockStrainAmp.unpack_uncompressed_strain(byte_data)
+    unpacked_strain = MockStrainAmp._unpack_uncompressed_strain(byte_data)
     assert np.array_equal(unpacked_strain, [258, 772, 1286, 1800, 2314, 2828])
 
 
@@ -376,7 +376,7 @@ def test_strainamp_unpack_compressed_strain():
     # Initialize the data to be unpacked
     byte_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]
     # Call the static method and assert the proper array is returned
-    unpacked_strain = MockStrainAmp.unpack_compressed_strain(byte_data)
+    unpacked_strain = MockStrainAmp._unpack_compressed_strain(byte_data)
     assert np.array_equal(unpacked_strain, [16, 515, 64, 1286, 112, 2057])
 
 

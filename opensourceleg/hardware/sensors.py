@@ -1,7 +1,6 @@
 from typing import Any, Union
 
 import os
-import sys
 import time
 from dataclasses import dataclass
 
@@ -16,6 +15,7 @@ from opensourceleg.tools.logger import Logger
 class StrainAmp:
     """
     A class to directly manage the 6ch strain gauge amplifier over I2C.
+    An instance of this class is created by the loadcell class.
     Author: Mitry Anderson
     """
 
@@ -36,7 +36,6 @@ class StrainAmp:
 
     def __init__(self, bus, I2C_addr=0x66) -> None:
         """Create a strainamp object, to talk over I2C"""
-        # self._I2CMan = I2CManager(bus)
         self._SMBus: Union[SMBus, MockSMBus] = SMBus(bus)
         time.sleep(1)
         self.bus = bus
@@ -56,9 +55,9 @@ class StrainAmp:
         for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L + 1):
             data.append(self._SMBus.read_byte_data(self.addr, i))
 
-        return self.unpack_uncompressed_strain(data)
+        return self._unpack_uncompressed_strain(data)
 
-    def read_compressed_strain(self):
+    def _read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
         try:
             self.data = self._SMBus.read_i2c_block_data(self.addr, self.MEM_R_CH1_H, 10)
@@ -69,16 +68,18 @@ class StrainAmp:
             if self.failed_reads >= 5:
                 raise Exception("Load cell unresponsive.")
         # unpack them and return as nparray
-        return self.unpack_compressed_strain(self.data)
+        return self._unpack_compressed_strain(self.data)
 
     def update(self):
-        """Called to update data of strain amp. Also returns data."""
-        self.genvars[self.indx, :] = self.read_compressed_strain()
+        """Called to update data of strain amp. Also returns data.
+        Data is median filtered (max one sample delay) to avoid i2c issues.
+        """
+        self.genvars[self.indx, :] = self._read_compressed_strain()
         self.indx: int = (self.indx + 1) % 3
         return np.median(a=self.genvars, axis=0)
 
     @staticmethod
-    def unpack_uncompressed_strain(data):
+    def _unpack_uncompressed_strain(data):
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         ch1 = (data[0] << 8) | data[1]
         ch2 = (data[2] << 8) | data[3]
@@ -89,15 +90,8 @@ class StrainAmp:
         return np.array(object=[ch1, ch2, ch3, ch4, ch5, ch6])
 
     @staticmethod
-    def unpack_compressed_strain(data):
+    def _unpack_compressed_strain(data):
         """Used for more recent versions of strainamp firmware"""
-        # ch1 = (data[0] << 4) | ( (data[1] >> 4) & 0x0F)
-        # ch2 = ( (data[1] << 8) & 0x0F00) | data[2]
-        # ch3 = (data[3] << 4) | ( (data[4] >> 4) & 0x0F)
-        # ch4 = ( (data[4] << 8) & 0x0F00) | data[5]
-        # ch5 = (data[6] << 4) | ( (data[7] >> 4) & 0x0F)
-        # ch6 = ( (data[7] << 8) & 0x0F00) | data[8]
-        # moved into one line to save 0.02ms -- maybe pointless but eh
         return np.array(
             object=[
                 (data[0] << 4) | ((data[1] >> 4) & 0x0F),
@@ -174,8 +168,8 @@ class Loadcell:
 
     def update(self, loadcell_zero=None) -> None:
         """
-        Computes Loadcell data
-
+        Queries the loadcell for the latest data.
+        Latest data can then be accessed via properties, e.g. loadcell.Fx.
         """
         if self._is_dephy:
             loadcell_signed = (
@@ -208,7 +202,8 @@ class Loadcell:
 
     def initialize(self, number_of_iterations: int = 2000) -> None:
         """
-        Obtains the initial loadcell reading (aka) loadcell_zero
+        Obtains the initial loadcell reading (aka) loadcell_zero.
+        This is automatically subtraced off for subsequent calls of the update method.
         """
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
@@ -251,34 +246,65 @@ class Loadcell:
 
     @property
     def is_zeroed(self) -> bool:
+        """Indicates if load cell zeroing routine has been called."""
         return self._zeroed
 
     @property
     def fx(self):
+        """
+        Latest force in the x (medial/lateral) direction in Newtons.
+        If using the standard OSL setup, this is positive towards the user's right.
+        """
         return self.loadcell_data[0]
 
     @property
     def fy(self):
+        """
+        Latest force in the y (anterior/posterior) direction in Newtons.
+        If using the standard OSL setup, this is positive in the posterior direction.
+        """
         return self.loadcell_data[1]
 
     @property
     def fz(self):
+        """
+        Latest force in the z (vertical) direction in Newtons.
+        If using the standard OSL setup, this should be positive downwards.
+        i.e. quiet standing on the OSL should give a negative Fz.
+        """
         return self.loadcell_data[2]
 
     @property
     def mx(self):
+        """
+        Latest moment about the x (medial/lateral) axis in Nm.
+        If using the standard OSL setup, this axis is positive towards the user's right.
+        """
         return self.loadcell_data[3]
 
     @property
     def my(self):
+        """
+        Latest moment about the y (anterior/posterior) axis in Nm.
+        If using the standard OSL setup, this axis is positive in the posterior direction.
+        """
         return self.loadcell_data[4]
 
     @property
     def mz(self):
+        """
+        Latest moment about the z (vertical) axis in Nm.
+        If using the standard OSL setup, this axis is positive towards the ground.
+        """
         return self.loadcell_data[5]
 
     @property
     def loadcell_data(self):
+        """
+        Returns a vector of the latest loadcell data.
+        [Fx, Fy, Fz, Mx, My, Mz]
+        Forces in N, moments in Nm.
+        """
         if self._loadcell_data is not None:
             return self._loadcell_data[0]
         else:
@@ -406,7 +432,11 @@ class MockLoadcell(Loadcell):
 @dataclass
 class IMUDataClass:
     """
-    Dataclass for IMU data
+    Dataclass for IMU data.
+    Data is returned in the IMU frame.
+    Angles are in deg.
+    Velocities are in deg/s.
+    Acceleration is in g.
 
     Author: Kevin Best
     https://github.com/tkevinbest
@@ -426,6 +456,27 @@ class IMUDataClass:
 
 
 class IMULordMicrostrain:
+    """
+    Sensor class for the Lord Microstrain IMU.
+    Requires the MSCL library from Lord Microstrain (see below for install instructions).
+
+    As configured, this class returns euler angles (deg), angular rates (deg/s), and accelerations (g).
+
+    Example Usage::
+    -------------
+        imu = IMULordMicrostrain()
+        imu.start_streaming()
+        while in loop:
+            imu.get_data()
+        imu.stop_streaming()
+
+    Resources
+    --------
+    * To install, download the pre-built package for raspian at https://github.com/LORD-MicroStrain/MSCL/tree/master
+    * Full documentation for their library can be found at:
+        https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html.
+    """
+
     def __init__(
         self, port=r"/dev/ttyUSB0", baud_rate=921600, timeout=500, sample_rate=100
     ):
