@@ -314,12 +314,14 @@ def clamp_within_vector_range(input_value, input_vector):
     """
     This function ensures that input_value remains within the range spanned by the input_vector.
     If the input_value falls outside the vector's bounds, it'll return the appropriate max or min value from the vector.
-    E.g.:
+
+    Example:
         clamp_within_vector_range(10, [0,1,2,3]) = 3
         clamp_within_vector_range(-10, [0,1,2,3]) = 0
 
-    Author: Kevin Best, 8/7/2023
-    https://github.com/tkevinbest
+    Author:
+        Kevin Best, 8/7/2023
+        https://github.com/tkevinbest
     """
     min_allowed = min(input_vector)
     max_allowed = max(input_vector)

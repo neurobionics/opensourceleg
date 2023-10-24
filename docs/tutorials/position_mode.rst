@@ -1,16 +1,19 @@
 Commanding Position
---------------------------
+===================
 In this tutorial, we'll show you how to control your open-source leg in position mode usin the `opensourceleg` library.
 
-.. rubric:: Step 1: Importing the `OpenSourceLeg` Class
+Import the OpenSourceLeg Class
+------------------------------
 
 To use the `OpenSourceLeg` class, we first need to import it from the `opensourceleg.osl` module:
 
 .. code-block:: python
 
+    import opensourceleg.tools.units as units
     from opensourceleg.osl import OpenSourceLeg
 
-.. rubric:: Step 2: Creating an `OpenSourceLeg` Object
+Add a Joint Object
+-------------------
 
 Once we have imported the `OpenSourceLeg` class, we can create an instance of the class with the desired frequency and joint configuration:
 
@@ -21,27 +24,17 @@ Once we have imported the `OpenSourceLeg` class, we can create an instance of th
 
 In this code, we create an `OpenSourceLeg` object named `osl` with a frequency of 200 Hz and a joint with a gear ratio of 9.0.
 
-.. rubric:: Step 3: Setting Units for the `position` Attribute
-
-We can set the units for the `position` attribute of the `osl` object using the `units` dictionary:
-
-.. code-block:: python
-
-    osl.units["position"] = "deg"
-    osl.log.info(osl.units)
-
-In this code, we set the units for the `position` attribute to "deg" and log the units to the console.
-
-.. rubric:: Step 4: Controlling Joint Position
+Controlling Joint Position
+--------------------------
 
 To control the position of a joint, we can use a `with` block to ensure that the `OpenSourceLeg` object is properly opened and cleaned up after use:
 
 .. code-block:: python
 
-    set_point = 50  # motor ticks
+    set_point = units.convert_to_default(45, units.position.deg)  
 
     with osl:
-        osl.knee.set_mode("position")
+        osl.knee.set_mode(osl.knee.controler_modes.position)
         osl.knee.set_motor_position(osl.knee.motor_position + set_point)
         
         for t in osl.clock:
@@ -53,7 +46,8 @@ In this code, we enter a `with` block that sets the mode of the `knee` joint to 
 .. warning::
     This code assumes that the `OpenSourceLeg` object is properly configured and calibrated, and that the joint is properly connected and functioning.
 
-.. rubric:: Here is the code for this tutorial:
+Code for this tutorial:
+-----------------------
 
 .. literalinclude:: ../../tutorials/position_mode.py
     :language: python

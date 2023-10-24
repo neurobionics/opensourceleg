@@ -1,11 +1,13 @@
+========
+Hardware
+========
+
 Actuators
 ---------
 
-.. automodule:: opensourceleg.actuators
+.. automodule:: opensourceleg.hardware.actuators
    :members:
 
-Constants
----------
    * ``PI`` **float** = 3.14159
    * ``MOTOR_COUNT_PER_REV`` **float** = 16384
    * ``NM_PER_AMP`` **float** = 0.1133
@@ -20,65 +22,23 @@ Constants
    * ``NM_S_PER_RAD_TO_B`` **float** = ``RAD_PER_DEG`` / ``IMPEDANCE_A`` * 1e3 / ``NM_PER_AMP``
    * ``MAX_CASE_TEMPERATURE`` **float** = 80.0
 
-Control
--------
-
-.. automodule:: opensourceleg.control
-   :members:
 
 Joints
--------
-
-.. automodule:: opensourceleg.joints
-   :members:
-   :show-inheritance:
-
-Loadcell
----------
-
-.. automodule:: opensourceleg.loadcell
-   :members:
-
-Logger
--------
-
-.. automodule:: opensourceleg.logger
-   :members:
-   :show-inheritance:
-
-Open-Source Leg
-----------------
-
-.. automodule:: opensourceleg.osl
-   :members:
-   :show-inheritance:
-
-State Machine
----------------
-
-.. automodule:: opensourceleg.state_machine
-   :members:
-
-Thermal
---------
-
-.. automodule:: opensourceleg.thermal
-   :members:
-
-TUI
-----
-
-.. automodule:: opensourceleg.tui
-   :members:
-
-Units
 ------
 
-.. automodule:: opensourceleg.units
+.. automodule:: opensourceleg.hardware.joints
+   :members:
+   :show-inheritance:
+
+Sensors
+-------
+
+.. automodule:: opensourceleg.hardware.sensors
    :members:
 
-Utilities
----------
 
-.. automodule:: opensourceleg.utilities
-   :members: 
+Thermal
+-------
+
+.. automodule:: opensourceleg.hardware.thermal
+   :members:
