@@ -1,9 +1,11 @@
 Compiled Controllers
---------------------
+====================
 The ``opensourceleg.control`` module provides functionality for using controllers written in languages other than python via the ``CompiledController`` class.
 This class wraps a function from a compiled dynamic library and allows it to be called from your main python code. 
 Using a compiled controller written in another language can be beneficial, especially when speed is a concern. 
 
+Make an Example library
+-------------------------
 In this tutorial, we will write an example linear algebra library in ``c++`` that provides a function to compute the dot product between two 3D vectors. 
 This very simple function will allow us to show how to define input and output structures and call the controller. More complex examples using actual controllers in both ``c++`` and MATLAB implementations are provided in the examples folder. 
 
@@ -15,6 +17,8 @@ The ``CompiledController`` class assumes that you have a compiled dynamic librar
 
 First, navigate to the directory ``opensourceleg/tutorials/compiled_control/``. Then run ``make`` to build the library. If succesful, a new library named ``lin_alg.so`` should be created. 
 
+Load the Example Library
+-------------------------
 Next, we need to write a python script to call our newly compiled library. First, we import the library. We also import ``os`` to get the path of the current directory. 
 
 .. code-block:: python
@@ -42,6 +46,8 @@ We also give it the name of our main function as well as any initialization and 
     If your library provides initialization and cleanup functions, they will be called upon loading and cleanup, respectively. 
     If your library does not need these functions, pass the default argument of `None`. 
 
+Define Custom Datatypes
+----------------------
 Our library uses a `Vector3D` structure, which we need to define so that the python code can pass the data to the library 
 in the right format. Every structure is built using basic types from ``my_linalg.types``,
 such as `c_double`, `c_bool`, `c_int16`, etc. 
@@ -71,6 +77,8 @@ the compiled library. We define the inputs as two `Vector3D` objects and the out
                              ("vector2", my_linalg.types.Vector3D)])
     my_linalg.define_outputs([("result", my_linalg.types.c_double)])
 
+Populate Inputs and Test the Function
+-------------------------------------
 Now that the input structure has been defined, we can write to the inputs structure at ``my_linalg.inputs``.
 First, we declare two vectors and populate their fields with the appropriate values. 
 
@@ -103,7 +111,8 @@ As our input vectors were orthogonal, we get the expected result of zero.
 
     Dot product: 3.6549999999971154e-05
 
-.. rubric:: Here is the full code for this tutorial:
+Code for this tutorial
+----------------------
 
 .. literalinclude:: ../../tutorials/compiled_control/compiled_control.py
     :language: python
