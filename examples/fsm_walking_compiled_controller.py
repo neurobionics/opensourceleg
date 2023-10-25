@@ -106,7 +106,7 @@ controller.define_inputs(
 )
 controller.define_outputs(
     [
-        ("current_state", controller.types.c_uint8),
+        ("current_state", controller.types.c_int),
         ("time_in_current_state", controller.types.c_double),
         ("knee_impedance", controller.types.impedance_param_type),
         ("ankle_impedance", controller.types.impedance_param_type),
@@ -142,10 +142,18 @@ with osl:
         controller.inputs.sensors.Fz = osl.loadcell.fz  # type: ignore
 
         # Update any control inputs that change every loop
-        outputs = controller.inputs.time = t  # type: ignore
+        controller.inputs.time = t  # type: ignore
 
         # Call the controller
         outputs = controller.run()
+
+        # Test print to ensure external library call works
+        print(
+            "Current time in state {}: {:.2f} seconds".format(
+                outputs.current_state, outputs.time_in_current_state
+            ),
+            end="\r",
+        )
 
         # Write to the hardware
         osl.knee.set_joint_impedance(

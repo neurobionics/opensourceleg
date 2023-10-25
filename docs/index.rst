@@ -77,7 +77,13 @@ The GPL license ensures that all these freedoms are protected, now and in the fu
     /tutorials/current_mode
     /tutorials/position_mode
     /tutorials/impedance_mode
+    /tutorials/compiled_control
+    
+.. toctree::
+    :hidden:
+    :caption: Examples
 
+    /examples/finite_state_machine
 
 .. toctree::
     :hidden:
