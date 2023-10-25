@@ -1,5 +1,7 @@
+.. _compiled_controller_tutorial_doc:
+
 Compiled Controllers
-====================
+=======================
 The ``opensourceleg.control`` module provides functionality for using controllers written in languages other than python via the ``CompiledController`` class.
 This class wraps a function from a compiled dynamic library and allows it to be called from your main python code. 
 Using a compiled controller written in another language can be beneficial, especially when speed is a concern. 
@@ -14,6 +16,12 @@ The ``CompiledController`` class assumes that you have a compiled dynamic librar
 .. literalinclude:: ../../tutorials/compiled_control/dot_product_3d.cpp
     :language: cpp
     :linenos:
+
+.. note:: 
+
+    The ``extern "C"`` linkage-specification is important to prevent the `C++` compiler from name mangling. 
+    Under the hood, our library uses a `C` style calling convention, which expects to be able to find the library functions with their standard names.
+
 
 First, navigate to the directory ``opensourceleg/tutorials/compiled_control/``. Then run ``make`` to build the library. If succesful, a new library named ``lin_alg.so`` should be created. 
 
@@ -47,7 +55,7 @@ We also give it the name of our main function as well as any initialization and 
     If your library does not need these functions, pass the default argument of `None`. 
 
 Define Custom Datatypes
-----------------------
+---------------------------
 Our library uses a `Vector3D` structure, which we need to define so that the python code can pass the data to the library 
 in the right format. Every structure is built using basic types from ``my_linalg.types``,
 such as `c_double`, `c_bool`, `c_int16`, etc. 
@@ -78,7 +86,7 @@ the compiled library. We define the inputs as two `Vector3D` objects and the out
     my_linalg.define_outputs([("result", my_linalg.types.c_double)])
 
 Populate Inputs and Test the Function
--------------------------------------
+---------------------------------------
 Now that the input structure has been defined, we can write to the inputs structure at ``my_linalg.inputs``.
 First, we declare two vectors and populate their fields with the appropriate values. 
 

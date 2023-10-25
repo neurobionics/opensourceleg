@@ -1,3 +1,5 @@
+.. _adding_joints_tutorial:
+
 Adding an Actuator
 ==================
 In this tutorial, we'll show you how to add a joint to your open-source leg using the **opensourceleg** library.
