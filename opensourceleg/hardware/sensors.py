@@ -493,25 +493,25 @@ class IMULordMicrostrain:
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
 
