@@ -434,8 +434,8 @@ class IMUDataClass:
     """
     Dataclass for IMU data.
     Data is returned in the IMU frame.
-    Angles are in deg.
-    Velocities are in deg/s.
+    Angles are in rad.
+    Velocities are in rad/s.
     Acceleration is in g.
 
     Author: Kevin Best
@@ -443,17 +443,17 @@ class IMUDataClass:
     """
 
     angle_x: float = 0
-    """x direction Euler angle in deg"""
+    """x direction Euler angle in rad"""
     angle_y: float = 0
-    """y direction Euler angle in deg"""
+    """y direction Euler angle in rad"""
     angle_z: float = 0
-    """z direction Euler angle in deg"""
+    """z direction Euler angle in rad"""
     velocity_x: float = 0
-    """x direction rotational velocity in deg/s"""
+    """x direction rotational velocity in rad/s"""
     velocity_y: float = 0
-    """y direction rotational velocity in deg/s"""
+    """y direction rotational velocity in rad/s"""
     velocity_z: float = 0
-    """z direction rotational velocity in deg/s"""
+    """z direction rotational velocity in rad/s"""
     accel_x: float = 0
     """x direction acceleration in g"""
     accel_y: float = 0
@@ -469,7 +469,7 @@ class IMULordMicrostrain:
     Sensor class for the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).
 
-    As configured, this class returns euler angles (deg), angular rates (deg/s), and accelerations (g).
+    As configured, this class returns euler angles (rad), angular rates (rad/s), and accelerations (g).
 
     Example:
         imu = IMULordMicrostrain()
