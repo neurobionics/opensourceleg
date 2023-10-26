@@ -443,14 +443,23 @@ class IMUDataClass:
     """
 
     angle_x: float = 0
+    """x direction Euler angle in deg"""
     angle_y: float = 0
+    """y direction Euler angle in deg"""
     angle_z: float = 0
+    """z direction Euler angle in deg"""
     velocity_x: float = 0
+    """x direction rotational velocity in deg/s"""
     velocity_y: float = 0
+    """y direction rotational velocity in deg/s"""
     velocity_z: float = 0
+    """z direction rotational velocity in deg/s"""
     accel_x: float = 0
+    """x direction acceleration in g"""
     accel_y: float = 0
+    """y direction acceleration in g"""
     accel_z: float = 0
+    """z direction acceleration in g"""
     imu_time_sta: float = 0
     imu_filter_gps_time_week_num: float = 0
 
