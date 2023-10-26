@@ -34,9 +34,10 @@ class CompiledController:
         library_name,
         library_path,
         main_function_name,
-        initialization_function_name,
-        cleanup_function_name,
+        initialization_function_name=None,
+        cleanup_function_name=None,
     ) -> None:
+        self.cleanup_func = None
         self.lib = ctl.load_library(library_name, library_path)
         self.cleanup_func = self._load_function(cleanup_function_name)
         self.main_function = self._load_function(main_function_name)
