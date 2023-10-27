@@ -83,6 +83,7 @@ The GPL license ensures that all these freedoms are protected, now and in the fu
     :hidden:
     :caption: Examples
 
+    /examples/basic_motion
     /examples/finite_state_machine
 
 .. toctree::
