@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Union
 
 import os
 import time
@@ -8,8 +8,8 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from opensourceleg.hardware.joints import Joint
-from opensourceleg.tools.logger import Logger
+from ..tools.logger import Logger
+from .joints import Joint
 
 
 class StrainAmp:
@@ -434,8 +434,8 @@ class IMUDataClass:
     """
     Dataclass for IMU data.
     Data is returned in the IMU frame.
-    Angles are in deg.
-    Velocities are in deg/s.
+    Angles are in rad.
+    Velocities are in rad/s.
     Acceleration is in g.
 
     Author: Kevin Best
@@ -443,14 +443,23 @@ class IMUDataClass:
     """
 
     angle_x: float = 0
+    """x direction Euler angle in rad"""
     angle_y: float = 0
+    """y direction Euler angle in rad"""
     angle_z: float = 0
+    """z direction Euler angle in rad"""
     velocity_x: float = 0
+    """x direction rotational velocity in rad/s"""
     velocity_y: float = 0
+    """y direction rotational velocity in rad/s"""
     velocity_z: float = 0
+    """z direction rotational velocity in rad/s"""
     accel_x: float = 0
+    """x direction acceleration in g"""
     accel_y: float = 0
+    """y direction acceleration in g"""
     accel_z: float = 0
+    """z direction acceleration in g"""
     imu_time_sta: float = 0
     imu_filter_gps_time_week_num: float = 0
 
@@ -460,7 +469,7 @@ class IMULordMicrostrain:
     Sensor class for the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).
 
-    As configured, this class returns euler angles (deg), angular rates (deg/s), and accelerations (g).
+    As configured, this class returns euler angles (rad), angular rates (rad/s), and accelerations (g).
 
     Example:
         imu = IMULordMicrostrain()
@@ -493,25 +502,25 @@ class IMULordMicrostrain:
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
         channels.append(
             ms.MipChannel(
                 ms.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP,
-                ms.SampleRate.Hertz(sampleRate),
+                ms.SampleRate.Hertz(sample_rate),
             )
         )
 
