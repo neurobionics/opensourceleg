@@ -39,7 +39,7 @@ numpy = "^1.24.3"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"
-black = {version = "^22.3", allow-prereleases = true}
+black = {version = ">=22.3,<24.0", allow-prereleases = true}
 darglint = "^1.8.1"
 isort = {extras = ["colors"], version = "^5.10.1"}
 mypy = "^0.991"
