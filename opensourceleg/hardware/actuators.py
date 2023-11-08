@@ -719,7 +719,7 @@ class DephyActpack(Device):
     def motor_velocity(self) -> float:
         """Motor velocity in rad/s."""
         if self._data is not None:
-            return float(int(self._data.mot_vel) * RAD_PER_COUNT)
+            return int(self._data.mot_vel) * RAD_PER_DEG
         else:
             return 0.0
 

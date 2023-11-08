@@ -540,5 +540,5 @@ def test_mockjoint_nondefaultproperties(joint_patched):
     assert jp2.is_homed == True
     assert jp2.encoder_map == None
     assert jp2.output_position == 20 * 2 * np.pi / 16384 / 50
-    assert jp2.output_velocity == 10 * 2 * np.pi / 16384 / 50
+    assert jp2.output_velocity == 10 * np.pi / 180 / 50
     assert jp2.joint_torque == 20 * 0.1133 / 1000 * 50
