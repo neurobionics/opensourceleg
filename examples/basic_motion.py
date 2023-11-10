@@ -25,13 +25,16 @@ def make_periodic_traj_func(period, minimum, maximum):
     return lambda t: amplitude * np.cos(t * 2 * np.pi / period) + mean
 
 
-ankle_traj = make_periodic_traj_func(30, -20, 20)
-knee_traj = make_periodic_traj_func(30, 10, 90)
+ankle_traj = make_periodic_traj_func(10, -20, 20)
+knee_traj = make_periodic_traj_func(10, 10, 90)
 
 with osl:
     osl.home()
+    input("Homing complete: Press enter to continue")
     osl.knee.set_mode(osl.knee.control_modes.position)
     osl.ankle.set_mode(osl.ankle.control_modes.position)
+    osl.knee.set_position_gains(kp=5)
+    osl.ankle.set_position_gains(kp=5)
 
     for t in osl.clock:
         osl.update()
@@ -40,10 +43,13 @@ with osl:
         osl.knee.set_output_position(knee_setpoint)
         osl.ankle.set_output_position(ankle_setpoint)
         print(
-            "Ankle desired {:.2f} rad, Ankle Actual {:.2f} rad, Knee Desired {:.2f} rad, Ankle Desired {:,2f} rad".format(
+            "Ankle Desired {:+.2f} rad, Ankle Actual {:+.2f} rad, Knee Desired {:+.2f} rad, Ankle Desired {:+.2f} rad".format(
                 ankle_setpoint,
                 osl.ankle.output_position,
                 knee_setpoint,
                 osl.knee.output_position,
-            )
+            ),
+            end="\r",
         )
+
+print("\n")
