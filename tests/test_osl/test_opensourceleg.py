@@ -567,7 +567,18 @@ def test_osl_home(joint_patched: Joint, mock_get_active_ports):
     test_osl_h._knee._data = Data(mot_ang=20, ank_ang=10)
     test_osl_h.log = Logger(file_path="tests/test_osl/test_osl_h")
     test_osl_h.log.set_stream_level("DEBUG")
+
+    # Save the original input function
+    original_input = __builtins__.input
+
+    # Replace the built-in input function with a mock that returns an empty string
+    __builtins__.input = lambda _: ""
+
     test_osl_h.home()
+
+    # Restore the original input function
+    __builtins__.input = original_input
+
     with open("tests/test_osl/test_osl_h.log") as f:
         contents = f.read()
         assert "[OSL] Homing knee joint." in contents
@@ -591,7 +602,18 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
     test_osl_cl._loadcell._zeroed = True
     test_osl_cl.log = Logger(file_path="tests/test_osl/test_osl_cl")
     test_osl_cl.log.set_stream_level("DEBUG")
+
+    # Save the original input function
+    original_input = __builtins__.input
+
+    # Replace the built-in input function with a mock that returns an empty string
+    __builtins__.input = lambda _: ""
+
     test_osl_cl.calibrate_loadcell()
+
+    # Restore the original input function
+    __builtins__.input = original_input
+
     with open("tests/test_osl/test_osl_cl.log") as f:
         contents = f.read()
         assert "[OSL] Calibrating loadcell." in contents
