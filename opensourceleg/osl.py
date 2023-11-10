@@ -357,9 +357,9 @@ class OpenSourceLeg:
         self._timestamp = time.time()
 
     def home(self) -> None:
-        
-        input('\nPress enter to begin homing:')
-        
+
+        input("\nPress enter to begin homing:")
+
         if self.has_knee:
             self.log.info(msg="[OSL] Homing knee joint.")
             self.knee.home()
@@ -371,9 +371,9 @@ class OpenSourceLeg:
         self._is_homed = True
 
     def calibrate_loadcell(self) -> None:
-        
-        input('\nPress any key to begin load cell zero:')
-        
+
+        input("\nPress any key to begin load cell zero:")
+
         self.log.debug(msg="[OSL] Calibrating loadcell.")
         if self.has_loadcell:
             self.loadcell.reset()
