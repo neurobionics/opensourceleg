@@ -10,25 +10,17 @@ October 9, 2023
 
 import inspect
 import os
-import sys
 
 import numpy as np
-
-# Path fixes to handle running directly from cloned repo instead of pip installed.
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))  # type: ignore
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
 
 from opensourceleg.control.compiled_controller import CompiledController
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.tools import units
 
 osl = OpenSourceLeg(frequency=200)
-use_offline_mode = True
-osl.add_joint("knee", gear_ratio=9 * 83 / 18, port=None, offline_mode=use_offline_mode)
-osl.add_joint(
-    "ankle", gear_ratio=9 * 83 / 18, port="todo", offline_mode=use_offline_mode
-)
+use_offline_mode = False
+osl.add_joint("knee", gear_ratio=9 * 83 / 18, offline_mode=use_offline_mode)
+osl.add_joint("ankle", gear_ratio=9 * 83 / 18, offline_mode=use_offline_mode)
 LOADCELL_MATRIX = np.array(
     [
         (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
@@ -43,8 +35,9 @@ osl.add_loadcell(
     joint=osl.knee, offline_mode=use_offline_mode, loadcell_matrix=LOADCELL_MATRIX
 )
 
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))  # type: ignore
 controller = CompiledController(
-    library_name="FSM_WalkingController",
+    library_name="FSMController",
     library_path=currentdir,
     main_function_name="FSMController",
     initialization_function_name="FSMController_initialize",
@@ -148,13 +141,12 @@ controller.inputs.parameters.transition_parameters.kneeThetaLSwingToEStance = 30
 
 with osl:
     osl.home()
-    osl.calibrate_loadcell()
+    osl.update()
     osl.knee.set_mode(osl.knee.control_modes.impedance)
-    osl.ankle.set_mode(osl.knee.control_modes.impedance)
+    osl.ankle.set_mode(osl.ankle.control_modes.impedance)
 
     # Main Loop
     for t in osl.clock:
-        # Read from the hardware and update the inputs object
         osl.update()
 
         controller.inputs.sensors.knee_angle = (  # type: ignore
@@ -173,8 +165,12 @@ with osl:
 
         # Test print to ensure external library call works
         print(
-            "Current time in state {}: {:.2f} seconds".format(
-                outputs.current_state, outputs.time_in_current_state
+            "Current time in state {}: {:.2f} seconds, Knee Eq {:.2f}, Ankle Eq {:.2f}, Fz {:.2f}".format(
+                outputs.current_state,
+                outputs.time_in_current_state,
+                outputs.knee_impedance.eq_angle,
+                outputs.ankle_impedance.eq_angle,
+                osl.loadcell.fz,
             ),
             end="\r",
         )
@@ -182,10 +178,10 @@ with osl:
         # Write to the hardware
         osl.knee.set_joint_impedance(
             K=units.convert_to_default(
-                outputs.knee_impedance.stiffness, units.stiffness.N_m_per_deg
+                outputs.knee_impedance.stiffness, units.stiffness.N_m_per_rad
             ),
             B=units.convert_to_default(
-                outputs.knee_impedance.damping, units.damping.N_m_per_deg_per_s
+                outputs.knee_impedance.damping, units.damping.N_m_per_rad_per_s
             ),
         )
         osl.knee.set_output_position(
@@ -195,10 +191,10 @@ with osl:
         )
         osl.ankle.set_joint_impedance(
             K=units.convert_to_default(
-                outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_deg
+                outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_rad
             ),
             B=units.convert_to_default(
-                outputs.ankle_impedance.damping, units.damping.N_m_per_deg_per_s
+                outputs.ankle_impedance.damping, units.damping.N_m_per_rad_per_s
             ),
         )
         osl.ankle.set_output_position(
@@ -206,3 +202,5 @@ with osl:
                 outputs.ankle_impedance.eq_angle, units.position.deg
             )
         )
+
+    print("\n")
