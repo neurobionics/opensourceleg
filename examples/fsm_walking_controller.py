@@ -1,3 +1,13 @@
+"""
+Example FSM walking controller for the OSL.
+This implementation is all in python.
+
+Senthur Raj Ayyappan, Kevin Best
+Neurobionics Lab
+Robotics Department
+University of Michigan
+November 14, 2023
+"""
 import numpy as np
 
 import opensourceleg.tools.units as units
