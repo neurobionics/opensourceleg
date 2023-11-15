@@ -182,6 +182,47 @@ def build_4_state_FSM(osl: OpenSourceLeg) -> StateMachine:
     Returns:
         FSM object"""
 
+    early_stance = State(name="e_stance")
+    late_stance = State(name="l_stance")
+    early_swing = State(name="e_swing")
+    late_swing = State(name="l_swing")
+
+    early_stance.set_knee_impedance_paramters(
+        theta=KNEE_THETA_ESTANCE, k=KNEE_K_ESTANCE, b=KNEE_B_ESTANCE
+    )
+    early_stance.make_knee_active()
+    early_stance.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_ESTANCE, k=ANKLE_K_ESTANCE, b=ANKLE_B_ESTANCE
+    )
+    early_stance.make_ankle_active()
+
+    late_stance.set_knee_impedance_paramters(
+        theta=KNEE_THETA_LSTANCE, k=KNEE_K_LSTANCE, b=KNEE_B_LSTANCE
+    )
+    late_stance.make_knee_active()
+    late_stance.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_LSTANCE, k=ANKLE_K_LSTANCE, b=ANKLE_B_LSTANCE
+    )
+    late_stance.make_ankle_active()
+
+    early_swing.set_knee_impedance_paramters(
+        theta=KNEE_THETA_ESWING, k=KNEE_K_ESWING, b=KNEE_B_ESWING
+    )
+    early_swing.make_knee_active()
+    early_swing.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_ESWING, k=ANKLE_K_ESWING, b=ANKLE_B_ESWING
+    )
+    early_swing.make_ankle_active()
+
+    late_swing.set_knee_impedance_paramters(
+        theta=KNEE_THETA_LSWING, k=KNEE_K_LSWING, b=KNEE_B_LSWING
+    )
+    late_swing.make_knee_active()
+    late_swing.set_ankle_impedance_paramters(
+        theta=ANKLE_THETA_LSWING, k=ANKLE_K_LSWING, b=ANKLE_B_LSWING
+    )
+    late_swing.make_ankle_active()
+
     def estance_to_lstance(osl: OpenSourceLeg) -> bool:
         """
         Transition from early stance to late stance when the loadcell
@@ -225,55 +266,13 @@ def build_4_state_FSM(osl: OpenSourceLeg) -> StateMachine:
             or osl.knee.output_position < KNEE_THETA_LSWING_TO_ESTANCE
         )
 
-    early_stance = State(name="e_stance")
-    early_stance.set_knee_impedance_paramters(
-        theta=KNEE_THETA_ESTANCE, k=KNEE_K_ESTANCE, b=KNEE_B_ESTANCE
-    )
-    early_stance.make_knee_active()
-    early_stance.set_ankle_impedance_paramters(
-        theta=ANKLE_THETA_ESTANCE, k=ANKLE_K_ESTANCE, b=ANKLE_B_ESTANCE
-    )
-    early_stance.make_ankle_active()
-
-    late_stance = State(name="l_stance")
-    late_stance.set_knee_impedance_paramters(
-        theta=KNEE_THETA_LSTANCE, k=KNEE_K_LSTANCE, b=KNEE_B_LSTANCE
-    )
-    late_stance.make_knee_active()
-    late_stance.set_ankle_impedance_paramters(
-        theta=ANKLE_THETA_LSTANCE, k=ANKLE_K_LSTANCE, b=ANKLE_B_LSTANCE
-    )
-    late_stance.make_ankle_active()
-
-    early_swing = State(name="e_swing")
-    early_swing.set_knee_impedance_paramters(
-        theta=KNEE_THETA_ESWING, k=KNEE_K_ESWING, b=KNEE_B_ESWING
-    )
-    early_swing.make_knee_active()
-    early_swing.set_ankle_impedance_paramters(
-        theta=ANKLE_THETA_ESWING, k=ANKLE_K_ESWING, b=ANKLE_B_ESWING
-    )
-    early_swing.make_ankle_active()
-
-    late_swing = State(name="l_swing")
-    late_swing.set_knee_impedance_paramters(
-        theta=KNEE_THETA_LSWING, k=KNEE_K_LSWING, b=KNEE_B_LSWING
-    )
-    late_swing.make_knee_active()
-    late_swing.set_ankle_impedance_paramters(
-        theta=ANKLE_THETA_LSWING, k=ANKLE_K_LSWING, b=ANKLE_B_LSWING
-    )
-    late_swing.make_ankle_active()
-
     foot_flat = Event(name="foot_flat")
     heel_off = Event(name="heel_off")
     toe_off = Event(name="toe_off")
     pre_heel_strike = Event(name="pre_heel_strike")
     heel_strike = Event(name="heel_strike")
-    misc = Event(name="misc")
 
     fsm = StateMachine(osl=osl, spoof=offline_mode)
-
     fsm.add_state(state=early_stance, initial_state=True)
     fsm.add_state(state=late_stance)
     fsm.add_state(state=early_swing)
@@ -284,7 +283,6 @@ def build_4_state_FSM(osl: OpenSourceLeg) -> StateMachine:
     fsm.add_event(event=toe_off)
     fsm.add_event(event=pre_heel_strike)
     fsm.add_event(event=heel_strike)
-    fsm.add_event(event=misc)
 
     fsm.add_transition(
         source=early_stance,
