@@ -1,3 +1,5 @@
+.. _commanding_current_tutorial:
+
 Commanding Current
 ==================
 
