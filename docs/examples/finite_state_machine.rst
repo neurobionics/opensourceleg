@@ -78,6 +78,11 @@ A print statement is also included for debugging.
     :language: python
     :lines: 115-169
 
+.. note:: 
+    The OSL library provides sensor values in default units. If your library expects other units,
+    you need to convert the values prior to assigning them. You can use the ``units`` module in the ``tools`` subpackage to do this.
+    For example you can convert from radians (the default) to degrees using ``ankle_angle_in_deg = units.convert_from_default(osl.ankle.output_position, units.position.deg)``.
+
 Building the State Machine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The function ``build_4_state_FSM()`` uses the ``StateMachine`` functionality of the ``opensourceleg.control`` module to make a state machine with 4 states.
