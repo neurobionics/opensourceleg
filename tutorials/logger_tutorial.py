@@ -1,0 +1,21 @@
+from opensourceleg.tools.logger import Logger
+
+local_logger = Logger(file_path="./test_log")
+
+local_logger.set_file_level(level="DEBUG")
+local_logger.set_stream_level(level="INFO")
+
+
+class SimpleClass:
+    def __init__(self):
+        self.a = 1
+        self.b = 2
+        self.c = 3
+
+
+simple_class = SimpleClass()
+
+local_logger.add_attributes(simple_class, ["a", "b", "c"])
+local_logger.data()
+local_logger.debug("message")
+local_logger.close()
