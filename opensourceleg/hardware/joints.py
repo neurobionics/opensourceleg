@@ -21,23 +21,14 @@ It includes the `Joint` and `MockJoint` classes, facilitating joint homing,
 encoder mapping, impedance setting, and parameter conversion. The module is designed
 for robotic systems, offering both real and mock joint implementations.
 
-Key Classes and Functionalities:
-
-1. `Joint`: Represents a robotic joint controlled by a DephyActpack. Methods
-include homing, encoder mapping, and setting impedance gains. Properties for
-accessing joint information.
-
-2. `MockJoint`: Inherits from both the `Joint` class and the `MockDephyActpack`
-class. Used for testing without invoking actual hardware.
-
 Usage Guide:
 
-- Create a `Joint` instance by providing necessary parameters.
-- Optionally, create an encoder map using the `make_encoder_map` method.
-- Set impedance gains with the `set_joint_impedance` method.
-- Home the joint using the `home` method.
-- Access joint information using properties such as name, gear ratio, and temperature.
-- For testing without hardware, create a `MockJoint` instance.'
+1. Create a `Joint` instance by providing necessary parameters.
+2. Optionally, create an encoder map using the `make_encoder_map` method.
+3. Set impedance gains with the `set_joint_impedance` method.
+4. Home the joint using the `home` method.
+5. Access joint information using properties such as name, gear ratio, and temperature.
+6. For testing without hardware, create a `MockJoint` instance.'
 """
 
 

@@ -2,6 +2,19 @@
 import enum
 from dataclasses import dataclass
 
+"""
+Global Units Dictionary
+
+The global_units module defines classes for managing unit conversions across
+various physical quantities. It includes classes for force, torque, stiffness,
+damping, length, position, mass, velocity, acceleration, time, current, and voltage.
+
+Usage:
+1. Utilize the `force`, `torque`, etc., classes to represent quantities and configure their unit conversion factors.
+2. Use the `convert_to_default` function to convert a value from a user unit to the default unit for the corresponding quantity.
+3. Use the `convert_from_default` function to convert a value from the default unit to a user-specified unit.
+"""
+
 
 @dataclass
 class force:
