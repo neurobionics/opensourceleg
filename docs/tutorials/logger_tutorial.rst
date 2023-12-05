@@ -1,12 +1,12 @@
 Logger Tutorial
 ====================
 
-This tutorial demonstrates the usage of the `Logger` class from the `opensourceleg.tools.logger` module to log attributes from class instances to a CSV file.
+This tutorial demonstrates the usage of the ``Logger`` class from the ``opensourceleg.tools.logger`` module to log attributes from class instances to a CSV file.
 
 Import the Logger Class
 -----------------------
 
-To use the `Logger` class, import it from the `opensourceleg.tools.logger` module:
+To use the ``Logger`` class, import it from the ``opensourceleg.tools.logger`` module:
 
 .. code-block:: python
 
@@ -15,7 +15,7 @@ To use the `Logger` class, import it from the `opensourceleg.tools.logger` modul
 Initialization
 --------------
 
-To begin logging, create an instance of the `Logger` class:
+To begin logging, create an instance of the ``Logger`` class:
 
 .. code-block:: python
 
@@ -33,8 +33,8 @@ Set different logging levels for the file and stream handlers. Available levels 
     local_logger.set_file_level(level="DEBUG")
     local_logger.set_stream_level(level="INFO")
 
-- `set_file_level`: Set the logging level for the file handler.
-- `set_stream_level`: Set the logging level for the stream handler.
+- ``set_file_level``: Set the logging level for the file handler.
+- ``set_stream_level``: Set the logging level for the stream handler.
 
 Creating a Sample Class
 -----------------------
@@ -54,44 +54,44 @@ Define a sample class with attributes to be logged:
 Adding Attributes for Logging
 ------------------------------
 
-Use the `add_attributes` method to specify the class instance and attributes to log:
+Use the ``add_attributes`` method to specify the class instance and attributes to log:
 
 .. code-block:: python
 
-    local_logger.add_attributes(simple_class, ["a", "b", "c"])
+    local_logger.add_attributes(container=simple_class, attributes=["a", "b", "c"])
 
-- `container`: Pass the object (instance of a class) or a dictionary containing the attributes to be logged.
-- `attributes`: Provide a list of attributes to log.
+- ``container``: Pass the object (instance of a class) or a dictionary containing the attributes to be logged.
+- ``attributes``: Provide a list of attributes to log.
 
 Logging Data
 ------------
 
-Once attributes are added, log data using the `data` method:
+Once attributes are added, log data using the ``data`` method:
 
 .. code-block:: python
 
     local_logger.data()
 
-- `data`: Logs the attributes of the class instance to the CSV file.
+- ``data``: Logs the attributes of the class instance to the CSV file.
 
 Logging a Debug Message
 -----------------------
 
-Log a debug message using the `debug` method:
+Log a debug message using the ``debug`` method:
 
 .. code-block:: python
 
     local_logger.debug("message")
 
-- `debug`: Logs a debug message.
+- ``debug``: Logs a debug message.
 
 Closing the Logger
 ------------------
 
-After logging is complete, close the CSV file using the `close` method:
+After logging is complete, close the CSV file using the ``close`` method:
 
 .. code-block:: python
 
     local_logger.close()
 
-- `close`: Closes the CSV file.
+- ``close``: Closes the CSV file.

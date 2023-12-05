@@ -17,7 +17,7 @@ Using ``osl.clock`` in a ``for`` loop will create an infinite loop that executes
 
 The clock will continue ticking until one of three conditions are met:
 
-1. You call ``osl.clock.stop()``
+1. You call ``osl.clock.stop``
 2. An exception occurs
 3. You press ctrl+c on the keyboard. 
 
