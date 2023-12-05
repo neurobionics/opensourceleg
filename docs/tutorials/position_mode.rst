@@ -1,6 +1,6 @@
 Commanding Position
 ===================
-In this tutorial, we'll show you how to control your open-source leg in position mode usin the ``opensourceleg`` library.
+In this tutorial, we'll show you how to control your open-source leg in position mode using the ``opensourceleg`` library.
 
 Import the OpenSourceLeg Class
 ------------------------------
@@ -34,7 +34,7 @@ To control the position of a joint, we can use a ``with`` block to ensure that t
     set_point = units.convert_to_default(45, units.position.deg)  
 
     with osl:
-        osl.knee.set_mode(osl.knee.controler_modes.position)
+        osl.knee.set_mode(osl.knee.control_modes.position)
         osl.knee.set_motor_position(osl.knee.motor_position + set_point)
         
         for t in osl.clock:
