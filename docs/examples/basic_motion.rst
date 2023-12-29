@@ -73,13 +73,13 @@ The homing routine drives the joints towards their hardstops in order to initial
     :linenos:
     :lines: 31-32
 
-Next, we put both joints into position control mode. 
-If you wanted to change the position control gains, this would be an appropriate place to do so using the ``osl.(joint).set_position_gains()`` method.
+After homing, we wait for user input to begin moving the joints. Then we put both joints into position control mode and 
+set the proportional gains to a low value for this basic example.
 
 .. literalinclude:: ../../examples/basic_motion.py
     :language: python
     :linenos:
-    :lines: 33-34
+    :lines: 33-37
 
 Main Loop
 -----------
@@ -91,13 +91,13 @@ The loop will run until either ``osl.clock.stop()`` is called, an exception is r
 .. literalinclude:: ../../examples/basic_motion.py
     :language: python
     :linenos:
-    :lines: 36-49
+    :lines: 39-53
 
 Within the loop, we first call ``osl.update()`` to query the actuators and other sensors for their latest values. 
 We then update the knee and ankle position setpoints by calling our trajectory functions. 
 Note that we convert the setpoint to default OSL units (radians in this case), e.g., ``units.convert_to_default(knee_traj(t), units.position.deg)``.
 Finally, we use the ``set_output_position()`` method to command the OSL joints to move to the new reference value. 
-Finally, we print values to the screen. 
+We also we print values to the screen for debugging. 
 
 Full Code for This Example
 --------------------------------------

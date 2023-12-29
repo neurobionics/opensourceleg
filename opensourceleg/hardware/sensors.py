@@ -486,6 +486,9 @@ class IMULordMicrostrain:
     def __init__(
         self, port=r"/dev/ttyUSB0", baud_rate=921600, timeout=500, sample_rate=100
     ):
+        import sys
+
+        sys.path.append(r"/usr/share/python3-mscl/")
         import mscl as ms
 
         self.port = port

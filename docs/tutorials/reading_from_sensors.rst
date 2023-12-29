@@ -1,3 +1,5 @@
+.. _reading_from_sensors_tutorial:
+
 Reading from Sensors
 ====================
 

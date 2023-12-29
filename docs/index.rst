@@ -41,6 +41,11 @@ The easiest and quickest way to install the *opensourceleg* library is via `pip 
 
 If you plan on installing the *opensourceleg* library on a Raspberry Pi, we recommend using `opensourcelegpi <https://github.com/neurobionics/opensourcelegpi>`_ tool, which is a cloud-based CI tool used to build an up-to-date OS for a `Raspberry Pi <https://www.raspberrypi.com/products/raspberry-pi-4-model-b/>`_ that can be used headless/GUI-less to control autonomous/remote robotic systems. This tool bundles the *opensourceleg* library and its dependencies into a single OS image, which can be flashed onto a microSD card and used to boot a Raspberry Pi. For more information, click `here <https://github.com/neurobionics/opensourcelegpi/blob/main/README.md>`_.
 
+Getting Started
+=================
+
+For new users, we recommend visiting the :ref:`getting_started` page for an overview of the library and its documentation.
+
 Developing
 ==========
 
@@ -70,14 +75,16 @@ The GPL license ensures that all these freedoms are protected, now and in the fu
     :hidden:
     :caption: Tutorials
 
+    /tutorials/getting_started
     /tutorials/adding_joints
     /tutorials/adding_loadcell
-    /tutorials/reading_from_sensors
     /tutorials/voltage_mode
     /tutorials/current_mode
     /tutorials/position_mode
     /tutorials/impedance_mode
     /tutorials/compiled_control
+    /tutorials/osl_clock
+    /tutorials/reading_from_sensors
     
 .. toctree::
     :hidden:
