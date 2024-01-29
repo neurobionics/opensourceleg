@@ -13,6 +13,31 @@ from flexsea.device import Device
 from ..tools.logger import Logger
 from .thermal import ThermalModel
 
+"""
+Module Overview:
+
+This module defines classes related to controlling the Dephy Actpack, including control modes,
+gains, and Actpack modes. It also provides a class for the Dephy Actpack itself.
+
+Key Classes:
+
+- `ControlModes`: Enumerates available control modes for the Dephy Actpack.
+- `Gains`: Dataclass for controller gains.
+- `ActpackMode`: Base class for Actpack modes, including `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode`.
+- `ActpackControlModes`: Enumerates available Actpack modes.
+- `DephyActpack`: Class for interacting with the Dephy Actpack.
+
+Usage Guide:
+
+1. Create an instance of `DephyActpack` with appropriate parameters (e.g., port, baud_rate, frequency).
+2. Start the actpack using the `start` method.
+3. Set the desired control mode using the `set_mode` method.
+4. Set gains for the selected control mode using methods like `set_position_gains`, `set_current_gains`, etc.
+5. Optionally, update the actpack using the `update` method to query the latest values.
+6. Stop the actpack using the `stop` method.
+
+"""
+
 
 @dataclass
 class ControlModes:

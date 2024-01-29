@@ -13,6 +13,24 @@ from .actuators import (
     MockDephyActpack,
 )
 
+"""
+Module Overview:
+
+This module provides classes for controlling robotic joints using DephyActpack.
+It includes the `Joint` and `MockJoint` classes, facilitating joint homing,
+encoder mapping, impedance setting, and parameter conversion. The module is designed
+for robotic systems, offering both real and mock joint implementations.
+
+Usage Guide:
+
+1. Create a `Joint` instance by providing necessary parameters.
+2. Optionally, create an encoder map using the `make_encoder_map` method.
+3. Set impedance gains with the `set_joint_impedance` method.
+4. Home the joint using the `home` method.
+5. Access joint information using properties such as name, gear ratio, and temperature.
+6. For testing without hardware, create a `MockJoint` instance.'
+"""
+
 
 class Joint(DephyActpack):
     def __init__(
