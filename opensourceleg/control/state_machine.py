@@ -6,6 +6,20 @@ from typing import Any, Callable, List, Optional
 import time
 from dataclasses import dataclass, field
 
+"""
+The state_machine module provides classes for implementing a finite state machine (FSM).
+It includes the State, Idle, Event, Transition, FromToTransition, and StateMachine classes.
+
+Usage:
+1. Use the `State` class to represent a state in the FSM. Configure its parameters
+   such as joint activity, impedance parameters, and callbacks.
+2. Extend the `Idle` class to create specific idle states with additional properties if needed.
+3. Utilize the `Event` class to define events that trigger state transitions.
+4. Create transitions between states using the `Transition` and `FromToTransition` classes.
+   Add criteria and actions as needed.
+5. Instantiate the `StateMachine` class, add states, events, and transitions, and start the FSM.
+"""
+
 
 class State:
     """

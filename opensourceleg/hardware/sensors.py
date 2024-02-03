@@ -11,6 +11,24 @@ from smbus2 import SMBus
 from ..tools.logger import Logger
 from .joints import Joint
 
+"""
+Module Overview:
+
+This module defines classes related to load cell management, specifically for the Dephy Actpack and a mock version for testing. Additionally, it includes a class for interfacing with the Lord Microstrain IMU.
+
+Usage Guide:
+
+1. For load cell management, create an instance of `Loadcell` with appropriate parameters (e.g., dephy_mode, joint, amp_gain, exc, loadcell_matrix, logger).
+2. Optionally, initialize the load cell zero using the `initialize` method.
+3. Update the load cell data using the `update` method.
+4. Access force and moment values using the properties like `fx`, `fy`, `fz`, `mx`, `my`, `mz`.
+5. For testing, use the mocked classes `MockStrainAmp` and `MockLoadcell` as needed.
+6. For IMU data, create an instance of `IMULordMicrostrain` with appropriate parameters (e.g., port, baud_rate, timeout, sample_rate).
+7. Start and stop streaming using the `start_streaming` and `stop_streaming` methods.
+8. Obtain IMU data using the `get_data` method.
+
+"""
+
 
 class StrainAmp:
     """
@@ -486,6 +504,9 @@ class IMULordMicrostrain:
     def __init__(
         self, port=r"/dev/ttyUSB0", baud_rate=921600, timeout=500, sample_rate=100
     ):
+        import sys
+
+        sys.path.append(r"/usr/share/python3-mscl/")
         import mscl as ms
 
         self.port = port
