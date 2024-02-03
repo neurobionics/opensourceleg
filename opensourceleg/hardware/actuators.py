@@ -209,14 +209,11 @@ class VoltageMode(ActpackMode):
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Voltage mode.")
-        self._set_voltage(voltage=0)
+        self._device.stop_motor()
         time.sleep(0.1)
 
     def _set_voltage(self, voltage: int) -> None:
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=voltage,
-        )
+        self._device.command_motor_voltage(value=voltage)
 
 
 class CurrentMode(ActpackMode):
@@ -235,7 +232,7 @@ class CurrentMode(ActpackMode):
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
-        self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
+        self._device.stop_motor()
         time.sleep(1 / self._device.frequency)
 
     def _set_gains(
@@ -258,10 +255,7 @@ class CurrentMode(ActpackMode):
         Args:
             current (int): _description_
         """
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=current,
-        )
+        self._device.command_motor_current(value=current)
 
 
 class PositionMode(ActpackMode):
@@ -282,7 +276,7 @@ class PositionMode(ActpackMode):
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
-        self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
+        self._device.stop_motor()
         time.sleep(0.1)
 
     def _set_gains(
@@ -305,10 +299,7 @@ class PositionMode(ActpackMode):
         Args:
             counts (int): position in counts
         """
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=counts,
-        )
+        self._device.command_motor_position(value=counts)
 
 
 class ImpedanceMode(ActpackMode):
@@ -328,7 +319,7 @@ class ImpedanceMode(ActpackMode):
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
-        self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
+        self._device.stop_motor()
         time.sleep(1 / self._device.frequency)
 
     def _set_motor_position(self, counts: int) -> None:
@@ -337,10 +328,7 @@ class ImpedanceMode(ActpackMode):
         Args:
             counts (int): position in counts
         """
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=counts,
-        )
+        self._device.command_motor_impedance(value=counts)
 
     def _set_gains(
         self,
@@ -408,8 +396,9 @@ class DephyActpack(Device):
     def __init__(
         self,
         name: str = "DephyActpack",
+        firmwareVersion: str = "7.2.0",
         port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
+        baudRate: int = 230400,
         frequency: int = 500,
         logger: Logger = Logger(),
         debug_level: int = 0,
@@ -427,7 +416,7 @@ class DephyActpack(Device):
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
         """
-        super().__init__(port=port, baud_rate=baud_rate)
+        super().__init__(firmwareVersion = firmwareVersion, port=port, baudRate=baudRate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
@@ -457,11 +446,7 @@ class DephyActpack(Device):
 
     def start(self) -> None:
         try:
-            self.open(
-                freq=self._frequency,
-                log_level=self._debug_level,
-                log_enabled=self._dephy_log,
-            )
+            self.open()
         except OSError as e:
             print("\n")
             self._log.error(
@@ -475,7 +460,7 @@ class DephyActpack(Device):
 
     def stop(self) -> None:
         self.set_mode(mode=self.control_modes.voltage)
-        self.set_voltage(value=0)
+        self.stop_motor()
 
         time.sleep(0.1)
         self.close()
