@@ -33,6 +33,25 @@ Usage Guide:
 
 
 class Joint(DephyActpack):
+    """
+    Base class for reading sensor data from and controlling robotic joints using Dephy's actpack
+    (support for more actuators will be added in the future).
+
+    Parameters:
+        name (str): Name of the joint. Defaults to knee.
+        port (str): Port to which the actpack is connected. Defaults to None.
+        baud_rate(int): Baud rate of the actpack. Defaults to 230400.
+        gear_ratio (float): Gear ratio of the joint. Defaults to 1.0.
+        has_loadcell (bool): Is the load cell conneced to the corresponding Defaults to False.
+        actpack? If True, the load cell data will be read from the actpack and not from the RPi's GPIO
+        pins.
+        debug_level(int): Debug level to be used for the actpack's logging routine. Defaults to 0.
+        dephy_log (bool): If True, Dephy Actpack's logging routine will be Defaults to False.
+        enabled in addition to the default opensourceleg's logging routine.
+        logger (Logger): Logger instance to be used for logging. If no logger is provided, a new
+        logger will be used.
+        """
+
     def __init__(
         self,
         name: str = "knee",
@@ -88,13 +107,16 @@ class Joint(DephyActpack):
 
         """
 
-        This method homes the joint by moving it to the zero position.
-        The zero position is defined as the position where the joint is fully extended.
-        This method will also make an encoder map if one does not exist.
+        This method homes the joint by moving it to the zero position. The zero
+        position is defined as the position where the joint is fully extended. This method will also
+        make an encoder map if one does not exist.
 
-        Args:
-            homing_voltage (int): voltage in mV to use for homing
-            homing_frequency (int): frequency in Hz to use for homing
+        Parameters:
+            homing_voltage (int): Voltage to be used for homing the joint in mV. Defaults to 2000
+            homing_frequency (int): Frequency to be used for homing the joint in Hz. Defaults to 100.
+
+        Returns:
+            None
         """
 
         is_homing = True
@@ -163,6 +185,12 @@ class Joint(DephyActpack):
 
         Eqn: position = sum from i=0^5 (a_i*counts^i)
 
+        Parameters:
+            None
+
+        Returns:
+            None
+
         Author: Kevin Best
                 U-M Locolab | Neurobionics Lab
                 Gitub: tkevinbest, https://github.com/tkevinbest
@@ -218,32 +246,46 @@ class Joint(DephyActpack):
 
     def set_max_temperature(self, temperature: float) -> None:
         """
-        Set the maximum temperature of the motor.
+        Sets the maximum allowable temperature for the joint in degrees C. If the
+        joint's temperature exceeds this value, the joint will be safely exited.
 
-        Args:
-            temperature (float): temperature in degrees Celsius
+        Parameters:
+            temperature (float): Maximum allowable temperature in degrees C.
+
+        Returns:
+            None
+
         """
+
         self._max_temperature = temperature
 
     def set_output_torque(self, torque: float) -> None:
         """
-        Set the output torque of the joint.
-        This is the torque that is applied to the joint, not the motor.
+        Set the output torque of the joint. That is, the prescribed torque here will be
+        scaled into motor torque using the gear ratio.
 
-        Args:
-            torque (float): torque in N_m
+        Parameters:
+            torque (float): Torque to be set in Nm.
+
+        Returns:
+            None
+
         """
         self.set_motor_torque(torque=torque / self.gear_ratio)
 
     def set_output_position(self, position: float) -> None:
         """
-        Set the output position of the joint.
-        This is the desired position of the joint, not the motor.
-        This method automatically handles scaling by the gear raito.
+        Set the output position of the joint. This is the desired position of the joint, not
+        the motor. This method automatically handles scaling by the gear raito.
 
-        Args:
-            position (float): position in radians
+        Parameters:
+            position (float): Position to be set in radians.
+
+        Returns:
+            None
+
         """
+
         self.set_motor_position(position=position * self.gear_ratio)
 
     def set_motor_impedance(
@@ -255,15 +297,19 @@ class Joint(DephyActpack):
         ff: int = 128,
     ) -> None:
         """
-        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
+        Sets the impedance control gains for the joint in SI units: Nm/rad and Nm/(rad/s).
 
-        Args:
+        Parameters:
             kp (int): Proportional gain. Defaults to 40.
             ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            K (float): Spring constant. Defaults to 0.08922.
+            B (float): Damping constant. Defaults to 0.0038070.
             ff (int): Feedforward gain. Defaults to 128.
+        Returns:
+            None
+
         """
+
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
@@ -282,19 +328,23 @@ class Joint(DephyActpack):
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
-        This sets the impedance at the output and automatically scales based on gear raitos.
+        This sets the impedance at the output and automatically scales based on gear ratios.
 
         Conversion:
             K_motor = K_joint / (gear_ratio ** 2)
             B_motor = B_joint / (gear_ratio ** 2)
 
-        Args:
+        Parameters:
             kp (int): Proportional gain. Defaults to 40.
             ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 100 Nm/rad.
-            B (float): Damping constant. Defaults to 3.0 Nm/rad/s.
+            K (float): Spring constant. Defaults to 100.0.
+            B (float): Damping constant. Defaults to 3.0.
             ff (int): Feedforward gain. Defaults to 128.
+
+        Returns:
+            None
         """
+
         self.set_motor_impedance(
             kp=kp,
             ki=ki,
@@ -335,50 +385,53 @@ class Joint(DephyActpack):
 
     @property
     def name(self) -> str:
+        """name (str): Name of the joint."""
         return self._name
 
     @property
     def gear_ratio(self) -> float:
+        """gear_ratio (float): Gear ratio of the joint."""
         return self._gear_ratio
 
     @property
     def max_temperature(self) -> float:
-        """Max allowed temperature of the actuator case in celsius."""
+        """max_temperature (float): Maximum allowable temperature of the actuator in degrees C."""
         return self._max_temperature
 
     @property
     def is_homed(self) -> bool:
-        """Indicates if the homing routine has been called yet."""
+        """is_homed (bool): True if the joint has been homed."""
         return self._is_homed
 
     @property
     def encoder_map(self):
-        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+        """encoder_map (np.array): Polynomial coefficients defining the joint encoder map from counts
+        to radians."""
         return self._encoder_map
 
     @property
     def output_position(self) -> float:
         """
-        Position of the output in radians.
-        This is calculated by scaling the motor angle with the gear ratio.
-        Note that this method does not consider compliance from an SEA.
+        output_position (float): Position of the output in radians. This is calculated by scaling the
+        motor angle with the gear ratio. Note that this method does not consider the presence of an
+        SEA.
         """
         return self.motor_position / self.gear_ratio
 
     @property
     def output_velocity(self) -> float:
         """
-        Velocity of the output in radians.
-        This is calculated by scaling the motor angle with the gear ratio.
-        Note that this method does not consider compliance from an SEA.
+        output_velocity (float): Velocity of the output in radians. This is calculated by scaling the
+        motor angle with the gear ratio. Note that this method does not consider the presence of an
+        SEA.
         """
         return self.motor_velocity / self.gear_ratio
 
     @property
     def joint_torque(self) -> float:
         """
-        Torque at the joint output in Nm.
-        This is calculated using motor current, k_t, and the gear ratio.
+        joint_torque (float): Torque at the joint output in Nm. This is calculated using motor
+        current, k_t, and the gear ratio.
         """
         return self.motor_torque * self.gear_ratio
 

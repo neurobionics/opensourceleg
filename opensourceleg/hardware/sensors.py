@@ -32,8 +32,12 @@ Usage Guide:
 
 class StrainAmp:
     """
-    A class to directly manage the 6ch strain gauge amplifier over I2C.
-    An instance of this class is created by the loadcell class.
+    A class to interface with the 6ch strain gauge amplifier over I2C/RPi GPIO.
+
+    Parameters:
+        bus (int): I2C bus to be used. If no bus is provided, the default bus will be used.
+        I2C_addr (str): I2C address of the strain gauge amplifier. Defaults to 0x66.
+
     Author: Mitry Anderson
     """
 
@@ -68,7 +72,18 @@ class StrainAmp:
         return f"StrainAmp"
 
     def read_uncompressed_strain(self):
-        """Used for an older version of the strain amp firmware (at least pre-2017)"""
+        """
+        Reads the uncompressed strain data from the strain gauge amplifier. This
+        method is recommended for an older version of the strain amplifier firmware (pre-2017).
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        """
+
         data = []
         for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L + 1):
             data.append(self._SMBus.read_byte_data(self.addr, i))
@@ -76,7 +91,18 @@ class StrainAmp:
         return self._unpack_uncompressed_strain(data)
 
     def _read_compressed_strain(self):
-        """Used for more recent versions of strain amp firmware"""
+        """
+        Reads the compressed strain data from the strain gauge amplifier. This
+        method is recommended for a newer version of the strain amplifier firmware (post-2017).
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        """
+
         try:
             self.data = self._SMBus.read_i2c_block_data(self.addr, self.MEM_R_CH1_H, 10)
             self.failed_reads = 0
@@ -89,16 +115,36 @@ class StrainAmp:
         return self._unpack_compressed_strain(self.data)
 
     def update(self):
-        """Called to update data of strain amp. Also returns data.
-        Data is median filtered (max one sample delay) to avoid i2c issues.
         """
+        Updates the strain gauge amplifier's attributes by reading the strain gauge
+        amplifier's data stream if the strain gauge amplifier is connected. The updated data is
+        median filtered (maximum sample delay of one) to avoid I2C issues.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        """
+
         self.genvars[self.indx, :] = self._read_compressed_strain()
         self.indx: int = (self.indx + 1) % 3
         return np.median(a=self.genvars, axis=0)
 
     @staticmethod
     def _unpack_uncompressed_strain(data):
-        """Used for an older version of the strain amp firmware (at least pre-2017)"""
+        """
+        Unpacks the uncompressed strain data. This method is recommended for an
+        older version of the strain amplifier firmware (pre-2017).
+
+        Parameters:
+            data: Uncompressed strain data to be unpacked.
+
+        Returns:
+            None
+
+        """
         ch1 = (data[0] << 8) | data[1]
         ch2 = (data[2] << 8) | data[3]
         ch3 = (data[4] << 8) | data[5]
@@ -109,7 +155,16 @@ class StrainAmp:
 
     @staticmethod
     def _unpack_compressed_strain(data):
-        """Used for more recent versions of strainamp firmware"""
+        """
+        Unpacks the compressed strain data. This method is recommended for a
+        newer version of the strain amplifier firmware (post-2017).
+
+        Parameters:
+            data: Compressed strain data to be unpacked.
+
+        Returns:
+            None
+        """
         return np.array(
             object=[
                 (data[0] << 4) | ((data[1] >> 4) & 0x0F),
@@ -143,6 +198,21 @@ class StrainAmp:
 
 
 class Loadcell:
+    """
+    Class to interface with the load cell. It contains various helper functions to read the load cell
+    data and convert it to forces and moments.
+
+    Parameters:
+        dephy_mode (bool): Is the load cell connected to the actpack? If True, the
+        load cell data will be read from the actpack and not from the RPi's GPIO pins. Defaults to False.
+        joint (Joint): Joint to which the load cell is connected. Defaults to None.
+        amp_gain (float): Amplifier gain of the load cell strain amplifier. Defaults to 125.0.
+        exc (float): Excitation voltage of the load cell strain amplifier. Defaults to False.
+        loadcell_matrix (np.ndarray(6, 6)): Calibration matrix for the load cell.
+        This matrix is used to convert the load cell's raw data to forces and moments. Defaults to None.
+        logger (Logger): Logger instance to be used for logging. If no logger is provided,
+        a new logger will be used. Defaults to None
+    """
     def __init__(
         self,
         dephy_mode: bool = False,
@@ -181,14 +251,32 @@ class Loadcell:
         return f"Loadcell"
 
     def reset(self):
+        """
+        Resets the load cell's zero offset.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         self._zeroed = False
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
     def update(self, loadcell_zero=None) -> None:
         """
-        Queries the loadcell for the latest data.
-        Latest data can then be accessed via properties, e.g. loadcell.Fx.
+        Updates the load cell's attributes by reading and converting the load cell's
+        data. You can access the load cell forces and moments using the loadcell attributes like
+        loadcell.fx, loadcell.mx, etc.
+
+        Parameters:
+            loadcell_zero (np.array(6)): Zero offset of the load cell. Defaults to None.
+
+        Returns:
+            None
+
         """
+
         if self._is_dephy:
             loadcell_signed = (
                 (self._joint.genvars - self._offset) / self._adc_range * self._exc
@@ -220,9 +308,18 @@ class Loadcell:
 
     def initialize(self, number_of_iterations: int = 2000) -> None:
         """
-        Obtains the initial loadcell reading (aka) loadcell_zero.
-        This is automatically subtraced off for subsequent calls of the update method.
+        Initializes the load cell's zero offset by taking the average of the load cell's raw
+        data over a given number of iterations.
+
+        Parameters:
+            number_of_iterations (int): Number of iterations to be used. Defaults to 2000.
+            for the load cell's zero offset calibration.
+
+        Returns:
+            None
+
         """
+
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
@@ -264,64 +361,56 @@ class Loadcell:
 
     @property
     def is_zeroed(self) -> bool:
-        """Indicates if load cell zeroing routine has been called."""
+        """is_zeroed (bool): True if the load cell zeroing routine has been successfully completed."""
         return self._zeroed
 
     @property
     def fx(self):
         """
-        Latest force in the x (medial/lateral) direction in Newtons.
-        If using the standard OSL setup, this is positive towards the user's right.
+        fx (float): Force in the x direction in N.
         """
         return self.loadcell_data[0]
 
     @property
     def fy(self):
         """
-        Latest force in the y (anterior/posterior) direction in Newtons.
-        If using the standard OSL setup, this is positive in the posterior direction.
+        fy (float): Force in the y direction in N.
         """
         return self.loadcell_data[1]
 
     @property
     def fz(self):
         """
-        Latest force in the z (vertical) direction in Newtons.
-        If using the standard OSL setup, this should be positive downwards.
-        i.e. quiet standing on the OSL should give a negative Fz.
+        fz (float): Force in the z direction in N.
         """
         return self.loadcell_data[2]
 
     @property
     def mx(self):
         """
-        Latest moment about the x (medial/lateral) axis in Nm.
-        If using the standard OSL setup, this axis is positive towards the user's right.
+        mx (float): Moment in the x direction in Nm.
         """
         return self.loadcell_data[3]
 
     @property
     def my(self):
         """
-        Latest moment about the y (anterior/posterior) axis in Nm.
-        If using the standard OSL setup, this axis is positive in the posterior direction.
+        my (float) Moment in the y direction in Nm.
         """
         return self.loadcell_data[4]
 
     @property
     def mz(self):
         """
-        Latest moment about the z (vertical) axis in Nm.
-        If using the standard OSL setup, this axis is positive towards the ground.
+        mz (float): Moment in the z direction in Nm.
+
         """
         return self.loadcell_data[5]
 
     @property
     def loadcell_data(self):
         """
-        Returns a vector of the latest loadcell data.
-        [Fx, Fy, Fz, Mx, My, Mz]
-        Forces in N, moments in Nm.
+        loadcell_data (np.array(6)): Raw vector of the load cell data i.e. [fx, fy, fz, mx, my, mz]. Forces are in N and moments are in Nm.
         """
         if self._loadcell_data is not None:
             return self._loadcell_data[0]
@@ -484,10 +573,16 @@ class IMUDataClass:
 
 class IMULordMicrostrain:
     """
-    Sensor class for the Lord Microstrain IMU.
+    Base class to interface with the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).
 
     As configured, this class returns euler angles (rad), angular rates (rad/s), and accelerations (g).
+
+    Parameters:
+        port (str): Port to which the IMU is connected. If no port is provided, the default port will be used. Defaults to /dev/ttyUSB0.
+        baud_rate (int): Baud rate of the IMU. Defaults to 921600.
+        timeout (int): Timeout for reading data from the IMU in milliseconds. Defaults to 500.
+        sample_rate (int): Sample rate of the IMU in Hz. Defaults to 100.
 
     Example:
         imu = IMULordMicrostrain()
@@ -499,6 +594,10 @@ class IMULordMicrostrain:
     Resources:
         * To install, download the pre-built package for raspian at https://github.com/LORD-MicroStrain/MSCL/tree/master
         * Full documentation for their library can be found at https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html.
+
+    Author: Kevin Best
+            U-M Locolab | Neurobionics Lab
+            Gitub: tkevinbest, https://github.com/tkevinbest
     """
 
     def __init__(
@@ -558,15 +657,45 @@ class IMULordMicrostrain:
         return f"IMULordMicrostrain"
 
     def start_streaming(self):
+        """
+        Starts streaming data from the IMU.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        """
+
         self.imu.resume()
 
     def stop_streaming(self):
+        """
+        Stops streaming data from the IMU.
+
+        Paramters:
+            None
+
+        Returns:
+            None
+
+        """
+
         self.imu.setToIdle()
 
     def get_data(self):
         """
-        Get IMU data from the Lord Microstrain IMU
+        Get data from the Lord Microstrain IMU
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
         """
+
         imu_packets = self.imu.getDataPackets(self.timeout)
         if len(imu_packets):
             # Read all the information from the first packet as float.

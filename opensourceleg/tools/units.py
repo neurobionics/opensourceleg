@@ -133,10 +133,10 @@ def convert_to_default(value: float, from_unit: float) -> float:
     """
     Convert a value from an user unit to the default unit.
 
-    Args:
-        value (float): Value to convert
-        from_unit (float): Unit corresponding to the value that is being converted to the default unit.
-
+    Parameters:
+        value (float): Value to be converted to the default unit.
+        from_unit (float): Unit of the value to be converted to the default unit.
+        
     Returns:
         float: Converted value in default units.
 
@@ -157,9 +157,9 @@ def convert_from_default(value: float, to_unit: float) -> float:
     """
     Convert a value from the default unit to an user unit.
 
-    Args:
-        value (float): Value to convert
-        to_unit (float): Desired unit for the converted value.
+    Parameters:
+        value (float): Value to be converted to the desired unit.
+        to_unit (float): Desired unit of the value to be converted to.
 
     Returns:
         float: Converted value in desired unit.
