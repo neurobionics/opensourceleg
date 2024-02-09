@@ -39,7 +39,7 @@ class Logger(logging.Logger):
 
     Parameters:
         file_path (str): path to save the log file. If you want to save the log file in the
-        current working directory, use './' followed by the file name. Defaults to ./osl.
+                         current working directory, use './' followed by the file name. Defaults to ./osl.
         log_format (str): Format of the log message. Defaults to [%(asctime)s] %(levelname)s: %(message)s.
     """
 
@@ -99,9 +99,6 @@ class Logger(logging.Logger):
 
         Parameters:
             level (str): Level of the logger. Defaults to DEBUG.
-
-        Returns:
-            None
         """
         if level not in self._log_levels.keys():
             self.warning(msg=f"Invalid logging level: {level}")
@@ -116,9 +113,6 @@ class Logger(logging.Logger):
 
         Parameter:
             level (str): Level to be set for the logger's stream. Defaults to INFO
-
-        Returns:
-            None
         """
         if level not in self._log_levels.keys():
             self.warning(msg=f"Invalid logging level: {level}")
@@ -133,12 +127,9 @@ class Logger(logging.Logger):
 
         Parameters:
             container (Union[object, dict[Any, Any]]): Class instance or dictionary to log the attributes
-            from. Defaults to None.
+                                                       from. Defaults to None.
             attributes (list[str]): List of attribute names to log. The attribute names should be strings
-            and should match the attribute names of the class instance or dictionary. Defaults to None.
-
-        Returns:
-            None
+                                    and should match the attribute names of the class instance or dictionary. Defaults to None.
         """
         self._containers.append(container)
         self._attributes.append(attributes)
@@ -149,9 +140,6 @@ class Logger(logging.Logger):
         will be saved at the file path specified in the constructor.
 
         Parameters:
-            None
-
-        Returns:
             None
         """
         header_data = []
@@ -190,9 +178,6 @@ class Logger(logging.Logger):
         Closes the data log file.
 
         Parameters:
-            None
-
-        Returns:
             None
         """
         self._file.close()

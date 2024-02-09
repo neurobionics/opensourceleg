@@ -105,12 +105,8 @@ class State:
 
         Parameters:
             time (float): Minimum time to be spent in this state in seconds. If the state is
-            exited before this time, the state machine will wait until the minimum time has
-            elapsed before transitioning to the next state.
-
-        Returns:
-            None
-
+                          exited before this time, the state machine will wait until the minimum time has
+                          elapsed before transitioning to the next state.
         """
         self._min_time_in_state = time
 
@@ -143,9 +139,6 @@ class State:
             k (float): Stiffness of the ankle joint in this state in Nm/rad.
             b (float): Damping of the ankle joint in this state in Nm/(rad/s).
 
-        Returns:
-            None
-
         Note:
             The ankle impedance parameters are only used if the ankle is
             active. You can make the ankle active by calling the
@@ -164,10 +157,6 @@ class State:
         Parameters:
             key (str): Key of the custom data
             value (Any): Value of the custom data
-
-        Returns:
-            None
-
         """
         self._custom_data[key] = value
 
@@ -189,10 +178,6 @@ class State:
 
         Parameters:
             callback (Callable[[Any], None]): Function to be called when the state is entered.
-
-        Returns:
-            None
-
         """
         self._entry_callbacks.append(callback)
 
@@ -202,10 +187,6 @@ class State:
 
         Parameters:
             callback (Callable[[Any], None]): Function to be called when the state is exited.
-
-        Returns:
-            None
-
         """
         self._exit_callbacks.append(callback)
 
@@ -214,9 +195,6 @@ class State:
 
         Parameters:
             data (Any): Any custom data that you'd like to pass to the state's entry callbacks.
-
-        Returns:
-            None
         """
         self._time_entered = time.time()
         for c in self._entry_callbacks:
@@ -228,9 +206,6 @@ class State:
 
         Parameters:
             data (Any): Any custom data that you'd like to pass to the state's exit callbacks.
-
-        Returns:
-            None
         """
         self._time_exited = time.time()
         for c in self._exit_callbacks:
@@ -241,9 +216,6 @@ class State:
         Sets the knee joint to be active in this state.
 
         Parameters:
-            None
-
-        Returns:
             None
 
         Note:
@@ -257,9 +229,6 @@ class State:
         Sets the ankle joint to be active in this state.
 
         Parameters:
-            None
-
-        Returns:
             None
 
         Note:
@@ -410,11 +379,8 @@ class Transition:
         Adds a criteria to the transition. The transition will be triggered only if all the criteria are met.
 
         Parameters:
-            callbackCallable[[Any], bool]A callback function that returns a boolean
-            value, which determines whether the transition should be triggered.
-
-        Returns:
-            None
+            callback (Callable[[Any], bool]): A callback function that returns a boolean
+                                              value, which determines whether the transition should be triggered.
         """
         self._criteria = callback
 
@@ -424,10 +390,7 @@ class Transition:
 
         Parameters:
             callback (Callable[[Any], Any]): Function or callback to be called when the
-            transition is triggered.
-
-        Returns:
-            None
+                                             transition is triggered.
 
         """
         self._action = callback
@@ -501,20 +464,12 @@ class StateMachine:
     Parameters:
 
     osl (Any): Open-Source Leg instance or any other hardware object to be
-    controlled. This object should ideally have all the necessary control methods and sensor data.
-    Defaults to none.
+               controlled. This object should ideally have all the necessary control methods and sensor data.
+               Defaults to none.
     spoof (bool): If True, the state machine will spoof the state transitions--ie, it will not check
-    the criteria for transitioning but will instead transition after the minimum time spent in state
-    has elapsed. This is useful for testing.
+                  the criteria for transitioning but will instead transition after the minimum time spent in state
+                  has elapsed. This is useful for testing.
 
-    Attributes
-    ----------
-    current_state : State
-        The current state of the state machine.
-    states : list[State]
-        The list of states in the state machine.
-    is_spoofing : bool
-        Whether or not the state machine is spoofing the state transitions.
     """
 
     def __init__(self, osl=None, spoof: bool = False) -> None:
@@ -544,8 +499,8 @@ class StateMachine:
             state (State): State to be added to the state machine.
             initial_state (bool): If True, the state will be set as the initial state of the state machine. Defaults to False.
 
-        Returns:
-            None
+        Raises:
+            ValueError: If state already exixts in the state machine
         """
         if state in self._states:
             raise ValueError("State already exists.")
@@ -561,9 +516,6 @@ class StateMachine:
 
         Parameters:
             event (Event): Event to be added to the state machine.
-
-        Returns:
-            None
         """
         self._events.append(event)
 
@@ -581,11 +533,11 @@ class StateMachine:
             source (State): Source state of the transition.
             destination (State): Destination state of the transition.
             event (Event): Event to trigger the transition.
-            callback (Callable[[Any], bool]):A callback function that returns a boolean value, which determines whether the transition
-            should be triggered. Defaults to None.
+            callback (Callable[[Any], bool]): A callback function that returns a boolean value, which determines whether the transition
+                                              should be triggered. Defaults to None.
 
         Returns:
-            None
+            Optional[Transition]
         """
         transition = None
 
@@ -609,8 +561,8 @@ class StateMachine:
         Parameters:
             data (Any): Any custom data to be used with the state machine. This data will be passed to the state's exit callbacks.
 
-        Returns:
-            None
+        Raises:
+            ValueError: It the OSL isn't active
         """
         validity = False
 
@@ -641,8 +593,8 @@ class StateMachine:
         Parameters:
             data (Any): Any custom data that you'd like to pass to the initial state's entry callbacks.
 
-        Returns:
-            None
+        Raises:
+            ValueError: If initial state is not set
         """
         if not self._initial_state:
             raise ValueError("Initial state not set.")
@@ -658,8 +610,8 @@ class StateMachine:
         Parameters:
             data (Any): Any custom data that you'd like to pass to the exit state's exit callbacks.
 
-        Returns:
-            None
+        Raises:
+            ValueError: If the OSL isn't active
         """
         if not (self._initial_state or self._current_state):
             raise ValueError("OSL isn't active.")

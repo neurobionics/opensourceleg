@@ -101,6 +101,9 @@ class StrainAmp:
         Returns:
             None
 
+        Raises:
+            Exception: Unresponsive load cell
+
         """
 
         try:
@@ -257,9 +260,6 @@ class Loadcell:
 
         Parameters:
             None
-
-        Returns:
-            None
         """
         self._zeroed = False
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
@@ -271,11 +271,7 @@ class Loadcell:
         loadcell.fx, loadcell.mx, etc.
 
         Parameters:
-            loadcell_zero (np.array(6)): Zero offset of the load cell. Defaults to None.
-
-        Returns:
-            None
-
+            loadcell_zero (np.array): Zero offset of the load cell. Defaults to None.
         """
 
         if self._is_dephy:
@@ -314,10 +310,7 @@ class Loadcell:
 
         Parameters:
             number_of_iterations (int): Number of iterations to be used. Defaults to 2000.
-            for the load cell's zero offset calibration.
-
-        Returns:
-            None
+                                        for the load cell's zero offset calibration.
 
         """
 
@@ -663,10 +656,6 @@ class IMULordMicrostrain:
 
         Parameters:
             None
-
-        Returns:
-            None
-
         """
 
         self.imu.resume()
@@ -677,10 +666,6 @@ class IMULordMicrostrain:
 
         Paramters:
             None
-
-        Returns:
-            None
-
         """
 
         self.imu.setToIdle()
@@ -691,10 +676,6 @@ class IMULordMicrostrain:
 
         Parameters:
             None
-
-        Returns:
-            None
-
         """
 
         imu_packets = self.imu.getDataPackets(self.timeout)

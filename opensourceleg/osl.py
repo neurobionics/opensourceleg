@@ -107,21 +107,17 @@ class OpenSourceLeg:
         Adds a knee or ankle joint to the OSL.
 
         Parameters:
-
-        name (str): Name of the joint to be added. Defaults to knee.
-        port (str): Port to which the actpack is connected. Defaults to None.
-        baud_rate (int): Baud rate of the actpack. Defaults to 230400.
-        gear_ratio (float): Gear ratio of the joint. Defaults to 1.0.
-        has_loadcell (bool):Is the load cell conneced to the corresponding actpack? If True, the load cell data will be read from the
-        actpack and not from the RPi's GPIO pins. Defaults to False
-        debug_level (int): Debug level to be used for the actpack's logging routine. Defaults to 0.
-        dephy_log (bool): If True, Dephy Actpack's logging routine will be enabled in addition to the default opensourceleg's logging
-        routine. Defaults to False.
-        offline_mode (bool): If True, the actpack will be in offline mode. This is useful for testing the OSL without connecting the
-        actpacks. Defaults to False.
-
-        Returns:
-            None
+            name (str): Name of the joint to be added. Defaults to knee.
+            port (str): Port to which the actpack is connected. Defaults to None.
+            baud_rate (int): Baud rate of the actpack. Defaults to 230400.
+            gear_ratio (float): Gear ratio of the joint. Defaults to 1.0.
+            has_loadcell (bool): Is the load cell conneced to the corresponding actpack? If True, the load cell data will be read from the
+                                 actpack and not from the RPi's GPIO pins. Defaults to False
+            debug_level (int): Debug level to be used for the actpack's logging routine. Defaults to 0.
+            dephy_log (bool): If True, Dephy Actpack's logging routine will be enabled in addition to the default opensourceleg's logging
+                              routine. Defaults to False.
+            offline_mode (bool): If True, the actpack will be in offline mode. This is useful for testing the OSL without connecting the
+                                 actpacks. Defaults to False.
         """
         if offline_mode:
             if "knee" in name.lower():
@@ -285,17 +281,14 @@ class OpenSourceLeg:
 
         Parameters:
             dephy_mode (bool): Is the load cell connected to the actpack? If True, the load cell data will be read from the
-            actpack and not from the RPi's GPIO pins. Defaults to False.
+                               actpack and not from the RPi's GPIO pins. Defaults to False.
             joint (Joint): Joint to which the load cell is connected. Defaults to None.
             amp_gain (float): Amplifier gain of the load cell strain amplifier. efaults to 125.0.
             exc (float): Excitation voltage of the load cell strain amplifier. Defaults to 5.0.
-            loadcell_matrix (np.ndarray(6, 6)): Calibration matrix for the load cell. This matrix is used to convert the
-            load cell's raw data to forces and moments. Defaults to None.
+            loadcell_matrix (np.ndarray): Calibration matrix for the load cell. This matrix is used to convert the
+                                                load cell's raw data to forces and moments. Defaults to None.
             offline_mode (bool): If True, the load cell will be in offline mode. This is useful for testing the OSL without
-            connecting the load cell. Defaults to False.
-
-        Returns:
-            None
+                                 connecting the load cell. Defaults to False.
         """
 
         if loadcell_matrix is None:
@@ -337,10 +330,9 @@ class OpenSourceLeg:
 
         Parameters:
             log_data (bool): If True, all the variables configured with osl.logger will be automatically
-            logged when the update method is called. Defaults to False.
+                             logged when the update method is called. Defaults to False.
 
-        Returns:
-            None
+
         """
         if self.has_knee:
             self._knee.update()
@@ -373,12 +365,6 @@ class OpenSourceLeg:
     def home(self) -> None:
         """
         Initiates the homing routine for all the joints connected to the OSL. This routine homes the knee joint first and then the ankle joint regardless of the order in which the joints were added to the OSL.
-
-        Parameters:
-            None
-
-        Returns:
-            None
         """
         if self.has_knee:
             self.log.info(msg="[OSL] Homing knee joint.")
@@ -396,9 +382,6 @@ class OpenSourceLeg:
 
         Parameters:
             None
-
-        Returns:
-            None
         """
         self.log.debug(msg="[OSL] Calibrating loadcell.")
         if self.has_loadcell:
@@ -409,9 +392,6 @@ class OpenSourceLeg:
         Makes an encoder map for all the connected joints.
 
         Parameters:
-            None
-
-        Returns:
             None
         """
         self.log.debug(msg="[OSL] Calibrating encoders.")
@@ -427,9 +407,6 @@ class OpenSourceLeg:
         Resets the OSL. This method will stop the OSL, transition all the joints to voltage mode, and set the voltage to 0mV.
 
         Parameters:
-            None
-
-        Returns:
             None
         """
         self.log.debug(msg="[OSL] Resetting OSL.")

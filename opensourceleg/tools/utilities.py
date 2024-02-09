@@ -159,10 +159,7 @@ class SoftRealtimeLoop:
         Paramaters:
             function_in_loop (Callable[[Any], Any]): Function to be run within the real-time loop.
             dt (float): Time step to be used for the real-time loop. If None, the time step given in the
-            constructor will be used. Defaults to None.
-
-        Returns:
-            None
+                        constructor will be used. Defaults to None.
         """
         if dt is None:
             dt = self.dt
@@ -183,9 +180,6 @@ class SoftRealtimeLoop:
         Safely stops the real-time loop's run method and exits the loop.
 
         Parameters:
-            None
-
-        Returns:
             None
         """
         self.killer.kill_now = True
@@ -327,9 +321,6 @@ def get_active_ports():
 
     Parameters:
         None
-
-    Returns:
-        None
     """
     if sys.platform.startswith("linux") or sys.platform.startswith("cygwin"):
         ports = glob.glob("/dev/tty[A-Za-z]C*")
@@ -361,6 +352,9 @@ def clamp_within_vector_range(input_value, input_vector):
         input_value (float): Value to be clamped within the vector's range.
         input_vector (list[float]): Vector to be used to clamp the input value.
 
+    Returns:
+        Any
+
     Example:
         clamp_within_vector_range(10, [0,1,2,3]) = 3
         clamp_within_vector_range(-10, [0,1,2,3]) = 0
@@ -379,8 +373,9 @@ def get_ctype_args(input_header: str):
     Converts a header file from C string into a list of ctypes arguments.
 
     Parameters:
-        inputHeader: string from header file, such as "const struct0_T *thighIMU, double Knee_joint_position,
-          double Ankle_joint_position"
+        input_header (str): string from header file, such as "const struct0_T *thighIMU, double Knee_joint_position,
+                           double Ankle_joint_position"
+
     Returns:
         list[ctypes]: ctypes list of the appropriate types for the inputs, such as (ctypes.c_void_p, ctypes.c_double, ctypes.c_double)
 
@@ -400,8 +395,11 @@ def get_ctype(token):
     Parameters:
         token (float): Single token from a header file, such as 'const'
 
-    Retruns:
+    Returns:
         c_type
+
+    Raises:
+        Exception: Invalid Token
 
     Author: Kevin Best, 8/7/2023
     https://github.com/tkevinbest

@@ -114,9 +114,6 @@ class Joint(DephyActpack):
         Parameters:
             homing_voltage (int): Voltage to be used for homing the joint in mV. Defaults to 2000
             homing_frequency (int): Frequency to be used for homing the joint in Hz. Defaults to 100.
-
-        Returns:
-            None
         """
 
         is_homing = True
@@ -188,9 +185,6 @@ class Joint(DephyActpack):
         Parameters:
             None
 
-        Returns:
-            None
-
         Author: Kevin Best
                 U-M Locolab | Neurobionics Lab
                 Gitub: tkevinbest, https://github.com/tkevinbest
@@ -251,10 +245,6 @@ class Joint(DephyActpack):
 
         Parameters:
             temperature (float): Maximum allowable temperature in degrees C.
-
-        Returns:
-            None
-
         """
 
         self._max_temperature = temperature
@@ -266,10 +256,6 @@ class Joint(DephyActpack):
 
         Parameters:
             torque (float): Torque to be set in Nm.
-
-        Returns:
-            None
-
         """
         self.set_motor_torque(torque=torque / self.gear_ratio)
 
@@ -280,10 +266,6 @@ class Joint(DephyActpack):
 
         Parameters:
             position (float): Position to be set in radians.
-
-        Returns:
-            None
-
         """
 
         self.set_motor_position(position=position * self.gear_ratio)
@@ -305,9 +287,6 @@ class Joint(DephyActpack):
             K (float): Spring constant. Defaults to 0.08922.
             B (float): Damping constant. Defaults to 0.0038070.
             ff (int): Feedforward gain. Defaults to 128.
-        Returns:
-            None
-
         """
 
         self.set_impedance_gains(
@@ -340,9 +319,6 @@ class Joint(DephyActpack):
             K (float): Spring constant. Defaults to 100.0.
             B (float): Damping constant. Defaults to 3.0.
             ff (int): Feedforward gain. Defaults to 128.
-
-        Returns:
-            None
         """
 
         self.set_motor_impedance(

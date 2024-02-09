@@ -92,9 +92,6 @@ class ThermalModel:
             dt (float): Time step in seconds. Defaults to 1/200.
             motor_current (float): Motor current in mA. Defaults to 0.
 
-        Returns:
-            None
-
         Dynamics:
             1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
             2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA

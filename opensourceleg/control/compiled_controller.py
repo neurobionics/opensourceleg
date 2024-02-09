@@ -94,9 +94,6 @@ class CompiledController:
             field_type is a type either given by a native c_types value or
                 a custom type defined via the define_type() method.
                 All types can be accessed as CompiledController.types.(type_name)
-
-        Returns:
-            None
         """
         self._input_type = self.define_type("inputs", input_list)
         self.inputs = self._input_type()  # type: ignore
@@ -112,8 +109,6 @@ class CompiledController:
                 field_type is a type either given by a native c_types value or
                     a custom type defined via the define_type() method.
                     All types can be accessed as CompiledController.types.(type_name)
-        Returns:
-            None
         """
         self._output_type = self.define_type("outputs", output_list)
         self.outputs = self._output_type()  # type: ignore
