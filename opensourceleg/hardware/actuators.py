@@ -599,7 +599,7 @@ class DephyActpack(Device):
         logger (Logger): Logger instance to be used for logging.
         debug_level (int): Debug level to be used for Dephy Actpack's logging routine. Defaults to 0.
         dephy_log (bool): If True, Dephy Actpack's logging routine will be enabled in addition to the default opensourceleg's logging routine. Defaults to False.
-        """
+    """
 
     def __init__(
         self,
@@ -1243,7 +1243,7 @@ class MockDephyActpack(DephyActpack):
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
-        
+
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency

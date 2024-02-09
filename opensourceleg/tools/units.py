@@ -136,7 +136,7 @@ def convert_to_default(value: float, from_unit: float) -> float:
     Parameters:
         value (float): Value to be converted to the default unit.
         from_unit (float): Unit of the value to be converted to the default unit.
-        
+
     Returns:
         float: Converted value in default units.
 

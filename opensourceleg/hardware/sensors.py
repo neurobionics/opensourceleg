@@ -213,6 +213,7 @@ class Loadcell:
         logger (Logger): Logger instance to be used for logging. If no logger is provided,
         a new logger will be used. Defaults to None
     """
+
     def __init__(
         self,
         dephy_mode: bool = False,

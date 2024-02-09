@@ -50,7 +50,7 @@ class Joint(DephyActpack):
         enabled in addition to the default opensourceleg's logging routine.
         logger (Logger): Logger instance to be used for logging. If no logger is provided, a new
         logger will be used.
-        """
+    """
 
     def __init__(
         self,
