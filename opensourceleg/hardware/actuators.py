@@ -1162,7 +1162,7 @@ class MockDephyActpack(DephyActpack):
         self._mode: ActpackMode = self.control_modes.voltage
 
     # Overrides the open method to function without a device
-    def open(self, freq, log_level, log_enabled):
+    def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
         self.is_streaming = True
 
@@ -1170,6 +1170,30 @@ class MockDephyActpack(DephyActpack):
     def send_motor_command(self, ctrl_mode, value):
         self._motor_command = (
             f"[{self.__repr__()}] Control Mode: {ctrl_mode}, Value: {value}"
+        )
+
+    # Overrides the command_motor_current method to set the new _motor_command attribute
+    def command_motor_current(self, value):
+        self._motor_command = (
+            f"[{self.__repr__()}] Control Mode: c_int(2), Value: {value}"
+        )
+
+    # Overrides the command_motor_current method to set the new _motor_command attribute
+    def command_motor_voltage(self, value):
+        self._motor_command = (
+            f"[{self.__repr__()}] Control Mode: c_int(1), Value: {value}"
+        )
+
+    # Overrides the command_motor_current method to set the new _motor_command attribute
+    def command_motor_position(self, value):
+        self._motor_command = (
+            f"[{self.__repr__()}] Control Mode: c_int(0), Value: {value}"
+        )
+
+    # Overrides the command_motor_current method to set the new _motor_command attribute
+    def command_motor_impedance(self, value):
+        self._motor_command = (
+            f"[{self.__repr__()}] Control Mode: c_int(3), Value: {value}"
         )
 
     # Overrides the set_gains method to set the gains in the new _gains attribute
@@ -1208,6 +1232,9 @@ class MockDephyActpack(DephyActpack):
         self._data.gyroy += small_noise
         self._data.gyroz += small_noise
         return self._data
+
+    def stop_motor(self):
+        self.command_motor_voltage(0)
 
     # Overrides the close method to do nothing
     def close(self):
