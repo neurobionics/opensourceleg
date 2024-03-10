@@ -539,7 +539,7 @@ class DephyActpack(Device):
         dephy_log: bool = False,
     ) -> None:
 
-        super().__init__(firmwareVersion=firmwareVersion, port=port, baud_rate=baudRate)
+        super().__init__(firmwareVersion=firmwareVersion, port=port, baudRate=baudRate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
