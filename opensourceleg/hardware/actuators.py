@@ -519,6 +519,7 @@ class DephyActpack(Device):
 
     Parameters:
         name (str): Name to be given to the actpack. Defaults to DephyActpack.
+        firmware_version (str): Compatible version of the actpack that will be used. Defaults to 7.2.0.
         port (str): Port to which the actpack is connected. Defaults to /dev/ttyACM0.
         baud_rate (int): Baud rate of the actpack. Defaults to 230400.
         frequency (int): Frequency of the actpack. Defaults to 500.
@@ -530,16 +531,16 @@ class DephyActpack(Device):
     def __init__(
         self,
         name: str = "DephyActpack",
-        firmwareVersion: str = "7.2.0",
+        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
-        baudRate: int = 230400,
+        baud_rate: int = 230400,
         frequency: int = 500,
         logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
 
-        super().__init__(firmwareVersion=firmwareVersion, port=port, baudRate=baudRate)
+        super().__init__(firmwareVersion=firmware_version, port=port, baudRate=baud_rate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
