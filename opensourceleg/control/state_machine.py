@@ -23,19 +23,24 @@ Usage:
 
 class State:
     """
-    A class to represent a state in a finite state machine.
+    Base class for all the states in the state machine. Please note that the knee and ankle
+    impedance parameters are only used if the corresponding joint is active in the state. In addition
+    to the default impedance parameters for each joint, you can also define custom parameters
+    using the set_custom_data method.
 
-    Args:
-        name (str): Name of the state
-        is_knee_active (bool): Whether the knee is active. Default: False
-        knee_stiffness (float): Knee stiffness in Nm/rad
-        knee_damping (float): Knee damping in Nm/rad/sec
-        knee_equilibrium_angle (float): Knee equilibrium angle
-        is_ankle_active (bool): Whether the ankle is active. Default: False
-        ankle_stiffness (float): Ankle stiffness in Nm/rad
-        ankle_damping (float): Ankle damping in Nm/rad/sec
-        ankle_equilibrium_angle (float): Ankle equilibrium angle
-        minimum_time_in_state (float): Minimum time spent in the state in seconds. Default: 2.0
+    Parameters:
+        name (str): Name of the state. Defaults to state.
+        is_knee_active (bool): If True, the knee joint will be active in this state. Defaults to False.
+        knee_stiffness (float): Stiffness of the knee joint in this state in Nm/rad. Defaults to 0.0.
+        knee_damping (float): Damping of the knee joint in this state in Nm/(rad/s). Defaults to 0.0.
+        knee_equilibrium_angle (float): Equilibrium angle of the knee joint in this state in radians. Defaults to 0.0.
+        is_ankle_active (bool): If True, the ankle joint will be active in this state. Defaults to False.
+        ankle_stiffness (float): Stiffness of the knee joint in this state in Nm/rad. Defaults to 0.0.
+        ankle_damping (float): Damping of the knee joint in this state in Nm/(rad/s). Defaults to 0.0.
+        ankle_equilibrium_angle (float): Equilibrium angle of the knee joint in this state in radians. Defaults to 0.0.
+        minimum_time_in_state (float): Minimum time to be spent in this state in seconds. If the state is exited before
+        this time, the state machine will wait until the minimum time has elapsed before transitioning to the next state.
+        Defaults to 2.0.
 
     Note:
         The knee and ankle impedance parameters are only used if the
@@ -96,21 +101,24 @@ class State:
 
     def set_minimum_time_spent_in_state(self, time: float) -> None:
         """
-        Set the minimum time spent in the state
+        Sets the minimum time to be spent in this state in seconds.
 
-        Args:
-            time (float): Minimum time spent in the state in seconds
+        Parameters:
+            time (float): Minimum time to be spent in this state in seconds. If the state is
+                          exited before this time, the state machine will wait until the minimum time has
+                          elapsed before transitioning to the next state.
         """
         self._min_time_in_state = time
 
     def set_knee_impedance_paramters(self, theta, k, b) -> None:
         """
-        Set the knee impedance parameters
+        Sets the impedance parameters of the knee joint in this state. The impedance
+        parameters are only used if the knee joint is active in this state.
 
-        Args:
-            theta (float): Equilibrium angle of the knee joint
-            k (float): Stiffness of the knee joint
-            b (float): Damping of the knee joint
+        Parameters:
+            theta (float): Equilibrium angle of the knee joint in this state in radians.
+            k (float): Stiffness of the knee joint in this state in Nm/rad.
+            b (float): Damping of the knee joint in this state in Nm/(rad/s).
 
         Note:
             The knee impedance parameters are only used if the knee is
@@ -123,12 +131,13 @@ class State:
 
     def set_ankle_impedance_paramters(self, theta, k, b) -> None:
         """
-        Set the ankle impedance parameters
+        Sets the impedance parameters of the ankle joint in this state. The impedance
+        parameters are only used if the ankle joint is active in this state.
 
-        Args:
-            theta (float): Equilibrium angle of the ankle joint
-            k (float): Stiffness of the ankle joint
-            b (float): Damping of the ankle joint
+        Parameters:
+            theta (float): Equilibrium angle of the ankle joint in this state in radians.
+            k (float): Stiffness of the ankle joint in this state in Nm/rad.
+            b (float): Damping of the ankle joint in this state in Nm/(rad/s).
 
         Note:
             The ankle impedance parameters are only used if the ankle is
@@ -141,49 +150,73 @@ class State:
 
     def set_custom_data(self, key: str, value: Any) -> None:
         """
-        Set custom data for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
+        Sets a custom data entry for the state. This data can be used to store any
+        additional information that you want to associate with the state. Custom data is stored as a
+        dictionary as key value pairs. Multiple custom data entries can be added to the state.
 
-        Args:
-            key (str): Key of the data
-            value (Any): Value of the data
+        Parameters:
+            key (str): Key of the custom data
+            value (Any): Value of the custom data
         """
         self._custom_data[key] = value
 
     def get_custom_data(self, key: str) -> Any:
         """
-        Get custom data for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
+        Gets a custom data entry for the state. Please note that if the key does not exist, this method will raise a KeyError.
 
-        Args:
-            key (str): Key of the data
+        Parameters:
+            key (str): Key of the custom data.
 
         Returns:
-            Any: Value of the data
+            Any: Value of the custom data
         """
         return self._custom_data[key]
 
     def on_entry(self, callback: Callable[[Any], None]) -> None:
+        """
+        Adds a function or callback to be called when the state is entered.
+
+        Parameters:
+            callback (Callable[[Any], None]): Function to be called when the state is entered.
+        """
         self._entry_callbacks.append(callback)
 
     def on_exit(self, callback: Callable[[Any], None]) -> None:
+        """
+        Adds a function or callback to be called when the state is exited.
+
+        Parameters:
+            callback (Callable[[Any], None]): Function to be called when the state is exited.
+        """
         self._exit_callbacks.append(callback)
 
     def start(self, data: Any) -> None:
+        """
+
+        Parameters:
+            data (Any): Any custom data that you'd like to pass to the state's entry callbacks.
+        """
         self._time_entered = time.time()
         for c in self._entry_callbacks:
             c(data)
 
     def stop(self, data: Any) -> None:
+        """
+        Stops the state by calling all of its exit callbacks in the order they were added.
+
+        Parameters:
+            data (Any): Any custom data that you'd like to pass to the state's exit callbacks.
+        """
         self._time_exited = time.time()
         for c in self._exit_callbacks:
             c(data)
 
     def make_knee_active(self):
         """
-        Make the knee active
+        Sets the knee joint to be active in this state.
+
+        Parameters:
+            None
 
         Note:
             The knee impedance parameters are only used if the knee is
@@ -193,7 +226,10 @@ class State:
 
     def make_ankle_active(self):
         """
-        Make the ankle active
+        Sets the ankle joint to be active in this state.
+
+        Parameters:
+            None
 
         Note:
             The ankle impedance parameters are only used if the ankle is
@@ -203,50 +239,62 @@ class State:
 
     @property
     def name(self) -> str:
+        """name (str): Name of the state."""
         return self._name
 
     @property
     def knee_stiffness(self) -> float:
+        """knee_stiffness (float): Stiffness of the knee joint in this state in Nm/rad."""
         return self._knee_stiffness
 
     @property
     def knee_damping(self) -> float:
+        """knee_damping (float): Damping of the knee joint in this state in Nm/(rad/s)."""
         return self._knee_damping
 
     @property
     def knee_theta(self) -> float:
+        """knee_theta (float): Equilibrium angle of the knee joint in this state in radians."""
         return self._knee_theta
 
     @property
     def ankle_stiffness(self) -> float:
+        """ankle_stiffness (float): Stiffness of the ankle joint in this state in Nm/rad."""
         return self._ankle_stiffness
 
     @property
     def ankle_damping(self) -> float:
+        """ankle_damping (float): Damping of the ankle joint in this state in Nm/(rad/s)."""
         return self._ankle_damping
 
     @property
     def ankle_theta(self) -> float:
+        """ankle_theta (float): Equilibrium angle of the ankle joint in this state in radians."""
         return self._ankle_theta
 
     @property
     def is_knee_active(self) -> bool:
+        """is_knee_active (bool): Is the knee joint set to be active in this state?"""
         return self._is_knee_active
 
     @property
     def is_ankle_active(self) -> bool:
+        """is_ankle_active (bool): Is the ankle joint set to be active in this state?"""
         return self._is_ankle_active
 
     @property
     def minimum_time_spent_in_state(self) -> float:
+        """minimum_time_spent_in_state (float): Minimum time to be spent in this state in seconds."""
         return self._min_time_in_state
 
     @property
     def current_time_in_state(self) -> float:
+        """current_time_in_state (float): Current time spent in this state in seconds."""
         return time.time() - self._time_entered
 
     @property
     def time_spent_in_state(self) -> float:
+        """time_spent_in_state (float): Total time spent in this state in seconds."""
         return self._time_exited - self._time_entered
 
 
@@ -262,16 +310,14 @@ class Idle(State):
 
 class Event:
     """
-    Event class
+    Base class for all the events in the state machine. An event is an unique identifier that
+    corresponds to a transition in the state machine.
+
+    Parameters:
+        name (str): Name of the event.
     """
 
     def __init__(self, name) -> None:
-        """
-        Parameters
-        ----------
-        name : str
-            The name of the event.
-        """
         self._name = name
 
     def __eq__(self, __o) -> bool:
@@ -288,12 +334,22 @@ class Event:
 
     @property
     def name(self):
+        """name (str): Name of the event."""
         return self._name
 
 
 class Transition:
     """
-    Transition class
+    Base class for all the transitions in the state machine. A transition is a directed link between
+    two states in the state machine. A transition is tied to an event and is triggered only when the
+    callback function returns True.
+
+    Parameters:
+        event (Event): Event corresponding to the transition.
+        source (State): Source state of the transition.
+        destination (State): Destination state of the transition.
+        callback (Callable[[Any], bool]): A callback function that returns a boolean value, which
+        determines whether the transition should be triggered.
     """
 
     def __init__(
@@ -319,21 +375,39 @@ class Transition:
         )
 
     def add_criteria(self, callback: Callable[[Any], bool]) -> None:
+        """
+        Adds a criteria to the transition. The transition will be triggered only if all the criteria are met.
+
+        Parameters:
+            callback (Callable[[Any], bool]): A callback function that returns a boolean
+                                              value, which determines whether the transition should be triggered.
+        """
         self._criteria = callback
 
     def add_action(self, callback: Callable[[Any], Any]) -> None:
+        """
+        Adds an action to the transition. This function will be called when the transition is triggered.
+
+        Parameters:
+            callback (Callable[[Any], Any]): Function or callback to be called when the
+                                             transition is triggered.
+
+        """
         self._action = callback
 
     @property
     def event(self) -> Event:
+        """event (Event): Event corresponding to the transition."""
         return self._event
 
     @property
     def source_state(self) -> State:
+        """source_state (State): Source state of the transition."""
         return self._source_state
 
     @property
     def destination_state(self) -> State:
+        """destination_state (State): Destination state of the transition."""
         return self._destination_state
 
 
@@ -384,26 +458,18 @@ class FromToTransition(Transition):
 
 class StateMachine:
     """
-    State Machine class
+    A Finite State Machine (FSM) class to design and implement state machines for controlling
+    the Open-Source Leg or any other hardware system.
 
-    Parameters
-    ----------
-    osl : Any
-        The OpenSourceLeg object.
-    spoof : bool
-        If True, the state machine will spoof the state transitions--ie, it will not
-        check the criteria for transitioning but will instead transition after the
-        minimum time spent in state has elapsed. This is useful for testing.
-        Defaults to False.
+    Parameters:
 
-    Attributes
-    ----------
-    current_state : State
-        The current state of the state machine.
-    states : list[State]
-        The list of states in the state machine.
-    is_spoofing : bool
-        Whether or not the state machine is spoofing the state transitions.
+    osl (Any): Open-Source Leg instance or any other hardware object to be
+               controlled. This object should ideally have all the necessary control methods and sensor data.
+               Defaults to none.
+    spoof (bool): If True, the state machine will spoof the state transitions--ie, it will not check
+                  the criteria for transitioning but will instead transition after the minimum time spent in state
+                  has elapsed. This is useful for testing.
+
     """
 
     def __init__(self, osl=None, spoof: bool = False) -> None:
@@ -427,14 +493,14 @@ class StateMachine:
 
     def add_state(self, state: State, initial_state: bool = False) -> None:
         """
-        Add a state to the state machine.
+        Adds a state to the state machine.
 
-        Parameters
-        ----------
-        state : State
-            The state to be added.
-        initial_state : bool, optional
-            Whether the state is the initial state, by default False
+        Parameters:
+            state (State): State to be added to the state machine.
+            initial_state (bool): If True, the state will be set as the initial state of the state machine. Defaults to False.
+
+        Raises:
+            ValueError: If state already exixts in the state machine
         """
         if state in self._states:
             raise ValueError("State already exists.")
@@ -445,6 +511,12 @@ class StateMachine:
             self._initial_state = state
 
     def add_event(self, event: Event) -> None:
+        """
+        Adds an event to the state machine.
+
+        Parameters:
+            event (Event): Event to be added to the state machine.
+        """
         self._events.append(event)
 
     def add_transition(
@@ -455,18 +527,17 @@ class StateMachine:
         callback: Callable[[Any], bool] = None,
     ) -> Optional[Transition]:
         """
-        Add a transition to the state machine.
+        Adds a transition to the state machine.
 
-        Parameters
-        ----------
-        source : State
-            The source state.
-        destination : State
-            The destination state.
-        event : Event
-            The event that triggers the transition.
-        callback : Callable[[Any], bool], optional
-            A callback function that returns a boolean value, which determines whether the transition is valid, by default None
+        Parameters:
+            source (State): Source state of the transition.
+            destination (State): Destination state of the transition.
+            event (Event): Event to trigger the transition.
+            callback (Callable[[Any], bool]): A callback function that returns a boolean value, which determines whether the transition
+                                              should be triggered. Defaults to None.
+
+        Returns:
+            Optional[Transition]
         """
         transition = None
 
@@ -483,6 +554,16 @@ class StateMachine:
         return transition
 
     def update(self, data: Any = None) -> None:
+        """
+        Updates the state machine. This method should be called in a loop to update
+        the state machine's state and to trigger transitions.
+
+        Parameters:
+            data (Any): Any custom data to be used with the state machine. This data will be passed to the state's exit callbacks.
+
+        Raises:
+            ValueError: It the OSL isn't active
+        """
         validity = False
 
         if not (self._initial_state or self._current_state):
@@ -506,6 +587,15 @@ class StateMachine:
             self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any = None) -> None:
+        """
+        Starts the state machine. This method should be called before calling the update method.
+
+        Parameters:
+            data (Any): Any custom data that you'd like to pass to the initial state's entry callbacks.
+
+        Raises:
+            ValueError: If initial state is not set
+        """
         if not self._initial_state:
             raise ValueError("Initial state not set.")
 
@@ -514,6 +604,15 @@ class StateMachine:
         self._current_state.start(data=data)
 
     def stop(self, data: Any = None) -> None:
+        """
+        Stops the state machine. This method should be called before the state machine goes out of scope.
+
+        Parameters:
+            data (Any): Any custom data that you'd like to pass to the exit state's exit callbacks.
+
+        Raises:
+            ValueError: If the OSL isn't active
+        """
         if not (self._initial_state or self._current_state):
             raise ValueError("OSL isn't active.")
 
@@ -532,6 +631,7 @@ class StateMachine:
 
     @property
     def current_state(self):
+        """current_state (State): Current state of the state machine."""
         if self._current_state is None:
             return self._initial_state
         else:
@@ -539,10 +639,12 @@ class StateMachine:
 
     @property
     def states(self):
+        """states (list[State]): List of all the states in the state machine."""
         return [state.name for state in self._states]
 
     @property
     def is_spoofing(self):
+        """is_spoofing (bool): True if the state machine is spoofing the state transitions."""
         return self._spoof
 
 

@@ -37,7 +37,7 @@ class ThermalModel:
         2: The model can be used to predict the temperature of the winding and the case at any time step.
         3: The model can also be used to scale the torque based on the temperature of the winding and the case.
 
-    Args:
+    Parameters:
         ambient (float): Ambient temperature in Celsius. Defaults to 21.
         params (dict): Dictionary of parameters. Defaults to dict().
         temp_limit_windings (float): Maximum temperature of the windings in Celsius. Defaults to 115.
@@ -88,7 +88,7 @@ class ThermalModel:
         """
         Updates the temperature of the winding and the case based on the current and the ambient temperature.
 
-        Args:
+        Parameters:
             dt (float): Time step in seconds. Defaults to 1/200.
             motor_current (float): Motor current in mA. Defaults to 0.
 
@@ -114,7 +114,7 @@ class ThermalModel:
         """
         Updates the temperature of the winding and the case based on the current and the ambient temperature and returns the scale factor for the torque.
 
-        Args:
+        Parameters:
             dt (float): Time step in seconds.
             motor_current (float): Motor current in mA. Defaults to 0.
             FOS (float): Factor of safety. Defaults to 3.0.
