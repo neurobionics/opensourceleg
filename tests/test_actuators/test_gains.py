@@ -19,7 +19,6 @@ negative_gains.B = -5
 
 
 def test_gains():
-
     """
     Test the Gains class\n
     Assert the repr method returns the correct string

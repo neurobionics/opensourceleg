@@ -8,6 +8,7 @@ Robotics Department
 University of Michigan
 November 14, 2023
 """
+
 import numpy as np
 
 import opensourceleg.tools.units as units

@@ -330,7 +330,6 @@ class Loadcell:
 
 
 class MockSMBus:
-
     """
     Mocked SMBus class to test the StrainAmp class\n
     This class has attributes and methods that mimic the SMBus class
@@ -381,7 +380,6 @@ class MockSMBus:
 
 
 class MockStrainAmp(StrainAmp):
-
     """
     Create a mock StrainAmp class to test the StrainAmp and Loadcell classes\n
     This class inherits from the StrainAmp class but overrides the _SMBus atttribute
@@ -403,7 +401,6 @@ class MockStrainAmp(StrainAmp):
 
 
 class MockLoadcell(Loadcell):
-
     """
     Create a mock Loadcell class to test the StrainAmp and Loadcell classes\n
     This class inherits from the Loadcell class but overrides the _lc atttribute

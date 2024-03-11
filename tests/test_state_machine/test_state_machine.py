@@ -18,7 +18,6 @@ from opensourceleg.tools.logger import Logger
 
 
 def test_state_init():
-
     """
     Tests the State constructor\n
     Initializes a default state object and asserts the attributes are properly set.
@@ -40,7 +39,6 @@ def test_state_init():
 
 
 def test_state_eq():
-
     """
     Tests the State __eq__ method\n
     Initializes two default state objects and asserts the if and else statements correctly
@@ -57,7 +55,6 @@ def test_state_eq():
 
 
 def test_state_ne():
-
     """
     Tests the State __ne__ method\n
     Initializes two default state objects and asserts the if and else statements correctly
@@ -72,7 +69,6 @@ def test_state_ne():
 
 
 def test_state_call():
-
     """
     Tests the State __call__ method\n
     Initializes a default state object and asserts the call method correctly
@@ -87,7 +83,6 @@ def test_state_call():
 
 
 def test_state_set_minimum_time_spent_in_state():
-
     """
     Tests the State set_minimum_time_spent_in_state method\n
     Initializes a default state object and asserts the default value for
@@ -104,7 +99,6 @@ def test_state_set_minimum_time_spent_in_state():
 
 
 def test_state_set_knee_impedance_parameters():
-
     """
     Tests the State set_knee_impedance_paramters method\n
     Initializes a default state object and asserts the default values for
@@ -125,7 +119,6 @@ def test_state_set_knee_impedance_parameters():
 
 
 def test_state_set_ankle_impedance_parameters():
-
     """
     Tests the State set_ankle_impedance_paramters method\n
     Initializes a default state object and asserts the default values for
@@ -146,7 +139,6 @@ def test_state_set_ankle_impedance_parameters():
 
 
 def test_state_set_and_get_custom_data():
-
     """
     Tests the State set_custom_data and get_custom_data methods\n
     Initializes a default state object and asserts the default value for
@@ -171,7 +163,6 @@ def test_state_set_and_get_custom_data():
 
 
 def callback1(data) -> bool:
-
     """
     Callback function to be used in the on_entry test and the on_exit test
     """
@@ -181,7 +172,6 @@ def callback1(data) -> bool:
 
 
 def test_callback1():
-
     """
     Tests the callback1 function\n
     Asserts the function returns True.
@@ -191,7 +181,6 @@ def test_callback1():
 
 
 def callback2(data) -> bool:
-
     """
     Callback function to be used in the on_entry test and the on_exit test
     """
@@ -201,7 +190,6 @@ def callback2(data) -> bool:
 
 
 def test_callback2():
-
     """
     Tests the callback2 function\n
     Asserts the function returns True.
@@ -211,7 +199,6 @@ def test_callback2():
 
 
 def test_state_on_entry():
-
     """
     Tests the State on_entry method\n
     Initializes a default state object. Then, the on_entry method is called and
@@ -232,7 +219,6 @@ def test_state_on_entry():
 
 
 def test_state_on_exit():
-
     """
     Tests the State on_exit method\n
     Initializes a default state object. Then, the on_exit method is called and
@@ -254,7 +240,6 @@ def test_state_on_exit():
 
 @pytest.fixture
 def mock_time(monkeypatch):
-
     """
     Fixture to mock the time.time method to return 1.0
     """
@@ -263,7 +248,6 @@ def mock_time(monkeypatch):
 
 
 def criteria_test(data="test_data") -> bool:
-
     """
     Test function that initializes a logger of the lowest stream level
     and asserts the callback is called.
@@ -276,7 +260,6 @@ def criteria_test(data="test_data") -> bool:
 
 
 def criteria_test2(data="log_name") -> bool:
-
     """
     Test function that initializes a logger of the lowest stream level
     and asserts the callback is called.
@@ -289,7 +272,6 @@ def criteria_test2(data="log_name") -> bool:
 
 
 def test_action(data="log_name") -> bool:
-
     """
     Test function that initializes a logger of the lowest stream level
     and asserts the callback is called.
@@ -302,7 +284,6 @@ def test_action(data="log_name") -> bool:
 
 
 def test_state_start(mock_time):
-
     """
     Tests the State start method\n
     Initializes a default state object with a callback added to the _entry_callbacks
@@ -323,7 +304,6 @@ def test_state_start(mock_time):
 
 
 def test_state_stop(mock_time):
-
     """
     Tests the State stop method\n
     Initializes a default state object with a callback added to the _exit_callbacks
@@ -344,7 +324,6 @@ def test_state_stop(mock_time):
 
 
 def test_state_make_knee_active():
-
     """
     Tests the State make_knee_active method\n
     Initializes a default state object and asserts the knee is not active by
@@ -360,7 +339,6 @@ def test_state_make_knee_active():
 
 
 def test_state_make_ankle_active():
-
     """
     Tests the State make_ankle_active method\n
     Initializes a default state object and asserts the ankle is not active by
@@ -376,7 +354,6 @@ def test_state_make_ankle_active():
 
 
 def test_state_default_properties(mock_time):
-
     """
     Tests the State properties\n
     Initializes a default state object and asserts the properties are properly set.
@@ -399,7 +376,6 @@ def test_state_default_properties(mock_time):
 
 
 def test_idle_init():
-
     """
     Tests the Idle constructor\n
     Initializes a default idle object and asserts the attributes are properly set.
@@ -421,7 +397,6 @@ def test_idle_init():
 
 
 def test_idle_properties():
-
     """
     Tests the Idle properties\n
     Initializes a default idle object and asserts the properties are properly set.
@@ -442,7 +417,6 @@ def test_idle_properties():
 
 
 def test_event_init():
-
     """
     Tests the Event constructor\n
     Initializes a default event object and asserts the attributes are properly set.
@@ -455,7 +429,6 @@ def test_event_init():
 
 
 def test_event_eq():
-
     """
     Tests the Event __eq__ method\n
     Initializes two default event objects and asserts the if and else statements correctly
@@ -472,7 +445,6 @@ def test_event_eq():
 
 
 def test_event_ne():
-
     """
     Tests the Event __ne__ method\n
     Initializes two default event objects and asserts the if and else statements correctly
@@ -485,7 +457,6 @@ def test_event_ne():
 
 
 def test_transition_init():
-
     """
     Tests the Transition constructor\n
     Initializes a transition object and asserts the attributes are properly set. Then,
@@ -518,7 +489,6 @@ def test_transition_init():
 
 
 def test_transition_call():
-
     """
     Tests the Transition __call__ method\n
     Initializes a transition object and asserts the call method correctly
@@ -539,7 +509,6 @@ def test_transition_call():
 
 
 def test_transition_add_criteria_and_add_action():
-
     """
     Tests the Transition add_criteria and add_action methods\n
     Initializes a transition object and calls the add_criteria and add_action methods.
@@ -560,7 +529,6 @@ def test_transition_add_criteria_and_add_action():
 
 
 def test_transition_properties():
-
     """
     Tests the Transition properties\n
     Initializes a transition object and asserts the properties are properly set.
@@ -577,7 +545,6 @@ def test_transition_properties():
 
 
 def test_from_to_transition_init():
-
     """
     Tests the FromToTransition constructor\n
     Initializes a FromToTransition object and asserts the attributes are properly set.
@@ -673,7 +640,6 @@ def test_from_to_transition_call(mock_time):
 
 
 def test_state_machine_init():
-
     """
     Tests the StateMachine constructor\n
     Initializes a StateMachine object and asserts the attributes are properly set.
@@ -694,7 +660,6 @@ def test_state_machine_init():
 
 
 def test_state_machine_add_state():
-
     """
     Tests the StateMachine add_state method\n
     Initializes a StateMachine object and adds a state and asserts it was
@@ -736,7 +701,6 @@ def test_state_machine_add_state():
 
 
 def test_state_machine_add_event():
-
     """
     Tests the StateMachine add_event method\n
     Initializes a StateMachine object and adds an event and asserts it was
@@ -757,7 +721,6 @@ def test_state_machine_add_event():
 
 
 def test_state_machine_add_transition():
-
     """
     Tests the StateMachine add_transition method\n
     Initializes a StateMachine object and adds 3 states and 3 events. Then,
@@ -789,7 +752,6 @@ def test_state_machine_add_transition():
 
 
 def exit_callback_test(idle=Idle(), data="test_state_machine_update2"):
-
     """
     Test callback function that initializes a logger of the lowest stream level
     and asserts the callback is called.
@@ -802,7 +764,6 @@ def exit_callback_test(idle=Idle(), data="test_state_machine_update2"):
 
 
 def test_state_machine_update():
-
     """
     Tests the StateMachine update method\n
     Initializes a StateMachine object and intializes the initial state and
@@ -876,7 +837,6 @@ def test_state_machine_update():
 
 
 def test_state_machine_start():
-
     """
     Tests the StateMachine start method\n
     Initializes a StateMachine object with no initial state, calls the start
@@ -904,7 +864,6 @@ def test_state_machine_start():
 
 
 def test_state_machine_stop():
-
     """
     Tests the StateMachine stop method\n
     Initializes a StateMachine object with no initial state, calls the stop
@@ -931,7 +890,6 @@ def test_state_machine_stop():
 
 
 def test_state_machine_is_on():
-
     """
     Tests the StateMachine is_on method\n
     Initializes a StateMachine object and sets the _current_state attribute
@@ -952,7 +910,6 @@ def test_state_machine_is_on():
 
 
 def test_state_machine_spoof():
-
     """
     Tests the StateMachine spoof method\n
     Initializes a StateMachine object and asserts the spoof attribute is
@@ -971,7 +928,6 @@ def test_state_machine_spoof():
 
 
 def test_state_machine_default_properties():
-
     """
     Tests the StateMachine default properties\n
     Initializes a default StateMachine object and asserts the properties are properly set.
@@ -984,7 +940,6 @@ def test_state_machine_default_properties():
 
 
 def test_state_machine_non_default_properties():
-
     """
     Tests the StateMachine non-default properties\n
     Initializes a StateMachine object and adds 3 states, sets the

@@ -24,7 +24,6 @@ from tests.test_actuators.test_dephyactpack import (
 
 
 def test_patching(dephyactpack_patched: DephyActpack):
-
     """
     Test the patching of the DephyActpack class with the MockDephyActpack class\n
     Assert the patched class is an instance of the MockDephyActpack class
@@ -35,7 +34,6 @@ def test_patching(dephyactpack_patched: DephyActpack):
 
 
 class MockJoint(Joint, MockDephyActpack):
-
     """
     Mock Joint class for testing the Joint class\n
     Inherits everything from the Joint class and the MockDephyActpack class
@@ -82,7 +80,6 @@ class MockJoint(Joint, MockDephyActpack):
 
 
 def test_mockjoint_init():
-
     """
     Tests the Joint constructor\n
     """
@@ -103,7 +100,6 @@ def test_mockjoint_init():
 
 @pytest.fixture
 def joint_mock() -> MockJoint:
-
     """
     Fixture that returns a MockJoint instance when the Joint class is called
     """
@@ -113,7 +109,6 @@ def joint_mock() -> MockJoint:
 
 @pytest.fixture
 def patch_joint(mocker, joint_mock: MockJoint):
-
     """
     Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
     """
@@ -123,7 +118,6 @@ def patch_joint(mocker, joint_mock: MockJoint):
 
 @pytest.fixture
 def joint_patched(patch_joint) -> Joint:
-
     """
     Fixture that returns a Joint instance when the Joint class is called
     """
@@ -133,7 +127,6 @@ def joint_patched(patch_joint) -> Joint:
 
 
 def test_mockjoint(joint_patched: Joint):
-
     """
     Test the joint_patched fixture\n
     Assert the joint_patched fixture returns an instance of the MockJoint class
@@ -145,7 +138,6 @@ def test_mockjoint(joint_patched: Joint):
 
 @pytest.fixture
 def patch_sleep(monkeypatch):
-
     """
     Fixture that patches the time.sleep function with a lambda function that does nothing
     """
@@ -154,7 +146,6 @@ def patch_sleep(monkeypatch):
 
 
 def test_home(joint_patched: Joint, patch_sleep):
-
     """
     Test the home method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the _log attribute
@@ -217,7 +208,6 @@ def test_home(joint_patched: Joint, patch_sleep):
 
 @pytest.fixture
 def patch_time_time(monkeypatch):
-
     """
     Fixture that patches the time.time function with a lambda function that returns
     a list of values that are popped off the list each time the time.time function
@@ -255,7 +245,6 @@ def patch_time_time(monkeypatch):
 
 
 def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_time):
-
     """
     Test the make_encoder_map method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the _log attribute
@@ -306,7 +295,6 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
 
 
 def test_set_max_temperature(joint_patched: Joint):
-
     """
     Test the set_max_temperature method of the Joint class\n
     This test creates an instance of the MockJoint class asserts the default max_temperature
@@ -321,7 +309,6 @@ def test_set_max_temperature(joint_patched: Joint):
 
 
 def test_set_output_torque(joint_patched: Joint):
-
     """
     Test the set_output_torque method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the gear ratio to 100,
@@ -342,7 +329,6 @@ def test_set_output_torque(joint_patched: Joint):
 
 
 def test_set_output_position(joint_patched: Joint):
-
     """
     Test the set_output_position method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the gear ratio to 100,
@@ -361,7 +347,6 @@ def test_set_output_position(joint_patched: Joint):
 
 
 def test_set_motor_impedance(joint_patched: Joint):
-
     """
     Test the set_motor_impedance method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the gear ratio to 100,
@@ -385,7 +370,6 @@ def test_set_motor_impedance(joint_patched: Joint):
 
 
 def test_set_joint_impedance(joint_patched: Joint):
-
     """
     Test the set_joint_impedance method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the gear ratio to 100,
@@ -410,7 +394,6 @@ def test_set_joint_impedance(joint_patched: Joint):
 
 
 def test_convert_to_joint_impedance(joint_patched: Joint):
-
     """
     Test the convert_to_joint_impedance method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the gear ratio to 100.
@@ -441,7 +424,6 @@ def test_convert_to_joint_impedance(joint_patched: Joint):
 
 
 def test_convert_to_motor_impedance(joint_patched: Joint):
-
     """
     Test the convert_to_motor_impedance method of the Joint class\n
     This test creates an instance of the MockJoint class. The convert_to_motor_impedance
@@ -464,7 +446,6 @@ def test_convert_to_motor_impedance(joint_patched: Joint):
 
 
 def test_convert_to_pid_impedance(joint_patched: Joint):
-
     """
     Test the convert_to_pid_impedance method of the Joint class\n
     This test creates an instance of the MockJoint class and sets the gear ratio to 100.
@@ -500,7 +481,6 @@ def test_convert_to_pid_impedance(joint_patched: Joint):
 
 
 def test_mockjoint_default_properties(joint_patched: Joint):
-
     """
     Test the default properties of the MockJoint class\n
     This test creates an instance of the MockJoint class and asserts the default
@@ -519,7 +499,6 @@ def test_mockjoint_default_properties(joint_patched: Joint):
 
 
 def test_mockjoint_nondefaultproperties(joint_patched):
-
     """
     Test the non-default properties of the MockJoint class\n
     This test creates an instance of the MockJoint class and sets the attributes

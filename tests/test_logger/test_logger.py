@@ -6,7 +6,6 @@ from opensourceleg.tools.logger import Logger
 
 
 class Simple_Class:
-
     """
     Simple class to use for testing the Logger class
     """
@@ -18,7 +17,6 @@ class Simple_Class:
 
 
 def test_init():
-
     """
     Tests the Logger constrctor\n
     Asserts the constructor works properly when passed a valid file_path
@@ -30,7 +28,6 @@ def test_init():
 
 
 def test_set_file_level():
-
     """
     Tests the Logger set_file_level method\n
     Asserts the proper level is set when a valid level is passed and the proper
@@ -55,7 +52,6 @@ def test_set_file_level():
 
 
 def test_set_stream_level():
-
     """
     Tests the Logger set_stream_level method\n
     Asserts the proper level is set when a valid level is passed and the proper
@@ -82,7 +78,6 @@ def test_set_stream_level():
 
 
 def test_add_attributes():
-
     """
     Tests the Logger add_attributes method\n
     Asserts the method works properly when passed a single class instance and
@@ -106,7 +101,6 @@ def test_add_attributes():
 
 
 def test_close():
-
     """
     Tests the Logger close method\n
     This test initializes a Logger instance and then calls the close method then
@@ -119,7 +113,6 @@ def test_close():
 
 
 def test_data():
-
     """
     Tests the Logger data method\n
     This test initializes a Logger instance and then calls the add_attributes

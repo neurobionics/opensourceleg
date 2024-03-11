@@ -7,7 +7,6 @@ from tests.test_joints.test_joint import patch_time_time
 
 
 def test_loopkiller_init():
-
     """
     Tests the LoopKiller constructor\n
     Initializes a default LoopKiller object and asserts the attribute values
@@ -26,7 +25,6 @@ def test_loopkiller_init():
 
 
 def test_loopkiller_handle_signal():
-
     """
     Tests the LoopKiller handle_signal method\n
     Initializes a default LoopKiller object and asserts the kill_now attribute
@@ -42,7 +40,6 @@ def test_loopkiller_handle_signal():
 
 @pytest.fixture
 def patch_time_time2(monkeypatch):
-
     """
     Fixture to patch the time.time method\n
     Patches the time.time method to return a list of values one at a time.
@@ -53,7 +50,6 @@ def patch_time_time2(monkeypatch):
 
 
 def test_loopkiller_get_fade(patch_time_time2):
-
     """
     Tests the LoopKiller get_fade method\n
     Initializes a LoopKiller object with a fade_time and asserts the get_fade
@@ -117,7 +113,6 @@ def test_softrealtimeloop_init(patch_time_time2):
 
 @pytest.fixture
 def patch_time_time3(monkeypatch):
-
     """
     Fixture to patch the time.time method\n
     Patches the time.time method to return a list of values one at a time.

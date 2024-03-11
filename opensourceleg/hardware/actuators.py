@@ -520,7 +520,6 @@ class DephyActpack(Device):
         ki: int = DEFAULT_POSITION_GAINS.ki,
         kd: int = DEFAULT_POSITION_GAINS.kd,
     ) -> None:
-
         """
         Sets the position gains in arbitrary Dephy units.
 
@@ -543,7 +542,6 @@ class DephyActpack(Device):
         ki: int = DEFAULT_CURRENT_GAINS.ki,
         ff: int = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
-
         """
         Sets the current gains in arbitrary Dephy units.
 
@@ -943,7 +941,6 @@ class MockData:
 
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 class MockDephyActpack(DephyActpack):
-
     """
     MockDephyActpack class definition for testing.\n
     This class inherits everything from the DephyActpack class but
