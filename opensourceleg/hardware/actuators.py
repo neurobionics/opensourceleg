@@ -373,7 +373,6 @@ class PositionMode(ActpackMode):
         ki: int = DEFAULT_POSITION_GAINS.ki,
         kd: int = DEFAULT_POSITION_GAINS.kd,
     ) -> None:
-
         """
         Sets the gains for the position control mode.
 
@@ -962,7 +961,8 @@ class DephyActpack(Device):
     @property
     def genvars(self):
         """genvars (np.array(shape=6)): Raw general variables from the actpack. These are used by
-        the load cell amplifier when it is connected to the actpack instead of the RPi's GPIO pins."""
+        the load cell amplifier when it is connected to the actpack instead of the RPi's GPIO pins.
+        """
         if self._data is not None:
             return np.array(
                 object=[
