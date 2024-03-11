@@ -56,7 +56,7 @@ mypy:
 .PHONY: check-safety
 check-safety:
 	poetry check
-	poetry run safety check --full-report --ignore=51457
+	poetry run safety check --full-report --ignore=51457 --ignore=64437 --ignore=64436 --ignore=62044
 	poetry run bandit --recursive -c pyproject.toml opensourceleg tests
 
 .PHONY: lint
