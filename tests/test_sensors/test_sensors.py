@@ -28,7 +28,6 @@ LOADCELL_MATRIX = np.array(
 
 
 class MockSMBus:
-
     """
     Mocked SMBus class to test the StrainAmp class\n
     This class has attributes and methods that mimic the SMBus class
@@ -76,7 +75,6 @@ class MockSMBus:
 
 
 class MockStrainAmp(StrainAmp):
-
     """
     Create a mock StrainAmp class to test the StrainAmp and Loadcell classes\n
     This class inherits from the StrainAmp class but overrides the _SMBus atttribute
@@ -95,7 +93,6 @@ class MockStrainAmp(StrainAmp):
 
 
 class MockLoadcell(Loadcell):
-
     """
     Create a mock Loadcell class to test the StrainAmp and Loadcell classes\n
     This class inherits from the Loadcell class but overrides the _lc atttribute
@@ -135,7 +132,6 @@ class MockLoadcell(Loadcell):
 
 @pytest.fixture
 def strainamp_mock() -> MockStrainAmp:
-
     """
     Fixture which returns a MockStrainAmp object
     """
@@ -145,7 +141,6 @@ def strainamp_mock() -> MockStrainAmp:
 
 @pytest.fixture
 def patch_strainamp(mocker, strainamp_mock: MockStrainAmp):
-
     """
     Fixture which patches the StrainAmp class to return a MockStrainAmp object
     """
@@ -157,7 +152,6 @@ def patch_strainamp(mocker, strainamp_mock: MockStrainAmp):
 
 @pytest.fixture
 def strainamp_patched(patch_strainamp) -> StrainAmp:
-
     """
     Fixture which returns a patched StrainAmp object
     """
@@ -168,7 +162,6 @@ def strainamp_patched(patch_strainamp) -> StrainAmp:
 
 @pytest.fixture
 def loadcell_mock() -> MockLoadcell:
-
     """
     Fixture which returns a MockLoadcell object
     """
@@ -178,7 +171,6 @@ def loadcell_mock() -> MockLoadcell:
 
 @pytest.fixture
 def patch_loadcell(mocker, loadcell_mock: MockLoadcell):
-
     """
     Fixture which patches the Loadcell class to return a MockLoadcell object
     """
@@ -190,7 +182,6 @@ def patch_loadcell(mocker, loadcell_mock: MockLoadcell):
 
 @pytest.fixture
 def loadcell_patched(patch_loadcell) -> Loadcell:
-
     """
     Fixture which returns a patched Loadcell object
     """
@@ -200,7 +191,6 @@ def loadcell_patched(patch_loadcell) -> Loadcell:
 
 
 def test_mockstrainamp_init():
-
     """
     Test the MockStrainAmp constructor\n
     This test initializes a MockStrainAmp object and asserts the attributes are initialized properly.
@@ -231,7 +221,6 @@ def test_mockstrainamp_init():
 
 
 def test_strainamp_read_byte_data():
-
     """
     Test the StrainAmp read_byte_data method\n
     This test initializes a MockSMBus object and calls the read_byte_data method
@@ -253,7 +242,6 @@ def test_strainamp_read_byte_data():
 
 
 def test_strainamp_read_uncompressed_strain(strainamp_patched: StrainAmp):
-
     """
     Test the StrainAmp read_uncompressed_strain method\n
     This test initializes a StrainAmp object with byte array data and calls the
@@ -296,7 +284,6 @@ def test_strainamp_read_uncompressed_strain(strainamp_patched: StrainAmp):
 
 
 def test_strainamp_read_compressed_strain(strainamp_patched: StrainAmp):
-
     """
     Test the StrainAmp read_compressed_strain method\n
     This test initializes a StrainAmp object with byte array data and calls the
@@ -316,7 +303,6 @@ def test_strainamp_read_compressed_strain(strainamp_patched: StrainAmp):
 
 
 def test_strainamp_update(strainamp_patched: StrainAmp):
-
     """
     Test the StrainAmp update method\n
     This test initializes a StrainAmp object with byte array data and calls the
@@ -351,7 +337,6 @@ def test_strainamp_update(strainamp_patched: StrainAmp):
 
 
 def test_strainamp_unpack_uncompressed_strain():
-
     """
     Test the StrainAmp unpack_uncompressed_strain method\n
     This test initializes a StrainAmp object with byte array data and calls the
@@ -366,7 +351,6 @@ def test_strainamp_unpack_uncompressed_strain():
 
 
 def test_strainamp_unpack_compressed_strain():
-
     """
     Test the StrainAmp unpack_compressed_strain method\n
     This test initializes byte_data and calls the unpack_compressed_strain
@@ -381,7 +365,6 @@ def test_strainamp_unpack_compressed_strain():
 
 
 def test_strainamp_strain_data_to_wrench():
-
     """
     Test the StrainAmp strain_data_to_wrench method\n
     This test initializes an unpacked strain array, a loadcell matrix, and a loadcell zero variable
@@ -428,7 +411,6 @@ def test_strainamp_strain_data_to_wrench():
 
 
 def test_strainamp_wrench_to_strain_data():
-
     """
     Test the StrainAmp wrench_to_strain_data method\n
     This test initializes a loadcell matrix, and a measurement variable and calls the
@@ -472,7 +454,6 @@ def test_strainamp_wrench_to_strain_data():
 
 
 def test_mockloadcell_init():
-
     """
     Test the MockLoadcell constructor\n
     This test initializes a MockLoadcell object and asserts the attributes are initialized properly.
@@ -498,7 +479,6 @@ def test_mockloadcell_init():
 
 
 def test_loadcell_default_properties(loadcell_patched: Loadcell):
-
     """
     Test the Loadcell default properties\n
     This test initializes a Loadcell object and asserts the default properties are all zero.
@@ -517,7 +497,6 @@ def test_loadcell_default_properties(loadcell_patched: Loadcell):
 
 
 def test_loadcell_nondefault_properties(loadcell_patched: Loadcell):
-
     """
     Test the Loadcell non-default properties\n
     This test initializes a Loadcell object and passes non-zero data to the _loadcell_data attribute
@@ -547,7 +526,6 @@ def test_loadcell_nondefault_properties(loadcell_patched: Loadcell):
 
 
 def test_loadcell_reset(loadcell_patched: Loadcell):
-
     """
     Test the Loadcell reset method\n
     This test initializes a Loadcell object and passes non-zero data to the _loadcell_data attribute
@@ -567,7 +545,6 @@ def test_loadcell_reset(loadcell_patched: Loadcell):
 
 
 def test_loadcell_update(loadcell_patched: Loadcell):
-
     """
     Test the Loadcell update method\n
     This test initializes a Loadcell object and passes data into attributes needed for testing
@@ -867,7 +844,6 @@ def test_loadcell_update(loadcell_patched: Loadcell):
 
 
 def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
-
     """
     Tests the Loadcell initialize method\n
     This test initializes a Loadcell object and passes data into attributes needed for testing

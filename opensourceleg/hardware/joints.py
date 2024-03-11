@@ -85,7 +85,6 @@ class Joint(DephyActpack):
         homing_voltage: int = 2000,
         homing_frequency: int = 100,
     ) -> None:
-
         """
 
         This method homes the joint by moving it to the zero position.
@@ -384,7 +383,6 @@ class Joint(DephyActpack):
 
 
 class MockJoint(Joint, MockDephyActpack):
-
     """
     Mock Joint class for testing the Joint class\n
     Inherits everything from the Joint class and the MockDephyActpack class

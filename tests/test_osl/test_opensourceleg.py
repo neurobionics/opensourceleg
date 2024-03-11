@@ -54,7 +54,6 @@ LOADCELL_MATRIX = np.array(
 
 
 def test_opensourceleg_init(mock_time):
-
     """
     Tests the OpenSourceLeg constructor\n
     Asserts the constructor works properly for the default case.
@@ -84,7 +83,6 @@ def test_opensourceleg_init(mock_time):
 def test_osl_enter(
     mock_get_active_ports, joint_patched: Joint, loadcell_patched: Loadcell, patch_sleep
 ):
-
     """
     Tests the OpenSourceLeg __enter__ method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level. A
@@ -135,7 +133,6 @@ def test_osl_enter(
 
 
 def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_sleep):
-
     """
     Tests the OpenSourceLeg __exit__ method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level.
@@ -155,7 +152,6 @@ def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_
 
 
 def test_osl_repr():
-
     """
     Tests the OpenSourceLeg __repr__ method\n
     Intializes an OpenSourceLeg object and asserts the repr method returns the proper
@@ -168,7 +164,6 @@ def test_osl_repr():
 
 @pytest.fixture
 def mock_get_active_ports(monkeypatch):
-
     """
     Monkeypatches the get_active_ports method\n
     Returns a list of 3 ports.
@@ -182,7 +177,6 @@ def mock_get_active_ports(monkeypatch):
 
 @pytest.fixture
 def mock_get_active_ports1(monkeypatch):
-
     """
     Monkeypatches the get_active_ports method\n
     Returns a list of 1 port.
@@ -195,7 +189,6 @@ def mock_get_active_ports1(monkeypatch):
 
 @pytest.fixture
 def mock_get_active_ports0(monkeypatch):
-
     """
     Monkeypatches the get_active_ports method\n
     Returns a list of 0 ports.
@@ -205,7 +198,6 @@ def mock_get_active_ports0(monkeypatch):
 
 
 def test_osl_add_joint_no_ports(mock_get_active_ports0):
-
     """
     Tests the OpenSourceLeg add_joint method with no ports available\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level. Then
@@ -229,7 +221,6 @@ def test_osl_add_joint_no_ports(mock_get_active_ports0):
 
 
 def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
-
     """
     Tests the OpenSourceLeg add_joint method with one port available\n
     Intializes an OpenSourceLeg object and adds a knee joint. It then asserts
@@ -251,7 +242,6 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
 
 
 def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_ports):
-
     """
     Tests the OpenSourceLeg add_joint method with ports available\n
     Intializes an OpenSourceLeg object and adds a knee joint. It then asserts
@@ -293,7 +283,6 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
 
 
 def test_osl_add_loadcell(loadcell_patched: Loadcell):
-
     """
     Tests the OpenSourceLeg add_loadcell method\n
     Intializes an OpenSourceLeg object and adds a loadcell. It then asserts
@@ -325,7 +314,6 @@ def test_osl_add_loadcell(loadcell_patched: Loadcell):
 
 @pytest.fixture
 def patch_exit(monkeypatch):
-
     """
     Monkeypatches the exit method\n
     Returns None.
@@ -337,7 +325,6 @@ def patch_exit(monkeypatch):
 def test_osl_update_knee(
     joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
 ):
-
     """
     Tests the OpenSourceLeg update method with knee\n
     Intializes an OpenSourceLeg object and a knee is added. Then the update
@@ -362,7 +349,6 @@ def test_osl_update_knee(
 def test_osl_update_ankle(
     joint_patched: Joint, mock_get_active_ports, patch_sleep, patch_exit
 ):
-
     """
     Tests the OpenSourceLeg update method with ankle\n
     Intializes an OpenSourceLeg object and an ankle is added. Then the update
@@ -385,7 +371,6 @@ def test_osl_update_ankle(
 
 
 def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
-
     """
     Test the OpenSourceLeg update method with loadcell\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level
@@ -524,7 +509,6 @@ def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
 
 
 def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_sleep):
-
     """
     Tests the OpenSourceLeg update method with log_data\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level
@@ -552,7 +536,6 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
 
 
 def test_osl_home(joint_patched: Joint, mock_get_active_ports):
-
     """
     Tests the OpenSourceLeg home method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level
@@ -577,7 +560,6 @@ def test_osl_home(joint_patched: Joint, mock_get_active_ports):
 
 
 def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
-
     """
     Tests the OpenSourceLeg calibrate_loadcell method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level
@@ -601,7 +583,6 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
 def test_osl_calibrate_encoders(
     joint_patched: Joint, mock_get_active_ports, patch_time_time, patch_sleep
 ):
-
     """
     Tests the OpenSourceLeg calibrate_encoders method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level
@@ -632,7 +613,6 @@ def test_osl_calibrate_encoders(
 
 
 def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
-
     """
     Tests the OpenSourceLeg reset method\n
     Intializes an OpenSourceLeg object with a knee and ankle added. The modes
@@ -654,7 +634,6 @@ def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
 
 
 def test_osl_properties(mock_time):
-
     """
     Tests the OpenSourceLeg properties\n
     Intializes an OpenSourceLeg object with a logger. The properties are asserted

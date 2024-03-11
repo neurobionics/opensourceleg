@@ -12,7 +12,6 @@ PRECISION_OF_SLEEP = 0.0001
 
 
 class LoopKiller:
-
     """
     Soft Realtime Loop---a class designed to allow clean exits from infinite loops
     with the potential for post-loop cleanup operations executing.
@@ -125,10 +124,8 @@ class SoftRealtimeLoop:
             print("In %d cycles at %.2f Hz:" % (self.n, 1.0 / self.dt))
             print("\tavg error: %.3f milliseconds" % (1e3 * self.sum_err / self.n))
             print(
-                "\tstddev error: %.3f milliseconds"
-                % (
-                    1e3
-                    * sqrt((self.sum_var - self.sum_err**2 / self.n) / (self.n - 1))
+                "\tstddev error: %.3f milliseconds"(
+                    1e3 * sqrt((self.sum_var - self.sum_err**2 / self.n) / (self.n - 1))
                 )
             )
             print(

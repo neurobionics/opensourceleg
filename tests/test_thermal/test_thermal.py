@@ -50,7 +50,6 @@ test_model_specified = thermal.ThermalModel(
     ],
 )
 def test_init(test_model, class_variable, expected_value):
-
     """
     Tests the ThermalModel constructor\n
     Asserts the class variables of the ThermalModel object are equal to the expected values.
@@ -60,7 +59,6 @@ def test_init(test_model, class_variable, expected_value):
 
 
 def test_update():
-
     """
     Tests the ThermalModel update method\n
     Calls the update method with no arguments and asserts the class variables are equal to the expected values.
