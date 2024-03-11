@@ -6,7 +6,7 @@ import time
 from ctypes import c_int
 from dataclasses import dataclass
 
-import flexsea.fx_enums as fxe
+import flexsea.utilities.constants as fx_const
 import numpy as np
 from flexsea.device import Device
 
@@ -47,10 +47,10 @@ class ControlModes:
     Available modes are Voltage, Current, Position, Impedance.
     """
 
-    voltage: ctypes.c_int = fxe.FX_VOLTAGE
-    current: ctypes.c_int = fxe.FX_CURRENT
-    position: ctypes.c_int = fxe.FX_POSITION
-    impedance: ctypes.c_int = fxe.FX_IMPEDANCE
+    voltage: ctypes.c_int = fx_const.controllers["voltage"]
+    current: ctypes.c_int = fx_const.controllers["current"]
+    position: ctypes.c_int = fx_const.controllers["position"]
+    impedance: ctypes.c_int = fx_const.controllers["impedance"]
 
     def __repr__(self) -> str:
         return f"ControlModes"
