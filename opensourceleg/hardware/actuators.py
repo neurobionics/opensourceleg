@@ -1158,6 +1158,8 @@ class MockDephyActpack(DephyActpack):
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
         self._mode: ActpackMode = self.control_modes.voltage
 
+        self._clib: MockClib = MockClib()
+
     # Overrides the open method to function without a device
     def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
@@ -1236,6 +1238,15 @@ class MockDephyActpack(DephyActpack):
     # Overrides the close method to do nothing
     def close(self):
         pass
+
+
+class MockClib:
+
+    def __init__(self) -> None:
+        a: bool = False
+
+    def fxIsOpen(self, val) -> bool:
+        return True
 
 
 if __name__ == "__main__":

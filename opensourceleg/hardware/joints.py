@@ -442,22 +442,11 @@ class MockJoint(Joint, MockDephyActpack):
 
         self._max_temperature: float = MAX_CASE_TEMPERATURE
 
-        self._clib = MockClib()
-
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
         else:
             self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return
-
-
-class MockClib:
-
-    def __init__(self) -> None:
-        a: bool = False
-
-    def fxIsOpen(self, val) -> bool:
-        return True
 
 
 if __name__ == "__main__":
