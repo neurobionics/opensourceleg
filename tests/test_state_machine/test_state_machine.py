@@ -280,7 +280,7 @@ def test_action(data="log_name") -> bool:
     callback_log = Logger(file_path=f"tests/test_state_machine/{data}")
     callback_log.set_stream_level(level="DEBUG")
     callback_log.debug("Action was called")
-    return True
+    assert True
 
 
 def test_state_start(mock_time):

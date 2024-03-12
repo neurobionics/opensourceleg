@@ -290,13 +290,14 @@ class PositionMode(ActpackMode):
         kp: int = DEFAULT_POSITION_GAINS.kp,
         ki: int = DEFAULT_POSITION_GAINS.ki,
         kd: int = DEFAULT_POSITION_GAINS.kd,
+        ff: int = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
 
         assert 0 <= kp <= 1000, "kp must be between 0 and 1000"
         assert 0 <= ki <= 1000, "ki must be between 0 and 1000"
         assert 0 <= kd <= 1000, "kd must be between 0 and 1000"
 
-        self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=0)
+        self._device.set_gains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff)
         self._has_gains = True
 
     def _set_motor_position(self, counts: int) -> None:
@@ -519,6 +520,7 @@ class DephyActpack(Device):
         kp: int = DEFAULT_POSITION_GAINS.kp,
         ki: int = DEFAULT_POSITION_GAINS.ki,
         kd: int = DEFAULT_POSITION_GAINS.kd,
+        ff: int = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Dephy units.
@@ -534,7 +536,7 @@ class DephyActpack(Device):
             )
             return
 
-        self._mode._set_gains(kp=kp, ki=ki, kd=kd)  # type: ignore
+        self._mode._set_gains(kp=kp, ki=ki, kd=kd, ff=ff)  # type: ignore
 
     def set_current_gains(
         self,
