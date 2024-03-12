@@ -453,7 +453,7 @@ class MockJoint(Joint, MockDephyActpack):
 
 class MockClib:
 
-    def __init__() -> None:
+    def __init__(self) -> None:
         a: bool = False
 
     def fxIsOpen(self, val) -> bool:
