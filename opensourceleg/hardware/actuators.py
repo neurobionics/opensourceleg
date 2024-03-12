@@ -529,6 +529,7 @@ class DephyActpack(Device):
             kp (int): The proportional gain
             ki (int): The integral gain
             kd (int): The derivative gain
+            ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.position:
             self._log.warning(
