@@ -62,7 +62,7 @@ To modify, develop, or contribute to the `opensourceleg <https://pypi.org/projec
 License
 =======
 
-The *opensourceleg* library is licensed under the terms of the `GPL-3.0 license <https://github.com/neurobionics/opensourceleg/raw/main/LICENSE>`_. This license grants users a number of freedoms:
+The *opensourceleg* library is licensed under the terms of the `LGPL-v2.1 license <https://github.com/neurobionics/opensourceleg/raw/main/LICENSE>`_. This license grants users a number of freedoms:
 
 * You are free to use the *opensourceleg* library for any purpose.
 * You are free to modify the *opensourceleg* library to suit your needs.

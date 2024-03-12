@@ -23,16 +23,17 @@ An open-source software library for numerical computation, data acquisition, <br
 
 ## Installation
 
-The easiest and quickest way to install the *opensourceleg* library is via [pip](https://pip.pypa.io/en/stable/):
+The easiest and quickest way to install the _opensourceleg_ library is via [pip](https://pip.pypa.io/en/stable/):
 
 ```bash
 pip install opensourceleg
 ```
 
-> If you plan on installing the *opensourceleg* library on a Raspberry Pi, we recommend using [opensourcelegpi](https://github.com/neurobionics/opensourcelegpi) tool, which is a cloud-based CI tool used to build an up-to-date OS for a [Raspberry Pi](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) that can be used headless/GUI-less to control autonomous/remote robotic systems. This tool bundles the *opensourceleg* library and its dependencies into a single OS image, which can be flashed onto a microSD card and used to boot a Raspberry Pi. For more information, click [here](https://github.com/neurobionics/opensourcelegpi/blob/main/README.md).
+> If you plan on installing the _opensourceleg_ library on a Raspberry Pi, we recommend using [opensourcelegpi](https://github.com/neurobionics/opensourcelegpi) tool, which is a cloud-based CI tool used to build an up-to-date OS for a [Raspberry Pi](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) that can be used headless/GUI-less to control autonomous/remote robotic systems. This tool bundles the _opensourceleg_ library and its dependencies into a single OS image, which can be flashed onto a microSD card and used to boot a Raspberry Pi. For more information, click [here](https://github.com/neurobionics/opensourcelegpi/blob/main/README.md).
 
 ### Developing
-To modify, develop, or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we encourage you to install [Poetry](https://python-poetry.org), which is a python packaging and dependency management tool. Once you have Poetry installed on your local machine, you can clone the repository and install the *opensourceleg* library by running the following commands:
+
+To modify, develop, or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we encourage you to install [Poetry](https://python-poetry.org), which is a python packaging and dependency management tool. Once you have Poetry installed on your local machine, you can clone the repository and install the _opensourceleg_ library by running the following commands:
 
 ```bash
 git clone https://github.com/neurobionics/opensourceleg.git
@@ -48,12 +49,12 @@ You can find tutorials and API documentation at [opensourceleg.readthedocs.io](h
 
 ## License
 
-The *opensourceleg* library is licensed under the terms of the [GPL-3.0 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
+The _opensourceleg_ library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
 
-* You are free to use the *opensourceleg* library for any purpose.
-* You are free to modify the *opensourceleg* library to suit your needs.
-* You can study how the *opensourceleg* library works and change it.
-* You can distribute modified versions of the *opensourceleg* library.
+- You are free to use the _opensourceleg_ library for any purpose.
+- You are free to modify the _opensourceleg_ library to suit your needs.
+- You can study how the _opensourceleg_ library works and change it.
+- You can distribute modified versions of the _opensourceleg_ library.
 
 The GPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
 
