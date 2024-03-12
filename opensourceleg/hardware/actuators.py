@@ -1239,6 +1239,10 @@ class MockDephyActpack(DephyActpack):
     def close(self):
         pass
 
+    @property
+    def connected(self) -> bool:
+        return True
+
 
 class MockClib:
 
