@@ -257,7 +257,10 @@ def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
     mocked_dap.open()
     with open("tests/test_actuators/test_mockdephyactpack_open_log.log") as f:
         contents = f.read()
-        assert "DEBUG: [DephyActpack[MockDephyActpack]] Opening Device at /dev/ttyACM0" in contents
+        assert (
+            "DEBUG: [DephyActpack[MockDephyActpack]] Opening Device at /dev/ttyACM0"
+            in contents
+        )
     # Tests the open method with erroring arguments
     with pytest.raises(OSError):
         mocked_dap.open()
@@ -434,7 +437,10 @@ def test_voltagemode(dephyactpack_patched: DephyActpack):
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Voltage mode." in contents
     # Asserts the proper motor command is sent
-    assert mock_dap4._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    assert (
+        mock_dap4._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    )
 
 
 def test_currentmode(dephyactpack_patched: DephyActpack):
@@ -462,7 +468,10 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
     assert mock_dap5._gains == {"kp": 40, "ki": 400, "kd": 0, "k": 0, "b": 0, "ff": 128}
     assert mock_dap5._mode._has_gains == True
     # Asserts the proper motor command is sent
-    assert mock_dap5._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(2), Value: 0"
+    assert (
+        mock_dap5._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(2), Value: 0"
+    )
     # Tests the exit method of the VoltageMode class
     mock_dap5._mode._exit()
     # Asserts the proper log message is written
@@ -470,7 +479,10 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Current mode." in contents
     # Asserts the proper motor command is sent
-    assert mock_dap5._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    assert (
+        mock_dap5._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    )
 
 
 def test_positionmode(dephyactpack_patched: DephyActpack):
@@ -501,7 +513,10 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     assert mock_dap6._gains == {"kp": 50, "ki": 0, "kd": 0, "k": 0, "b": 0, "ff": 0}
     assert mock_dap6._mode._has_gains == True
     # Asserts the proper motor command is sent
-    assert mock_dap6._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(0), Value: 10"
+    assert (
+        mock_dap6._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(0), Value: 10"
+    )
     # Tests the exit method of the PositionMode class
     mock_dap6._mode._exit()
     # Asserts the proper log message is written
@@ -509,7 +524,10 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Position mode." in contents
     # Asserts the proper motor command is sent
-    assert mock_dap6._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    assert (
+        mock_dap6._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    )
 
 
 def test_impedancemode(dephyactpack_patched: DephyActpack):
@@ -547,7 +565,10 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     }
     assert mock_dap7._mode._has_gains == True
     # Asserts the proper motor command is sent
-    assert mock_dap7._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(3), Value: 10"
+    assert (
+        mock_dap7._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(3), Value: 10"
+    )
     # Tests the exit method of the ImpedanceMode class
     mock_dap7._mode._exit()
     # Asserts the proper log message is written
@@ -555,7 +576,10 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
         contents = f.read()
         assert "DEBUG: [Actpack] Exiting Position mode." in contents
     # Asserts the proper motor command is sent
-    assert mock_dap7._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    assert (
+        mock_dap7._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    )
 
 
 def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
@@ -604,7 +628,10 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     # Asserts the proper log messages are written
     with open("tests/test_actuators/test_dephyactpack_start8_log.log") as f:
         contents = f.read()
-        assert "DEBUG: [DephyActpack[MockDephyActpack]] Opening Device at /dev/ttyACM0" in contents
+        assert (
+            "DEBUG: [DephyActpack[MockDephyActpack]] Opening Device at /dev/ttyACM0"
+            in contents
+        )
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
     # Asserts the read method updated the _data attribute properly
     assert mock_dap8._data.batt_volt == 25
@@ -663,7 +690,10 @@ def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
     # Asserts the set_mode method was called properly
     assert mock_dap10._mode == VoltageMode(device=mock_dap10)
     # Asserts the motor command was sent properly
-    assert mock_dap10._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    assert (
+        mock_dap10._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 0"
+    )
 
 
 def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
@@ -955,7 +985,10 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     # Calls the set_voltage method in VoltageMode
     mock_dap16.set_voltage(value=4.0)
     # Asserts the proper motor command was sent
-    assert mock_dap16._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 4"
+    assert (
+        mock_dap16._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(1), Value: 4"
+    )
     # Changed mode to PositionMode
     mock_dap16._mode = PositionMode(device=mock_dap16)
     # Calls the set_voltage method in PositionMode
@@ -989,7 +1022,10 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     # Calls the set_current method in CurrentMode
     mock_dap17.set_current(value=6.0)
     # Asserts the proper motor command was sent
-    assert mock_dap17._motor_command == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(2), Value: 6"
+    assert (
+        mock_dap17._motor_command
+        == "[DephyActpack[MockDephyActpack]] Control Mode: c_int(2), Value: 6"
+    )
     # Changed mode to PositionMode
     mock_dap17._mode = PositionMode(device=mock_dap17)
     # Calls the set_current method in PositionMode
@@ -1024,7 +1060,10 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     mock_dap18.set_motor_torque(torque=7.0)
     # Asserts the proper motor command was sent
     motor_torque = int(7 * 1000 / 0.1133)
-    assert mock_dap18._motor_command == f"[DephyActpack[MockDephyActpack]] Control Mode: c_int(2), Value: {motor_torque}"
+    assert (
+        mock_dap18._motor_command
+        == f"[DephyActpack[MockDephyActpack]] Control Mode: c_int(2), Value: {motor_torque}"
+    )
     # Changed mode to PositionMode
     mock_dap18._mode = PositionMode(device=mock_dap18)
     # Calls the set_motor_torque method in PositionMode
@@ -1059,14 +1098,20 @@ def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     mock_dap19.set_motor_position(position=8.0)
     # Asserts the proper motor command was sent
     motor_pos = int(8 / 2 / np.pi * 16384)
-    assert mock_dap19._motor_command == f"[DephyActpack[MockDephyActpack]] Control Mode: c_int(0), Value: {motor_pos}"
+    assert (
+        mock_dap19._motor_command
+        == f"[DephyActpack[MockDephyActpack]] Control Mode: c_int(0), Value: {motor_pos}"
+    )
     # Changed mode to ImpedanceMode
     mock_dap19._mode = ImpedanceMode(device=mock_dap19)
     # Calls the set_motor_position method in ImpedanceMode
     mock_dap19.set_motor_position(position=9.0)
     # Asserts the proper motor command was sent
     motor_pos2 = int(9 / 2 / np.pi * 16384)
-    assert mock_dap19._motor_command == f"[DephyActpack[MockDephyActpack]] Control Mode: c_int(3), Value: {motor_pos2}"
+    assert (
+        mock_dap19._motor_command
+        == f"[DephyActpack[MockDephyActpack]] Control Mode: c_int(3), Value: {motor_pos2}"
+    )
     # Changed mode to CurrentMode
     mock_dap19._mode = CurrentMode(device=mock_dap19)
     # Calls the set_motor_position method in CurrentMode

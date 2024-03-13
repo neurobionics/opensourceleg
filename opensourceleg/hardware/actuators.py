@@ -1245,7 +1245,6 @@ class MockDephyActpack(DephyActpack):
 
 
 class MockClib:
-
     def __init__(self) -> None:
         a: bool = False
 
