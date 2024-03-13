@@ -11,6 +11,7 @@ from opensourceleg.hardware.actuators import (
     CurrentMode,
     DephyActpack,
     ImpedanceMode,
+    MockDephyActpack,
     PositionMode,
     VoltageMode,
 )
@@ -20,131 +21,131 @@ from opensourceleg.tools.logger import Logger
 
 # MockDephyActpack class definition for testing
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class MockDephyActpack(DephyActpack):
-    """
-    MockDephyActpack class definition for testing.\n
-    This class inherits everything from the DephyActpack class but
-    deletes the super().__init__() call in the constructor so the
-    constructor does not try to connect to a device. It also overrides
-    some of the methods to allow for testing without a device, and adds
-    attributes used to determine if the methods were called properly.
-    """
+# class MockDephyActpack(DephyActpack):
+#     """
+#     MockDephyActpack class definition for testing.\n
+#     This class inherits everything from the DephyActpack class but
+#     deletes the super().__init__() call in the constructor so the
+#     constructor does not try to connect to a device. It also overrides
+#     some of the methods to allow for testing without a device, and adds
+#     attributes used to determine if the methods were called properly.
+#     """
 
-    def __init__(
-        self,
-        name: str = "MockDephyActpack",
-        port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
-        frequency: int = 500,
-        logger: Logger = Logger(),
-        debug_level: int = 0,
-        dephy_log: bool = False,
-    ) -> None:
-        """
-        Initializes the MockDephyActpack class
+#     def __init__(
+#         self,
+#         name: str = "MockDephyActpack",
+#         port: str = "/dev/ttyACM0",
+#         baud_rate: int = 230400,
+#         frequency: int = 500,
+#         logger: Logger = Logger(),
+#         debug_level: int = 0,
+#         dephy_log: bool = False,
+#     ) -> None:
+#         """
+#         Initializes the MockDephyActpack class
 
-        Args:
-            name (str): _description_. Defaults to "MockDephyActpack".
-            port (str): _description_
-            baud_rate (int): _description_. Defaults to 230400.
-            frequency (int): _description_. Defaults to 500.
-            logger (Logger): _description_
-            debug_level (int): _description_. Defaults to 0.
-            dephy_log (bool): _description_. Defaults to False.
-        """
-        self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
-        self._frequency: int = frequency
-        self._data: Any = None
-        self._name: str = name
+#         Args:
+#             name (str): _description_. Defaults to "MockDephyActpack".
+#             port (str): _description_
+#             baud_rate (int): _description_. Defaults to 230400.
+#             frequency (int): _description_. Defaults to 500.
+#             logger (Logger): _description_
+#             debug_level (int): _description_. Defaults to 0.
+#             dephy_log (bool): _description_. Defaults to False.
+#         """
+#         self._debug_level: int = debug_level
+#         self._dephy_log: bool = dephy_log
+#         self._frequency: int = frequency
+#         self._data: Any = None
+#         self._name: str = name
 
-        self._log: Logger = logger
-        self._state = None
+#         self._log: Logger = logger
+#         self._state = None
 
-        # New attributes to be used for testing
+#         # New attributes to be used for testing
 
-        # This is used in the open() method to display the port the device should be connected to
-        self.port: str = port
+#         # This is used in the open() method to display the port the device should be connected to
+#         self.port: str = port
 
-        # This is used in the send_motor_command() method to display the motor command that was sent
-        self._motor_command: str = "None"
+#         # This is used in the send_motor_command() method to display the motor command that was sent
+#         self._motor_command: str = "None"
 
-        # This is used in the set_gains() method to display the gains that were set
-        self._gains: dict[str, float] = {
-            "kp": 0,
-            "ki": 0,
-            "kd": 0,
-            "k": 0,
-            "b": 0,
-            "ff": 0,
-        }
+#         # This is used in the set_gains() method to display the gains that were set
+#         self._gains: dict[str, float] = {
+#             "kp": 0,
+#             "ki": 0,
+#             "kd": 0,
+#             "k": 0,
+#             "b": 0,
+#             "ff": 0,
+#         }
 
-        # This is used in the read() method to indicate a data stream
-        self.is_streaming: bool = False
+#         # This is used in the read() method to indicate a data stream
+#         self.is_streaming: bool = False
 
-        self._motor_zero_position = 0.0
-        self._joint_zero_position = 0.0
+#         self._motor_zero_position = 0.0
+#         self._joint_zero_position = 0.0
 
-        self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=80,
-            soft_border_C_windings=10,
-            temp_limit_case=70,
-            soft_border_C_case=10,
-        )
+#         self._thermal_model: ThermalModel = ThermalModel(
+#             temp_limit_windings=80,
+#             soft_border_C_windings=10,
+#             temp_limit_case=70,
+#             soft_border_C_case=10,
+#         )
 
-        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
+#         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: ActpackMode = self.control_modes.voltage
+#         self._mode: ActpackMode = self.control_modes.voltage
 
-    # Overrides the open method to function without a device
-    def open(self, freq, log_level, log_enabled):
-        if freq == 100 and log_level == 5 and log_enabled:
-            raise OSError
-        else:
-            self._log.debug(msg=f"Opening Device at {self.port}")
+#     # Overrides the open method to function without a device
+#     def open(self, freq, log_level, log_enabled):
+#         if freq == 100 and log_level == 5 and log_enabled:
+#             raise OSError
+#         else:
+#             self._log.debug(msg=f"Opening Device at {self.port}")
 
-    # Overrides the send_motor_command method to set the new _motor_command attribute
-    def send_motor_command(self, ctrl_mode, value):
-        self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
+#     # Overrides the send_motor_command method to set the new _motor_command attribute
+#     def send_motor_command(self, ctrl_mode, value):
+#         self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
 
-    # Overrides the set_gains method to set the gains in the new _gains attribute
-    def set_gains(self, kp, ki, kd, k, b, ff):
-        self._gains["kp"] = kp
-        self._gains["ki"] = ki
-        self._gains["kd"] = kd
-        self._gains["k"] = k
-        self._gains["b"] = b
-        self._gains["ff"] = ff
+#     # Overrides the set_gains method to set the gains in the new _gains attribute
+#     def set_gains(self, kp, ki, kd, k, b, ff):
+#         self._gains["kp"] = kp
+#         self._gains["ki"] = ki
+#         self._gains["kd"] = kd
+#         self._gains["k"] = k
+#         self._gains["b"] = b
+#         self._gains["ff"] = ff
 
-    # Overrides the read method to modify the data incrementally instead of through a device data stream
-    def read(self):
-        self._data.batt_volt += 15
-        self._data.batt_curr += 15
-        self._data.mot_volt += 15
-        self._data.mot_cur += 15
-        self._data.mot_ang += 15
-        self._data.ank_ang += 15
-        self._data.mot_vel += 15
-        self._data.mot_acc += 15
-        self._data.ank_vel += 15
-        self._data.temperature += 15
-        self._data.genvar_0 += 15
-        self._data.genvar_1 += 15
-        self._data.genvar_2 += 15
-        self._data.genvar_3 += 15
-        self._data.genvar_4 += 15
-        self._data.genvar_5 += 15
-        self._data.accelx += 15
-        self._data.accely += 15
-        self._data.accelz += 15
-        self._data.gyrox += 15
-        self._data.gyroy += 15
-        self._data.gyroz += 15
-        return self._data
+#     # Overrides the read method to modify the data incrementally instead of through a device data stream
+#     def read(self):
+#         self._data.batt_volt += 15
+#         self._data.batt_curr += 15
+#         self._data.mot_volt += 15
+#         self._data.mot_cur += 15
+#         self._data.mot_ang += 15
+#         self._data.ank_ang += 15
+#         self._data.mot_vel += 15
+#         self._data.mot_acc += 15
+#         self._data.ank_vel += 15
+#         self._data.temperature += 15
+#         self._data.genvar_0 += 15
+#         self._data.genvar_1 += 15
+#         self._data.genvar_2 += 15
+#         self._data.genvar_3 += 15
+#         self._data.genvar_4 += 15
+#         self._data.genvar_5 += 15
+#         self._data.accelx += 15
+#         self._data.accely += 15
+#         self._data.accelz += 15
+#         self._data.gyrox += 15
+#         self._data.gyroy += 15
+#         self._data.gyroz += 15
+#         return self._data
 
-    # Overrides the close method to do nothing
-    def close(self):
-        pass
+#     # Overrides the close method to do nothing
+#     def close(self):
+#         pass
 
 
 # MockData class definition for testing without a data stream
@@ -229,7 +230,7 @@ def dephyactpack_patched(patch_dephyactpack) -> DephyActpack:
     return obj
 
 
-def test_patching(dephyactpack_patched: MockDephyActpack):
+def test_patching(dephyactpack_patched: DephyActpack):
     """
     Initializes a DephyActpack object using the dephyactpack_patched fixture
     and asserts that it is an instance of the MockDephyActpack class.
@@ -263,7 +264,7 @@ def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
         mocked_dap.open(freq=100, log_level=5, log_enabled=True)
 
 
-def test_properties_zero(dephyactpack_patched: MockDephyActpack):
+def test_properties_zero(dephyactpack_patched: DephyActpack):
     """
     Tests the default properties of the MockDephyActpack class.\n
     This test initializes a MockDephyActpack object and asserts that the
@@ -299,7 +300,7 @@ def test_properties_zero(dephyactpack_patched: MockDephyActpack):
     assert mock_dap.gyroz == 0
 
 
-def test_properties_nonzero(dephyactpack_patched: MockDephyActpack):
+def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     """
     Tests the properties of the MockDephyActpack class when the data
     attribute has non-zero values.\n This test initializes a MockDephyActpack
@@ -359,7 +360,7 @@ def test_properties_nonzero(dephyactpack_patched: MockDephyActpack):
     assert mock_dap1.gyroz == 20 * float(np.pi / 180 / 32.8)
 
 
-def test_mode_prop(dephyactpack_patched: MockDephyActpack):
+def test_mode_prop(dephyactpack_patched: DephyActpack):
     """
     Tests the mode property of the DephyActpack class where the device
     is an instance of the MockDephyActpack class.\n This test initializes
@@ -378,7 +379,7 @@ def test_mode_prop(dephyactpack_patched: MockDephyActpack):
     assert mock_dap1.mode == ImpedanceMode(device=mock_dap1)
 
 
-def test_set_motor_zero_position(dephyactpack_patched: MockDephyActpack):
+def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
     """
     Tests the set_motor_zero_position method of the DephyActpack class.\n
     This test initializes a MockDephyActpack object and asserts that the
@@ -393,7 +394,7 @@ def test_set_motor_zero_position(dephyactpack_patched: MockDephyActpack):
     assert mock_dap2._motor_zero_position == -20
 
 
-def test_set_joint_zero_position(dephyactpack_patched: MockDephyActpack):
+def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
     """
     Tests the set_joint_zero_position method of the DephyActpack class.\n
     This test initializes a MockDephyActpack object and asserts that the
@@ -408,7 +409,7 @@ def test_set_joint_zero_position(dephyactpack_patched: MockDephyActpack):
     assert mock_dap3._joint_zero_position == -20
 
 
-def test_voltagemode(dephyactpack_patched: MockDephyActpack):
+def test_voltagemode(dephyactpack_patched: DephyActpack):
     """
     Tests the VoltageMode class.\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -437,7 +438,7 @@ def test_voltagemode(dephyactpack_patched: MockDephyActpack):
     assert mock_dap4._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_currentmode(dephyactpack_patched: MockDephyActpack):
+def test_currentmode(dephyactpack_patched: DephyActpack):
     """
     Tests the CurrentMode class.\n
     This test initializes a MockDephyActpack object, sets the _log
@@ -473,7 +474,7 @@ def test_currentmode(dephyactpack_patched: MockDephyActpack):
     assert mock_dap5._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_positionmode(dephyactpack_patched: MockDephyActpack):
+def test_positionmode(dephyactpack_patched: DephyActpack):
     """
     Tests the PositionMode class.\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -512,7 +513,7 @@ def test_positionmode(dephyactpack_patched: MockDephyActpack):
     assert mock_dap6._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_impedancemode(dephyactpaxck_patched: MockDephyActpack):
+def test_impedancemode(dephyactpack_patched: DephyActpack):
     """
     Tests the ImpedanceMode class.\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -558,7 +559,7 @@ def test_impedancemode(dephyactpaxck_patched: MockDephyActpack):
     assert mock_dap7._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_dephyactpack_start(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack start method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -643,7 +644,7 @@ def test_dephyactpack_start(dephyactpack_patched: MockDephyActpack):
     #         assert "Need admin previleges to open the port '/dev/ttyACM0'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n" in contents
 
 
-def test_dephyactpack_stop(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack stop method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -666,7 +667,7 @@ def test_dephyactpack_stop(dephyactpack_patched: MockDephyActpack):
     assert mock_dap10._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_dephyactpack_update(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack update method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -743,7 +744,7 @@ def test_dephyactpack_update(dephyactpack_patched: MockDephyActpack):
     )
 
 
-def test_dephyactpack_set_mode(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_mode method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -777,7 +778,7 @@ def test_dephyactpack_set_mode(dephyactpack_patched: MockDephyActpack):
         )
 
 
-def test_dephyactpack_set_position_gains(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_position_gains method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -829,7 +830,7 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: MockDephyActpack)
         )
 
 
-def test_dephyactpack_set_current_gains(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_current_gains method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -881,7 +882,7 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: MockDephyActpack):
         )
 
 
-def test_dephyactpack_set_impedance_gains(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_impedance_gains method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -935,7 +936,7 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: MockDephyActpack
         )
 
 
-def test_dephyactpack_set_voltage(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_voltage method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -969,7 +970,7 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: MockDephyActpack):
         )
 
 
-def test_dephyactpack_set_current(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_current method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -1003,7 +1004,7 @@ def test_dephyactpack_set_current(dephyactpack_patched: MockDephyActpack):
         )
 
 
-def test_dephyactpack_set_motor_torque(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_motor_torque method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -1038,7 +1039,7 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: MockDephyActpack):
         )
 
 
-def test_dephyactpack_set_motor_position(dephyactpack_patched: MockDephyActpack):
+def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     """
     Tests the DephyActpack set_motor_position method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
