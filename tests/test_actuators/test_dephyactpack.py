@@ -229,7 +229,7 @@ def dephyactpack_patched(patch_dephyactpack) -> DephyActpack:
     return obj
 
 
-def test_patching(dephyactpack_patched: DephyActpack):
+def test_patching(dephyactpack_patched: MockDephyActpack):
     """
     Initializes a DephyActpack object using the dephyactpack_patched fixture
     and asserts that it is an instance of the MockDephyActpack class.
@@ -263,7 +263,7 @@ def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
         mocked_dap.open(freq=100, log_level=5, log_enabled=True)
 
 
-def test_properties_zero(dephyactpack_patched: DephyActpack):
+def test_properties_zero(dephyactpack_patched: MockDephyActpack):
     """
     Tests the default properties of the MockDephyActpack class.\n
     This test initializes a MockDephyActpack object and asserts that the
@@ -299,7 +299,7 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
     assert mock_dap.gyroz == 0
 
 
-def test_properties_nonzero(dephyactpack_patched: DephyActpack):
+def test_properties_nonzero(dephyactpack_patched: MockDephyActpack):
     """
     Tests the properties of the MockDephyActpack class when the data
     attribute has non-zero values.\n This test initializes a MockDephyActpack
@@ -359,7 +359,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     assert mock_dap1.gyroz == 20 * float(np.pi / 180 / 32.8)
 
 
-def test_mode_prop(dephyactpack_patched: DephyActpack):
+def test_mode_prop(dephyactpack_patched: MockDephyActpack):
     """
     Tests the mode property of the DephyActpack class where the device
     is an instance of the MockDephyActpack class.\n This test initializes
@@ -378,7 +378,7 @@ def test_mode_prop(dephyactpack_patched: DephyActpack):
     assert mock_dap1.mode == ImpedanceMode(device=mock_dap1)
 
 
-def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
+def test_set_motor_zero_position(dephyactpack_patched: MockDephyActpack):
     """
     Tests the set_motor_zero_position method of the DephyActpack class.\n
     This test initializes a MockDephyActpack object and asserts that the
@@ -393,7 +393,7 @@ def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
     assert mock_dap2._motor_zero_position == -20
 
 
-def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
+def test_set_joint_zero_position(dephyactpack_patched: MockDephyActpack):
     """
     Tests the set_joint_zero_position method of the DephyActpack class.\n
     This test initializes a MockDephyActpack object and asserts that the
@@ -408,7 +408,7 @@ def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
     assert mock_dap3._joint_zero_position == -20
 
 
-def test_voltagemode(dephyactpack_patched: DephyActpack):
+def test_voltagemode(dephyactpack_patched: MockDephyActpack):
     """
     Tests the VoltageMode class.\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -437,7 +437,7 @@ def test_voltagemode(dephyactpack_patched: DephyActpack):
     assert mock_dap4._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_currentmode(dephyactpack_patched: DephyActpack):
+def test_currentmode(dephyactpack_patched: MockDephyActpack):
     """
     Tests the CurrentMode class.\n
     This test initializes a MockDephyActpack object, sets the _log
@@ -473,7 +473,7 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
     assert mock_dap5._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_positionmode(dephyactpack_patched: DephyActpack):
+def test_positionmode(dephyactpack_patched: MockDephyActpack):
     """
     Tests the PositionMode class.\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -512,7 +512,7 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     assert mock_dap6._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_impedancemode(dephyactpack_patched: DephyActpack):
+def test_impedancemode(dephyactpaxck_patched: MockDephyActpack):
     """
     Tests the ImpedanceMode class.\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -558,7 +558,7 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     assert mock_dap7._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_start(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack start method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -643,7 +643,7 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     #         assert "Need admin previleges to open the port '/dev/ttyACM0'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n" in contents
 
 
-def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_stop(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack stop method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -666,7 +666,7 @@ def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
     assert mock_dap10._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_update(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack update method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -743,7 +743,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     )
 
 
-def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_mode(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_mode method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -777,7 +777,7 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_position_gains(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_position_gains method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -829,7 +829,7 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_current_gains(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_current_gains method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -881,7 +881,7 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_impedance_gains(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_impedance_gains method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -935,7 +935,7 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_voltage(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_voltage method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -969,7 +969,7 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_current(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_current method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -1003,7 +1003,7 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_motor_torque(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_motor_torque method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
@@ -1038,7 +1038,7 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
         )
 
 
-def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
+def test_dephyactpack_set_motor_position(dephyactpack_patched: MockDephyActpack):
     """
     Tests the DephyActpack set_motor_position method\n
     This test initializes a MockDephyActpack object, sets the _log attribute
