@@ -18,7 +18,6 @@ from opensourceleg.hardware.actuators import (
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
 
-
 # MockDephyActpack class definition for testing
 # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
 # class MockDephyActpack(DephyActpack):
