@@ -183,7 +183,9 @@ def test_home(joint_patched: Joint, patch_sleep):
     assert jpa.is_homed == True
     assert jpa._mode == VoltageMode(device=jpa)
     assert jpa.gear_ratio == 41.4999
-    assert jpa._motor_command == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
+    assert (
+        jpa._motor_command == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
+    )
     with open(file="tests/test_joints/test_home_ankle_log.log") as f:
         contents = f.read()
         assert "INFO: [ankle] Homing complete." in contents
@@ -323,8 +325,11 @@ def test_set_output_torque(joint_patched: Joint):
     jp5.set_output_torque(torque=4.0)
     jp5_mot_cmd_value = int(4.0 / 100 / 0.1133 * 1000)
     # Asserts the proper motor command is sent
-    assert jp5._motor_command == "[DephyActpack[knee]] Control Mode: c_int(2), Value: {}".format(
-        str(jp5_mot_cmd_value)
+    assert (
+        jp5._motor_command
+        == "[DephyActpack[knee]] Control Mode: c_int(2), Value: {}".format(
+            str(jp5_mot_cmd_value)
+        )
     )
 
 
@@ -341,8 +346,11 @@ def test_set_output_position(joint_patched: Joint):
     jp6._mode = PositionMode(device=jp6)
     jp6.set_output_position(position=6.0)
     jp6_mot_cmd_value = int(6.0 * 100 / (2 * np.pi / 16384))
-    assert jp6._motor_command == "[DephyActpack[knee]] Control Mode: c_int(0), Value: {}".format(
-        str(jp6_mot_cmd_value)
+    assert (
+        jp6._motor_command
+        == "[DephyActpack[knee]] Control Mode: c_int(0), Value: {}".format(
+            str(jp6_mot_cmd_value)
+        )
     )
 
 
