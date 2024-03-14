@@ -167,7 +167,7 @@ def test_home(joint_patched: Joint, patch_sleep):
     assert jp1.is_homed == True
     assert jp1._mode == VoltageMode(device=jp1)
     assert jp1.gear_ratio == 41.4999
-    assert jp1._motor_command == "Control Mode: c_int(1), Value: 0"
+    assert jp1._motor_command == "[DephyActpack[knee]] Control Mode: c_int(1), Value: 0"
     with open(file="tests/test_joints/test_home_log.log") as f:
         contents = f.read()
         assert "INFO: [knee] Homing complete." in contents
@@ -183,7 +183,7 @@ def test_home(joint_patched: Joint, patch_sleep):
     assert jpa.is_homed == True
     assert jpa._mode == VoltageMode(device=jpa)
     assert jpa.gear_ratio == 41.4999
-    assert jpa._motor_command == "Control Mode: c_int(1), Value: 0"
+    assert jpa._motor_command == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
     with open(file="tests/test_joints/test_home_ankle_log.log") as f:
         contents = f.read()
         assert "INFO: [ankle] Homing complete." in contents
@@ -283,7 +283,7 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
         "b": 0,
         "ff": 128,
     }
-    assert jp2._motor_command == "Control Mode: c_int(2), Value: 0"
+    assert jp2._motor_command == "[DephyActpack[knee]] Control Mode: c_int(2), Value: 0"
     test_joint_position_array = [0.005752427954571154, 0.011504855909142308]
     test_output_position_array = [0.00013861305580425867, 0.00027722611160851734]
     test_power = np.arange(4.0)
@@ -323,7 +323,7 @@ def test_set_output_torque(joint_patched: Joint):
     jp5.set_output_torque(torque=4.0)
     jp5_mot_cmd_value = int(4.0 / 100 / 0.1133 * 1000)
     # Asserts the proper motor command is sent
-    assert jp5._motor_command == "Control Mode: c_int(2), Value: {}".format(
+    assert jp5._motor_command == "[DephyActpack[knee]] Control Mode: c_int(2), Value: {}".format(
         str(jp5_mot_cmd_value)
     )
 
@@ -341,7 +341,7 @@ def test_set_output_position(joint_patched: Joint):
     jp6._mode = PositionMode(device=jp6)
     jp6.set_output_position(position=6.0)
     jp6_mot_cmd_value = int(6.0 * 100 / (2 * np.pi / 16384))
-    assert jp6._motor_command == "Control Mode: c_int(0), Value: {}".format(
+    assert jp6._motor_command == "[DephyActpack[knee]] Control Mode: c_int(0), Value: {}".format(
         str(jp6_mot_cmd_value)
     )
 

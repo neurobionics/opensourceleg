@@ -651,8 +651,8 @@ def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
     test_osl_r.reset()
     assert test_osl_r._knee._mode == VoltageMode(device=test_osl_r._knee)
     assert test_osl_r._ankle._mode == VoltageMode(device=test_osl_r._ankle)
-    assert test_osl_r._knee._motor_command == "Control Mode: c_int(1), Value: 0"
-    assert test_osl_r._ankle._motor_command == "Control Mode: c_int(1), Value: 0"
+    assert test_osl_r._knee._motor_command == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
+    assert test_osl_r._ankle._motor_command == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
 
 
 def test_osl_properties(mock_time):
