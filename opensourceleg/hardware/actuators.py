@@ -6,7 +6,7 @@ import time
 from ctypes import c_int
 from dataclasses import dataclass
 
-import flexsea.fx_enums as fxe
+import flexsea.utilities.constants as fx_const
 import numpy as np
 from flexsea.device import Device
 
@@ -47,10 +47,10 @@ class ControlModes:
     Available modes are Voltage, Current, Position, Impedance.
     """
 
-    voltage: ctypes.c_int = fxe.FX_VOLTAGE
-    current: ctypes.c_int = fxe.FX_CURRENT
-    position: ctypes.c_int = fxe.FX_POSITION
-    impedance: ctypes.c_int = fxe.FX_IMPEDANCE
+    voltage: ctypes.c_int = fx_const.controllers["voltage"]
+    current: ctypes.c_int = fx_const.controllers["current"]
+    position: ctypes.c_int = fx_const.controllers["position"]
+    impedance: ctypes.c_int = fx_const.controllers["impedance"]
 
     def __repr__(self) -> str:
         return f"ControlModes"
@@ -1043,7 +1043,7 @@ class DephyActpack(Device):
 class MockData:
     def __init__(
         self,
-        batt_volt=30,
+        batt_volt=0,
         batt_curr=0,
         mot_volt=0,
         mot_cur=0,
@@ -1158,6 +1158,8 @@ class MockDephyActpack(DephyActpack):
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
         self._mode: ActpackMode = self.control_modes.voltage
 
+        self._clib: MockClib = MockClib()
+
     # Overrides the open method to function without a device
     def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
@@ -1204,30 +1206,29 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
-        small_noise = np.random.normal(0, 0.01)
 
-        self._data.batt_volt += small_noise
-        self._data.batt_curr += 0.0
-        self._data.mot_volt += 0.0
-        self._data.mot_cur += 0.0
-        self._data.mot_ang += 0.0
-        self._data.ank_ang += 0.0
-        self._data.mot_vel += small_noise
-        self._data.mot_acc += small_noise
-        self._data.ank_vel += small_noise
-        self._data.temperature += small_noise
-        self._data.genvar_0 += 0.0
-        self._data.genvar_1 += 0.0
-        self._data.genvar_2 += 0.0
-        self._data.genvar_3 += 0.0
-        self._data.genvar_4 += 0.0
-        self._data.genvar_5 += 0.0
-        self._data.accelx += small_noise
-        self._data.accely += small_noise
-        self._data.accelz += small_noise
-        self._data.gyrox += small_noise
-        self._data.gyroy += small_noise
-        self._data.gyroz += small_noise
+        self._data.batt_volt += 15
+        self._data.batt_curr += 15
+        self._data.mot_volt += 15
+        self._data.mot_cur += 15
+        self._data.mot_ang += 15
+        self._data.ank_ang += 15
+        self._data.mot_vel += 15
+        self._data.mot_acc += 15
+        self._data.ank_vel += 15
+        self._data.temperature += 15
+        self._data.genvar_0 += 15
+        self._data.genvar_1 += 15
+        self._data.genvar_2 += 15
+        self._data.genvar_3 += 15
+        self._data.genvar_4 += 15
+        self._data.genvar_5 += 15
+        self._data.accelx += 15
+        self._data.accely += 15
+        self._data.accelz += 15
+        self._data.gyrox += 15
+        self._data.gyroy += 15
+        self._data.gyroz += 15
         return self._data
 
     def stop_motor(self):
@@ -1236,6 +1237,18 @@ class MockDephyActpack(DephyActpack):
     # Overrides the close method to do nothing
     def close(self):
         pass
+
+    @property
+    def connected(self) -> bool:
+        return True
+
+
+class MockClib:
+    def __init__(self) -> None:
+        a: bool = False
+
+    def fxIsOpen(self, val) -> bool:
+        return True
 
 
 if __name__ == "__main__":
