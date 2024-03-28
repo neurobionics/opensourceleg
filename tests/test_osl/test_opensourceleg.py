@@ -94,8 +94,8 @@ def test_osl_enter(
     test_osl_ent = OpenSourceLeg()
     test_osl_ent.log = Logger(file_path="tests/test_osl/test_osl_ent")
     test_osl_ent.log.set_stream_level("DEBUG")
-    test_osl_ent.add_joint(name="knee")
-    test_osl_ent.add_joint(name="ankle")
+    test_osl_ent.add_joint(name="knee", offline_mode=True)
+    test_osl_ent.add_joint(name="ankle", offline_mode=True)
     test_osl_ent.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_ent._knee._data = Data(
         batt_volt=10,
@@ -142,9 +142,9 @@ def test_osl_exit(mock_get_active_ports, joint_patched: Joint, mock_time, patch_
     test_osl_ex = OpenSourceLeg()
     test_osl_ex.log = Logger(file_path="tests/test_osl/test_osl_ex")
     test_osl_ex.log.set_stream_level("DEBUG")
-    test_osl_ex.add_joint(name="knee")
+    test_osl_ex.add_joint(name="knee", offline_mode=True)
     test_osl_ex._knee._mode = CurrentMode(device=test_osl_ex._knee)
-    test_osl_ex.add_joint(name="ankle")
+    test_osl_ex.add_joint(name="ankle", offline_mode=True)
     test_osl_ex._ankle._mode = ImpedanceMode(device=test_osl_ex._ankle)
     test_osl_ex.__exit__(type=None, value=None, tb=None)
     assert test_osl_ex._knee._mode == VoltageMode(device=test_osl_ex._knee)
@@ -228,11 +228,11 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     """
 
     test_osl_ajop = OpenSourceLeg()
-    test_osl_ajop.add_joint(name="knee")
+    test_osl_ajop.add_joint(name="knee", offline_mode=True)
     assert test_osl_ajop._has_knee == True
     assert test_osl_ajop._knee.name == "knee"
     assert test_osl_ajop._knee.port == "/dev/ttyACM0"
-    assert test_osl_ajop._knee.gear_ratio == 1.0
+    assert test_osl_ajop._knee.gear_ratio == 41.4999
     assert test_osl_ajop._knee.max_temperature == 80
     assert test_osl_ajop._knee.is_homed == False
     assert test_osl_ajop._knee.encoder_map == None
@@ -254,22 +254,22 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     test_osl_aj = OpenSourceLeg()
     test_osl_aj.log = Logger(file_path="tests/test_osl/test_osl_aj")
     test_osl_aj.log.set_stream_level("DEBUG")
-    test_osl_aj.add_joint(name="knee")
+    test_osl_aj.add_joint(name="knee", offline_mode=True)
     assert test_osl_aj._has_knee == True
     assert test_osl_aj._knee.name == "knee"
     assert test_osl_aj._knee.port == "/dev/ttyACM0"
-    assert test_osl_aj._knee.gear_ratio == 1.0
+    assert test_osl_aj._knee.gear_ratio == 41.4999
     assert test_osl_aj._knee.max_temperature == 80
     assert test_osl_aj._knee.is_homed == False
     assert test_osl_aj._knee.encoder_map == None
     assert test_osl_aj._knee.output_position == 0.0
     assert test_osl_aj._knee.output_velocity == 0.0
     assert test_osl_aj._knee.joint_torque == 0.0
-    test_osl_aj.add_joint(name="ankle")
+    test_osl_aj.add_joint(name="ankle", offline_mode=True)
     assert test_osl_aj._has_ankle == True
-    assert test_osl_aj._ankle.name == "ankle"
+    assert test_osl_aj._ankle._name == "knee"
     assert test_osl_aj._ankle.port == "/dev/ttyACM0"
-    assert test_osl_aj._ankle.gear_ratio == 1.0
+    assert test_osl_aj._ankle.gear_ratio == 41.4999
     assert test_osl_aj._ankle.max_temperature == 80
     assert test_osl_aj._ankle.is_homed == False
     assert test_osl_aj._ankle.encoder_map == None
@@ -335,7 +335,7 @@ def test_osl_update_knee(
     test_osl_u_knee = OpenSourceLeg()
     test_osl_u_knee.log = Logger(file_path="tests/test_osl/test_osl_u_knee")
     test_osl_u_knee.log.set_stream_level("DEBUG")
-    test_osl_u_knee.add_joint(name="knee")
+    test_osl_u_knee.add_joint(name="knee", offline_mode=True)
     test_osl_u_knee._knee._data = Data()
     test_osl_u_knee._knee.is_streaming = True
     test_osl_u_knee._knee._max_temperature = 1.0
@@ -359,7 +359,7 @@ def test_osl_update_ankle(
     test_osl_u_ankle = OpenSourceLeg()
     test_osl_u_ankle.log = Logger(file_path="tests/test_osl/test_osl_u_ankle")
     test_osl_u_ankle.log.set_stream_level("DEBUG")
-    test_osl_u_ankle.add_joint(name="ankle")
+    test_osl_u_ankle.add_joint(name="ankle", offline_mode=True)
     test_osl_u_ankle._ankle._data = Data()
     test_osl_u_ankle._ankle.is_streaming = True
     test_osl_u_ankle._ankle._max_temperature = 1.0
@@ -520,7 +520,7 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
     test_osl_u_ld = OpenSourceLeg()
     test_osl_u_ld.log = Logger(file_path="tests/test_osl/test_osl_u_ld")
     test_osl_u_ld.log.set_stream_level("DEBUG")
-    test_osl_u_ld.add_joint(name="knee")
+    test_osl_u_ld.add_joint(name="knee", offline_mode=True)
     test_osl_u_ld._knee._data = Data()
     test_osl_u_ld._knee.is_streaming = True
     test_class_instance = Simple_Class()
@@ -545,8 +545,8 @@ def test_osl_home(joint_patched: Joint, mock_get_active_ports):
     """
 
     test_osl_h = OpenSourceLeg()
-    test_osl_h.add_joint(name="knee")
-    test_osl_h.add_joint(name="ankle")
+    test_osl_h.add_joint(name="knee", offline_mode=True)
+    test_osl_h.add_joint(name="ankle", offline_mode=True)
     test_osl_h._knee._data = Data(mot_ang=20, ank_ang=10)
     test_osl_h.log = Logger(file_path="tests/test_osl/test_osl_h")
     test_osl_h.log.set_stream_level("DEBUG")
@@ -616,7 +616,7 @@ def test_osl_calibrate_encoders(
     test_osl_ce = OpenSourceLeg()
     test_osl_ce.log = Logger(file_path="tests/test_osl/test_osl_ce")
     test_osl_ce.log.set_stream_level("DEBUG")
-    test_osl_ce.add_joint(name="knee")
+    test_osl_ce.add_joint(name="knee", offline_mode=True)
     test_osl_ce._knee._data = Data(mot_cur=4999)
     test_osl_ce._knee.is_streaming = True
     test_osl_ce._knee.home()
@@ -644,8 +644,8 @@ def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
     """
 
     test_osl_r = OpenSourceLeg()
-    test_osl_r.add_joint(name="knee")
-    test_osl_r.add_joint(name="ankle")
+    test_osl_r.add_joint(name="knee", offline_mode=True)
+    test_osl_r.add_joint(name="ankle", offline_mode=True)
     test_osl_r._knee._mode = CurrentMode(device=test_osl_r._knee)
     test_osl_r._ankle._mode = ImpedanceMode(device=test_osl_r._ankle)
     test_osl_r.reset()
@@ -653,11 +653,11 @@ def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
     assert test_osl_r._ankle._mode == VoltageMode(device=test_osl_r._ankle)
     assert (
         test_osl_r._knee._motor_command
-        == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
+        == "[DephyActpack[knee]] Control Mode: c_int(1), Value: 0"
     )
     assert (
         test_osl_r._ankle._motor_command
-        == "[DephyActpack[ankle]] Control Mode: c_int(1), Value: 0"
+        == "[DephyActpack[knee]] Control Mode: c_int(1), Value: 0"
     )
 
 

@@ -1107,6 +1107,7 @@ class MockDephyActpack(DephyActpack):
     def __init__(
         self,
         name: str = "MockDephyActpack",
+        firmwareVersion: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
