@@ -94,7 +94,7 @@ class OpenSourceLeg:
 
     def add_joint(
         self,
-        name,
+        name: str = "knee",
         firmwareVersion: str = "7.2.0",
         port: str = None,
         baud_rate: int = 230400,
