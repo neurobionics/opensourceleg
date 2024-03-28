@@ -94,7 +94,8 @@ class OpenSourceLeg:
 
     def add_joint(
         self,
-        name: str = "knee",
+        name,
+        firmwareVersion: str = "7.2.0",
         port: str = None,
         baud_rate: int = 230400,
         gear_ratio: float = 1.0,
@@ -108,6 +109,7 @@ class OpenSourceLeg:
 
         Parameters:
             name (str): Name of the joint to be added. Defaults to knee.
+            firmwareVersion (str): Current version of the actpack being used. Defaults to 7.2.0
             port (str): Port to which the actpack is connected. Defaults to None.
             baud_rate (int): Baud rate of the actpack. Defaults to 230400.
             gear_ratio (float): Gear ratio of the joint. Defaults to 1.0.
@@ -123,6 +125,7 @@ class OpenSourceLeg:
             if "knee" in name.lower():
                 self._knee = MockJoint(
                     name=name,
+                    firmwareVersion=firmwareVersion,
                     port=port if port is not None else "",
                     baud_rate=baud_rate,
                     frequency=self._frequency,
@@ -137,6 +140,7 @@ class OpenSourceLeg:
             elif "ankle" in name.lower():
                 self._ankle = MockJoint(
                     name=name,
+                    firmwareVersion=firmwareVersion,
                     port=port if port is not None else "",
                     baud_rate=baud_rate,
                     frequency=self._frequency,
@@ -183,6 +187,7 @@ class OpenSourceLeg:
 
                     self._knee = Joint(
                         name=name,
+                        firmwareVersion=firmwareVersion,
                         port=port,
                         baud_rate=baud_rate,
                         frequency=self._frequency,
@@ -205,6 +210,7 @@ class OpenSourceLeg:
 
                     self._ankle = Joint(
                         name=name,
+                        firmwareVersion=firmwareVersion,
                         port=port,
                         baud_rate=baud_rate,
                         frequency=self._frequency,
@@ -231,6 +237,7 @@ class OpenSourceLeg:
 
                     self._knee = Joint(
                         name=name,
+                        firmwareVersion=firmwareVersion,
                         port=port,
                         baud_rate=baud_rate,
                         frequency=self._frequency,
@@ -253,6 +260,7 @@ class OpenSourceLeg:
 
                     self._ankle = Joint(
                         name=name,
+                        firmwareVersion=firmwareVersion,
                         port=port,
                         baud_rate=baud_rate,
                         frequency=self._frequency,
