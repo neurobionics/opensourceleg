@@ -725,7 +725,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
             in contents
         )
     # Set the is_streaming attribute to True to simulate an open device
-    mock_dap11.is_streaming = True
+    mock_dap11.start_streaming(100);
     # Assert the default thermal model was properly initialized
     assert mock_dap11._thermal_model.T_w == 21
     # Calls the update method of the MockDephyActpack instance

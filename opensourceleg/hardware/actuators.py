@@ -1122,6 +1122,8 @@ class MockDephyActpack(DephyActpack):
         self._data: MockData = MockData()
         self._name: str = name
 
+        self.id: str = "1.0.0"
+
         self._log: Logger = logger
         self._state = None
 
@@ -1144,7 +1146,6 @@ class MockDephyActpack(DephyActpack):
         }
 
         # This is used in the read() method to indicate a data stream
-        self.streaming: bool = False
 
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
@@ -1161,10 +1162,11 @@ class MockDephyActpack(DephyActpack):
 
         self._clib: MockClib = MockClib()
 
+
     # Overrides the open method to function without a device
     def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
-        self.streaming = True
+        self.start_streaming(100)
 
     # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
@@ -1235,6 +1237,9 @@ class MockDephyActpack(DephyActpack):
     def stop_motor(self):
         self.command_motor_voltage(0)
 
+    def set_streaming(self):
+        self.streaming = True
+
     # Overrides the close method to do nothing
     def close(self):
         pass
@@ -1248,8 +1253,15 @@ class MockClib:
     def __init__(self) -> None:
         a: bool = False
 
+
     def fxIsOpen(self, val) -> bool:
         return True
+
+    def fxIsStreaming(self, id) -> bool:
+        return True
+
+
+
 
 
 if __name__ == "__main__":
