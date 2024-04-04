@@ -1162,7 +1162,6 @@ class MockDephyActpack(DephyActpack):
 
         self._clib: MockClib = MockClib()
 
-
     # Overrides the open method to function without a device
     def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
@@ -1253,15 +1252,11 @@ class MockClib:
     def __init__(self) -> None:
         a: bool = False
 
-
     def fxIsOpen(self, val) -> bool:
         return True
 
     def fxIsStreaming(self, id) -> bool:
         return True
-
-
-
 
 
 if __name__ == "__main__":
