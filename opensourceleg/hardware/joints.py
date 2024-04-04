@@ -55,7 +55,7 @@ class Joint(DephyActpack):
     def __init__(
         self,
         name: str = "knee",
-        firmwareVersion: str = "7.2.0",
+        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -68,7 +68,7 @@ class Joint(DephyActpack):
 
         super().__init__(
             name=name,
-            firmware_version=firmwareVersion,
+            firmware_version=firmware_version,
             port=port,
             baud_rate=baud_rate,
             frequency=frequency,
@@ -423,7 +423,7 @@ class MockJoint(Joint, MockDephyActpack):
     def __init__(
         self,
         name: str = "knee",
-        firmwareVersion: str = "7.2.0",
+        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,

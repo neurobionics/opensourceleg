@@ -614,7 +614,7 @@ class DephyActpack(Device):
             None
         """
 
-        if self.is_streaming:
+        if self.streaming:
             self._data = self.read()
             self._thermal_model.T_c = self.case_temperature
             self._thermal_scale = self._thermal_model.update_and_get_scale(
@@ -1107,7 +1107,7 @@ class MockDephyActpack(DephyActpack):
     def __init__(
         self,
         name: str = "MockDephyActpack",
-        firmwareVersion: str = "7.2.0",
+        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1144,7 +1144,7 @@ class MockDephyActpack(DephyActpack):
         }
 
         # This is used in the read() method to indicate a data stream
-        self.is_streaming: bool = False
+        self.streaming: bool = False
 
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
@@ -1164,7 +1164,7 @@ class MockDephyActpack(DephyActpack):
     # Overrides the open method to function without a device
     def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
-        self.is_streaming = True
+        self.streaming = True
 
     # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
