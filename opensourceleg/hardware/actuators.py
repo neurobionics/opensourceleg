@@ -1,3 +1,8 @@
+"""
+New Actuator Module for Moteus Motor
+Updated 04/2024
+"""
+
 from typing import Any, Callable, Union, overload
 
 import ctypes
@@ -37,7 +42,6 @@ Usage Guide:
 6. Stop the actpack using the `stop` method.
 
 """
-
 
 @dataclass
 class ControlModes:
