@@ -88,17 +88,17 @@ class Joint(DephyActpack):
         self._max_temperature: float = MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
-            self._name: str = name
+            self.actuator_name: str = name
         else:
             self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return
 
-        if os.path.isfile(path=f"./{self._name}_encoder_map.npy"):
-            coefficients = np.load(file=f"./{self._name}_encoder_map.npy")
+        if os.path.isfile(path=f"./{self.actuator_name}_encoder_map.npy"):
+            coefficients = np.load(file=f"./{self.actuator_name}_encoder_map.npy")
             self._encoder_map = np.polynomial.polynomial.Polynomial(coef=coefficients)
         else:
             self._log.debug(
-                msg=f"[{self._name}] No encoder map found. Please run the calibration routine."
+                msg=f"[{self.actuator_name}] No encoder map found. Please run the calibration routine."
             )
 
     def home(
@@ -162,7 +162,7 @@ class Joint(DephyActpack):
         _zero_pos: int = 0
         _zero_pos_joint: int = 0
 
-        if "ankle" in self._name.lower():
+        if "ankle" in self._actuator_name.lower():
             _zero_pos = int((np.deg2rad(30) * self.gear_ratio) / RAD_PER_COUNT)
             _zero_pos_joint = int(np.deg2rad(30) / RAD_PER_COUNT)
 
@@ -170,7 +170,7 @@ class Joint(DephyActpack):
         self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos_joint))
 
         self._is_homed = True
-        self._log.info(f"[{self._name}] Homing complete.")
+        self._log.info(f"[{self._actuator_name}] Homing complete.")
 
     def make_encoder_map(self) -> None:
         """
@@ -236,7 +236,7 @@ class Joint(DephyActpack):
 
         self._encoder_map = np.polynomial.polynomial.Polynomial(coef=_coeffs)
 
-        np.save(file=f"./{self._name}_encoder_map.npy", arr=_coeffs)
+        np.save(file=f"./{self._actuator_name}_encoder_map.npy", arr=_coeffs)
         self._log.info(msg=f"[{self.__repr__()}] Encoder map saved.")
 
     def set_max_temperature(self, temperature: float) -> None:
@@ -361,9 +361,9 @@ class Joint(DephyActpack):
         return pid_stiffness, pid_damping
 
     @property
-    def name(self) -> str:
+    def joint_name(self) -> str:
         """name (str): Name of the joint."""
-        return self._name
+        return self._actuator_name
 
     @property
     def gear_ratio(self) -> float:
@@ -446,7 +446,7 @@ class MockJoint(Joint, MockDephyActpack):
         self._max_temperature: float = MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
-            self._name: str = name
+            self._actuator_name: str = name
         else:
             self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return

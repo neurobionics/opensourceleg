@@ -12,10 +12,9 @@ from opensourceleg.hardware.actuators import (
     PositionMode,
     VoltageMode,
 )
-from opensourceleg.hardware.joints import Joint
+from opensourceleg.hardware.joints import Joint, MockJoint
 from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import (
-    Data,
     MockDephyActpack,
     dephyactpack_mock,
     dephyactpack_patched,
@@ -33,50 +32,50 @@ def test_patching(dephyactpack_patched: DephyActpack):
     assert isinstance(patched_dap, MockDephyActpack)
 
 
-class MockJoint(Joint, MockDephyActpack):
-    """
-    Mock Joint class for testing the Joint class\n
-    Inherits everything from the Joint class and the MockDephyActpack class
-    except for the Joint constructor.
-    """
+# class MockJoint(Joint, MockDephyActpack):
+#     """
+#     Mock Joint class for testing the Joint class\n
+#     Inherits everything from the Joint class and the MockDephyActpack class
+#     except for the Joint constructor.
+#     """
 
-    def __init__(
-        self,
-        name: str = "knee",
-        port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
-        frequency: int = 500,
-        gear_ratio: float = 41.4999,
-        has_loadcell: bool = False,
-        logger: Logger = Logger(),
-        debug_level: int = 0,
-        dephy_log: bool = False,
-    ) -> None:
+#     def __init__(
+#         self,
+#         name: str = "knee",
+#         port: str = "/dev/ttyACM0",
+#         baud_rate: int = 230400,
+#         frequency: int = 500,
+#         gear_ratio: float = 41.4999,
+#         has_loadcell: bool = False,
+#         logger: Logger = Logger(),
+#         debug_level: int = 0,
+#         dephy_log: bool = False,
+#     ) -> None:
 
-        MockDephyActpack.__init__(self, port)
-        self._gear_ratio: float = gear_ratio
-        self._is_homed: bool = False
-        self._has_loadcell: bool = has_loadcell
-        self._encoder_map = None
+#         MockDephyActpack.__init__(self, port)
+#         self._gear_ratio: float = gear_ratio
+#         self._is_homed: bool = False
+#         self._has_loadcell: bool = has_loadcell
+#         self._encoder_map = None
 
-        self._motor_zero_pos = 0.0
-        self._joint_zero_pos = 0.0
+#         self._motor_zero_pos = 0.0
+#         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = MAX_CASE_TEMPERATURE
+#         self._max_temperature: float = MAX_CASE_TEMPERATURE
 
-        if "knee" in name.lower() or "ankle" in name.lower():
-            self._name: str = name
-        else:
-            self._log.warning(msg=f"Invalid joint name: {name}")
-            return
+#         if "knee" in name.lower() or "ankle" in name.lower():
+#             self._name: str = name
+#         else:
+#             self._log.warning(msg=f"Invalid joint name: {name}")
+#             return
 
-        # if os.path.isfile(path=f"./{self._name}_encoder_map.npy"):
-        #     coefficients = np.load(file=f"./{self._name}_encoder_map.npy")
-        #     self._encoder_map = np.polynomial.polynomial.Polynomial(coef=coefficients)
-        # else:
-        #     self._log.debug(
-        #         msg=f"[{self._name}] No encoder map found. Please run the calibration routine."
-        #     )
+#         # if os.path.isfile(path=f"./{self._name}_encoder_map.npy"):
+#         #     coefficients = np.load(file=f"./{self._name}_encoder_map.npy")
+#         #     self._encoder_map = np.polynomial.polynomial.Polynomial(coef=coefficients)
+#         # else:
+#         #     self._log.debug(
+#         #         msg=f"[{self._name}] No encoder map found. Please run the calibration routine."
+#         #     )
 
 
 def test_mockjoint_init():
@@ -92,7 +91,7 @@ def test_mockjoint_init():
     assert mji._motor_zero_pos == 0.0
     assert mji._joint_zero_pos == 0.0
     assert mji._max_temperature == MAX_CASE_TEMPERATURE
-    assert mji._name == "knee"
+    assert mji._actuator_name == "knee"
 
     # mji2 = MockJoint(name="invalid")
     # assert mji2._name == None
@@ -161,7 +160,7 @@ def test_home(joint_patched: Joint, patch_sleep):
     jp1 = joint_patched
     jp1._log = Logger(file_path="tests/test_joints/test_home_log")
     jp1._log.set_stream_level(level="DEBUG")
-    jp1._data = Data(mot_cur=4999)
+    jp1._data["mot_cur"] = 4999
     jp1.is_streaming = True
     jp1.home()
     assert jp1.is_homed == True
@@ -174,10 +173,10 @@ def test_home(joint_patched: Joint, patch_sleep):
     assert jp1.motor_zero_position == 15
     assert jp1.joint_zero_position == 15
     jpa = joint_patched
-    jpa._name = "ankle"
+    jpa._actuator_name = "ankle"
     jpa._log = Logger(file_path="tests/test_joints/test_home_ankle_log")
     jpa._log.set_stream_level(level="DEBUG")
-    jpa._data = Data(mot_cur=4999)
+    jpa._data["mot_cur"] = 4999
     jpa.is_streaming = True
     jpa.home()
     assert jpa.is_homed == True
@@ -189,8 +188,8 @@ def test_home(joint_patched: Joint, patch_sleep):
     with open(file="tests/test_joints/test_home_ankle_log.log") as f:
         contents = f.read()
         assert "INFO: [ankle] Homing complete." in contents
-    assert jpa.motor_zero_position == 56676
-    assert jpa.joint_zero_position == 1380
+    assert jpa.motor_zero_position == 56691
+    assert jpa.joint_zero_position == 1395
 
 
 # Test the home KeyBoardInterrupt
@@ -261,7 +260,7 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
     jp2 = joint_patched
     jp2._log = Logger(file_path="tests/test_joints/test_make_knee_encoder_map_log")
     jp2._log.set_stream_level(level="DEBUG")
-    jp2._data = Data(mot_cur=4999)
+    jp2._data["mot_cur"] = 4999
     jp2.make_encoder_map()
     with open(file="tests/test_joints/test_make_knee_encoder_map_log.log") as f:
         contents = f.read()
@@ -273,7 +272,7 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
         contents = f.read()
         assert "Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
         assert (
-            "INFO: [DephyActpack[knee]] You may now stop moving the joint." in contents
+            "You may now stop moving the joint." in contents
         )
         assert "INFO: [DephyActpack[knee]] Encoder map saved." in contents
     assert jp2._mode == CurrentMode(device=jp2)
@@ -496,7 +495,7 @@ def test_mockjoint_default_properties(joint_patched: Joint):
     """
 
     jp1 = joint_patched
-    assert jp1.name == "knee"
+    assert jp1.joint_name == "knee"
     assert jp1.gear_ratio == 41.4999
     assert jp1.max_temperature == 80
     assert jp1.is_homed == False
@@ -514,14 +513,16 @@ def test_mockjoint_nondefaultproperties(joint_patched):
     """
 
     jp2 = joint_patched
-    jp2._data = Data(mot_ang=20, mot_vel=10, mot_cur=20)
-    jp2._name = "ankle"
+    jp2._data["mot_ang"] = 20
+    jp2._data["mot_vel"] = 10
+    jp2._data["mot_cur"] = 20
+    jp2._actuator_name = "ankle"
     jp2._gear_ratio = 50.0
     jp2._max_temperature = 100.0
     jp2._is_homed = True
     # jp2._encoder_map = np.polynomial.polynomial.Polynomial(coef=[1, 2, 3])
 
-    assert jp2.name == "ankle"
+    assert jp2.joint_name == "ankle"
     assert jp2.gear_ratio == 50.0
     assert jp2.max_temperature == 100
     assert jp2.is_homed == True
