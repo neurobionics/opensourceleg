@@ -271,9 +271,7 @@ def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_tim
     with open(file="tests/test_joints/test_make_knee_encoder_map_log.log") as f:
         contents = f.read()
         assert "Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
-        assert (
-            "You may now stop moving the joint." in contents
-        )
+        assert "You may now stop moving the joint." in contents
         assert "INFO: [DephyActpack[knee]] Encoder map saved." in contents
     assert jp2._mode == CurrentMode(device=jp2)
     assert jp2._gains == {

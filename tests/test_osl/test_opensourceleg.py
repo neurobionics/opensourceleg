@@ -380,12 +380,12 @@ def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep, joint_patc
     test_osl_u_loadcell.log.set_stream_level("DEBUG")
     test_osl_u_loadcell.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
     test_osl_u_loadcell._loadcell._joint = joint_patched
-    test_osl_u_loadcell._loadcell._joint._data["genvar_0"] =1
-    test_osl_u_loadcell._loadcell._joint._data["genvar_1"] =2
-    test_osl_u_loadcell._loadcell._joint._data["genvar_2"] =3
-    test_osl_u_loadcell._loadcell._joint._data["genvar_3"] =4
-    test_osl_u_loadcell._loadcell._joint._data["genvar_4"] =5
-    test_osl_u_loadcell._loadcell._joint._data["genvar_5"] =6
+    test_osl_u_loadcell._loadcell._joint._data["genvar_0"] = 1
+    test_osl_u_loadcell._loadcell._joint._data["genvar_1"] = 2
+    test_osl_u_loadcell._loadcell._joint._data["genvar_2"] = 3
+    test_osl_u_loadcell._loadcell._joint._data["genvar_3"] = 4
+    test_osl_u_loadcell._loadcell._joint._data["genvar_4"] = 5
+    test_osl_u_loadcell._loadcell._joint._data["genvar_5"] = 6
 
     test_osl_u_loadcell.update()
     loadcell_coupled = [
