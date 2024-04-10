@@ -1121,7 +1121,7 @@ class MockDephyActpack(DephyActpack):
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
-        self._data: dict = dict(
+        self._data: dict[str, float] = dict(
             batt_volt=0,
             batt_curr=0,
             mot_volt=0,
