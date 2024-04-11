@@ -86,19 +86,30 @@ class LoopKiller:
 
 class SoftRealtimeLoop:
     """
-    Soft Realtime Loop---a class designed to allow clean exits from infinite loops
-    with the potential for post-loop cleanup operations executing.
+    A class to create soft real-time loops for running control algorithms. This class was designed to allow clean exits
+    from infinite loops with the potential for executing post-loop cleanup operations. The SoftRealTimeLoop can also be
+    used as a with statement as it has a __enter__ and __exit__ method. Please read the tutorials for more information.
 
-    The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI)
-    when it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
-    Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
+    Parameters:
+        dt (float): Time step to be used for the real-time loop in seconds. Defaults to 0.001
+        fade (float): Fade factor to be used for the real-time loop. Defaults to 0.0.
+        report (bool): If True, the loop will report useful information regarding the loop like the number of cycles,
+        average error in the loop, percentage of time spent sleeping, etc. Defaults to False.
 
-    the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
-    A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
-    See the 'ifmain' for two examples.
+    More Info:
+        Soft Realtime Loop---a class designed to allow clean exits from infinite loops
+        with the potential for post-loop cleanup operations executing.
 
-    This library will soon be hosted as a PIP module and added as a python dependency.
-    https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
+        The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI)
+        when it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
+        Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
+
+        the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
+        A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
+        See the 'ifmain' for two examples.
+
+        This library will soon be hosted as a PIP module and added as a python dependency.
+        https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
 
     # Author: Gray C. Thomas, Ph.D
     # https://github.com/GrayThomas, https://graythomas.github.io
@@ -134,9 +145,18 @@ class SoftRealtimeLoop:
 
     @property
     def fade(self):
+        """fade (float): Fade factor being used for the real-time loop."""
         return self.killer.get_fade()
 
     def run(self, function_in_loop, dt=None):
+        """
+        Runs the real-time loop with the given function.
+
+        Paramaters:
+            function_in_loop (Callable[[Any], Any]): Function to be run within the real-time loop.
+            dt (float): Time step to be used for the real-time loop. If None, the time step given in the
+                        constructor will be used. Defaults to None.
+        """
         if dt is None:
             dt = self.dt
         self.t0 = self.t1 = time.time() + dt
@@ -152,9 +172,16 @@ class SoftRealtimeLoop:
             self.t1 += dt
 
     def stop(self):
+        """
+        Safely stops the real-time loop's run method and exits the loop.
+
+        Parameters:
+            None
+        """
         self.killer.kill_now = True
 
     def time(self):
+        """time (float): Current time within the real-time loop."""
         return time.time() - self.t0
 
     def time_since(self):
@@ -234,6 +261,11 @@ class SaturatingRamp:
     Call saturatingRamp.update() to update the value of the ramp and return the value.
     Can also access saturatingRamp.value without updating.
 
+    Parameters:
+        loop_frequency (int): Frequency of the loop in Hz. This is used to calculate the time step for
+        the ramp. Defaults to 100.
+        ramp_time (float): Time to complete the ramp. Defaults to 1.0.
+
     Example usage:
         ramp = saturatingRamp(100, 1.0)
 
@@ -258,15 +290,13 @@ class SaturatingRamp:
 
     def update(self, enable_ramp=False):
         """
-        Updates the ramp value and returns it as a float.
-        If enable_ramp is true, ramp value increases
-        Otherwise decreases.
+        Updates the ramp value and returns the current value of the ramp.
 
         Example usage:
             torque = torque * ramp.update(enable_ramp)
 
-        Args:
-            enable_ramp (bool, optional): If enable_ramp is true, ramp value increases. Defaults to False.
+        Parameters:
+            enable_ramp (bool): If True, the ramp value increases. If False, the ramp value decreases. Defaults to False.
 
         Returns:
             value (float): Scalar between 0 and 1.
@@ -283,7 +313,10 @@ class SaturatingRamp:
 
 def get_active_ports():
     """
-    Lists active serial ports.
+    Finds and returns the active serial ports. This method is useful to find which port the hardware is connected to.
+
+    Parameters:
+        None
     """
     if sys.platform.startswith("linux") or sys.platform.startswith("cygwin"):
         ports = glob.glob("/dev/tty[A-Za-z]C*")
@@ -311,6 +344,13 @@ def clamp_within_vector_range(input_value, input_vector):
     This function ensures that input_value remains within the range spanned by the input_vector.
     If the input_value falls outside the vector's bounds, it'll return the appropriate max or min value from the vector.
 
+    Parameters:
+        input_value (float): Value to be clamped within the vector's range.
+        input_vector (list[float]): Vector to be used to clamp the input value.
+
+    Returns:
+        Any
+
     Example:
         clamp_within_vector_range(10, [0,1,2,3]) = 3
         clamp_within_vector_range(-10, [0,1,2,3]) = 0
@@ -328,11 +368,12 @@ def get_ctype_args(input_header: str):
     """
     Converts a header file from C string into a list of ctypes arguments.
 
-    Keyword Arguments:
-        inputHeader: string from header file, such as "const struct0_T *thighIMU, double Knee_joint_position,
-          double Ankle_joint_position"
-    returns:
-        ctypes list of the appropriate types for the inputs, such as (ctypes.c_void_p, ctypes.c_double, ctypes.c_double)
+    Parameters:
+        input_header (str): string from header file, such as "const struct0_T *thighIMU, double Knee_joint_position,
+                           double Ankle_joint_position"
+
+    Returns:
+        list[ctypes]: ctypes list of the appropriate types for the inputs, such as (ctypes.c_void_p, ctypes.c_double, ctypes.c_double)
 
     Author: Kevin Best,
     https://github.com/tkevinbest
@@ -346,6 +387,15 @@ def get_ctype_args(input_header: str):
 def get_ctype(token):
     """
     Converts a single token from a header file into a ctypes argument.
+
+    Parameters:
+        token (float): Single token from a header file, such as 'const'
+
+    Returns:
+        c_type
+
+    Raises:
+        Exception: Invalid Token
 
     Author: Kevin Best, 8/7/2023
     https://github.com/tkevinbest

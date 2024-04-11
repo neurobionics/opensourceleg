@@ -34,11 +34,13 @@ is instantiated.
 
 class Logger(logging.Logger):
     """
-    Logger class is a class that logs attributes from a class to a csv file
+    Custom logger class to log debug information and data to a csv file.
+    This class inherits from the logging.Logger class and adds additional methods.
 
-    Methods:
-        __init__(self, container: object, file_path: str, logger: logging.Logger = None) -> None
-        log(self) -> None
+    Parameters:
+        file_path (str): path to save the log file. If you want to save the log file in the
+                         current working directory, use './' followed by the file name. Defaults to ./osl.
+        log_format (str): Format of the log message. Defaults to [%(asctime)s] %(levelname)s: %(message)s.
     """
 
     def __init__(
@@ -91,10 +93,12 @@ class Logger(logging.Logger):
 
     def set_file_level(self, level: str = "DEBUG") -> None:
         """
-        Sets the level of the logger
+        Sets the file level of the logger. Anything below this level will not be logged to
+        the .log file. There are five standard levels: DEBUG, INFO, WARNING, ERROR, and CRITICAL.
+        DEBUG is the lowest level and CRITICAL is the highest level.
 
-        Args:
-            level (str): Level of the logger
+        Parameters:
+            level (str): Level of the logger. Defaults to DEBUG.
         """
         if level not in self._log_levels.keys():
             self.warning(msg=f"Invalid logging level: {level}")
@@ -103,10 +107,12 @@ class Logger(logging.Logger):
 
     def set_stream_level(self, level: str = "INFO") -> None:
         """
-        Sets the level of the logger
+        Sets the stream level of the logger. Anything below this level will not be logged to
+        the console. There are five standard levels: DEBUG, INFO, WARNING, ERROR, and CRITICAL.
+        DEBUG is the lowest level and CRITICAL is the highest level.
 
-        Args:
-            level (str): Level of the logger
+        Parameter:
+            level (str): Level to be set for the logger's stream. Defaults to INFO
         """
         if level not in self._log_levels.keys():
             self.warning(msg=f"Invalid logging level: {level}")
@@ -117,19 +123,24 @@ class Logger(logging.Logger):
         self, container: Union[object, dict[Any, Any]], attributes: list[str]
     ) -> None:
         """
-        Adds class instance and attributes to log
+        Adds the attributes to be logged to the logger.
 
-        Args:
-            container (object, dict): Container can either be an object (instance of a class)
-                or a Dict containing the attributes to be logged.
-            attributes (list[str]): List of attributes to log
+        Parameters:
+            container (Union[object, dict[Any, Any]]): Class instance or dictionary to log the attributes
+                                                       from. Defaults to None.
+            attributes (list[str]): List of attribute names to log. The attribute names should be strings
+                                    and should match the attribute names of the class instance or dictionary. Defaults to None.
         """
         self._containers.append(container)
         self._attributes.append(attributes)
 
     def data(self) -> None:
         """
-        Logs the attributes of the class instance to the csv file
+        Logs the data from the added attributes to a csv file. This csv file
+        will be saved at the file path specified in the constructor.
+
+        Parameters:
+            None
         """
         header_data = []
         data = []
@@ -164,7 +175,10 @@ class Logger(logging.Logger):
 
     def close(self) -> None:
         """
-        Closes the csv file
+        Closes the data log file.
+
+        Parameters:
+            None
         """
         self._file.close()
 

@@ -12,6 +12,7 @@ equilibrium_angle = units.convert_to_default(45, units.position.deg)  # rad
 
 with osl:
 
+    osl.update()
     osl.knee.set_mode(osl.knee.control_modes.impedance)
     osl.knee.set_joint_impedance(K=stiffness, B=damping)
     osl.knee.set_motor_position(osl.knee.motor_position + equilibrium_angle)
