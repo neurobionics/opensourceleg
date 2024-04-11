@@ -545,7 +545,7 @@ class DephyActpack(Device):
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
-        self._data: dict = None
+        self._data: Any = None
         self._actuator_name: str = name
 
         self._log: Logger = logger
@@ -1120,7 +1120,7 @@ class MockDephyActpack(DephyActpack):
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
-        self._data: dict = {
+        self._data: dict[str, float] = {
             "batt_volt": 0,
             "batt_curr": 0,
             "mot_volt": 0,
