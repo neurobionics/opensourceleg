@@ -381,6 +381,7 @@ class PositionMode(ActpackMode):
             kp (int): Proportional gain. Defaults to 50.
             ki (int): Integral gain. Defaults to 0.
             kd (int): Derivative gain. Defaults to 0.
+            ff (int): Feedforward gain. Defaults to 0.
         """
 
         assert 0 <= kp <= 1000, "kp must be between 0 and 1000"
