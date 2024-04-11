@@ -499,7 +499,7 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     # Creates a MockDephyActpack instance with a Logger of the lowest stream level
     mock_dap6 = dephyactpack_patched
     # mock_dap6._data = Data(
-    mock_dap6._data["mot_ang"] = (10,)
+    mock_dap6._data["mot_ang"] = 10
     # )
     mock_dap6._log = Logger(file_path="tests/test_actuators/test_positionmode_log")
     mock_dap6._log.set_stream_level("DEBUG")

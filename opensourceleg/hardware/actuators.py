@@ -545,7 +545,7 @@ class DephyActpack(Device):
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
-        self._data: Any = None
+        self._data: dict = None
         self._actuator_name: str = name
 
         self._log: Logger = logger
@@ -881,8 +881,7 @@ class DephyActpack(Device):
         This is the position of the motor with respect to the motor's zero position."""
         if self._data is not None:
             return float(
-                int(float(self._data["mot_ang"]) - self.motor_zero_position)
-                * RAD_PER_COUNT
+                int(self._data["mot_ang"] - self.motor_zero_position) * RAD_PER_COUNT
             )
         else:
             return 0.0
@@ -1121,30 +1120,30 @@ class MockDephyActpack(DephyActpack):
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
-        self._data: dict[str, float] = dict(
-            batt_volt=0,
-            batt_curr=0,
-            mot_volt=0,
-            mot_cur=0,
-            mot_ang=0,
-            ank_ang=0,
-            mot_vel=0,
-            mot_acc=0,
-            ank_vel=0,
-            temperature=25,
-            genvar_0=0,
-            genvar_1=0,
-            genvar_2=0,
-            genvar_3=0,
-            genvar_4=0,
-            genvar_5=0,
-            accelx=0,
-            accely=0,
-            accelz=0,
-            gyrox=0,
-            gyroy=0,
-            gyroz=0,
-        )
+        self._data: dict = {
+            "batt_volt": 0,
+            "batt_curr": 0,
+            "mot_volt": 0,
+            "mot_cur": 0,
+            "mot_ang": 0,
+            "ank_ang": 0,
+            "mot_vel": 0,
+            "mot_acc": 0,
+            "ank_vel": 0,
+            "temperature": 25,
+            "genvar_0": 0,
+            "genvar_1": 0,
+            "genvar_2": 0,
+            "genvar_3": 0,
+            "genvar_4": 0,
+            "genvar_5": 0,
+            "accelx": 0,
+            "accely": 0,
+            "accelz": 0,
+            "gyrox": 0,
+            "gyroy": 0,
+            "gyroz": 0,
+        }
         self._actuator_name: str = name
 
         self.id: str = "1.0.0"
