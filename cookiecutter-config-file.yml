@@ -4,7 +4,7 @@ default_context:
   project_name: "opensourceleg"
   project_description: "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses."
   organization: "Neurobionics Laboratory"
-  license: "GNU GPL v3.0"
+  license: "GNU LGPL v2.1"
   minimal_python_version: 3.9
   github_name: "neurobionics"
   email: "opensourceleg@gmail.com"
