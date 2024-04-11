@@ -546,7 +546,7 @@ class DephyActpack(Device):
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
         self._data: Any = None
-        self._name: str = name
+        self._actuator_name: str = name
 
         self._log: Logger = logger
         self._state = None
@@ -567,7 +567,7 @@ class DephyActpack(Device):
         self._mode: ActpackMode = self.control_modes.voltage
 
     def __repr__(self) -> str:
-        return f"DephyActpack[{self._name}]"
+        return f"DephyActpack[{self._actuator_name}]"
 
     def start(self) -> None:
         """
@@ -586,6 +586,7 @@ class DephyActpack(Device):
             )
             os._exit(status=1)
 
+        self.start_streaming(self._frequency)
         time.sleep(0.1)
         self._data = self.read()
         self._mode.enter()
@@ -614,7 +615,7 @@ class DephyActpack(Device):
             None
         """
 
-        if self.is_streaming:
+        if self.streaming:
             self._data = self.read()
             self._thermal_model.T_c = self.case_temperature
             self._thermal_scale = self._thermal_model.update_and_get_scale(
@@ -834,7 +835,7 @@ class DephyActpack(Device):
     def battery_voltage(self) -> float:
         """battery_voltage (float): Battery current in mV."""
         if self._data is not None:
-            return float(self._data.batt_volt)
+            return float(self._data["batt_volt"])
         else:
             return 0.0
 
@@ -845,7 +846,7 @@ class DephyActpack(Device):
         sensor.
         """
         if self._data is not None:
-            return float(self._data.batt_curr)
+            return float(self._data["batt_curr"])
         else:
             return 0.0
 
@@ -853,7 +854,7 @@ class DephyActpack(Device):
     def motor_voltage(self) -> float:
         """motor_voltage (float): Q-axis voltage in mV."""
         if self._data is not None:
-            return float(self._data.mot_volt)
+            return float(self._data["mot_volt"])
         else:
             return 0.0
 
@@ -862,7 +863,7 @@ class DephyActpack(Device):
         """motor_current (float): Motor current in mA. Measured using actpack's onboard current
         sensor."""
         if self._data is not None:
-            return float(self._data.mot_cur)
+            return float(self._data["mot_cur"])
         else:
             return 0.0
 
@@ -870,7 +871,7 @@ class DephyActpack(Device):
     def motor_torque(self) -> float:
         """motor_torque (float): Motor torque in Nm."""
         if self._data is not None:
-            return float(self._data.mot_cur * NM_PER_MILLIAMP)
+            return float(self._data["mot_cur"] * NM_PER_MILLIAMP)
         else:
             return 0.0
 
@@ -880,7 +881,7 @@ class DephyActpack(Device):
         This is the position of the motor with respect to the motor's zero position."""
         if self._data is not None:
             return float(
-                int(self._data.mot_ang - self.motor_zero_position) * RAD_PER_COUNT
+                int(self._data["mot_ang"] - self.motor_zero_position) * RAD_PER_COUNT
             )
         else:
             return 0.0
@@ -888,18 +889,18 @@ class DephyActpack(Device):
     @property
     def motor_encoder_counts(self) -> int:
         """motor_encoder_counts (int): Raw reading from motor encoder in counts."""
-        return int(self._data.mot_ang)
+        return int(self._data["mot_ang"])
 
     @property
     def joint_encoder_counts(self) -> int:
         """joint_encoder_counts (int): Raw reading from joint encoder in counts."""
-        return int(self._data.ank_ang)
+        return int(self._data["ank_ang"])
 
     @property
     def motor_velocity(self) -> float:
         """motor_velocity (float): Motor's velocity in rad/s as measured by the motor's encoder."""
         if self._data is not None:
-            return int(self._data.mot_vel) * RAD_PER_DEG
+            return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
             return 0.0
 
@@ -907,7 +908,7 @@ class DephyActpack(Device):
     def motor_acceleration(self) -> float:
         """motor_acceleration (float): Motor's acceleration in rad/s^2 as measured by the motor's encoder."""
         if self._data is not None:
-            return float(self._data.mot_acc)
+            return float(self._data["mot_acc"])
         else:
             return 0.0
 
@@ -917,7 +918,7 @@ class DephyActpack(Device):
         the position of the joint with respect to the joint's zero position."""
         if self._data is not None:
             return float(
-                int(self._data.ank_ang - self._joint_zero_position) * RAD_PER_COUNT
+                int(self._data["ank_ang"] - self._joint_zero_position) * RAD_PER_COUNT
             )
         else:
             return 0.0
@@ -926,7 +927,7 @@ class DephyActpack(Device):
     def joint_velocity(self) -> float:
         """joint_velocity (float): Joint velocity in rad/s as measured by the joint encoder."""
         if self._data is not None:
-            return float(self._data.ank_vel * RAD_PER_COUNT)
+            return float(self._data["ank_vel"] * RAD_PER_COUNT)
         else:
             return 0.0
 
@@ -934,7 +935,7 @@ class DephyActpack(Device):
     def case_temperature(self) -> float:
         """case_temperature (float): Temperature of the actpack's case in degrees Celsius."""
         if self._data is not None:
-            return float(self._data.temperature)
+            return float(self._data["temperature"])
         else:
             return 0.0
 
@@ -966,12 +967,12 @@ class DephyActpack(Device):
         if self._data is not None:
             return np.array(
                 object=[
-                    self._data.genvar_0,
-                    self._data.genvar_1,
-                    self._data.genvar_2,
-                    self._data.genvar_3,
-                    self._data.genvar_4,
-                    self._data.genvar_5,
+                    self._data["genvar_0"],
+                    self._data["genvar_1"],
+                    self._data["genvar_2"],
+                    self._data["genvar_3"],
+                    self._data["genvar_4"],
+                    self._data["genvar_5"],
                 ]
             )
         else:
@@ -983,7 +984,7 @@ class DephyActpack(Device):
         accelx (float): Acceleration in X direction in m/s^2.
         """
         if self._data is not None:
-            return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
+            return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
@@ -993,7 +994,7 @@ class DephyActpack(Device):
         accely (float): Acceleration in Y direction in m/s^2.
         """
         if self._data is not None:
-            return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
+            return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
@@ -1003,7 +1004,7 @@ class DephyActpack(Device):
         accelz (float): Acceleration in Z direction in m/s^2.
         """
         if self._data is not None:
-            return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
+            return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
@@ -1013,7 +1014,7 @@ class DephyActpack(Device):
         gyrox (float): Angular velocity in X direction in rad/s.
         """
         if self._data is not None:
-            return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
+            return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -1023,7 +1024,7 @@ class DephyActpack(Device):
         gyroy (float): Angular velocity in Y direction in rad/s.
         """
         if self._data is not None:
-            return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
+            return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -1033,7 +1034,7 @@ class DephyActpack(Device):
         gyroz (float): Angular velocity in Z direction in rad/s.
         """
         if self._data is not None:
-            return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
+            return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -1107,7 +1108,7 @@ class MockDephyActpack(DephyActpack):
     def __init__(
         self,
         name: str = "MockDephyActpack",
-        firmwareVersion: str = "7.2.0",
+        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1119,8 +1120,33 @@ class MockDephyActpack(DephyActpack):
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
-        self._data: MockData = MockData()
-        self._name: str = name
+        self._data: dict[str, float] = {
+            "batt_volt": 0,
+            "batt_curr": 0,
+            "mot_volt": 0,
+            "mot_cur": 0,
+            "mot_ang": 0,
+            "ank_ang": 0,
+            "mot_vel": 0,
+            "mot_acc": 0,
+            "ank_vel": 0,
+            "temperature": 25,
+            "genvar_0": 0,
+            "genvar_1": 0,
+            "genvar_2": 0,
+            "genvar_3": 0,
+            "genvar_4": 0,
+            "genvar_5": 0,
+            "accelx": 0,
+            "accely": 0,
+            "accelz": 0,
+            "gyrox": 0,
+            "gyroy": 0,
+            "gyroz": 0,
+        }
+        self._actuator_name: str = name
+
+        self.id: str = "1.0.0"
 
         self._log: Logger = logger
         self._state = None
@@ -1144,7 +1170,6 @@ class MockDephyActpack(DephyActpack):
         }
 
         # This is used in the read() method to indicate a data stream
-        self.is_streaming: bool = False
 
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
@@ -1164,7 +1189,7 @@ class MockDephyActpack(DephyActpack):
     # Overrides the open method to function without a device
     def open(self):
         self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
-        self.is_streaming = True
+        self.start_streaming(100)
 
     # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
@@ -1208,32 +1233,35 @@ class MockDephyActpack(DephyActpack):
     # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
 
-        self._data.batt_volt += 15
-        self._data.batt_curr += 15
-        self._data.mot_volt += 15
-        self._data.mot_cur += 15
-        self._data.mot_ang += 15
-        self._data.ank_ang += 15
-        self._data.mot_vel += 15
-        self._data.mot_acc += 15
-        self._data.ank_vel += 15
-        self._data.temperature += 15
-        self._data.genvar_0 += 15
-        self._data.genvar_1 += 15
-        self._data.genvar_2 += 15
-        self._data.genvar_3 += 15
-        self._data.genvar_4 += 15
-        self._data.genvar_5 += 15
-        self._data.accelx += 15
-        self._data.accely += 15
-        self._data.accelz += 15
-        self._data.gyrox += 15
-        self._data.gyroy += 15
-        self._data.gyroz += 15
+        self._data["batt_volt"] += 15
+        self._data["batt_curr"] += 15
+        self._data["mot_volt"] += 15
+        self._data["mot_cur"] += 15
+        self._data["mot_ang"] += 15
+        self._data["ank_ang"] += 15
+        self._data["mot_vel"] += 15
+        self._data["mot_acc"] += 15
+        self._data["ank_vel"] += 15
+        self._data["temperature"] += 15
+        self._data["genvar_0"] += 15
+        self._data["genvar_1"] += 15
+        self._data["genvar_2"] += 15
+        self._data["genvar_3"] += 15
+        self._data["genvar_4"] += 15
+        self._data["genvar_5"] += 15
+        self._data["accelx"] += 15
+        self._data["accely"] += 15
+        self._data["accelz"] += 15
+        self._data["gyrox"] += 15
+        self._data["gyroy"] += 15
+        self._data["gyroz"] += 15
         return self._data
 
     def stop_motor(self):
         self.command_motor_voltage(0)
+
+    def set_streaming(self):
+        self.streaming = True
 
     # Overrides the close method to do nothing
     def close(self):
@@ -1249,6 +1277,9 @@ class MockClib:
         a: bool = False
 
     def fxIsOpen(self, val) -> bool:
+        return True
+
+    def fxIsStreaming(self, id) -> bool:
         return True
 
 

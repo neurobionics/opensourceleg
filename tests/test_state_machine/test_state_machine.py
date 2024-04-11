@@ -271,7 +271,7 @@ def criteria_test2(data="log_name") -> bool:
     return False
 
 
-def test_action(data="log_name") -> bool:
+def action_test(data="log_name") -> bool:
     """
     Test function that initializes a logger of the lowest stream level
     and asserts the callback is called.
@@ -524,8 +524,8 @@ def test_transition_add_criteria_and_add_action():
     test_transition_acaa.add_criteria(callback=criteria_test)
     assert test_transition_acaa._criteria == criteria_test
     # Assert the add_action method works properly
-    test_transition_acaa.add_action(callback=test_action)
-    assert test_transition_acaa._action == test_action
+    test_transition_acaa.add_action(callback=action_test)
+    assert test_transition_acaa._action == action_test
 
 
 def test_transition_properties():
@@ -592,7 +592,7 @@ def test_from_to_transition_call(mock_time):
         source=state1,
         destination=State(name="state2"),
     )
-    from_to_transition_call.add_action(callback=test_action)
+    from_to_transition_call.add_action(callback=action_test)
     test = from_to_transition_call(data="test_from_to_transition_call", spoof=True)
     with open("tests/test_state_machine/test_from_to_transition_call.log") as f:
         contents = f.read()
@@ -606,7 +606,7 @@ def test_from_to_transition_call(mock_time):
         source=state2,
         destination=State(name="state3"),
     )
-    from_to_transition_call1.add_action(callback=test_action)
+    from_to_transition_call1.add_action(callback=action_test)
     test2 = from_to_transition_call1(data="test_from_to_transition_call1", spoof=True)
     # with open("tests/test_state_machine/test_from_to_transition_call1.log", "r") as f:
     #     contents = f.read()
@@ -619,7 +619,7 @@ def test_from_to_transition_call(mock_time):
         source=State(name="state1"),
         destination=State(name="state2"),
     )
-    from_to_transition_call2.add_action(callback=test_action)
+    from_to_transition_call2.add_action(callback=action_test)
     test1 = from_to_transition_call2(data="test_from_to_transition_call2")
     with open("tests/test_state_machine/test_from_to_transition_call2.log") as f:
         contents = f.read()
