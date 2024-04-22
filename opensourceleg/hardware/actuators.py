@@ -507,11 +507,11 @@ class DephyActpack(Device):
             self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
             return
 
-    def set_motor_zero_position(self, position: float) -> None:
+    def set_motor_zero_position(self, position: int) -> None:
         """Sets motor zero position in counts"""
         self._motor_zero_position = position
 
-    def set_joint_zero_position(self, position: float) -> None:
+    def set_joint_zero_position(self, position: int) -> None:
         """Sets joint zero position in counts"""
         self._joint_zero_position = position
 
@@ -671,12 +671,12 @@ class DephyActpack(Device):
     @property
     def motor_zero_position(self) -> float:
         """Motor encoder offset in radians."""
-        return self._motor_zero_position
+        return self._motor_zero_position * RAD_PER_COUNT
 
     @property
     def joint_zero_position(self) -> float:
         """Joint encoder offset in radians."""
-        return self._joint_zero_position
+        return self._joint_zero_position * RAD_PER_COUNT
 
     @property
     def battery_voltage(self) -> float:
@@ -726,7 +726,7 @@ class DephyActpack(Device):
         """Angle of the motor in radians."""
         if self._data is not None:
             return float(
-                int(self._data.mot_ang - self.motor_zero_position) * RAD_PER_COUNT
+                int(self._data.mot_ang - self._motor_zero_position) * RAD_PER_COUNT
             )
         else:
             return 0.0
