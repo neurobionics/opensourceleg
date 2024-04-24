@@ -133,8 +133,8 @@ class Joint(DephyActpack):
             self._log.warning(msg="Homing interrupted.")
             return
 
-        _motor_zero_pos = self.motor_encoder_counts
-        _joint_zero_pos = self.joint_encoder_counts
+        self.set_motor_zero_position(position=self.motor_position)
+        self.set_joint_zero_position(position=self.joint_position)
 
         time.sleep(0.1)
 
@@ -142,11 +142,12 @@ class Joint(DephyActpack):
         _zero_pos_joint: int = 0
 
         if "ankle" in self._name.lower():
-            _zero_pos = int((np.deg2rad(30) * self.gear_ratio) / RAD_PER_COUNT)
-            _zero_pos_joint = int(np.deg2rad(30) / RAD_PER_COUNT)
+            self.set_joint_direction(1.0)
+            self.set_joint_offset(-1 * np.deg2rad(30))
+        else:
+            self.set_joint_direction(-1.0)
+            self.set_joint_offset(0.0)
 
-        self.set_motor_zero_position(position=(_motor_zero_pos + _zero_pos))
-        self.set_joint_zero_position(position=(_joint_zero_pos + _zero_pos_joint))
 
         self._is_homed = True
         self._log.info(f"[{self._name}] Homing complete.")
