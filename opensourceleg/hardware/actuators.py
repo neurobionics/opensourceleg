@@ -674,7 +674,7 @@ class DephyActpack(Device):
             return
 
         self._mode._set_motor_position(
-            int((position + self.motor_zero_position) / RAD_PER_COUNT),
+            int((position + self.motor_zero_position + self.motor_offset) / RAD_PER_COUNT),
         )
 
     @property
