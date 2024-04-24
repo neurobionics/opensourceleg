@@ -442,6 +442,8 @@ class DephyActpack(Device):
         self._joint_zero_position = 0.0
 
         self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
         self._joint_direction = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
@@ -517,6 +519,10 @@ class DephyActpack(Device):
     def set_joint_zero_position(self, position: float) -> None:
         """Sets joint zero position in radians"""
         self._joint_zero_position = position
+
+    def set_motor_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        self._motor_offset = position
 
     def set_joint_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
@@ -695,6 +701,12 @@ class DephyActpack(Device):
         return self._joint_offset
 
     @property
+    def motor_offset(self) -> float:
+        """Motor encoder offset in radians."""
+        return self._motor_offset
+
+
+    @property
     def joint_direction(self) -> float:
         """Joint direction: 1 or -1"""
         return self._joint_direction
@@ -746,7 +758,7 @@ class DephyActpack(Device):
     def motor_position(self) -> float:
         """Angle of the motor in radians."""
         if self._data is not None:
-            return float(self._data.mot_ang * RAD_PER_COUNT) - self._motor_zero_position
+            return float(self._data.mot_ang * RAD_PER_COUNT) - self._motor_zero_position - self.motor_offset
         else:
             return 0.0
 
@@ -780,7 +792,7 @@ class DephyActpack(Device):
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
-            return (float(self._data.ank_ang * RAD_PER_COUNT) - self._joint_zero_position - self.joint_offset) * self.joint_direction
+            return (float(self._data.ank_ang * RAD_PER_COUNT) - self._joint_zero_position) * self.joint_direction - self.joint_offset
         else:
             return 0.0
 
@@ -1026,6 +1038,8 @@ class MockDephyActpack(DephyActpack):
         self._joint_zero_position = 0.0
 
         self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
         self._joint_direction = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
