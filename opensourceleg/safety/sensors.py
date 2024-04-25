@@ -2,28 +2,6 @@ from collections import deque
 
 import numpy as np
 
-
-def add_legacy_safety(instance, prop_name, decorator):
-    """Applies a decorator to the getter of a property only for a specific instance by creating a subclass."""
-    subclass = type(f"{instance.__class__.__name__}Safe", (instance.__class__,), {})
-    safety_attributes_key = f"_safety_attributes"
-
-    instance.__dict__.setdefault(safety_attributes_key, [])
-    instance.__dict__[safety_attributes_key].append(prop_name)
-
-    original_property = getattr(instance.__class__, prop_name)
-    if not isinstance(original_property, property):
-        raise TypeError(f"The attribute {prop_name} is not a property.")
-
-    decorated_getter = decorator(original_property.fget)
-    setattr(
-        subclass,
-        prop_name,
-        property(decorated_getter, original_property.fset, original_property.fdel),
-    )
-    instance.__class__ = subclass
-
-
 def add_safety(instance, prop_name, decorator):
     """Applies a decorator to the getter of a property for a specific instance by creating or updating a subclass."""
     safety_attributes_key = f"_safety_attributes"
