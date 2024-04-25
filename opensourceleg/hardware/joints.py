@@ -143,7 +143,7 @@ class Joint(DephyActpack):
 
         if "ankle" in self._name.lower():
             self.set_joint_direction(-1.0)
-            self.set_joint_offset(np.deg2rad(30))
+            self.set_joint_offset(-np.deg2rad(30))
             self.set_motor_offset(np.deg2rad(30) * self.gear_ratio)
         else:
             self.set_joint_direction(-1.0)

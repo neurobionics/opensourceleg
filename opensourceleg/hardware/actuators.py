@@ -276,9 +276,7 @@ class PositionMode(ActpackMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_motor_position(
-            counts=int(self._device.motor_position / RAD_PER_COUNT)
-        )
+        self._device.set_motor_position(self._device.motor_position)
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
@@ -323,9 +321,8 @@ class ImpedanceMode(ActpackMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_motor_position(
-            counts=int(self._device.motor_position / RAD_PER_COUNT)
-        )
+        self._device.set_motor_position(self._device.motor_position)
+
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
