@@ -104,8 +104,8 @@ def run_volitional_controller():
             volitional.update() 
             passive_ankle.update() 
             actDataAng = FX.read_device(devID) 
-            jointAng = GR*actDataAng.mot_ang
-            ##### How do they define GR (Gear Ratio) 
+            jointAng = TR*actDataAng.mot_ang
+            ##### How do they define TR (Transmission Ratio) 
     
             raw_EMG_1 = emg.readadc(osl.pChan2, spi) # Read in Raw EMG for muscle 1
             raw_EMG_2 = emg.readadc(osl.pChan3, spi) # Read in Raw EMG for muscle 2
