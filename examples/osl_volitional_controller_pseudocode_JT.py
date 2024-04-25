@@ -31,6 +31,16 @@ FX = fx.FlexSEA()
 # Open Device ID and Start Streaming
 devId = opcl.devOpen(FX) 
 
+cal_filename = 'SubjectDetails/' + subjectID + '_EMG_Cal.yaml' # discuss path with UM team
+
+calEMGData = emg.CalEMGDataSingle()
+time_window = 0.1
+freq_delay = 1/1000
+window = int(time_window/freq_delay)
+reading_1 = np.zeros(window)
+reading_2 = np.zeros(window)
+calEMGData = emg.emgCalibration(FX, calEMGData, time_window, freq_delay, cal_filename)
+
 
 def run_volitional_controller():
     """
@@ -93,6 +103,7 @@ def run_volitional_controller():
     # Prompt the user on whether or not they want to conduct a new calibration.
     calChoice = int(input('Use existing calibration data for Motor Range or run calibration sequence (1 for Existing, 2 for New Data): '))
     calData = calibration(calChoice)
+	# Update to be consistent with UM team
     
     with osl:
         osl.home()
@@ -104,13 +115,13 @@ def run_volitional_controller():
             volitional.update() 
             passive_ankle.update() 
             actDataAng = FX.read_device(devID) 
-            jointAng = TR*actDataAng.mot_ang
-            ##### How do they define TR (Transmission Ratio) 
+            jointAng = GR*actDataAng.mot_ang # osl.gear_ratio? see line 43/44
+            ##### How do they define TR (Gear Ratio) 
     
             raw_EMG_1 = emg.readadc(osl.pChan2, spi) # Read in Raw EMG for muscle 1
             raw_EMG_2 = emg.readadc(osl.pChan3, spi) # Read in Raw EMG for muscle 2
 
-            u = emg.voltional_decoder(raw_EMG_1, raw_EMG_2, calibration_parameters) # call volitional input function
+            u = emg.voltional_decoder(raw_EMG_1, raw_EMG_2, calEMGData) # call volitional input function
 
             # This block is setting the transitions and impedance values and eq position as needed for knee:
 
@@ -261,6 +272,7 @@ def passive_impedance(theta, k, b):
    self.joint_parameters.damping = b
    self.joint_parameters.theta = theta
 
+# This next function is probably already taken care of by UM team in some way?
 def calibration(calChoice):
    if calChoice == 1:
 
