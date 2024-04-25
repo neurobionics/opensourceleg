@@ -3,7 +3,7 @@ from collections import deque
 import numpy as np
 
 
-def add_safety(instance, prop_name, decorator):
+def add_legacy_safety(instance, prop_name, decorator):
     """Applies a decorator to the getter of a property only for a specific instance by creating a subclass."""
     subclass = type(f"{instance.__class__.__name__}Safe", (instance.__class__,), {})
     safety_attributes_key = f"_safety_attributes"
@@ -16,6 +16,42 @@ def add_safety(instance, prop_name, decorator):
         raise TypeError(f"The attribute {prop_name} is not a property.")
 
     decorated_getter = decorator(original_property.fget)
+    setattr(
+        subclass,
+        prop_name,
+        property(decorated_getter, original_property.fset, original_property.fdel),
+    )
+    instance.__class__ = subclass
+
+
+def add_safety(instance, prop_name, decorator):
+    """Applies a decorator to the getter of a property for a specific instance by creating or updating a subclass."""
+    safety_attributes_key = f"_safety_attributes"
+    instance.__dict__.setdefault(safety_attributes_key, [])
+    instance.__dict__[safety_attributes_key].append(prop_name)
+
+    subclass = type(f"{instance.__class__.__name__}:S", (instance.__class__,), {})
+
+    safety_decorators_key = f"_safety_decorators_{prop_name}"
+
+    # Initialize or append the new decorator
+    if not hasattr(instance, safety_decorators_key):
+        setattr(instance, safety_decorators_key, [])
+    getattr(instance, safety_decorators_key).append(decorator)
+
+    # Fetch the original property
+    original_property = getattr(instance.__class__, prop_name)
+    if not isinstance(original_property, property):
+        raise TypeError(f"The attribute {prop_name} is not a property.")
+
+    # Stack all decorators
+    decorated_getter = original_property.fget
+    for dec in reversed(
+        getattr(instance, safety_decorators_key)
+    ):  # Apply decorators in the order added
+        decorated_getter = dec(decorated_getter)
+
+    # Set the new property with all decorators applied
     setattr(
         subclass,
         prop_name,
@@ -150,16 +186,27 @@ if __name__ == "__main__":
         def __exit__(self, exc_type, exc_val, exc_tb):
             print("Hey! I'm exiting the context manager")
 
-    # Create two instances of the Sensor
     sensor_proxy = Sensor(100)
 
-    with sensor_proxy:
-        # Apply diagnostics only to sensor_proxy, not affecting sensor_main
-        add_safety(sensor_proxy, "value", is_positive())
-
-        # Test the result
-        sensor_proxy.value = -10
+    # Apply positive check
+    add_safety(sensor_proxy, "value", is_positive())
+    try:
+        sensor_proxy.value = -10  # Should raise ValueError
         sensor_proxy.update()
+    except ValueError as e:
+        print(e)
 
-        # Apply a decorator to monitor the standard deviation of the values
-        add_safety(sensor_proxy, "value", is_changing("value", 5, 1e-6, "proxy_value"))
+    # Apply standard deviation monitoring
+    add_safety(sensor_proxy, "value", is_changing("value", 5, 1e-6, "proxy_value"))
+    # Now, updating the value should check both conditions
+
+    # Simulate values for standard deviation check
+    values = [-1, -1, -1, -1]
+    for val in values:
+        sensor_proxy.value = val
+        try:
+            sensor_proxy.update()
+        except ValueError as e:
+            print(e)
+
+    # print(sensor_proxy.value)  # Check if it passes through all decorators
