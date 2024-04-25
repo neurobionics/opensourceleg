@@ -496,6 +496,12 @@ class DephyActpack(Device):
                 dt=(1 / self._frequency),
                 motor_current=self.motor_current,
             )
+
+            if hasattr(self, "_safety_attributes"):
+                for safety_attribute_name in self._safety_attributes:
+                    self.log.debug(
+                        msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
+                    )
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
@@ -780,7 +786,11 @@ class DephyActpack(Device):
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
-            return (float(self._data.ank_ang * RAD_PER_COUNT) - self._joint_zero_position - self.joint_offset) * self.joint_direction
+            return (
+                float(self._data.ank_ang * RAD_PER_COUNT)
+                - self._joint_zero_position
+                - self.joint_offset
+            ) * self.joint_direction
         else:
             return 0.0
 
