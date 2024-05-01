@@ -435,6 +435,8 @@ class DephyActpack(Device):
         self._log: Logger = logger
         self._state = None
 
+        self._encoder_map = None
+
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
 
@@ -534,6 +536,10 @@ class DephyActpack(Device):
     def set_joint_direction(self, direction: float) -> None:
         """Sets joint direction to 1 or -1"""
         self._joint_direction = direction
+
+    def set_encoder_map(self, encoder_map) -> None:
+        """Sets the joint encoder map"""
+        self._encoder_map = encoder_map
 
     def set_position_gains(
         self,
@@ -692,6 +698,11 @@ class DephyActpack(Device):
         return self._mode
 
     @property
+    def encoder_map(self):
+        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+        return self._encoder_map    
+
+    @property
     def motor_zero_position(self) -> float:
         """Motor encoder zero position in radians."""
         return self._motor_zero_position
@@ -801,11 +812,14 @@ class DephyActpack(Device):
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
-            return (
-                float(self._data.ank_ang * RAD_PER_COUNT)
-                - self._joint_zero_position
-                - self.joint_offset
-            ) * self.joint_direction
+            if self.encoder_map is not None:
+                return self.encoder_map(self._data.ank_ang)
+            else:
+                return (
+                    float(self._data.ank_ang * RAD_PER_COUNT)
+                    - self.joint_zero_position
+                    - self.joint_offset
+                ) * self.joint_direction
         else:
             return 0.0
 
@@ -1046,6 +1060,8 @@ class MockDephyActpack(DephyActpack):
 
         # This is used in the read() method to indicate a data stream
         self.is_streaming: bool = False
+
+        self._encoder_map = None
 
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
