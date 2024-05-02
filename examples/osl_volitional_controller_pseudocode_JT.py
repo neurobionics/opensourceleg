@@ -228,11 +228,11 @@ def volitional_decoder(raw_EMG_1, raw_EMG_2, calibration_parameters):
     emg_raw_rect_2 = emg.rectify_emg(raw_EMG_2, calibration_parameters.baseline_2)
     emg_avg_2, reading_2 = emg.filter_emg(emg_raw_rect_2, time_window, freq_delay, reading_2)
 
-    if emg_avg_3 > 2*calibration_parameters.stdev_3 or emg_avg_2 > 2*calibration_parameters.stdev_2:
+    if emg_avg_2 > 2*calibration_parameters.stdev_2 or emg_avg_1 > 2*calibration_parameters.stdev_1:
         # if signals are more significant than baseline noise:
 
-        u_p = emg_avg_3/calibration_parameters.MVA_GAS
-        u_d = emg_avg_2/calibration_parameters.MVA_TA
+        u_p = emg_avg_2/calibration_parameters.MVA_GAS
+        u_d = emg_avg_1/calibration_parameters.MVA_TA
 
             
         if u_p > 1:
