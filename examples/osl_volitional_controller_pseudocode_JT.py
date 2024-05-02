@@ -11,11 +11,11 @@ Last Edits: 4/09/24
 """
 import numpy as np
 import opensourceleg.tools.units as units
-from opensourceleg.control.state_machine import Event, State, StateMachine
+#from opensourceleg.control.state_machine import Event, State, StateMachine
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.control import OSL_Functions_EMG as emg
 
-offline_mode = False  # Set to true for debugging without hardware
+offline_mode = True  # Set to true for debugging without hardware
 
 passive_stiffness = 0.08
 passive_damping = 0.1
@@ -35,16 +35,6 @@ FX = fx.FlexSEA()
 # Open Device ID and Start Streaming
 devId = opcl.devOpen(FX) 
 # NEED TO UPDATE ALL devId STUFF TO BE UMICH COMPATIBLE
-
-cal_filename = 'SubjectDetails/' + subjectID + '_EMG_Cal.yaml' # discuss path with UM team
-
-calEMGData = emg.CalEMGDataSingle()
-time_window = 0.1
-freq_delay = 1/1000
-window = int(time_window/freq_delay)
-reading_1 = np.zeros(window)
-reading_2 = np.zeros(window)
-calEMGData = emg.emgCalibration(FX, calEMGData, time_window, freq_delay, cal_filename)
 
 
 def run_volitional_controller():
@@ -80,6 +70,16 @@ def run_volitional_controller():
     #spi.max_speed_hz=1000000
 
     spi = emg.initialize_spi()
+    
+    cal_filename = 'SubjectDetails/' + subjectID + '_EMG_Cal.yaml' # discuss path with UM team
+
+    calEMGData = emg.CalEMGDataSingle()
+    time_window = 0.1
+    time_step = 1/1000
+    window = int(time_window/time_step)
+    reading_1 = np.zeros(window)
+    reading_2 = np.zeros(window)
+    calEMGData = emg.emgCalibration(FX, calEMGData, time_window, time_step, cal_filename)
 
     volitional = volitional_decoder(osl) # Build volitional class
     #passive_ankle = passive_impedance(osl) # Build Passive impedance function that sets the gains for passive ankle 
@@ -124,14 +124,24 @@ def run_volitional_controller():
     
             raw_EMG_1 = emg.readadc(osl.pChan2, spi) # Read in Raw EMG for muscle 1
             raw_EMG_2 = emg.readadc(osl.pChan3, spi) # Read in Raw EMG for muscle 2
+            
+            # rectify and smooth the EMG:
+            emg_raw_rect_1 = emg.rectify_emg(raw_EMG_1, calEMGData.baseline_1)
+            emg_avg_1, reading_1 = emg.filter_emg(emg_raw_rect_1, time_window, time_step, reading_1)
 
-            u = emg.voltional_decoder(raw_EMG_1, raw_EMG_2, calEMGData) # call volitional input function
+            emg_raw_rect_2 = emg.rectify_emg(raw_EMG_2, calEMGData.baseline_2)
+            emg_avg_2, reading_2 = emg.filter_emg(emg_raw_rect_2, time_window, time_step, reading_2)
+
+            u = emg.voltional_decoder(emg_avg_1, emg_avg_2, calEMGData) # call volitional input function
 
             # This block is setting the transitions and impedance values and eq position as needed for knee:
 
             if osl._has_knee == True and osl._has_ankle == True:
+                
+                max_knee_velocity = 100 # degrees/second
 
-                volitional.gamma = X*(maximum velocity) ######### Need to decide max vel or allow it to be a tuned parameter
+                #volitional.gamma = X*(maximum velocity) ######### Need to decide max vel or allow it to be a tuned parameter
+                volitional.gamma = time_step*(max_knee_velocity)
 
                 volitional.joint_parameters.theta = osl.knee.output_position + volitional.gamma*u   
 
@@ -176,7 +186,7 @@ def run_volitional_controller():
 
             elif osl._has_ankle == True and osl._has_knee == False:
 
-                volitional.gamma = X (ROM)
+                volitional.gamma = 25 #? (ROM) should be ROM/2, for max plantar/dorsi angle
 
                 volitional.joint_parameters.theta = volitional.gamma*u
 
@@ -199,8 +209,8 @@ def run_volitional_controller():
                     ),
                 )
 
-	    else: 
-		print('Configuration issue. Please check that either the knee and ankle or the ankle only are configured.')
+            else: 
+                print('Configuration issue. Please check that either the knee and ankle or the ankle only are configured.')
  
             print(
                 "Current time in state {}: {:.2f} seconds, Knee Eq {:.2f}, Ankle Eq {:.2f}, Fz {:.2f}".format(
@@ -216,17 +226,10 @@ def run_volitional_controller():
         volitional.stop() 
         print("")
 
-def volitional_decoder(raw_EMG_1, raw_EMG_2, calibration_parameters):
+def volitional_decoder(emg_avg_1, emg_avg_2, calibration_parameters):
     """
     Converts from raw EMG values to volitional control input
     """
-
-    # rectify and smooth the EMG:
-    emg_raw_rect_1 = emg.rectify_emg(raw_EMG_1, calibration_parameters.baseline_1)
-    emg_avg_1, reading_1 = emg.filter_emg(emg_raw_rect_1, time_window, freq_delay, reading_1)
-
-    emg_raw_rect_2 = emg.rectify_emg(raw_EMG_2, calibration_parameters.baseline_2)
-    emg_avg_2, reading_2 = emg.filter_emg(emg_raw_rect_2, time_window, freq_delay, reading_2)
 
     if emg_avg_2 > 2*calibration_parameters.stdev_2 or emg_avg_1 > 2*calibration_parameters.stdev_1:
         # if signals are more significant than baseline noise:
