@@ -69,10 +69,12 @@ def run_volitional_controller():
     )
 
     # Create Class Object for SPI Functions Related to Force/EMG Sensors
-    sleep(5*osl.dtCenti)
-    spi = spidev.SpiDev()
-    spi.open(0, 0)
-    spi.max_speed_hz=1000000
+    #sleep(5*osl.dtCenti)
+    #spi = spidev.SpiDev()
+    #spi.open(0, 0)
+    #spi.max_speed_hz=1000000
+
+    spi = emg.initialize_spi()
 
     volitional = volitional_decoder(osl) # Build volitional class
     passive_ankle = passive_impedance(osl) # Build Passive impedance function that sets the gains for passive ankle 
@@ -125,7 +127,7 @@ def run_volitional_controller():
 
             # This block is setting the transitions and impedance values and eq position as needed for knee:
 
-            if configuration == knee_ankle:
+            if osl._has_knee == True and osl._has_ankle == True:
 
                 volitional.gamma = X*(maximum velocity) ######### Need to decide max vel or allow it to be a tuned parameter
 
@@ -170,7 +172,7 @@ def run_volitional_controller():
                 )
 
 
-            if configuration == ankle_only:
+            elif osl._has_ankle == True and osl._has_knee == False:
 
                 volitional.gamma = X (ROM)
 
@@ -195,7 +197,8 @@ def run_volitional_controller():
                     ),
                 )
 
-
+	    else: 
+		print('Configuration issue. Please check that either the knee and ankle or the ankle only are configured.')
  
             print(
                 "Current time in state {}: {:.2f} seconds, Knee Eq {:.2f}, Ankle Eq {:.2f}, Fz {:.2f}".format(
