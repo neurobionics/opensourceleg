@@ -17,6 +17,10 @@ from opensourceleg.control import OSL_Functions_EMG as emg
 
 offline_mode = False  # Set to true for debugging without hardware
 
+passive_stiffness = 0.08
+passive_damping = 0.1
+passive_ankle_position = 0
+
 # Prompt user for body weight [in kg]
 BODY_WEIGHT = int(input('Please input the subject weight in [kg]: '))
 # Device Configuration (Uncomment the desired configuration and comment out the undesired configuration)
@@ -30,6 +34,7 @@ CONFIG = knee_ankle
 FX = fx.FlexSEA()
 # Open Device ID and Start Streaming
 devId = opcl.devOpen(FX) 
+# NEED TO UPDATE ALL devId STUFF TO BE UMICH COMPATIBLE
 
 cal_filename = 'SubjectDetails/' + subjectID + '_EMG_Cal.yaml' # discuss path with UM team
 
@@ -77,7 +82,7 @@ def run_volitional_controller():
     spi = emg.initialize_spi()
 
     volitional = volitional_decoder(osl) # Build volitional class
-    passive_ankle = passive_impedance(osl) # Build Passive impedance function that sets the gains for passive ankle 
+    #passive_ankle = passive_impedance(osl) # Build Passive impedance function that sets the gains for passive ankle 
 
     osl.log.add_attributes(container=osl, attributes=["timestamp"])
     osl.log.add_attributes(
@@ -110,15 +115,12 @@ def run_volitional_controller():
     with osl:
         osl.home()
         volitional.start() 
-        passive_ankle.start() 
+        #passive_ankle.start() 
 
         for t in osl.clock:
             osl.update()
             volitional.update() 
-            passive_ankle.update() 
-            actDataAng = FX.read_device(devID) 
-            jointAng = GR*actDataAng.mot_ang # osl.gear_ratio? see line 43/44
-            ##### How do they define TR (Gear Ratio) 
+            #passive_ankle.update() 
     
             raw_EMG_1 = emg.readadc(osl.pChan2, spi) # Read in Raw EMG for muscle 1
             raw_EMG_2 = emg.readadc(osl.pChan3, spi) # Read in Raw EMG for muscle 2
@@ -131,7 +133,7 @@ def run_volitional_controller():
 
                 volitional.gamma = X*(maximum velocity) ######### Need to decide max vel or allow it to be a tuned parameter
 
-                volitional.joint_parameters.theta = jointAng + volitional.gamma*u   
+                volitional.joint_parameters.theta = osl.knee.output_position + volitional.gamma*u   
 
                 if osl.knee.mode != osl.knee.control_modes.impedance:
                     osl.knee.set_mode(mode=osl.knee.control_modes.impedance)
@@ -157,17 +159,17 @@ def run_volitional_controller():
                     osl.ankle.set_impedance_gains()
                 osl.ankle.set_joint_impedance(
                     K=units.convert_to_default(
-                        passive_ankle.stiffness,
+                        passive_stiffness,
                         units.stiffness.N_m_per_rad,
                     ),
                     B=units.convert_to_default(
-                        passive_ankle.damping,
+                        passive_damping,
                         units.damping.N_m_per_rad_per_s,
                     ),
                 )
                 osl.ankle.set_output_position(
                     position=units.convert_to_default(
-                        passive_ankle.position, units.position.deg
+                        passive_ankle_position, units.position.deg
                     ),
                 )
 
@@ -261,19 +263,19 @@ def volitional_decoder(raw_EMG_1, raw_EMG_2, calibration_parameters):
             u = -K_0*(m - calibration_parameters.m_0)/(calibration_parameters.m_ta - calibration_parameters.m_0)
 
      
-    self.joint_parameters.stiffness = XX
-    self.joint_parameters.damping = XX
-    self.joint_parameters.theta = XX
+    #self.joint_parameters.stiffness = XX
+    #self.joint_parameters.damping = XX
+    #self.joint_parameters.theta = XX
 
 
     return u
 
-def passive_impedance(theta, k, b):
+#def passive_impedance(theta, k, b):
    # Object that defines the passive ankle and sets its impedance parameters 
 
-   self.joint_parameters.stiffness = k
-   self.joint_parameters.damping = b
-   self.joint_parameters.theta = theta
+   #self.joint_parameters.stiffness = k
+   #self.joint_parameters.damping = b
+   #self.joint_parameters.theta = theta
 
 # This next function is probably already taken care of by UM team in some way?
 def calibration(calChoice):
