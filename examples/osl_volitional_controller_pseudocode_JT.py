@@ -31,9 +31,9 @@ BODY_WEIGHT = int(input('Please input the subject weight in [kg]: '))
 
 #-------------------- Setup-------------------- 
 # Create Class Object for Actuator Commands
-FX = fx.FlexSEA()
+# FX = fx.FlexSEA()
 # Open Device ID and Start Streaming
-devId = opcl.devOpen(FX) 
+# devId = opcl.devOpen(FX) 
 # NEED TO UPDATE ALL devId STUFF TO BE UMICH COMPATIBLE
 
 
@@ -79,7 +79,7 @@ def run_volitional_controller():
     window = int(time_window/time_step)
     reading_1 = np.zeros(window)
     reading_2 = np.zeros(window)
-    calEMGData = emg.emgCalibration(FX, calEMGData, time_window, time_step, cal_filename)
+    calEMGData = emg.emgCalibration(calEMGData, time_window, time_step, cal_filename)
 
     volitional = volitional_decoder(osl) # Build volitional class
     #passive_ankle = passive_impedance(osl) # Build Passive impedance function that sets the gains for passive ankle 
@@ -280,6 +280,7 @@ def volitional_decoder(emg_avg_1, emg_avg_2, calibration_parameters):
    #self.joint_parameters.damping = b
    #self.joint_parameters.theta = theta
 
+"""
 # This next function is probably already taken care of by UM team in some way?
 def calibration(calChoice):
    if calChoice == 1:
@@ -303,6 +304,7 @@ def calibration(calChoice):
        print('Calibration successful...')
 
    return calData
+   """
 
 if __name__ == "__main__":
     run_volitional_controller()
