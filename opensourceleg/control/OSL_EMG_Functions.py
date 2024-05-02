@@ -168,8 +168,8 @@ def noise_level(cal_time, filter_time_window, delay):
         print('Average ch3: ' + str(baseline_3) + ' Standard Deviation: ' + str(stdev_3))
 
         ready2 = input('Are you happy with the baseline calibration value? [y/n] (Enter Stop to Exit Script): ')
-        if ready2 != 'n' and ready2 != 'y' and ready2 != 'Stop':
-            ready2 = input('Please enter either y, n, or Stop: ')
+        if ready2 != 'n' and ready2 != 'y':
+            ready2 = input('Please enter either y, or n: ')
 
     return float(baseline_2), float(baseline_3), float(stdev_2), float(stdev_3), ready2
 
@@ -255,7 +255,7 @@ class CalEMGDataSingle:
         self.theta_ta = theta_ta
 
 
-def emgCalibration(FX, calEMGData, time_window, delay, filename):
+def emgCalibration(calEMGData, time_window, delay, filename):
 
     '''
     Function for calibrating the ankle module and storing the calibration data in a class object. This form uses the internal motor encoder
@@ -269,14 +269,6 @@ def emgCalibration(FX, calEMGData, time_window, delay, filename):
     calEMGData.baseline_2, calEMGData.baseline_3, calEMGData.stdev_2, calEMGData.stdev_3, ready2 = noise_level(5, time_window, delay)
 
     # ready3 = 'y'  # initialize to 'n' to run through
-
-    if ready2 == 'Stop': # or ready3 == 'Stop':
-        FX.stop_streaming(devId)
-        sleep(0.2)
-        FX.close(devId)
-        sleep(0.1)
-
-        print('Script Complete')
 
     # Calibrate the MVC and cocontraction slope data
     elif ready2 == 'y': # and ready3 == 'y':
