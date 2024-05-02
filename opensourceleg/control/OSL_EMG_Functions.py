@@ -24,10 +24,17 @@ from signal import signal, SIGINT
 import spidev
 
 # Create Class Object for SPI Functions Related to Force/EMG Sensors
-sleep(5*osl.dtCenti)
-spi = spidev.SpiDev()
-spi.open(0, 0)
-spi.max_speed_hz=1000000
+#sleep(5*osl.dtCenti)
+#spi = spidev.SpiDev()
+#spi.open(0, 0)
+#spi.max_speed_hz=1000000
+
+def initialize_spi():
+	sleep(5*osl.dtCenti)
+    spi = spidev.SpiDev()
+    spi.open(0, 0)
+    spi.max_speed_hz=1000000
+    return spi
 
 ############################# FUNCTION DEFINITIONS #############################
 
