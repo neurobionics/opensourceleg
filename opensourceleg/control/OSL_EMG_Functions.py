@@ -265,8 +265,6 @@ def emgCalibration(FX, calEMGData, time_window, delay, filename):
         calEMGData - Class object to store calibration data in
     '''
 
-#        calData.xAccel, calData.yAccel = imu.accelCalVert(devId, FX)
-
     # Take a baseline reading of noise level for the emg sensors
     calEMGData.baseline_2, calEMGData.baseline_3, calEMGData.stdev_2, calEMGData.stdev_3, ready2 = noise_level(5, time_window, delay)
 
