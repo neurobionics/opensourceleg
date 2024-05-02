@@ -24,7 +24,7 @@ passive_ankle_position = 0
 # Prompt user for body weight [in kg]
 BODY_WEIGHT = int(input('Please input the subject weight in [kg]: '))
 # Device Configuration (Uncomment the desired configuration and comment out the undesired configuration)
-CONFIG = knee_ankle
+#CONFIG = knee_ankle
 #CONFIG = ankle_only
 
 
