@@ -219,6 +219,7 @@ def patch_time_time(monkeypatch):
         80,
     ]
     monkeypatch.setattr(time, "time", lambda: values.pop(0))
+    monkeypatch.setattr(time, "monotonic", lambda: values.pop(0))
 
 
 def test_set_max_temperature(joint_patched: Joint):

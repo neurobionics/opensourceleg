@@ -169,7 +169,8 @@ class SoftRealtimeLoop:
             raise StopIteration
 
         while (
-            time.monotonic() < self.t1 - 2 * PRECISION_OF_SLEEP and not self.killer.kill_now
+            time.monotonic() < self.t1 - 2 * PRECISION_OF_SLEEP
+            and not self.killer.kill_now
         ):
             t_pre_sleep = time.monotonic()
             time.sleep(
