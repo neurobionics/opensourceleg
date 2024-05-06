@@ -82,8 +82,15 @@ class MockDephyActpack(DephyActpack):
         # This is used in the read() method to indicate a data stream
         self.is_streaming: bool = False
 
+        self._encoder_map = None
+
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
+
+        self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
+        self._joint_direction = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=80,
@@ -629,18 +636,6 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     assert mock_dap8._data.gyrox == 25
     assert mock_dap8._data.gyroy == 25
     assert mock_dap8._data.gyroz == 25
-
-    # mock_dap9 = dephyactpack_patched
-    # mock_dap9._log = Logger(file_path="tests/test_actuators/test_dephyactpack_start9_log")
-    # mock_dap9._log.set_stream_level("DEBUG")
-    # mock_dap9._frequency = 100
-    # mock_dap9._debug_level = 5
-    # mock_dap9._dephy_log = True
-    # with pytest.raises(OSError):
-    #     mock_dap9.start()
-    #     with open("tests/test_actuators/test_dephyactpack_start9_log.log", "r") as f:
-    #         contents = f.read()
-    #         assert "Need admin previleges to open the port '/dev/ttyACM0'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n" in contents
 
 
 def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):

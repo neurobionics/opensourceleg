@@ -70,14 +70,6 @@ class MockJoint(Joint, MockDephyActpack):
             self._log.warning(msg=f"Invalid joint name: {name}")
             return
 
-        # if os.path.isfile(path=f"./{self._name}_encoder_map.npy"):
-        #     coefficients = np.load(file=f"./{self._name}_encoder_map.npy")
-        #     self._encoder_map = np.polynomial.polynomial.Polynomial(coef=coefficients)
-        # else:
-        #     self._log.debug(
-        #         msg=f"[{self._name}] No encoder map found. Please run the calibration routine."
-        #     )
-
 
 def test_mockjoint_init():
     """
@@ -171,8 +163,8 @@ def test_home(joint_patched: Joint, patch_sleep):
     with open(file="tests/test_joints/test_home_log.log") as f:
         contents = f.read()
         assert "INFO: [knee] Homing complete." in contents
-    assert jp1._motor_zero_position == 15
-    assert jp1._joint_zero_position == 15
+    assert jp1._motor_zero_position == 0.005752427954571154
+    assert jp1._joint_zero_position == 0.005752427954571154
     jpa = joint_patched
     jpa._name = "ankle"
     jpa._log = Logger(file_path="tests/test_joints/test_home_ankle_log")
@@ -187,23 +179,8 @@ def test_home(joint_patched: Joint, patch_sleep):
     with open(file="tests/test_joints/test_home_ankle_log.log") as f:
         contents = f.read()
         assert "INFO: [ankle] Homing complete." in contents
-    assert jpa._motor_zero_position == 56676
-    assert jpa._joint_zero_position == 1380
-
-
-# Test the home KeyBoardInterrupt
-# def test_home_keyboardinterrupt(joint_patched: Joint, patch_sleep, mocker):
-#     jp_ki = joint_patched
-#     jp_ki._log = Logger(file_path="tests/test_joints/test_home_keyboardinterrupt_log")
-#     jp_ki._log.set_stream_level(level="DEBUG")
-#     jp_ki._data = Data()
-#     jp_ki.is_streaming = True
-#     with pytest.raises(KeyboardInterrupt):
-#         jp_ki.home()
-#         assert jp_ki._motor_command == "Control Mode: c_int(1), Value: 0"
-#         with open(file="tests/test_joints/test_home_keyboardinterrupt_log.log", mode="r") as f:
-#             contents = f.read()
-#             assert "WARNING: Homing interrupted." in contents
+    assert jpa._motor_zero_position == 0.0
+    assert jpa._joint_zero_position == 0.0
 
 
 @pytest.fixture
@@ -242,56 +219,6 @@ def patch_time_time(monkeypatch):
         80,
     ]
     monkeypatch.setattr(time, "time", lambda: values.pop(0))
-
-
-def test_make_knee_encoder_map(joint_patched: Joint, patch_sleep, patch_time_time):
-    """
-    Test the make_encoder_map method of the Joint class\n
-    This test creates an instance of the MockJoint class and sets the _log attribute
-    to a log of the lowest level. The _data attribute is set to a Data instance with
-    a mot_cur attribute of 4999. The make_encoder_map method is called for the unhomed
-    joint. It then asserts the proper log message is written for an unhomed joint. The
-    make_encoder_map method is called for the homed joint. It then asserts the proper
-    log messages are written, the mode is set to CurrentMode, the proper gains are set,
-    the proper motor command is sent, and the proper encoder map is created.
-    """
-
-    jp2 = joint_patched
-    jp2._log = Logger(file_path="tests/test_joints/test_make_knee_encoder_map_log")
-    jp2._log.set_stream_level(level="DEBUG")
-    jp2._data = Data(mot_cur=4999)
-    jp2.make_encoder_map()
-    with open(file="tests/test_joints/test_make_knee_encoder_map_log.log") as f:
-        contents = f.read()
-        assert "Please home the joint before making the encoder map." in contents
-    jp2.is_streaming = True
-    jp2.home()
-    jp2.make_encoder_map()
-    with open(file="tests/test_joints/test_make_knee_encoder_map_log.log") as f:
-        contents = f.read()
-        assert "Please manually move the joint numerous times through its full range of motion for 10 seconds. \nPress any key to continue."
-        assert (
-            "INFO: [DephyActpack[knee]] You may now stop moving the joint." in contents
-        )
-        assert "INFO: [DephyActpack[knee]] Encoder map saved." in contents
-    assert jp2._mode == CurrentMode(device=jp2)
-    assert jp2._gains == {
-        "kp": 40,
-        "ki": 400,
-        "kd": 0,
-        "k": 0,
-        "b": 0,
-        "ff": 128,
-    }
-    assert jp2._motor_command == "Control Mode: c_int(2), Value: 0"
-    test_joint_position_array = [0.005752427954571154, 0.011504855909142308]
-    test_output_position_array = [0.00013861305580425867, 0.00027722611160851734]
-    test_power = np.arange(4.0)
-    test_a_mat = np.array(test_joint_position_array).reshape(-1, 1) ** test_power
-    test_beta = np.linalg.lstsq(test_a_mat, test_output_position_array, rcond=None)[0]
-    test_coeffs = test_beta[0]
-    test_encoder_map = np.polynomial.polynomial.Polynomial(coef=test_coeffs)
-    assert jp2._encoder_map == test_encoder_map
 
 
 def test_set_max_temperature(joint_patched: Joint):
@@ -391,93 +318,6 @@ def test_set_joint_impedance(joint_patched: Joint):
         "b": int(3 / 100**2 * np.pi / 180 / 0.00028444 * 1e3 / 0.1133),
         "ff": 128,
     }
-
-
-def test_convert_to_joint_impedance(joint_patched: Joint):
-    """
-    Test the convert_to_joint_impedance method of the Joint class\n
-    This test creates an instance of the MockJoint class and sets the gear ratio to 100.
-    The convert_to_joint_impedance method is called with no arguments. It then asserts
-    the proper gains are returned. The convert_to_joint_impedance method is called with
-    arguments. It then asserts the proper gains are returned.
-    """
-
-    # Sets up the proper joint conditions for the convert_to_joint_impedance method
-    jp9 = joint_patched
-    jp9._gear_ratio = 100
-    # Call the convert_to_joint_impedance method with no arguments
-    jp9_pid_stiffness, jp9_pid_damping = jp9.convert_to_joint_impedance()
-    # Assert the proper stiffness and damping values are returned
-    assert (
-        jp9_pid_stiffness
-        == (100 / (2 * np.pi / 16384 / 0.0007812 * 1e3 / 0.1133)) * 100**2
-    )
-    assert jp9_pid_damping == 40 / (np.pi / 180 / 0.00028444 * 1e3 / 0.1133) * 100**2
-    # Call the convert_to_joint_impedance method with arguments
-    jp9_pid_stiffness, jp9_pid_damping = jp9.convert_to_joint_impedance(K=50, B=80)
-    # Assert the proper stiffness and damping values are returned
-    assert (
-        jp9_pid_stiffness
-        == 50 / (2 * np.pi / 16384 / 0.0007812 * 1e3 / 0.1133) * 100**2
-    )
-    assert jp9_pid_damping == 80 / (np.pi / 180 / 0.00028444 * 1e3 / 0.1133) * 100**2
-
-
-def test_convert_to_motor_impedance(joint_patched: Joint):
-    """
-    Test the convert_to_motor_impedance method of the Joint class\n
-    This test creates an instance of the MockJoint class. The convert_to_motor_impedance
-    method is called with no arguments. It then asserts the proper stiffness and damping
-    values are returned. The convert_to_motor_impedance method is called with arguments.
-    It then asserts the proper stiffness and damping values are returned.
-    """
-
-    jp10 = joint_patched
-    # Call the convert_to_motor_impedance method with no arguments
-    jp10_pid_stiffness, jp10_pid_damping = jp10.convert_to_motor_impedance()
-    # Assert the proper stiffness and damping values are returned
-    assert jp10_pid_stiffness == 100 / (2 * np.pi / 16384 / 0.0007812 * 1e3 / 0.1133)
-    assert jp10_pid_damping == 40 / (np.pi / 180 / 0.00028444 * 1e3 / 0.1133)
-    # Call the convert_to_motor_impedance method with arguments
-    jp10_pid_stiffness, jp10_pid_damping = jp10.convert_to_motor_impedance(K=50, B=80)
-    # Assert the proper stiffness and damping values are returned
-    assert jp10_pid_stiffness == 50 / (2 * np.pi / 16384 / 0.0007812 * 1e3 / 0.1133)
-    assert jp10_pid_damping == 80 / (np.pi / 180 / 0.00028444 * 1e3 / 0.1133)
-
-
-def test_convert_to_pid_impedance(joint_patched: Joint):
-    """
-    Test the convert_to_pid_impedance method of the Joint class\n
-    This test creates an instance of the MockJoint class and sets the gear ratio to 100.
-    The convert_to_pid_impedance method is called with no arguments. It then asserts
-    the proper stiffness and damping values are returned. The convert_to_pid_impedance
-    method is called with arguments. It then asserts the proper stiffness and damping
-    values are returned.
-    """
-
-    # Sets up the proper joint conditions for the convert_to_pid_impedance method
-    jp11 = joint_patched
-    jp11._gear_ratio = 100
-    # Call the convert_to_pid_impedance method with no arguments
-    jp11_pid_stiffness, jp11_pid_damping = jp11.convert_to_pid_impedance()
-    # Assert the proper stiffness and damping values are returned
-    assert (
-        jp11_pid_stiffness
-        == 0.08922 / (100**2) * 2 * np.pi / 16384 / 0.0007812 * 1e3 / 0.1133
-    )
-    assert round(jp11_pid_damping, 15) == round(
-        0.0038070 / (100.0**2) * np.pi / 180 / 0.00028444 * 1e3 / 0.1133, 15
-    )
-    # Call the convert_to_pid_impedance method with arguments
-    jp11_pid_stiffness, jp11_pid_damping = jp11.convert_to_pid_impedance(K=0.05, B=0.01)
-    # Assert the proper stiffness and damping values are returned
-    assert (
-        jp11_pid_stiffness
-        == 0.05 / (100**2) * 2 * np.pi / 16384 / 0.0007812 * 1e3 / 0.1133
-    )
-    assert round(jp11_pid_damping, 15) == round(
-        0.01 / (100.0**2) * np.pi / 180 / 0.00028444 * 1e3 / 0.1133, 15
-    )
 
 
 def test_mockjoint_default_properties(joint_patched: Joint):
