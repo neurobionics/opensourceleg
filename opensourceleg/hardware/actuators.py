@@ -1,3 +1,7 @@
+"""
+Actuators Interface Generalized
+05/2024
+"""
 from typing import Any, Callable, Union, overload
 
 import ctypes
@@ -6,12 +10,17 @@ import time
 from ctypes import c_int
 from dataclasses import dataclass
 
+# To be removed after Generalization
 import flexsea.fx_enums as fxe
+
 import numpy as np
+# To be removed after Generalization
 from flexsea.device import Device
 
 from ..tools.logger import Logger
 from .thermal import ThermalModel
+
+from abc import ABC, abstractmethod
 
 """
 Module Overview:
@@ -23,13 +32,13 @@ Key Classes:
 
 - `ControlModes`: Enumerates available control modes for the Dephy Actpack.
 - `Gains`: Dataclass for controller gains.
-- `ActpackMode`: Base class for Actpack modes, including `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode`.
+- `_ActpackMode`: Base class for Actpack modes, including `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode`.
 - `ActpackControlModes`: Enumerates available Actpack modes.
-- `DephyActpack`: Class for interacting with the Dephy Actpack.
+- `_DephyActpack`: Class for interacting with the Dephy Actpack.
 
 Usage Guide:
 
-1. Create an instance of `DephyActpack` with appropriate parameters (e.g., port, baud_rate, frequency).
+1. Create an instance of `_DephyActpack` with appropriate parameters (e.g., port, baud_rate, frequency).
 2. Start the actpack using the `start` method.
 3. Set the desired control mode using the `set_mode` method.
 4. Set gains for the selected control mode using methods like `set_position_gains`, `set_current_gains`, etc.
@@ -106,26 +115,27 @@ DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
-class ActpackMode:
+class _ActpackMode:
     """
     Base class for Actpack modes
 
     Args:
         control_mode (c_int): Control mode
-        device (DephyActpack): Dephy Actpack
+        device (_DephyActpack): Dephy Actpack
+    * To be changed to ABC
     """
 
-    def __init__(self, control_mode: c_int, device: "DephyActpack") -> None:
+    def __init__(self, control_mode: c_int, device: "_DephyActpack") -> None:
 
         self._control_mode: c_int = control_mode
-        self._device: DephyActpack = device
+        self._device: _DephyActpack = device
         self._entry_callback: Callable[[], None] = lambda: None
         self._exit_callback: Callable[[], None] = lambda: None
 
         self._has_gains = False
 
     def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, ActpackMode):
+        if isinstance(__o, _ActpackMode):
             return self._control_mode == __o._control_mode
         return False
 
@@ -133,7 +143,7 @@ class ActpackMode:
         return str(object=self._control_mode)
 
     def __repr__(self) -> str:
-        return f"ActpackMode[{self._control_mode}]"
+        return f"_ActpackMode[{self._control_mode}]"
 
     @property
     def mode(self) -> c_int:
@@ -167,13 +177,13 @@ class ActpackMode:
         """
         self._exit_callback()
 
-    def transition(self, to_state: "ActpackMode") -> None:
+    def transition(self, to_state: "_ActpackMode") -> None:
         """
         Transition to another mode. Calls the exit callback of the current mode
         and the entry callback of the new mode.
 
         Args:
-            to_state (ActpackMode): Mode to transition to
+            to_state (_ActpackMode): Mode to transition to
         """
         self.exit()
         to_state.enter()
@@ -196,9 +206,104 @@ class ActpackMode:
         """
         pass
 
+class BaseMode(ABC):
+    """
+    Base class for Actpack modes
 
-class VoltageMode(ActpackMode):
-    def __init__(self, device: "DephyActpack") -> None:
+    Args:
+        control_mode (c_int): Control mode
+        device (_DephyActpack): Dephy Actpack
+    * To be changed to ABC
+    """
+    def __init__(self, control_mode: c_int, device: "_DephyActpack") -> None:
+        """
+        Check Parameters Carefully!
+        """
+        self._control_mode: c_int = control_mode
+        self._device: _DephyActpack = device
+        self._entry_callback: Callable[[], None] = lambda: None
+        self._exit_callback: Callable[[], None] = lambda: None
+
+        self._has_gains = False
+
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, _ActpackMode):
+            return self._control_mode == __o._control_mode
+        return False
+
+    def __str__(self) -> str:
+        return str(object=self._control_mode)
+
+    def __repr__(self) -> str:
+        return f"BaseMode[{self._control_mode}]"
+
+    @property
+    def mode(self) -> c_int:
+        """
+        Control mode
+
+        Returns:
+            c_int: Control mode
+        """
+        return self._control_mode
+
+    @property
+    def has_gains(self) -> bool:
+        """
+        Whether the mode has gains
+
+        Returns:
+            bool: True if the mode has gains, False otherwise
+        """
+        return self._has_gains
+
+    def enter(self) -> None:
+        """
+        Calls the entry callback
+        """
+        self._entry_callback()
+
+    def exit(self) -> None:
+        """
+        Calls the exit callback
+        """
+        self._exit_callback()
+
+    def transition(self, to_state: "_ActpackMode") -> None:
+        """
+        Transition to another mode. Calls the exit callback of the current mode
+        and the entry callback of the new mode.
+
+        Args:
+            to_state (_ActpackMode): Mode to transition to
+        """
+        self.exit()
+        to_state.enter()
+    @abstractmethod
+    def _set_gains(self, kp: int, ki: int, kd: int, ff: int,) -> None:
+        pass
+
+    @abstractmethod
+    def _set_voltage(self, voltage: int) -> None:
+        """
+        This method should be implemented by the child class. It should set the q axis voltage.
+        """
+        pass
+    
+    @abstractmethod
+    def _set_current(self, current: int) -> None:
+        """
+        This method should be implemented by the child class. It should set the q axis current.
+        """
+        pass
+    @abstractmethod
+    def _set_motor_position(self, counts: int) -> None:
+        pass
+    
+
+
+class VoltageMode(BaseMode):
+    def __init__(self, device: "_DephyActpack") -> None:
         super().__init__(control_mode=CONTROL_MODE.voltage, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -218,8 +323,8 @@ class VoltageMode(ActpackMode):
         )
 
 
-class CurrentMode(ActpackMode):
-    def __init__(self, device: "DephyActpack") -> None:
+class CurrentMode(BaseMode):
+    def __init__(self, device: "_DephyActpack") -> None:
         super().__init__(control_mode=CONTROL_MODE.current, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -263,8 +368,8 @@ class CurrentMode(ActpackMode):
         )
 
 
-class PositionMode(ActpackMode):
-    def __init__(self, device: "DephyActpack") -> None:
+class PositionMode(BaseMode):
+    def __init__(self, device: "_DephyActpack") -> None:
         super().__init__(control_mode=CONTROL_MODE.position, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -311,8 +416,8 @@ class PositionMode(ActpackMode):
         )
 
 
-class ImpedanceMode(ActpackMode):
-    def __init__(self, device: "DephyActpack") -> None:
+class ImpedanceMode(BaseMode):
+    def __init__(self, device: "_DephyActpack") -> None:
         super().__init__(control_mode=CONTROL_MODE.impedance, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -380,7 +485,7 @@ class ActpackControlModes:
     position: PositionMode
     impedance: ImpedanceMode
 
-    def __init__(self, device: "DephyActpack") -> None:
+    def __init__(self, device: "_DephyActpack") -> None:
         self.voltage = VoltageMode(device=device)
         self.current = CurrentMode(device=device)
         self.position = PositionMode(device=device)
@@ -390,7 +495,7 @@ class ActpackControlModes:
         return f"ActpackControlModes"
 
 
-class DephyActpack(Device):
+class _DephyActpack(Device):
     """Class for the Dephy Actpack
 
     Args:
@@ -407,7 +512,7 @@ class DephyActpack(Device):
 
     def __init__(
         self,
-        name: str = "DephyActpack",
+        name: str = "_DephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -419,7 +524,7 @@ class DephyActpack(Device):
         Initializes the Actpack class
 
         Args:
-            name (str): _description_. Defaults to "DephyActpack".
+            name (str): _description_. Defaults to "_DephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -450,10 +555,10 @@ class DephyActpack(Device):
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: ActpackMode = self.control_modes.voltage
+        self._mode: _ActpackMode = self.control_modes.voltage
 
     def __repr__(self) -> str:
-        return f"DephyActpack[{self._name}]"
+        return f"_DephyActpack[{self._name}]"
 
     def start(self) -> None:
         try:
@@ -497,7 +602,7 @@ class DephyActpack(Device):
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
-    def set_mode(self, mode: ActpackMode) -> None:
+    def set_mode(self, mode: _ActpackMode) -> None:
         if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
             self._mode.transition(to_state=mode)
             self._mode = mode
@@ -664,7 +769,7 @@ class DephyActpack(Device):
         return self._frequency
 
     @property
-    def mode(self) -> ActpackMode:
+    def mode(self) -> _ActpackMode:
         return self._mode
 
     @property
@@ -886,7 +991,7 @@ class DephyActpack(Device):
             return 0.0
 
 
-# MockDephyActpack class definition for testing
+# Mock_DephyActpack class definition for testing
 # MockData class definition for testing without a data stream
 class MockData:
     def __init__(
@@ -941,11 +1046,11 @@ class MockData:
         return f"MockData"
 
 
-# This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class MockDephyActpack(DephyActpack):
+# This class inherits everything from the _DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
+class Mock_DephyActpack(_DephyActpack):
     """
-    MockDephyActpack class definition for testing.\n
-    This class inherits everything from the DephyActpack class but
+    Mock_DephyActpack class definition for testing.\n
+    This class inherits everything from the _DephyActpack class but
     deletes the super().__init__() call in the constructor so the
     constructor does not try to connect to a device. It also overrides
     some of the methods to allow for testing without a device, and adds
@@ -954,7 +1059,7 @@ class MockDephyActpack(DephyActpack):
 
     def __init__(
         self,
-        name: str = "MockDephyActpack",
+        name: str = "Mock_DephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -963,10 +1068,10 @@ class MockDephyActpack(DephyActpack):
         dephy_log: bool = False,
     ) -> None:
         """
-        Initializes the MockDephyActpack class
+        Initializes the Mock_DephyActpack class
 
         Args:
-            name (str): _description_. Defaults to "MockDephyActpack".
+            name (str): _description_. Defaults to "Mock_DephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -1015,7 +1120,7 @@ class MockDephyActpack(DephyActpack):
         )
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
-        self._mode: ActpackMode = self.control_modes.voltage
+        self._mode: _ActpackMode = self.control_modes.voltage
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
