@@ -812,7 +812,7 @@ class DephyActpack(Device):
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
             if self.encoder_map is not None:
-                return self.encoder_map(self._data.ank_ang)
+                return float(self.encoder_map(self._data.ank_ang))
             else:
                 return (
                     float(self._data.ank_ang * RAD_PER_COUNT)
