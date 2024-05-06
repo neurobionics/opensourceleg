@@ -2,6 +2,7 @@ from collections import deque
 
 import numpy as np
 
+
 def add_safety(instance, prop_name, decorator):
     """Applies a decorator to the getter of a property for a specific instance by creating or updating a subclass."""
     safety_attributes_key = f"_safety_attributes"

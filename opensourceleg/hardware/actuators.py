@@ -323,7 +323,6 @@ class ImpedanceMode(ActpackMode):
 
         self._device.set_motor_position(self._device.motor_position)
 
-
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
         self._device.send_motor_command(ctrl_mode=CONTROL_MODE.voltage, value=0)
@@ -700,7 +699,7 @@ class DephyActpack(Device):
     @property
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map    
+        return self._encoder_map
 
     @property
     def motor_zero_position(self) -> float:

@@ -373,7 +373,6 @@ class OpenSourceLeg:
 
         self._is_homed = True
 
-
     def calibrate_loadcell(self) -> None:
         self.log.debug(msg="[OSL] Calibrating loadcell.")
         if self.has_loadcell:
