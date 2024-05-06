@@ -67,14 +67,6 @@ class StrainAmp:
     def __repr__(self) -> str:
         return f"StrainAmp"
 
-    def read_uncompressed_strain(self):
-        """Used for an older version of the strain amp firmware (at least pre-2017)"""
-        data = []
-        for i in range(self.MEM_R_CH1_H, self.MEM_R_CH6_L + 1):
-            data.append(self._SMBus.read_byte_data(self.addr, i))
-
-        return self._unpack_uncompressed_strain(data)
-
     def _read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
         try:
@@ -120,26 +112,6 @@ class StrainAmp:
                 ((data[7] << 8) & 0x0F00) | data[8],
             ]
         )
-
-    @staticmethod
-    def strain_data_to_wrench(
-        unpacked_strain, loadcell_matrix, loadcell_zero, exc=5, gain=125
-    ):
-        """Converts strain values between 0 and 4095 to a wrench in N and Nm"""
-        loadcell_signed = (unpacked_strain - 2048) / 4095 * exc
-        loadcell_coupled = loadcell_signed * 1000 / (exc * gain)
-        return np.reshape(
-            np.transpose(a=loadcell_matrix.dot(np.transpose(a=loadcell_coupled)))
-            - loadcell_zero,
-            (6,),
-        )
-
-    @staticmethod
-    def wrench_to_strain_data(measurement, loadcell_matrix, exc=5, gain=125):
-        """Wrench in N and Nm to the strain values that would give that wrench"""
-        loadcell_coupled = (np.linalg.inv(loadcell_matrix)).dot(measurement)
-        loadcell_signed = loadcell_coupled * (exc * gain) / 1000
-        return ((loadcell_signed / exc) * 4095 + 2048).round(0).astype(int)
 
 
 class Loadcell:
