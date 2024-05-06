@@ -149,7 +149,6 @@ class Joint(DephyActpack):
             self.set_joint_offset(0.0)
             self.set_motor_offset(0.0)
 
-
         self._is_homed = True
         self._log.info(f"[{self._name}] Homing complete.")
 
@@ -312,36 +311,6 @@ class Joint(DephyActpack):
             ff=ff,
         )
 
-    def convert_to_joint_impedance(
-        self,
-        K: float = 100,
-        B: float = 40,
-    ):
-        joint_stiffness = (K / NM_PER_RAD_TO_K) * self.gear_ratio**2
-        joint_damping = (B / NM_S_PER_RAD_TO_B) * self.gear_ratio**2
-
-        return joint_stiffness, joint_damping
-
-    def convert_to_motor_impedance(
-        self,
-        K: float = 100,
-        B: float = 40,
-    ):
-        motor_stiffness = K / NM_PER_RAD_TO_K
-        motor_damping = B / NM_S_PER_RAD_TO_B
-
-        return motor_stiffness, motor_damping
-
-    def convert_to_pid_impedance(
-        self,
-        K: float = 0.08922,
-        B: float = 0.0038070,
-    ):
-        pid_stiffness = (K / self.gear_ratio**2) * NM_PER_RAD_TO_K
-        pid_damping = (B / self.gear_ratio**2) * NM_S_PER_RAD_TO_B
-
-        return pid_stiffness, pid_damping
-
     @property
     def name(self) -> str:
         return self._name
@@ -359,8 +328,6 @@ class Joint(DephyActpack):
     def is_homed(self) -> bool:
         """Indicates if the homing routine has been called yet."""
         return self._is_homed
-
-
 
     @property
     def output_position(self) -> float:
