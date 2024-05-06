@@ -48,7 +48,7 @@ class LoopKiller:
     def get_fade(self):
         # interpolates from 1 to zero with soft fade out
         if self._kill_soon:
-            t = time.time() - self._soft_kill_time
+            t = time.monotonic() - self._soft_kill_time
             if t >= self._fade_time:
                 return 0.0
             return 1.0 - (t / self._fade_time)
@@ -62,7 +62,7 @@ class LoopKiller:
         if self._kill_now:
             return True
         if self._kill_soon:
-            t = time.time() - self._soft_kill_time
+            t = time.monotonic() - self._soft_kill_time
             if t > self._fade_time:
                 self._kill_now = True
         return self._kill_now
@@ -75,7 +75,7 @@ class LoopKiller:
             else:
                 if self._fade_time > 0.0:
                     self._kill_soon = True
-                    self._soft_kill_time = time.time()
+                    self._soft_kill_time = time.monotonic()
                 else:
                     self._kill_now = True
         else:
@@ -106,7 +106,7 @@ class SoftRealtimeLoop:
     """
 
     def __init__(self, dt=0.001, report=False, fade=0.0):
-        self.t0 = self.t1 = time.time()
+        self.t0 = self.t1 = time.monotonic()
         self.killer = LoopKiller(fade_time=fade)
         self.dt = dt
         self.ttarg = None
@@ -139,12 +139,12 @@ class SoftRealtimeLoop:
     def run(self, function_in_loop, dt=None):
         if dt is None:
             dt = self.dt
-        self.t0 = self.t1 = time.time() + dt
+        self.t0 = self.t1 = time.monotonic() + dt
         while not self.killer.kill_now:
             ret = function_in_loop()
             if ret == 0:
                 self.stop()
-            while time.time() < self.t1 and not self.killer.kill_now:
+            while time.monotonic() < self.t1 and not self.killer.kill_now:
                 if signal.sigtimedwait(
                     [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
                 ):
@@ -155,13 +155,13 @@ class SoftRealtimeLoop:
         self.killer.kill_now = True
 
     def time(self):
-        return time.time() - self.t0
+        return time.monotonic() - self.t0
 
     def time_since(self):
-        return time.time() - self.t1
+        return time.monotonic() - self.t1
 
     def __iter__(self):
-        self.t0 = self.t1 = time.time() + self.dt
+        self.t0 = self.t1 = time.monotonic() + self.dt
         return self
 
     def __next__(self):
@@ -169,15 +169,15 @@ class SoftRealtimeLoop:
             raise StopIteration
 
         while (
-            time.time() < self.t1 - 2 * PRECISION_OF_SLEEP and not self.killer.kill_now
+            time.monotonic() < self.t1 - 2 * PRECISION_OF_SLEEP and not self.killer.kill_now
         ):
-            t_pre_sleep = time.time()
+            t_pre_sleep = time.monotonic()
             time.sleep(
-                max(PRECISION_OF_SLEEP, self.t1 - time.time() - PRECISION_OF_SLEEP)
+                max(PRECISION_OF_SLEEP, self.t1 - time.monotonic() - PRECISION_OF_SLEEP)
             )
-            self.sleep_t_agg += time.time() - t_pre_sleep
+            self.sleep_t_agg += time.monotonic() - t_pre_sleep
 
-        while time.time() < self.t1 and not self.killer.kill_now:
+        while time.monotonic() < self.t1 and not self.killer.kill_now:
             try:
                 if signal.sigtimedwait(
                     [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
@@ -191,10 +191,10 @@ class SoftRealtimeLoop:
         self.t1 += self.dt
         if self.ttarg is None:
             # inits ttarg on first call
-            self.ttarg = time.time() + self.dt
+            self.ttarg = time.monotonic() + self.dt
             # then skips the first loop
             return self.t1 - self.t0
-        error = time.time() - self.ttarg  # seconds
+        error = time.monotonic() - self.ttarg  # seconds
         self.sum_err += error
         self.sum_var += error**2
         self.n += 1
