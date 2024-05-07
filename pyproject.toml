@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "opensourceleg"
-version = "2.1.0"
+version = "2.2.0"
 description = "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses."
 readme = "README.md"
 authors = ["Open-source Leg <opensourceleg@gmail.com>"]
@@ -22,7 +22,7 @@ classifiers = [  #! Update me
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
   "Topic :: Software Development :: Libraries :: Python Modules",
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
 ]
@@ -39,7 +39,7 @@ numpy = "^1.24.3"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"
-black = {version = ">=22.3,<25.0", allow-prereleases = true}
+black = {version = ">=24.3,<25.0", allow-prereleases = true}
 darglint = "^1.8.1"
 isort = {extras = ["colors"], version = "^5.10.1"}
 mypy = ">=0.991,<1.1"

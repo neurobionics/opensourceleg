@@ -47,6 +47,7 @@ def patch_time_time2(monkeypatch):
 
     values = [0, 1, 2, 3, 4, 5]
     monkeypatch.setattr(time, "time", lambda: values.pop(0))
+    monkeypatch.setattr(time, "monotonic", lambda: values.pop(0))
 
 
 def test_loopkiller_get_fade(patch_time_time2):
@@ -120,6 +121,7 @@ def patch_time_time3(monkeypatch):
 
     values = [0, 0, 1, 2, 3, 4, 5]
     monkeypatch.setattr(time, "time", lambda: values.pop(0))
+    monkeypatch.setattr(time, "monotonic", lambda: values.pop(0))
 
 
 def test_softrealtimeloop_del():

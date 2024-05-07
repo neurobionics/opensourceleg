@@ -380,9 +380,7 @@ class PositionMode(BaseMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_motor_position(
-            counts=int(self._device.motor_position / RAD_PER_COUNT)
-        )
+        self._device.set_motor_position(self._device.motor_position)
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
@@ -427,9 +425,7 @@ class ImpedanceMode(BaseMode):
         if not self.has_gains:
             self._set_gains()
 
-        self._set_motor_position(
-            counts=int(self._device.motor_position / RAD_PER_COUNT)
-        )
+        self._device.set_motor_position(self._device.motor_position)
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
@@ -542,8 +538,15 @@ class _DephyActpack(Device):
         self._log: Logger = logger
         self._state = None
 
+        self._encoder_map = None
+
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
+
+        self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
+        self._joint_direction = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=80,
@@ -597,6 +600,12 @@ class _DephyActpack(Device):
                 dt=(1 / self._frequency),
                 motor_current=self.motor_current,
             )
+
+            if hasattr(self, "_safety_attributes"):
+                for safety_attribute_name in self._safety_attributes:
+                    self._log.debug(
+                        msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
+                    )
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
@@ -612,12 +621,28 @@ class _DephyActpack(Device):
             return
 
     def set_motor_zero_position(self, position: float) -> None:
-        """Sets motor zero position in counts"""
+        """Sets motor zero position in radians"""
         self._motor_zero_position = position
 
     def set_joint_zero_position(self, position: float) -> None:
-        """Sets joint zero position in counts"""
+        """Sets joint zero position in radians"""
         self._joint_zero_position = position
+
+    def set_motor_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        self._motor_offset = position
+
+    def set_joint_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        self._joint_offset = position
+
+    def set_joint_direction(self, direction: float) -> None:
+        """Sets joint direction to 1 or -1"""
+        self._joint_direction = direction
+
+    def set_encoder_map(self, encoder_map) -> None:
+        """Sets the joint encoder map"""
+        self._encoder_map = encoder_map
 
     def set_position_gains(
         self,
@@ -761,7 +786,10 @@ class _DephyActpack(Device):
             return
 
         self._mode._set_motor_position(
-            int((position / RAD_PER_COUNT) + self.motor_zero_position),
+            int(
+                (position + self.motor_zero_position + self.motor_offset)
+                / RAD_PER_COUNT
+            ),
         )
 
     @property
@@ -773,14 +801,34 @@ class _DephyActpack(Device):
         return self._mode
 
     @property
+    def encoder_map(self):
+        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+        return self._encoder_map
+
+    @property
     def motor_zero_position(self) -> float:
-        """Motor encoder offset in radians."""
+        """Motor encoder zero position in radians."""
         return self._motor_zero_position
 
     @property
     def joint_zero_position(self) -> float:
-        """Joint encoder offset in radians."""
+        """Joint encoder zero position in radians."""
         return self._joint_zero_position
+
+    @property
+    def joint_offset(self) -> float:
+        """Joint encoder offset in radians."""
+        return self._joint_offset
+
+    @property
+    def motor_offset(self) -> float:
+        """Motor encoder offset in radians."""
+        return self._motor_offset
+
+    @property
+    def joint_direction(self) -> float:
+        """Joint direction: 1 or -1"""
+        return self._joint_direction
 
     @property
     def battery_voltage(self) -> float:
@@ -829,8 +877,10 @@ class _DephyActpack(Device):
     def motor_position(self) -> float:
         """Angle of the motor in radians."""
         if self._data is not None:
-            return float(
-                int(self._data.mot_ang - self.motor_zero_position) * RAD_PER_COUNT
+            return (
+                float(self._data.mot_ang * RAD_PER_COUNT)
+                - self._motor_zero_position
+                - self.motor_offset
             )
         else:
             return 0.0
@@ -865,9 +915,14 @@ class _DephyActpack(Device):
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
-            return float(
-                int(self._data.ank_ang - self._joint_zero_position) * RAD_PER_COUNT
-            )
+            if self.encoder_map is not None:
+                return float(self.encoder_map(self._data.ank_ang))
+            else:
+                return (
+                    float(self._data.ank_ang * RAD_PER_COUNT)
+                    - self.joint_zero_position
+                    - self.joint_offset
+                ) * self.joint_direction
         else:
             return 0.0
 
@@ -1109,8 +1164,15 @@ class Mock_DephyActpack(_DephyActpack):
         # This is used in the read() method to indicate a data stream
         self.is_streaming: bool = False
 
+        self._encoder_map = None
+
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
+
+        self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
+        self._joint_direction = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=80,
