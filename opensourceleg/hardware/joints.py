@@ -10,7 +10,7 @@ from .actuators import (
     NM_S_PER_RAD_TO_B,
     RAD_PER_COUNT,
     DephyActpack,
-    _MockDephyActpack,
+    MockActuator,
 )
 
 """
@@ -356,10 +356,10 @@ class Joint(DephyActpack):
         return self.motor_torque * self.gear_ratio
 
 
-class MockJoint(Joint, _MockDephyActpack):
+class MockJoint(Joint, MockActuator):
     """
     Mock Joint class for testing the Joint class\n
-    Inherits everything from the Joint class and the _MockDephyActpack class
+    Inherits everything from the Joint class and the MockActuator class
     except for the Joint constructor.
     """
 
@@ -376,7 +376,7 @@ class MockJoint(Joint, _MockDephyActpack):
         dephy_log: bool = False,
     ) -> None:
 
-        _MockDephyActpack.__init__(self, name, port)
+        MockActuator.__init__(self, name, port)
         self._gear_ratio: float = gear_ratio
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell

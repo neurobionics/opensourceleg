@@ -1746,8 +1746,7 @@ class ActpackObj(Device, ActuatorObj):
             ),
         )
 
-
-# _MockDephyActpack class definition for testing
+# MockActuator class definition for testing
 # MockData class definition for testing without a data stream
 class MockData:
     def __init__(
@@ -1803,9 +1802,9 @@ class MockData:
 
 
 # This class inherits everything from the _DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class _MockDephyActpack(_DephyActpack):
+class MockActuator(_DephyActpack):
     """
-    _MockDephyActpack class definition for testing.\n
+    MockActuator class definition for testing.\n
     This class inherits everything from the _DephyActpack class but
     deletes the super().__init__() call in the constructor so the
     constructor does not try to connect to a device. It also overrides
@@ -1815,7 +1814,7 @@ class _MockDephyActpack(_DephyActpack):
 
     def __init__(
         self,
-        name: str = "_MockDephyActpack",
+        name: str = "MockActuator",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1824,10 +1823,10 @@ class _MockDephyActpack(_DephyActpack):
         dephy_log: bool = False,
     ) -> None:
         """
-        Initializes the _MockDephyActpack class
+        Initializes the MockActuator class
 
         Args:
-            name (str): _description_. Defaults to "_MockDephyActpack".
+            name (str): _description_. Defaults to "MockActuator".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -1937,13 +1936,6 @@ class _MockDephyActpack(_DephyActpack):
     def close(self):
         pass
 
-
-class MockActuatorObj: 
-    """
-    Generalized Mocking Data
-    """
-    def __init__(self) -> None:
-        pass
     
 
 if __name__ == "__main__":
