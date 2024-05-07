@@ -1046,14 +1046,423 @@ class _DephyActpack(Device):
             return 0.0
 
 class ActuatorObj(ABC): 
+    """Generalized Abstract Base Class for Actuator Object 
     """
-    Generalized Actuator Object Definition
+    @abstractmethod
+    def __repr__(self) -> str:
+        pass
+
+    @abstractmethod
+    def start(self) -> None:
+        pass
+
+    @abstractmethod
+    def stop(self) -> None:
+        pass
+    
+    @abstractmethod
+    def update(self) -> None:
+        pass
+    
+    @abstractmethod
+    def set_mode(self, mode: _ActpackMode) -> None:
+        pass
+    
+    @abstractmethod
+    def set_motor_zero_position(self, position: float) -> None:
+        """Sets motor zero position in radians"""
+        pass
+
+    @abstractmethod
+    def set_joint_zero_position(self, position: float) -> None:
+        """Sets joint zero position in radians"""
+        pass
+    @abstractmethod
+    def set_motor_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        pass
+
+    @abstractmethod
+    def set_joint_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        pass
+    
+    @abstractmethod
+    def set_joint_direction(self, direction: float) -> None:
+        """Sets joint direction to 1 or -1"""
+        pass
+
+    @abstractmethod
+    def set_encoder_map(self, encoder_map) -> None:
+        """Sets the joint encoder map"""
+        pass
+    @abstractmethod
+    def set_position_gains(
+        self,
+        kp: int,
+        ki: int,
+        kd: int,
+        ff: int,
+    ) -> None:
+        """
+        Sets the position gains in arbitrary Dephy units.
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            kd (int): The derivative gain
+            ff (int): The feedforward gain
+        """
+        pass
+    @abstractmethod
+    def set_current_gains(
+        self,
+        kp: int,
+        ki: int,
+        ff: int,
+    ) -> None:
+        pass
+    
+    @abstractmethod
+    def set_impedance_gains(
+        self,
+        kp: int,
+        ki: int,
+        K: int,
+        B: int,
+        ff: int,
+    ) -> None:
+        """
+        Sets the impedance gains in arbitrary actpack units.
+        See Dephy's webpage for conversions or use other library methods that handle conversion for you.
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            K (int): The spring constant
+            B (int): The damping constant
+            ff (int): The feedforward gain
+        """
+        pass
+    
+    @abstractmethod
+    def set_voltage(self, value: float) -> None:
+        """
+        Sets the q axis voltage in mV
+
+        Args:
+            value (float): The voltage to set in mv
+        """
+        pass
+    
+    @abstractmethod
+    def set_current(self, value: float) -> None:
+        """
+        Sets the q axis current in mA
+
+        Args:
+            value (float): The current to set in mA
+        """
+        pass
+
+    @abstractmethod
+    def set_motor_torque(self, torque: float) -> None:
+        """
+        Sets the motor torque in Nm.
+
+        Args:
+            torque (float): The torque to set in Nm.
+        """
+        pass
+    
+    @abstractmethod
+    def set_motor_position(self, position: float) -> None:
+        """
+        Sets the motor position in radians.
+        If in impedance mode, this sets the equilibrium angle in radians.
+
+        Args:
+            position (float): The position to set
+        """
+        pass
+
+    @property
+    def frequency(self) -> int:
+        return self._frequency
+
+    @property
+    def mode(self) -> _ActpackMode:
+        return self._mode
+
+    @property
+    def encoder_map(self):
+        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+        return self._encoder_map
+
+    @property
+    def motor_zero_position(self) -> float:
+        """Motor encoder zero position in radians."""
+        return self._motor_zero_position
+
+    @property
+    def joint_zero_position(self) -> float:
+        """Joint encoder zero position in radians."""
+        return self._joint_zero_position
+
+    @property
+    def joint_offset(self) -> float:
+        """Joint encoder offset in radians."""
+        return self._joint_offset
+
+    @property
+    def motor_offset(self) -> float:
+        """Motor encoder offset in radians."""
+        return self._motor_offset
+
+    @property
+    def joint_direction(self) -> float:
+        """Joint direction: 1 or -1"""
+        return self._joint_direction
+
+    @property
+    def battery_voltage(self) -> float:
+        """Battery voltage in mV."""
+        if self._data is not None:
+            return float(self._data.batt_volt)
+        else:
+            return 0.0
+
+    @property
+    def battery_current(self) -> float:
+        """Battery current in mA."""
+        if self._data is not None:
+            return float(self._data.batt_curr)
+        else:
+            return 0.0
+
+    @property
+    def motor_voltage(self) -> float:
+        """Q-axis motor voltage in mV."""
+        if self._data is not None:
+            return float(self._data.mot_volt)
+        else:
+            return 0.0
+
+    @property
+    def motor_current(self) -> float:
+        """Q-axis motor current in mA."""
+        if self._data is not None:
+            return float(self._data.mot_cur)
+        else:
+            return 0.0
+
+    @property
+    def motor_torque(self) -> float:
+        """
+        Torque at motor output in Nm.
+        This is calculated using the motor current and torque constant.
+        """
+        if self._data is not None:
+            return float(self._data.mot_cur * NM_PER_MILLIAMP)
+        else:
+            return 0.0
+
+    @property
+    def motor_position(self) -> float:
+        """Angle of the motor in radians."""
+        if self._data is not None:
+            return (
+                float(self._data.mot_ang * RAD_PER_COUNT)
+                - self._motor_zero_position
+                - self.motor_offset
+            )
+        else:
+            return 0.0
+
+    @property
+    def motor_encoder_counts(self) -> int:
+        """Raw reading from motor encoder in counts."""
+        return int(self._data.mot_ang)
+
+    @property
+    def joint_encoder_counts(self) -> int:
+        """Raw reading from joint encoder in counts."""
+        return int(self._data.ank_ang)
+
+    @property
+    def motor_velocity(self) -> float:
+        """Motor velocity in rad/s."""
+        if self._data is not None:
+            return int(self._data.mot_vel) * RAD_PER_DEG
+        else:
+            return 0.0
+
+    @property
+    def motor_acceleration(self) -> float:
+        """Motor acceleration in rad/s^2."""
+        if self._data is not None:
+            return float(self._data.mot_acc)
+        else:
+            return 0.0
+
+    @property
+    def joint_position(self) -> float:
+        """Measured angle from the joint encoder in radians."""
+        if self._data is not None:
+            if self.encoder_map is not None:
+                return float(self.encoder_map(self._data.ank_ang))
+            else:
+                return (
+                    float(self._data.ank_ang * RAD_PER_COUNT)
+                    - self.joint_zero_position
+                    - self.joint_offset
+                ) * self.joint_direction
+        else:
+            return 0.0
+
+    @property
+    def joint_velocity(self) -> float:
+        """Measured velocity from the joint encoder in rad/s."""
+        if self._data is not None:
+            return float(self._data.ank_vel * RAD_PER_COUNT)
+        else:
+            return 0.0
+
+    @property
+    def case_temperature(self) -> float:
+        """Case temperature in celsius."""
+        if self._data is not None:
+            return float(self._data.temperature)
+        else:
+            return 0.0
+
+    @property
+    def winding_temperature(self) -> float:
+        """
+        ESTIMATED temperature of the windings in celsius.
+        This is calculated based on the thermal model using motor current.
+        """
+        if self._data is not None:
+            return float(self._thermal_model.T_w)
+        else:
+            return 0.0
+
+    @property
+    def thermal_scaling_factor(self) -> float:
+        """
+        Scale factor to use in torque control, in [0,1].
+        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        For a proof, see paper referenced in thermal model.
+        """
+        return float(self._thermal_scale)
+
+    @property
+    def genvars(self):
+        """Dephy's 'genvars' object."""
+        if self._data is not None:
+            return np.array(
+                object=[
+                    self._data.genvar_0,
+                    self._data.genvar_1,
+                    self._data.genvar_2,
+                    self._data.genvar_3,
+                    self._data.genvar_4,
+                    self._data.genvar_5,
+                ]
+            )
+        else:
+            return np.zeros(shape=6)
+
+    @property
+    def accelx(self) -> float:
+        """
+        Acceleration in x direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            return 0.0
+
+    @property
+    def accely(self) -> float:
+        """
+        Acceleration in y direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            return 0.0
+
+    @property
+    def accelz(self) -> float:
+        """
+        Acceleration in z direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            return 0.0
+
+    @property
+    def gyrox(self) -> float:
+        """
+        Angular velocity in x direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
+        else:
+            return 0.0
+
+    @property
+    def gyroy(self) -> float:
+        """
+        Angular velocity in y direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
+        else:
+            return 0.0
+
+    @property
+    def gyroz(self) -> float:
+        """
+        Angular velocity in z direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
+        else:
+            return 0.0
+
+class ActpackObj(Device, ActuatorObj):
+    """Object for Dephy Actpack
+
     Args:
-        
+        Device (_type_): _description_
+        ActuatorObj (_type_): _description_
     """
+    """Class for the Dephy Actpack
+
+    Args:
+        Device (_type_): _description_
+
+    Raises:
+        KeyError: _description_
+        ValueError: _description_
+        KeyError: _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     def __init__(
         self,
-        name: str = "DephyActpack",
+        name: str = "_DephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1065,7 +1474,7 @@ class ActuatorObj(ABC):
         Initializes the Actpack class
 
         Args:
-            name (str): _description_. Defaults to "DephyActpack".
+            name (str): _description_. Defaults to "_DephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -1103,10 +1512,240 @@ class ActuatorObj(ABC):
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: BaseMode = self.control_modes.voltage
+        self._mode: _ActpackMode = self.control_modes.voltage
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __repr__(self) -> str:
+        return f"_DephyActpack[{self._name}]"
+
+    def start(self) -> None:
+        try:
+            self.open(
+                freq=self._frequency,
+                log_level=self._debug_level,
+                log_enabled=self._dephy_log,
+            )
+        except OSError as e:
+            print("\n")
+            self._log.error(
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+            )
+            os._exit(status=1)
+
+        time.sleep(0.1)
+        self._data = self.read()
+        self._mode.enter()
+
+    def stop(self) -> None:
+        self.set_mode(mode=self.control_modes.voltage)
+        self.set_voltage(value=0)
+
+        time.sleep(0.1)
+        self.close()
+
+    def update(self) -> None:
+        """
+        Queries the latest values from the actpack.
+        Also updates thermal model.
+        """
+        if self.is_streaming:
+            self._data = self.read()
+            self._thermal_model.T_c = self.case_temperature
+            self._thermal_scale = self._thermal_model.update_and_get_scale(
+                dt=(1 / self._frequency),
+                motor_current=self.motor_current,
+            )
+
+            if hasattr(self, "_safety_attributes"):
+                for safety_attribute_name in self._safety_attributes:
+                    self._log.debug(
+                        msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
+                    )
+        else:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
+            )
+
+    def set_mode(self, mode: _ActpackMode) -> None:
+        if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
+            self._mode.transition(to_state=mode)
+            self._mode = mode
+
+        else:
+            self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
+            return
+
+    def set_motor_zero_position(self, position: float) -> None:
+        """Sets motor zero position in radians"""
+        self._motor_zero_position = position
+
+    def set_joint_zero_position(self, position: float) -> None:
+        """Sets joint zero position in radians"""
+        self._joint_zero_position = position
+
+    def set_motor_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        self._motor_offset = position
+
+    def set_joint_offset(self, position: float) -> None:
+        """Sets joint offset position in radians"""
+        self._joint_offset = position
+
+    def set_joint_direction(self, direction: float) -> None:
+        """Sets joint direction to 1 or -1"""
+        self._joint_direction = direction
+
+    def set_encoder_map(self, encoder_map) -> None:
+        """Sets the joint encoder map"""
+        self._encoder_map = encoder_map
+
+    def set_position_gains(
+        self,
+        kp: int = DEFAULT_POSITION_GAINS.kp,
+        ki: int = DEFAULT_POSITION_GAINS.ki,
+        kd: int = DEFAULT_POSITION_GAINS.kd,
+        ff: int = DEFAULT_POSITION_GAINS.ff,
+    ) -> None:
+        """
+        Sets the position gains in arbitrary Dephy units.
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            kd (int): The derivative gain
+            ff (int): The feedforward gain
+        """
+        if self._mode != self.control_modes.position:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set position gains in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_gains(kp=kp, ki=ki, kd=kd, ff=ff)  # type: ignore
+
+    def set_current_gains(
+        self,
+        kp: int = DEFAULT_CURRENT_GAINS.kp,
+        ki: int = DEFAULT_CURRENT_GAINS.ki,
+        ff: int = DEFAULT_CURRENT_GAINS.ff,
+    ) -> None:
+        """
+        Sets the current gains in arbitrary Dephy units.
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            ff (int): The feedforward gain
+        """
+        if self._mode != self.control_modes.current:
+            self._log.warning(
+                f"[{self.__repr__()}] Cannot set current gains in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_gains(kp=kp, ki=ki, ff=ff)  # type: ignore
+
+    def set_impedance_gains(
+        self,
+        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
+        K: int = DEFAULT_IMPEDANCE_GAINS.K,
+        B: int = DEFAULT_IMPEDANCE_GAINS.B,
+        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+    ) -> None:
+        """
+        Sets the impedance gains in arbitrary actpack units.
+        See Dephy's webpage for conversions or use other library methods that handle conversion for you.
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            K (int): The spring constant
+            B (int): The damping constant
+            ff (int): The feedforward gain
+        """
+        if self._mode != self.control_modes.impedance:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
+
+    def set_voltage(self, value: float) -> None:
+        """
+        Sets the q axis voltage in mV
+
+        Args:
+            value (float): The voltage to set in mv
+        """
+        if self._mode != self.control_modes.voltage:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_voltage(
+            int(value),
+        )
+
+    def set_current(self, value: float) -> None:
+        """
+        Sets the q axis current in mA
+
+        Args:
+            value (float): The current to set in mA
+        """
+        if self._mode != self.control_modes.current:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set current in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_current(
+            int(value),
+        )
+
+    def set_motor_torque(self, torque: float) -> None:
+        """
+        Sets the motor torque in Nm.
+
+        Args:
+            torque (float): The torque to set in Nm.
+        """
+        if self._mode != self.control_modes.current:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set motor_torque in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_current(
+            int(torque / NM_PER_MILLIAMP),
+        )
+
+    def set_motor_position(self, position: float) -> None:
+        """
+        Sets the motor position in radians.
+        If in impedance mode, this sets the equilibrium angle in radians.
+
+        Args:
+            position (float): The position to set
+        """
+        if self._mode not in [
+            self.control_modes.position,
+            self.control_modes.impedance,
+        ]:
+            self._log.warning(
+                msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
+            )
+            return
+
+        self._mode._set_motor_position(
+            int(
+                (position + self.motor_zero_position + self.motor_offset)
+                / RAD_PER_COUNT
+            ),
+        )
+
 
 # _MockDephyActpack class definition for testing
 # MockData class definition for testing without a data stream
@@ -1299,13 +1938,13 @@ class _MockDephyActpack(_DephyActpack):
         pass
 
 
-if __name__ == "__main__":
-    pass
-
-
 class MockActuatorObj: 
     """
     Generalized Mocking Data
     """
     def __init__(self) -> None:
         pass
+    
+
+if __name__ == "__main__":
+    pass
