@@ -39,12 +39,6 @@ class EMG:
 		self.spi.open(0, 0)
 		self.spi.max_speed_hz=1000000
 
-
-		
-
-
-############################# FUNCTION DEFINITIONS #############################
-
 	def readadc(self, adcChan):
 
 		'''
@@ -70,12 +64,9 @@ class EMG:
 		# Return Force Sensor Data
 		return data
 
-
-
 	def rectify_emg(self, raw, baseline):
 		rectified = abs(raw - baseline)
 		return rectified
-
 
 	def find_slope(self, stdev_1, stdev_2, flex_time, direction='plantarflex', intensity=100):
 		directions = ['plantarflex', 'dorsiflex']
@@ -89,15 +80,11 @@ class EMG:
 			all_ta = []
 			all_gas = []
 			all_m = []
-			# reading_4 = np.zeros(int(self.filter_time_window/self.time_step))
-			# reading_5 = np.zeros(int(self.filter_time_window/self.time_step))
 			emg_avg_prev_gas = 0
 			emg_avg_prev_ta = 0
 			while time() < start_time + flex_time:
 				emg_avg_gas = self.update('GAS')
-				# emg_avg_gas, reading_4 = self.filter_emg(emg_raw_rect_gas, filter_time_window, self.time_step, reading_4)
 				emg_avg_ta = self.update('TA')
-				# emg_avg_ta, reading_5 = self.filter_emg(emg_raw_rect_ta, filter_time_window, self.time_step, reading_5)
 
 				all_gas = np.append(all_gas, [emg_avg_gas])
 				all_ta = np.append(all_ta, [emg_avg_ta])
@@ -118,7 +105,6 @@ class EMG:
 				readyx = input('Please enter either y, n, or Stop: ')
 		return float(m_avg), float(max_gas), float(max_ta)
 
-
 	def noise_level(self, cal_time):
 		ready2 = 'n'
 		input('Please rest your muscle and stay inactive. When ready hit Enter.')
@@ -138,7 +124,6 @@ class EMG:
 				cal_values_2 = np.append(cal_values_2, [emg_avg_2_base])
 				cal_values_3 = np.append(cal_values_3, [emg_avg_3_base])
 
-				#print('Calibrating Baseline!')
 				print(emg_avg_2_base, emg_avg_3_base)
 				sleep(self.time_step)
 
@@ -178,8 +163,6 @@ class EMG:
 		emg_avg = mov_avg_filter.filter(emg_raw_rect)
 		return emg_avg
 
-
-
 	def calEMGDump(self, calData, filename):
 
 		'''
@@ -197,7 +180,6 @@ class EMG:
 		# Dump Calibration Data to File and Close
 		pDoc = yaml.dump(calData, pFile, Dumper = yaml.Dumper)
 		pFile.close()
-
 
 	def calEMGLoad(self, filename):
 
@@ -251,16 +233,6 @@ class EMG:
 			# establish a bisecting line between the 2 slopes
 			self.calEMGData.m_0 = float(np.tan((np.arctan(self.calEMGData.m_gas) + np.arctan(self.calEMGData.m_ta))/2))
 
-			# establish the MVC value for the undesired muscle by taking the MVC value measured for the desired muscle and placing it in line with the slope.
-			# self.calEMGData.MVA_TA = self.calEMGData.MVA_GAS/self.calEMGData.m_gas
-			# self.calEMGData.mvc_taflex_gas = self.calEMGData.MVA_TA*self.calEMGData.m_ta
-
-			# Find the magnitude and angle of the vector going from the baseline to the MVC value
-			# self.calEMGData.mag_max_gas = float(np.sqrt((calEMGData.MVA_GAS)**2 + (calEMGData.MVA_TA)**2))
-			# self.calEMGData.theta_gas = float(np.arctan(calEMGData.m_gas))
-			# self.calEMGData.mag_max_ta = float(np.sqrt((calEMGData.mvc_taflex_gas)**2 + (calEMGData.mvc_taflex_ta)**2))
-			# self.calEMGData.theta_ta = float(np.arctan(calEMGData.m_ta))
-
 		# print('Theta',self.calEMGData.theta_ta,'Data Type:',type(self.calEMGData.theta_ta))
 		print('M_0',self.calEMGData.m_0,'Data Type:',type(self.calEMGData.m_0))
 
@@ -280,23 +252,6 @@ class EMG:
 
 @dataclass
 class CalEMGDataSingle:
-
-	'''
-	Class used for storing calibration data of a single actuator
-	Structure:
-		cal - Calibration Being Run (0: IMU only, 1: Angle only, 2+: Both)
-		gyro - Z-Axis Gyroscope Bias
-		xAccel - X-Axis Accelerometer Bias
-		yAccel - Y-Axis Accelerometer Bias
-		angExtMot - Motor Encoder Tick Value at Full Extension
-		angFlexMot - Motor Encoder Tick Value at Full Flexion
-		bpdMot - Ticks Per Degree Conversion Unit for Motor
-		angExtJoint - Joint Encoder Tick Value at Full Extension
-		angFlexJoint - Joint Encoder Tick Value at Full Flexion
-		angVertJoint - Joint Encoder Tick Value at Vertical Orientation
-		bpdJoint - Ticks Per Degree Conversion Unit for Joint
-	'''
-
 	baseline_1: float = 0.0
 	baseline_2: float = 0.0
 	stdev_1: float = 0.0
@@ -307,10 +262,6 @@ class CalEMGDataSingle:
 	MVA_GAS: float = 0.0
 	MVA_TA: float = 0.0
 
-	# self.mag_max_gas = mag_max_gas
-	# self.theta_gas = theta_gas
-	# self.mag_max_ta = mag_max_ta
-	# self.theta_ta = theta_ta
 class moving_average:
 	def __init__(
 		self, 
@@ -322,10 +273,7 @@ class moving_average:
 	def reset(self, value):
 		self.vec = np.ones(self.window) * value
 	def filter(self, raw):
-
 		self.vec = np.append(self.vec, [raw])
 		self.vec = np.delete(self.vec,0)
-
 		emg_avg = np.sum(self.vec)/self.window
-
 		return emg_avg
