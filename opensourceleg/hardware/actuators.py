@@ -990,8 +990,70 @@ class _DephyActpack(Device):
         else:
             return 0.0
 
+class ActuatorObj(ABC): 
+    """
+    Generalized Actuator Object Definition
+    Args:
+        
+    """
+    def __init__(
+        self,
+        name: str = "DephyActpack",
+        port: str = "/dev/ttyACM0",
+        baud_rate: int = 230400,
+        frequency: int = 500,
+        logger: Logger = Logger(),
+        debug_level: int = 0,
+        dephy_log: bool = False,
+    ) -> None:
+        """
+        Initializes the Actpack class
 
-# Mock_DephyActpack class definition for testing
+        Args:
+            name (str): _description_. Defaults to "DephyActpack".
+            port (str): _description_
+            baud_rate (int): _description_. Defaults to 230400.
+            frequency (int): _description_. Defaults to 500.
+            logger (Logger): _description_
+            debug_level (int): _description_. Defaults to 0.
+            dephy_log (bool): _description_. Defaults to False.
+        """
+        super().__init__(port=port, baud_rate=baud_rate)
+        self._debug_level: int = debug_level
+        self._dephy_log: bool = dephy_log
+        self._frequency: int = frequency
+        self._data: Any = None
+        self._name: str = name
+
+        self._log: Logger = logger
+        self._state = None
+
+        self._encoder_map = None
+
+        self._motor_zero_position = 0.0
+        self._joint_zero_position = 0.0
+
+        self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
+        self._joint_direction = 1.0
+
+        self._thermal_model: ThermalModel = ThermalModel(
+            temp_limit_windings=80,
+            soft_border_C_windings=10,
+            temp_limit_case=70,
+            soft_border_C_case=10,
+        )
+        self._thermal_scale: float = 1.0
+
+        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
+
+        self._mode: BaseMode = self.control_modes.voltage
+
+    def __init__(self) -> None:
+        super().__init__()
+
+# _MockDephyActpack class definition for testing
 # MockData class definition for testing without a data stream
 class MockData:
     def __init__(
@@ -1047,9 +1109,9 @@ class MockData:
 
 
 # This class inherits everything from the _DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class Mock_DephyActpack(_DephyActpack):
+class _MockDephyActpack(_DephyActpack):
     """
-    Mock_DephyActpack class definition for testing.\n
+    _MockDephyActpack class definition for testing.\n
     This class inherits everything from the _DephyActpack class but
     deletes the super().__init__() call in the constructor so the
     constructor does not try to connect to a device. It also overrides
@@ -1059,7 +1121,7 @@ class Mock_DephyActpack(_DephyActpack):
 
     def __init__(
         self,
-        name: str = "Mock_DephyActpack",
+        name: str = "_MockDephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1068,10 +1130,10 @@ class Mock_DephyActpack(_DephyActpack):
         dephy_log: bool = False,
     ) -> None:
         """
-        Initializes the Mock_DephyActpack class
+        Initializes the _MockDephyActpack class
 
         Args:
-            name (str): _description_. Defaults to "Mock_DephyActpack".
+            name (str): _description_. Defaults to "_MockDephyActpack".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -1177,3 +1239,11 @@ class Mock_DephyActpack(_DephyActpack):
 
 if __name__ == "__main__":
     pass
+
+
+class MockActuatorObj: 
+    """
+    Generalized Mocking Data
+    """
+    def __init__(self) -> None:
+        pass
