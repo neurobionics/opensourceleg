@@ -52,7 +52,7 @@ class Logger(logging.Logger):
         self._containers: list[Union[object, dict[Any, Any]]] = []
         self._attributes: list[list[str]] = []
 
-        self._file = open(file_path + ".csv", "w")
+        self._file = open(file_path + ".csv", "w", newline="")
         self._writer = csv.writer(self._file)
 
         self._log_levels = {

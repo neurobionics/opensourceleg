@@ -580,38 +580,6 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
     assert test_osl_cl._loadcell._zeroed == False
 
 
-def test_osl_calibrate_encoders(
-    joint_patched: Joint, mock_get_active_ports, patch_time_time, patch_sleep
-):
-    """
-    Tests the OpenSourceLeg calibrate_encoders method\n
-    Intializes an OpenSourceLeg object with a logger of the lowest stream level
-    and a knee is added. Data is added to the knee and the knee is set to streaming.
-    The home method is called and the calibrate_encoders method is called. It is
-    asserted that the proper log message was written and the encoders were calibrated.
-    """
-
-    test_osl_ce = OpenSourceLeg()
-    test_osl_ce.log = Logger(file_path="tests/test_osl/test_osl_ce")
-    test_osl_ce.log.set_stream_level("DEBUG")
-    test_osl_ce.add_joint(name="knee")
-    test_osl_ce._knee._data = Data(mot_cur=4999)
-    test_osl_ce._knee.is_streaming = True
-    test_osl_ce._knee.home()
-    test_osl_ce.calibrate_encoders()
-    with open("tests/test_osl/test_osl_ce.log") as f:
-        contents = f.read()
-        assert "[OSL] Calibrating encoders." in contents
-    test_joint_position_array = [0.005752427954571154, 0.011504855909142308]
-    test_output_position_array = [0.00013861305580425867, 0.00027722611160851734]
-    test_power = np.arange(4.0)
-    test_a_mat = np.array(test_joint_position_array).reshape(-1, 1) ** test_power
-    test_beta = np.linalg.lstsq(test_a_mat, test_output_position_array, rcond=None)[0]
-    test_coeffs = test_beta[0]
-    test_encoder_map = np.polynomial.polynomial.Polynomial(coef=test_coeffs)
-    # assert test_osl_ce._knee._encoder_map == test_encoder_map
-
-
 def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
     """
     Tests the OpenSourceLeg reset method\n

@@ -354,6 +354,12 @@ class OpenSourceLeg:
         if log_data:
             self.log.data()
 
+        if hasattr(self, "_safety_attributes"):
+            for safety_attribute_name in self._safety_attributes:
+                self.log.debug(
+                    msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
+                )
+
         self._timestamp = time.time()
 
     def home(self) -> None:
@@ -372,14 +378,14 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self.loadcell.reset()
 
-    def calibrate_encoders(self) -> None:
+    def make_encoder_maps(self, overwrite=False) -> None:
         self.log.debug(msg="[OSL] Calibrating encoders.")
 
         if self.has_knee:
-            self.knee.make_encoder_map()
+            self.knee.make_encoder_map(overwrite=overwrite)
 
         if self.has_ankle:
-            self.ankle.make_encoder_map()
+            self.ankle.make_encoder_map(overwrite=overwrite)
 
     def reset(self) -> None:
         self.log.debug(msg="[OSL] Resetting OSL.")
