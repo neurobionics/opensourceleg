@@ -2,25 +2,25 @@
 Actuators Interface Generalized
 05/2024
 """
+
 from typing import Any, Callable, Union, overload
 
 import ctypes
 import os
 import time
+from abc import ABC, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
 
 # To be removed after Generalization
 import flexsea.fx_enums as fxe
-
 import numpy as np
+
 # To be removed after Generalization
 from flexsea.device import Device
 
 from ..tools.logger import Logger
 from .thermal import ThermalModel
-
-from abc import ABC, abstractmethod
 
 """
 Module Overview:
@@ -34,11 +34,11 @@ Key Classes:
 - `Gains`: Dataclass for controller gains.
 - `_ActpackMode`: Base class for Actpack modes, including `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode`.
 - `ActpackControlModes`: Enumerates available Actpack modes.
-- `_DephyActpack`: Class for interacting with the Dephy Actpack.
+- `ActuatorBase`: Class for interacting with the Dephy Actpack.
 
 Usage Guide:
 
-1. Create an instance of `_DephyActpack` with appropriate parameters (e.g., port, baud_rate, frequency).
+1. Create an instance of `ActuatorBase` with appropriate parameters (e.g., port, baud_rate, frequency).
 2. Start the actpack using the `start` method.
 3. Set the desired control mode using the `set_mode` method.
 4. Set gains for the selected control mode using methods like `set_position_gains`, `set_current_gains`, etc.
@@ -46,6 +46,7 @@ Usage Guide:
 6. Stop the actpack using the `stop` method.
 
 """
+
 
 @dataclass
 class ControlModes:
@@ -121,14 +122,14 @@ class _ActpackMode:
 
     Args:
         control_mode (c_int): Control mode
-        device (_DephyActpack): Dephy Actpack
+        device (ActuatorBase): Dephy Actpack
     * To be changed to ABC
     """
 
-    def __init__(self, control_mode: c_int, device: "_DephyActpack") -> None:
+    def __init__(self, control_mode: c_int, device: "ActuatorBase") -> None:
 
         self._control_mode: c_int = control_mode
-        self._device: _DephyActpack = device
+        self._device: ActuatorBase = device
         self._entry_callback: Callable[[], None] = lambda: None
         self._exit_callback: Callable[[], None] = lambda: None
 
@@ -206,28 +207,30 @@ class _ActpackMode:
         """
         pass
 
-class BaseMode(ABC):
+
+class ModeBase(ABC):
     """
     Base class for Actpack modes
 
     Args:
         control_mode (c_int): Control mode
-        device (_DephyActpack): Dephy Actpack
+        device (ActuatorBase): Dephy Actpack
     * To be changed to ABC
     """
-    def __init__(self, control_mode: c_int, device: "_DephyActpack") -> None:
+
+    def __init__(self, control_mode: c_int, device: "ActpackObj") -> None:
         """
         Check Parameters Carefully!
         """
         self._control_mode: c_int = control_mode
-        self._device: _DephyActpack = device
+        self._device: ActpackObj = device
         self._entry_callback: Callable[[], None] = lambda: None
         self._exit_callback: Callable[[], None] = lambda: None
 
         self._has_gains = False
 
     def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, _ActpackMode):
+        if isinstance(__o, ModeBase):
             return self._control_mode == __o._control_mode
         return False
 
@@ -235,7 +238,7 @@ class BaseMode(ABC):
         return str(object=self._control_mode)
 
     def __repr__(self) -> str:
-        return f"BaseMode[{self._control_mode}]"
+        return f"ModeBase[{self._control_mode}]"
 
     @property
     def mode(self) -> c_int:
@@ -257,6 +260,14 @@ class BaseMode(ABC):
         """
         return self._has_gains
 
+    @abstractmethod
+    def _entry(self) -> None:
+        pass
+
+    @abstractmethod
+    def _exit(self) -> None:
+        pass
+
     def enter(self) -> None:
         """
         Calls the entry callback
@@ -269,18 +280,25 @@ class BaseMode(ABC):
         """
         self._exit_callback()
 
-    def transition(self, to_state: "_ActpackMode") -> None:
+    def transition(self, to_state: "ModeBase") -> None:
         """
         Transition to another mode. Calls the exit callback of the current mode
         and the entry callback of the new mode.
 
         Args:
-            to_state (_ActpackMode): Mode to transition to
+            to_state (ModeBase): Mode to transition to
         """
         self.exit()
         to_state.enter()
+
     @abstractmethod
-    def _set_gains(self, kp: int, ki: int, kd: int, ff: int,) -> None:
+    def _set_gains(
+        self,
+        kp: int,
+        ki: int,
+        kd: int,
+        ff: int,
+    ) -> None:
         pass
 
     @abstractmethod
@@ -289,21 +307,21 @@ class BaseMode(ABC):
         This method should be implemented by the child class. It should set the q axis voltage.
         """
         pass
-    
+
     @abstractmethod
     def _set_current(self, current: int) -> None:
         """
         This method should be implemented by the child class. It should set the q axis current.
         """
         pass
+
     @abstractmethod
     def _set_motor_position(self, counts: int) -> None:
         pass
-    
 
 
-class VoltageMode(BaseMode):
-    def __init__(self, device: "_DephyActpack") -> None:
+class VoltageMode(ModeBase):
+    def __init__(self, device: "ActpackObj") -> None:
         super().__init__(control_mode=CONTROL_MODE.voltage, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -323,8 +341,8 @@ class VoltageMode(BaseMode):
         )
 
 
-class CurrentMode(BaseMode):
-    def __init__(self, device: "_DephyActpack") -> None:
+class CurrentMode(ModeBase):
+    def __init__(self, device: "ActpackObj") -> None:
         super().__init__(control_mode=CONTROL_MODE.current, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -368,8 +386,8 @@ class CurrentMode(BaseMode):
         )
 
 
-class PositionMode(BaseMode):
-    def __init__(self, device: "_DephyActpack") -> None:
+class PositionMode(ModeBase):
+    def __init__(self, device: "ActpackObj") -> None:
         super().__init__(control_mode=CONTROL_MODE.position, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -414,8 +432,8 @@ class PositionMode(BaseMode):
         )
 
 
-class ImpedanceMode(BaseMode):
-    def __init__(self, device: "_DephyActpack") -> None:
+class ImpedanceMode(ModeBase):
+    def __init__(self, device: "ActpackObj") -> None:
         super().__init__(control_mode=CONTROL_MODE.impedance, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
@@ -481,7 +499,7 @@ class ActpackControlModes:
     position: PositionMode
     impedance: ImpedanceMode
 
-    def __init__(self, device: "_DephyActpack") -> None:
+    def __init__(self, device: "ActpackObj") -> None:
         self.voltage = VoltageMode(device=device)
         self.current = CurrentMode(device=device)
         self.position = PositionMode(device=device)
@@ -1045,9 +1063,10 @@ class _DephyActpack(Device):
         else:
             return 0.0
 
-class ActuatorObj(ABC): 
-    """Generalized Abstract Base Class for Actuator Object 
-    """
+
+class ActuatorBase(ABC):
+    """Generalized Abstract Base Class for Actuator Object"""
+
     @abstractmethod
     def __repr__(self) -> str:
         pass
@@ -1059,15 +1078,15 @@ class ActuatorObj(ABC):
     @abstractmethod
     def stop(self) -> None:
         pass
-    
+
     @abstractmethod
     def update(self) -> None:
         pass
-    
+
     @abstractmethod
-    def set_mode(self, mode: _ActpackMode) -> None:
+    def set_mode(self, mode: ModeBase) -> None:
         pass
-    
+
     @abstractmethod
     def set_motor_zero_position(self, position: float) -> None:
         """Sets motor zero position in radians"""
@@ -1077,6 +1096,7 @@ class ActuatorObj(ABC):
     def set_joint_zero_position(self, position: float) -> None:
         """Sets joint zero position in radians"""
         pass
+
     @abstractmethod
     def set_motor_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
@@ -1086,7 +1106,7 @@ class ActuatorObj(ABC):
     def set_joint_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
         pass
-    
+
     @abstractmethod
     def set_joint_direction(self, direction: float) -> None:
         """Sets joint direction to 1 or -1"""
@@ -1096,6 +1116,7 @@ class ActuatorObj(ABC):
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
         pass
+
     @abstractmethod
     def set_position_gains(
         self,
@@ -1114,6 +1135,7 @@ class ActuatorObj(ABC):
             ff (int): The feedforward gain
         """
         pass
+
     @abstractmethod
     def set_current_gains(
         self,
@@ -1122,7 +1144,7 @@ class ActuatorObj(ABC):
         ff: int,
     ) -> None:
         pass
-    
+
     @abstractmethod
     def set_impedance_gains(
         self,
@@ -1144,7 +1166,7 @@ class ActuatorObj(ABC):
             ff (int): The feedforward gain
         """
         pass
-    
+
     @abstractmethod
     def set_voltage(self, value: float) -> None:
         """
@@ -1154,7 +1176,7 @@ class ActuatorObj(ABC):
             value (float): The voltage to set in mv
         """
         pass
-    
+
     @abstractmethod
     def set_current(self, value: float) -> None:
         """
@@ -1174,7 +1196,7 @@ class ActuatorObj(ABC):
             torque (float): The torque to set in Nm.
         """
         pass
-    
+
     @abstractmethod
     def set_motor_position(self, position: float) -> None:
         """
@@ -1187,44 +1209,53 @@ class ActuatorObj(ABC):
         pass
 
     @property
+    @abstractmethod
     def frequency(self) -> int:
         return self._frequency
 
     @property
-    def mode(self) -> _ActpackMode:
+    @abstractmethod
+    def mode(self) -> ModeBase:
         return self._mode
 
     @property
+    @abstractmethod
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
         return self._encoder_map
 
     @property
+    @abstractmethod
     def motor_zero_position(self) -> float:
         """Motor encoder zero position in radians."""
         return self._motor_zero_position
 
     @property
+    @abstractmethod
     def joint_zero_position(self) -> float:
         """Joint encoder zero position in radians."""
         return self._joint_zero_position
 
     @property
+    @abstractmethod
     def joint_offset(self) -> float:
         """Joint encoder offset in radians."""
         return self._joint_offset
 
     @property
+    @abstractmethod
     def motor_offset(self) -> float:
         """Motor encoder offset in radians."""
         return self._motor_offset
 
     @property
+    @abstractmethod
     def joint_direction(self) -> float:
         """Joint direction: 1 or -1"""
         return self._joint_direction
 
     @property
+    @abstractmethod
     def battery_voltage(self) -> float:
         """Battery voltage in mV."""
         if self._data is not None:
@@ -1233,6 +1264,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def battery_current(self) -> float:
         """Battery current in mA."""
         if self._data is not None:
@@ -1241,6 +1273,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def motor_voltage(self) -> float:
         """Q-axis motor voltage in mV."""
         if self._data is not None:
@@ -1249,6 +1282,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def motor_current(self) -> float:
         """Q-axis motor current in mA."""
         if self._data is not None:
@@ -1257,6 +1291,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def motor_torque(self) -> float:
         """
         Torque at motor output in Nm.
@@ -1268,6 +1303,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def motor_position(self) -> float:
         """Angle of the motor in radians."""
         if self._data is not None:
@@ -1280,16 +1316,19 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def motor_encoder_counts(self) -> int:
         """Raw reading from motor encoder in counts."""
         return int(self._data.mot_ang)
 
     @property
+    @abstractmethod
     def joint_encoder_counts(self) -> int:
         """Raw reading from joint encoder in counts."""
         return int(self._data.ank_ang)
 
     @property
+    @abstractmethod
     def motor_velocity(self) -> float:
         """Motor velocity in rad/s."""
         if self._data is not None:
@@ -1298,6 +1337,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def motor_acceleration(self) -> float:
         """Motor acceleration in rad/s^2."""
         if self._data is not None:
@@ -1306,6 +1346,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
@@ -1321,6 +1362,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
@@ -1329,6 +1371,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def case_temperature(self) -> float:
         """Case temperature in celsius."""
         if self._data is not None:
@@ -1337,6 +1380,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def winding_temperature(self) -> float:
         """
         ESTIMATED temperature of the windings in celsius.
@@ -1348,6 +1392,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
@@ -1357,6 +1402,7 @@ class ActuatorObj(ABC):
         return float(self._thermal_scale)
 
     @property
+    @abstractmethod
     def genvars(self):
         """Dephy's 'genvars' object."""
         if self._data is not None:
@@ -1374,6 +1420,7 @@ class ActuatorObj(ABC):
             return np.zeros(shape=6)
 
     @property
+    @abstractmethod
     def accelx(self) -> float:
         """
         Acceleration in x direction in m/s^2.
@@ -1385,6 +1432,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def accely(self) -> float:
         """
         Acceleration in y direction in m/s^2.
@@ -1396,6 +1444,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def accelz(self) -> float:
         """
         Acceleration in z direction in m/s^2.
@@ -1407,6 +1456,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def gyrox(self) -> float:
         """
         Angular velocity in x direction in rad/s.
@@ -1418,6 +1468,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def gyroy(self) -> float:
         """
         Angular velocity in y direction in rad/s.
@@ -1429,6 +1480,7 @@ class ActuatorObj(ABC):
             return 0.0
 
     @property
+    @abstractmethod
     def gyroz(self) -> float:
         """
         Angular velocity in z direction in rad/s.
@@ -1439,13 +1491,15 @@ class ActuatorObj(ABC):
         else:
             return 0.0
 
-class ActpackObj(Device, ActuatorObj):
+
+class ActpackObj(Device, ActuatorBase):
     """Object for Dephy Actpack
 
     Args:
         Device (_type_): _description_
-        ActuatorObj (_type_): _description_
+        ActuatorBase (_type_): _description_
     """
+
     """Class for the Dephy Actpack
 
     Args:
@@ -1462,7 +1516,7 @@ class ActpackObj(Device, ActuatorObj):
 
     def __init__(
         self,
-        name: str = "_DephyActpack",
+        name: str = "ActuatorBase",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1474,7 +1528,7 @@ class ActpackObj(Device, ActuatorObj):
         Initializes the Actpack class
 
         Args:
-            name (str): _description_. Defaults to "_DephyActpack".
+            name (str): _description_. Defaults to "ActuatorBase".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -1512,10 +1566,10 @@ class ActpackObj(Device, ActuatorObj):
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: _ActpackMode = self.control_modes.voltage
+        self._mode: ModeBase = self.control_modes.voltage
 
     def __repr__(self) -> str:
-        return f"_DephyActpack[{self._name}]"
+        return f"ActuatorBase[{self._name}]"
 
     def start(self) -> None:
         try:
@@ -1565,7 +1619,7 @@ class ActpackObj(Device, ActuatorObj):
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
-    def set_mode(self, mode: _ActpackMode) -> None:
+    def set_mode(self, mode: ModeBase) -> None:
         if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
             self._mode.transition(to_state=mode)
             self._mode = mode
@@ -1746,7 +1800,8 @@ class ActpackObj(Device, ActuatorObj):
             ),
         )
 
-# MockActuator class definition for testing
+
+# _MockActuator class definition for testing
 # MockData class definition for testing without a data stream
 class MockData:
     def __init__(
@@ -1801,11 +1856,11 @@ class MockData:
         return f"MockData"
 
 
-# This class inherits everything from the _DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class MockActuator(_DephyActpack):
+# This class inherits everything from the ActuatorBase class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
+class MockActuator(ActuatorBase):
     """
-    MockActuator class definition for testing.\n
-    This class inherits everything from the _DephyActpack class but
+    _MockActuator class definition for testing.\n
+    This class inherits everything from the ActuatorBase class but
     deletes the super().__init__() call in the constructor so the
     constructor does not try to connect to a device. It also overrides
     some of the methods to allow for testing without a device, and adds
@@ -1814,7 +1869,7 @@ class MockActuator(_DephyActpack):
 
     def __init__(
         self,
-        name: str = "MockActuator",
+        name: str = "_MockActuator",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -1823,10 +1878,10 @@ class MockActuator(_DephyActpack):
         dephy_log: bool = False,
     ) -> None:
         """
-        Initializes the MockActuator class
+        Initializes the _MockActuator class
 
         Args:
-            name (str): _description_. Defaults to "MockActuator".
+            name (str): _description_. Defaults to "_MockActuator".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -1882,7 +1937,7 @@ class MockActuator(_DephyActpack):
         )
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
-        self._mode: _ActpackMode = self.control_modes.voltage
+        self._mode: ModeBase = self.control_modes.voltage
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
@@ -1936,7 +1991,6 @@ class MockActuator(_DephyActpack):
     def close(self):
         pass
 
-    
 
 if __name__ == "__main__":
     pass

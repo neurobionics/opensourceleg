@@ -9,7 +9,7 @@ from .actuators import (
     NM_PER_RAD_TO_K,
     NM_S_PER_RAD_TO_B,
     RAD_PER_COUNT,
-    DephyActpack,
+    ActuatorObj,
     MockActuator,
 )
 
@@ -32,7 +32,7 @@ Usage Guide:
 """
 
 
-class Joint(DephyActpack):
+class Joint(ActuatorObj):
     def __init__(
         self,
         name: str = "knee",
