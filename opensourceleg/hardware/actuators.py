@@ -116,98 +116,6 @@ DEFAULT_CURRENT_GAINS = Gains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
-class _ActpackMode:
-    """
-    Base class for Actpack modes
-
-    Args:
-        control_mode (c_int): Control mode
-        device (ActuatorBase): Dephy Actpack
-    * To be changed to ABC
-    """
-
-    def __init__(self, control_mode: c_int, device: "ActuatorBase") -> None:
-
-        self._control_mode: c_int = control_mode
-        self._device: ActuatorBase = device
-        self._entry_callback: Callable[[], None] = lambda: None
-        self._exit_callback: Callable[[], None] = lambda: None
-
-        self._has_gains = False
-
-    def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, _ActpackMode):
-            return self._control_mode == __o._control_mode
-        return False
-
-    def __str__(self) -> str:
-        return str(object=self._control_mode)
-
-    def __repr__(self) -> str:
-        return f"_ActpackMode[{self._control_mode}]"
-
-    @property
-    def mode(self) -> c_int:
-        """
-        Control mode
-
-        Returns:
-            c_int: Control mode
-        """
-        return self._control_mode
-
-    @property
-    def has_gains(self) -> bool:
-        """
-        Whether the mode has gains
-
-        Returns:
-            bool: True if the mode has gains, False otherwise
-        """
-        return self._has_gains
-
-    def enter(self) -> None:
-        """
-        Calls the entry callback
-        """
-        self._entry_callback()
-
-    def exit(self) -> None:
-        """
-        Calls the exit callback
-        """
-        self._exit_callback()
-
-    def transition(self, to_state: "_ActpackMode") -> None:
-        """
-        Transition to another mode. Calls the exit callback of the current mode
-        and the entry callback of the new mode.
-
-        Args:
-            to_state (_ActpackMode): Mode to transition to
-        """
-        self.exit()
-        to_state.enter()
-
-    def _set_voltage(self, voltage: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the q axis voltage.
-        """
-        pass
-
-    def _set_current(self, current: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the q axis current.
-        """
-        pass
-
-    def _set_motor_position(self, counts: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the motor position.
-        """
-        pass
-
-
 class ModeBase(ABC):
     """
     Base class for Actpack modes
@@ -217,7 +125,7 @@ class ModeBase(ABC):
         device (ActuatorBase): Dephy Actpack
     * To be changed to ABC
     """
-
+    @abstractmethod
     def __init__(self, control_mode: c_int, device: "ActpackObj") -> None:
         """
         Check Parameters Carefully!
@@ -267,6 +175,7 @@ class ModeBase(ABC):
     @abstractmethod
     def _exit(self) -> None:
         pass
+    
 
     def enter(self) -> None:
         """
@@ -291,31 +200,31 @@ class ModeBase(ABC):
         self.exit()
         to_state.enter()
 
-    @abstractmethod
     def _set_gains(
         self,
         kp: int,
         ki: int,
-        kd: int,
+        kd: int, 
+        K: int, 
+        B: int,
         ff: int,
     ) -> None:
         pass
 
-    @abstractmethod
     def _set_voltage(self, voltage: int) -> None:
         """
         This method should be implemented by the child class. It should set the q axis voltage.
         """
         pass
 
-    @abstractmethod
+
     def _set_current(self, current: int) -> None:
         """
         This method should be implemented by the child class. It should set the q axis current.
         """
         pass
 
-    @abstractmethod
+
     def _set_motor_position(self, counts: int) -> None:
         pass
 
@@ -364,6 +273,9 @@ class CurrentMode(ModeBase):
         self,
         kp: int = DEFAULT_CURRENT_GAINS.kp,
         ki: int = DEFAULT_CURRENT_GAINS.ki,
+        Kd: int = 0, 
+        K: int = 0, 
+        B: int = 0,
         ff: int = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
 
@@ -410,6 +322,8 @@ class PositionMode(ModeBase):
         kp: int = DEFAULT_POSITION_GAINS.kp,
         ki: int = DEFAULT_POSITION_GAINS.ki,
         kd: int = DEFAULT_POSITION_GAINS.kd,
+        K: int = 0, 
+        B: int = 0,
         ff: int = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
 
@@ -465,6 +379,7 @@ class ImpedanceMode(ModeBase):
         self,
         kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: int = 0, 
         K: int = DEFAULT_IMPEDANCE_GAINS.K,
         B: int = DEFAULT_IMPEDANCE_GAINS.B,
         ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
@@ -509,51 +424,26 @@ class ActpackControlModes:
         return f"ActpackControlModes"
 
 
-class _DephyActpack(Device):
-    """Class for the Dephy Actpack
-
-    Args:
-        Device (_type_): _description_
-
-    Raises:
-        KeyError: _description_
-        ValueError: _description_
-        KeyError: _description_
-
-    Returns:
-        _type_: _description_
-    """
-
+class ActuatorBase(ABC):
+    """Generalized Abstract Base Class for Actuator Object"""
+    @abstractmethod
     def __init__(
         self,
-        name: str = "_DephyActpack",
-        port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
-        frequency: int = 500,
-        logger: Logger = Logger(),
-        debug_level: int = 0,
-        dephy_log: bool = False,
+        name: str,
+        port: str,
+        baud_rate: int,
+        frequency: int,
+        logger: Logger,
+        debug_level: int,
+        dephy_log: bool,
     ) -> None:
-        """
-        Initializes the Actpack class
+        self._debug_level: int
+        self._dephy_log: bool
+        self._frequency: int
+        self._data: Any
+        self._name: str
 
-        Args:
-            name (str): _description_. Defaults to "_DephyActpack".
-            port (str): _description_
-            baud_rate (int): _description_. Defaults to 230400.
-            frequency (int): _description_. Defaults to 500.
-            logger (Logger): _description_
-            debug_level (int): _description_. Defaults to 0.
-            dephy_log (bool): _description_. Defaults to False.
-        """
-        super().__init__(port=port, baud_rate=baud_rate)
-        self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
-        self._frequency: int = frequency
-        self._data: Any = None
-        self._name: str = name
-
-        self._log: Logger = logger
+        self._log: Logger
         self._state = None
 
         self._encoder_map = None
@@ -572,501 +462,13 @@ class _DephyActpack(Device):
             temp_limit_case=70,
             soft_border_C_case=10,
         )
-        self._thermal_scale: float = 1.0
+        self._thermal_scale: float
 
-        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
+        self.control_modes: ActpackControlModes
 
-        self._mode: _ActpackMode = self.control_modes.voltage
-
-    def __repr__(self) -> str:
-        return f"_DephyActpack[{self._name}]"
-
-    def start(self) -> None:
-        try:
-            self.open(
-                freq=self._frequency,
-                log_level=self._debug_level,
-                log_enabled=self._dephy_log,
-            )
-        except OSError as e:
-            print("\n")
-            self._log.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
-            )
-            os._exit(status=1)
-
-        time.sleep(0.1)
-        self._data = self.read()
-        self._mode.enter()
-
-    def stop(self) -> None:
-        self.set_mode(mode=self.control_modes.voltage)
-        self.set_voltage(value=0)
-
-        time.sleep(0.1)
-        self.close()
-
-    def update(self) -> None:
-        """
-        Queries the latest values from the actpack.
-        Also updates thermal model.
-        """
-        if self.is_streaming:
-            self._data = self.read()
-            self._thermal_model.T_c = self.case_temperature
-            self._thermal_scale = self._thermal_model.update_and_get_scale(
-                dt=(1 / self._frequency),
-                motor_current=self.motor_current,
-            )
-
-            if hasattr(self, "_safety_attributes"):
-                for safety_attribute_name in self._safety_attributes:
-                    self._log.debug(
-                        msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
-                    )
-        else:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
-            )
-
-    def set_mode(self, mode: _ActpackMode) -> None:
-        if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
-            self._mode.transition(to_state=mode)
-            self._mode = mode
-
-        else:
-            self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
-            return
-
-    def set_motor_zero_position(self, position: float) -> None:
-        """Sets motor zero position in radians"""
-        self._motor_zero_position = position
-
-    def set_joint_zero_position(self, position: float) -> None:
-        """Sets joint zero position in radians"""
-        self._joint_zero_position = position
-
-    def set_motor_offset(self, position: float) -> None:
-        """Sets joint offset position in radians"""
-        self._motor_offset = position
-
-    def set_joint_offset(self, position: float) -> None:
-        """Sets joint offset position in radians"""
-        self._joint_offset = position
-
-    def set_joint_direction(self, direction: float) -> None:
-        """Sets joint direction to 1 or -1"""
-        self._joint_direction = direction
-
-    def set_encoder_map(self, encoder_map) -> None:
-        """Sets the joint encoder map"""
-        self._encoder_map = encoder_map
-
-    def set_position_gains(
-        self,
-        kp: int = DEFAULT_POSITION_GAINS.kp,
-        ki: int = DEFAULT_POSITION_GAINS.ki,
-        kd: int = DEFAULT_POSITION_GAINS.kd,
-        ff: int = DEFAULT_POSITION_GAINS.ff,
-    ) -> None:
-        """
-        Sets the position gains in arbitrary Dephy units.
-
-        Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            kd (int): The derivative gain
-            ff (int): The feedforward gain
-        """
-        if self._mode != self.control_modes.position:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set position gains in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_gains(kp=kp, ki=ki, kd=kd, ff=ff)  # type: ignore
-
-    def set_current_gains(
-        self,
-        kp: int = DEFAULT_CURRENT_GAINS.kp,
-        ki: int = DEFAULT_CURRENT_GAINS.ki,
-        ff: int = DEFAULT_CURRENT_GAINS.ff,
-    ) -> None:
-        """
-        Sets the current gains in arbitrary Dephy units.
-
-        Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            ff (int): The feedforward gain
-        """
-        if self._mode != self.control_modes.current:
-            self._log.warning(
-                f"[{self.__repr__()}] Cannot set current gains in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_gains(kp=kp, ki=ki, ff=ff)  # type: ignore
-
-    def set_impedance_gains(
-        self,
-        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
-        K: int = DEFAULT_IMPEDANCE_GAINS.K,
-        B: int = DEFAULT_IMPEDANCE_GAINS.B,
-        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
-    ) -> None:
-        """
-        Sets the impedance gains in arbitrary actpack units.
-        See Dephy's webpage for conversions or use other library methods that handle conversion for you.
-
-        Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            K (int): The spring constant
-            B (int): The damping constant
-            ff (int): The feedforward gain
-        """
-        if self._mode != self.control_modes.impedance:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_gains(kp=kp, ki=ki, K=K, B=B, ff=ff)  # type: ignore
-
-    def set_voltage(self, value: float) -> None:
-        """
-        Sets the q axis voltage in mV
-
-        Args:
-            value (float): The voltage to set in mv
-        """
-        if self._mode != self.control_modes.voltage:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_voltage(
-            int(value),
-        )
-
-    def set_current(self, value: float) -> None:
-        """
-        Sets the q axis current in mA
-
-        Args:
-            value (float): The current to set in mA
-        """
-        if self._mode != self.control_modes.current:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set current in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_current(
-            int(value),
-        )
-
-    def set_motor_torque(self, torque: float) -> None:
-        """
-        Sets the motor torque in Nm.
-
-        Args:
-            torque (float): The torque to set in Nm.
-        """
-        if self._mode != self.control_modes.current:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set motor_torque in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_current(
-            int(torque / NM_PER_MILLIAMP),
-        )
-
-    def set_motor_position(self, position: float) -> None:
-        """
-        Sets the motor position in radians.
-        If in impedance mode, this sets the equilibrium angle in radians.
-
-        Args:
-            position (float): The position to set
-        """
-        if self._mode not in [
-            self.control_modes.position,
-            self.control_modes.impedance,
-        ]:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
-            )
-            return
-
-        self._mode._set_motor_position(
-            int(
-                (position + self.motor_zero_position + self.motor_offset)
-                / RAD_PER_COUNT
-            ),
-        )
-
-    @property
-    def frequency(self) -> int:
-        return self._frequency
-
-    @property
-    def mode(self) -> _ActpackMode:
-        return self._mode
-
-    @property
-    def encoder_map(self):
-        """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
-
-    @property
-    def motor_zero_position(self) -> float:
-        """Motor encoder zero position in radians."""
-        return self._motor_zero_position
-
-    @property
-    def joint_zero_position(self) -> float:
-        """Joint encoder zero position in radians."""
-        return self._joint_zero_position
-
-    @property
-    def joint_offset(self) -> float:
-        """Joint encoder offset in radians."""
-        return self._joint_offset
-
-    @property
-    def motor_offset(self) -> float:
-        """Motor encoder offset in radians."""
-        return self._motor_offset
-
-    @property
-    def joint_direction(self) -> float:
-        """Joint direction: 1 or -1"""
-        return self._joint_direction
-
-    @property
-    def battery_voltage(self) -> float:
-        """Battery voltage in mV."""
-        if self._data is not None:
-            return float(self._data.batt_volt)
-        else:
-            return 0.0
-
-    @property
-    def battery_current(self) -> float:
-        """Battery current in mA."""
-        if self._data is not None:
-            return float(self._data.batt_curr)
-        else:
-            return 0.0
-
-    @property
-    def motor_voltage(self) -> float:
-        """Q-axis motor voltage in mV."""
-        if self._data is not None:
-            return float(self._data.mot_volt)
-        else:
-            return 0.0
-
-    @property
-    def motor_current(self) -> float:
-        """Q-axis motor current in mA."""
-        if self._data is not None:
-            return float(self._data.mot_cur)
-        else:
-            return 0.0
-
-    @property
-    def motor_torque(self) -> float:
-        """
-        Torque at motor output in Nm.
-        This is calculated using the motor current and torque constant.
-        """
-        if self._data is not None:
-            return float(self._data.mot_cur * NM_PER_MILLIAMP)
-        else:
-            return 0.0
-
-    @property
-    def motor_position(self) -> float:
-        """Angle of the motor in radians."""
-        if self._data is not None:
-            return (
-                float(self._data.mot_ang * RAD_PER_COUNT)
-                - self._motor_zero_position
-                - self.motor_offset
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_encoder_counts(self) -> int:
-        """Raw reading from motor encoder in counts."""
-        return int(self._data.mot_ang)
-
-    @property
-    def joint_encoder_counts(self) -> int:
-        """Raw reading from joint encoder in counts."""
-        return int(self._data.ank_ang)
-
-    @property
-    def motor_velocity(self) -> float:
-        """Motor velocity in rad/s."""
-        if self._data is not None:
-            return int(self._data.mot_vel) * RAD_PER_DEG
-        else:
-            return 0.0
-
-    @property
-    def motor_acceleration(self) -> float:
-        """Motor acceleration in rad/s^2."""
-        if self._data is not None:
-            return float(self._data.mot_acc)
-        else:
-            return 0.0
-
-    @property
-    def joint_position(self) -> float:
-        """Measured angle from the joint encoder in radians."""
-        if self._data is not None:
-            if self.encoder_map is not None:
-                return float(self.encoder_map(self._data.ank_ang))
-            else:
-                return (
-                    float(self._data.ank_ang * RAD_PER_COUNT)
-                    - self.joint_zero_position
-                    - self.joint_offset
-                ) * self.joint_direction
-        else:
-            return 0.0
-
-    @property
-    def joint_velocity(self) -> float:
-        """Measured velocity from the joint encoder in rad/s."""
-        if self._data is not None:
-            return float(self._data.ank_vel * RAD_PER_COUNT)
-        else:
-            return 0.0
-
-    @property
-    def case_temperature(self) -> float:
-        """Case temperature in celsius."""
-        if self._data is not None:
-            return float(self._data.temperature)
-        else:
-            return 0.0
-
-    @property
-    def winding_temperature(self) -> float:
-        """
-        ESTIMATED temperature of the windings in celsius.
-        This is calculated based on the thermal model using motor current.
-        """
-        if self._data is not None:
-            return float(self._thermal_model.T_w)
-        else:
-            return 0.0
-
-    @property
-    def thermal_scaling_factor(self) -> float:
-        """
-        Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
-        For a proof, see paper referenced in thermal model.
-        """
-        return float(self._thermal_scale)
-
-    @property
-    def genvars(self):
-        """Dephy's 'genvars' object."""
-        if self._data is not None:
-            return np.array(
-                object=[
-                    self._data.genvar_0,
-                    self._data.genvar_1,
-                    self._data.genvar_2,
-                    self._data.genvar_3,
-                    self._data.genvar_4,
-                    self._data.genvar_5,
-                ]
-            )
-        else:
-            return np.zeros(shape=6)
-
-    @property
-    def accelx(self) -> float:
-        """
-        Acceleration in x direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
-
-    @property
-    def accely(self) -> float:
-        """
-        Acceleration in y direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
-
-    @property
-    def accelz(self) -> float:
-        """
-        Acceleration in z direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
-
-    @property
-    def gyrox(self) -> float:
-        """
-        Angular velocity in x direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
-
-    @property
-    def gyroy(self) -> float:
-        """
-        Angular velocity in y direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
-
-    @property
-    def gyroz(self) -> float:
-        """
-        Angular velocity in z direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
-
-
-class ActuatorBase(ABC):
-    """Generalized Abstract Base Class for Actuator Object"""
-
+        self._mode: ModeBase = self.control_modes.voltage
+        
+        
     @abstractmethod
     def __repr__(self) -> str:
         pass
@@ -1492,7 +894,7 @@ class ActuatorBase(ABC):
             return 0.0
 
 
-class ActpackObj(Device, ActuatorBase):
+class ActpackObj(ActuatorBase, Device):
     """Object for Dephy Actpack
 
     Args:
@@ -1513,30 +915,17 @@ class ActpackObj(Device, ActuatorBase):
     Returns:
         _type_: _description_
     """
-
     def __init__(
         self,
-        name: str = "ActuatorBase",
-        port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
-        frequency: int = 500,
-        logger: Logger = Logger(),
-        debug_level: int = 0,
-        dephy_log: bool = False,
+        name: str,
+        port: str,
+        baud_rate: int,
+        frequency: int,
+        logger: Logger,
+        debug_level: int,
+        dephy_log: bool,
     ) -> None:
-        """
-        Initializes the Actpack class
-
-        Args:
-            name (str): _description_. Defaults to "ActuatorBase".
-            port (str): _description_
-            baud_rate (int): _description_. Defaults to 230400.
-            frequency (int): _description_. Defaults to 500.
-            logger (Logger): _description_
-            debug_level (int): _description_. Defaults to 0.
-            dephy_log (bool): _description_. Defaults to False.
-        """
-        super().__init__(port=port, baud_rate=baud_rate)
+        Device().__init__(port=port, baud_rate=baud_rate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
@@ -1562,12 +951,13 @@ class ActpackObj(Device, ActuatorBase):
             temp_limit_case=70,
             soft_border_C_case=10,
         )
-        self._thermal_scale: float = 1.0
+        self._thermal_scale: float
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: ModeBase = self.control_modes.voltage
-
+        
+        
     def __repr__(self) -> str:
         return f"ActuatorBase[{self._name}]"
 
@@ -1857,7 +1247,7 @@ class MockData:
 
 
 # This class inherits everything from the ActuatorBase class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class MockActuator(ActuatorBase):
+class MockActuator(ActpackObj):
     """
     _MockActuator class definition for testing.\n
     This class inherits everything from the ActuatorBase class but
