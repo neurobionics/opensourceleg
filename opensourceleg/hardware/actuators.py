@@ -3,7 +3,6 @@ Actuators Interface Generalized
 05/2024
 """
 
-from site import abs_paths
 from typing import Any, Callable, Union, overload
 
 import ctypes
@@ -11,7 +10,9 @@ import os
 import time
 from abc import ABC, abstractmethod
 from ctypes import c_int
+from curses import baudrate
 from dataclasses import dataclass
+from site import abs_paths
 
 # To be removed after Generalization
 import flexsea.fx_enums as fxe
@@ -168,7 +169,7 @@ class ModeBase(ABC):
             bool: True if the mode has gains, False otherwise
         """
         return self._has_gains
-    
+
     @abstractmethod
     def _entry(self) -> None:
         pass
@@ -226,6 +227,7 @@ class ModeBase(ABC):
     def _set_motor_position(self, counts: int) -> None:
         pass
 
+
 class ActuatorMode(ModeBase):
     def __init__(self, control_mode: c_int, device: "ActpackObj") -> None:
         super().__init__(control_mode, device)
@@ -255,6 +257,7 @@ class ActuatorMode(ModeBase):
             bool: True if the mode has gains, False otherwise
         """
         return self._has_gains
+
 
 class VoltageMode(ModeBase):
     def __init__(self, device: "ActpackObj") -> None:
@@ -923,6 +926,7 @@ class ActpackObj(ActuatorBase, Device):
         debug_level: int,
         dephy_log: bool,
     ) -> None:
+        
         Device(port=port, baud_rate=baud_rate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
@@ -934,7 +938,7 @@ class ActpackObj(ActuatorBase, Device):
         self._state = None
 
         self._encoder_map = None
-
+        # self.is_streaming: bool
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
 
@@ -954,9 +958,10 @@ class ActpackObj(ActuatorBase, Device):
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: ModeBase = self.control_modes.voltage
+        
 
     def __repr__(self) -> str:
-        return f"ActuatorBase[{self._name}]"
+        return f"ActpackObj[{self._name}]"
 
     def start(self) -> None:
         try:
@@ -1187,6 +1192,7 @@ class ActpackObj(ActuatorBase, Device):
             ),
         )
 
+
 # _MockActuator class definition for testing
 # MockData class definition for testing without a data stream
 class MockData:
@@ -1379,4 +1385,12 @@ class MockActuator(ActpackObj):
 
 
 if __name__ == "__main__":
-    pass
+    act_obj = ActpackObj(
+        name="knee",
+        port="/dev/ttyACM0",
+        baud_rate=98400,
+        frequency=200,
+        logger=Logger(),
+        debug_level=6,
+        dephy_log=False,
+    )

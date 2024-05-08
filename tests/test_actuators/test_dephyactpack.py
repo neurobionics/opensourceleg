@@ -7,9 +7,9 @@ from pytest_mock import mocker
 
 from opensourceleg.hardware.actuators import (
     ActpackControlModes,
+    ActpackObj,
     ActuatorMode,
     CurrentMode,
-    ActpackObj,
     ImpedanceMode,
     PositionMode,
     VoltageMode,
@@ -577,9 +577,7 @@ def test_ActpackObj_start(ActpackObj_patched: ActpackObj):
 
     # Creates a MockActpackObj instance with a Logger of the lowest stream level
     mock_dap8 = ActpackObj_patched
-    mock_dap8._log = Logger(
-        file_path="tests/test_actuators/test_ActpackObj_start8_log"
-    )
+    mock_dap8._log = Logger(file_path="tests/test_actuators/test_ActpackObj_start8_log")
     mock_dap8._log.set_stream_level("DEBUG")
     # Defines the _data attribute of the MockActpackObj instance
     mock_dap8._data = Data(
@@ -648,9 +646,7 @@ def test_ActpackObj_stop(ActpackObj_patched: ActpackObj):
     """
     # Creates a MockActpackObj instance with a Logger of the lowest stream level
     mock_dap10 = ActpackObj_patched
-    mock_dap10._log = Logger(
-        file_path="tests/test_actuators/test_ActpackObj_stop_log"
-    )
+    mock_dap10._log = Logger(file_path="tests/test_actuators/test_ActpackObj_stop_log")
     mock_dap10._log.set_stream_level("DEBUG")
     mock_dap10._mode = CurrentMode(device=mock_dap10)
     # Calls the stop method of the MockActpackObj instance
@@ -766,10 +762,7 @@ def test_ActpackObj_set_mode(ActpackObj_patched: ActpackObj):
     # Asserts the proper log messages are written for an invalid mode
     with open("tests/test_actuators/test_ActpackObj_set_mode_log.log") as f:
         contents = f.read()
-        assert (
-            "WARNING: [ActpackObj[MockActuator]] Mode badmode not found"
-            in contents
-        )
+        assert "WARNING: [ActpackObj[MockActuator]] Mode badmode not found" in contents
 
 
 def test_ActpackObj_set_position_gains(ActpackObj_patched: ActpackObj):
@@ -920,9 +913,7 @@ def test_ActpackObj_set_impedance_gains(ActpackObj_patched: ActpackObj):
     # Calls the set_impedance_gains method with no arguments in CurrentMode
     mock_dap15.set_impedance_gains()
     # Asserts the proper log messages are written for an invalid mode
-    with open(
-        "tests/test_actuators/test_ActpackObj_set_impedance_gains_log.log"
-    ) as f:
+    with open("tests/test_actuators/test_ActpackObj_set_impedance_gains_log.log") as f:
         contents = f.read()
         assert (
             "WARNING: [ActpackObj[MockActuator]] Cannot set impedance gains in mode c_int(2)"

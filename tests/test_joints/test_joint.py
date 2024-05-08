@@ -6,8 +6,8 @@ from pytest_mock import mocker
 
 from opensourceleg.hardware.actuators import (
     MAX_CASE_TEMPERATURE,
-    CurrentMode,
     ActpackObj,
+    CurrentMode,
     ImpedanceMode,
     PositionMode,
     VoltageMode,
@@ -15,10 +15,10 @@ from opensourceleg.hardware.actuators import (
 from opensourceleg.hardware.joints import Joint
 from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import (
-    Data,
-    MockActpackObj,
     ActpackObj_mock,
     ActpackObj_patched,
+    Data,
+    MockActpackObj,
     patch_ActpackObj,
 )
 
