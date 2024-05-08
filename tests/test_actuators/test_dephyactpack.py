@@ -19,6 +19,7 @@ from opensourceleg.hardware.actuators import (
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
 
+
 @pytest.fixture
 def dephyactpack_mock() -> MockDephyActpack:
     """

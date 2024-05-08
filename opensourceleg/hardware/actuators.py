@@ -921,7 +921,7 @@ class DephyActpack(Device):
         This is the position of the motor with respect to the motor's zero position."""
         if self._data is not None:
             return (
-                float(self._data.mot_ang * RAD_PER_COUNT)
+                float(self._data["mot_ang"] * RAD_PER_COUNT)
                 - self._motor_zero_position
                 - self.motor_offset
             )
@@ -960,10 +960,10 @@ class DephyActpack(Device):
         the position of the joint with respect to the joint's zero position."""
         if self._data is not None:
             if self.encoder_map is not None:
-                return float(self.encoder_map(self._data.ank_ang))
+                return float(self.encoder_map(self._data["ank_ang"]))
             else:
                 return (
-                    float(self._data.ank_ang * RAD_PER_COUNT)
+                    float(self._data["ank_ang"] * RAD_PER_COUNT)
                     - self.joint_zero_position
                     - self.joint_offset
                 ) * self.joint_direction
