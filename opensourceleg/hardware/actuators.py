@@ -926,7 +926,7 @@ class ActpackObj(ActuatorBase, Device):
         debug_level: int,
         dephy_log: bool,
     ) -> None:
-        
+
         Device(port=port, baud_rate=baud_rate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
@@ -958,7 +958,6 @@ class ActpackObj(ActuatorBase, Device):
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: ModeBase = self.control_modes.voltage
-        
 
     def __repr__(self) -> str:
         return f"ActpackObj[{self._name}]"
