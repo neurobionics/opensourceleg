@@ -522,7 +522,8 @@ class DephyActpack(Device):
         frequency (int): Frequency of the actpack. Defaults to 500.
         logger (Logger): Logger instance to be used for logging.
         debug_level (int): Debug level to be used for Dephy Actpack's logging routine. Defaults to 0.
-        dephy_log (bool): If True, Dephy Actpack's logging routine will be enabled in addition to the default opensourceleg's logging routine. Defaults to                False.
+        dephy_log (bool): If True, Dephy Actpack's logging routine will be enabled in addition to the default opensourceleg's logging routine. Defaults to False.
+        stop_motor_on_disconnect (bool): If True, the motor will be stopped when the actpack is disconnected. Defaults to False.
     """
 
     def __init__(
@@ -535,10 +536,14 @@ class DephyActpack(Device):
         logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
+        stop_motor_on_disconnect: bool = False,
     ) -> None:
 
         super().__init__(
-            firmwareVersion=firmware_version, port=port, baudRate=baud_rate
+            firmwareVersion=firmware_version,
+            port=port,
+            baudRate=baud_rate,
+            stopMotorOnDisconnect=stop_motor_on_disconnect,
         )
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
@@ -1162,6 +1167,7 @@ class MockDephyActpack(DephyActpack):
         logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
+        stop_motor_on_disconnect: bool = False,
     ) -> None:
 
         self._debug_level: int = debug_level

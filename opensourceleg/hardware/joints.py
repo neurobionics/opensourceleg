@@ -1,3 +1,5 @@
+from typing import Optional
+
 import os
 import time
 
@@ -39,6 +41,7 @@ class Joint(DephyActpack):
 
     Parameters:
         name (str): Name of the joint. Defaults to knee.
+        firmware_version (str): Firmware version of the actpack. Defaults to 7.2.0.
         port (str): Port to which the actpack is connected. Defaults to None.
         baud_rate(int): Baud rate of the actpack. Defaults to 230400.
         gear_ratio (float): Gear ratio of the joint. Defaults to 1.0.
@@ -50,6 +53,8 @@ class Joint(DephyActpack):
         enabled in addition to the default opensourceleg's logging routine.
         logger (Logger): Logger instance to be used for logging. If no logger is provided, a new
         logger will be used.
+        stop_motor_on_disconnect (bool): If True, the motor will be stopped when the actpack is
+        disconnected. Defaults to False.
     """
 
     def __init__(
@@ -64,6 +69,7 @@ class Joint(DephyActpack):
         logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
+        stop_motor_on_disconnect: bool = False,
     ) -> None:
 
         super().__init__(
@@ -75,6 +81,7 @@ class Joint(DephyActpack):
             logger=logger,
             debug_level=debug_level,
             dephy_log=dephy_log,
+            stop_motor_on_disconnect=stop_motor_on_disconnect,
         )
 
         self._gear_ratio: float = gear_ratio
@@ -83,6 +90,8 @@ class Joint(DephyActpack):
 
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
+
+        self._encoder_map = None
 
         self._max_temperature: float = MAX_CASE_TEMPERATURE
 
@@ -94,7 +103,7 @@ class Joint(DephyActpack):
 
         if os.path.isfile(path=f"./{self.actuator_name}_encoder_map.npy"):
             coefficients = np.load(file=f"./{self.actuator_name}_encoder_map.npy")
-            self._encoder_map = np.polynomial.polynomial.Polynomial(coef=coefficients)
+            self._encoder_map = np.polynomial.polynomial.Polynomial(coef=coefficients)  # type: ignore
         else:
             self._log.debug(
                 msg=f"[{self.actuator_name}] No encoder map found. Please run the make_encoder_map routine if you need more accurate joint position."
@@ -198,7 +207,7 @@ class Joint(DephyActpack):
             )
             return
 
-        if os.path.exists(f"./{self._name}_encoder_map.npy") and not overwrite:
+        if os.path.exists(f"./{self._actuator_name}_encoder_map.npy") and not overwrite:
             self._log.info(
                 msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation."
             )
@@ -411,6 +420,7 @@ class MockJoint(Joint, MockDephyActpack):
         logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
+        stop_motor_on_disconnect: bool = False,
     ) -> None:
 
         MockDephyActpack.__init__(self, name=name, port=port)
