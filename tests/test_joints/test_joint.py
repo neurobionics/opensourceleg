@@ -7,7 +7,7 @@ from pytest_mock import mocker
 from opensourceleg.hardware.actuators import (
     MAX_CASE_TEMPERATURE,
     CurrentMode,
-    DephyActpack,
+    ActpackObj,
     ImpedanceMode,
     PositionMode,
     VoltageMode,
@@ -16,27 +16,27 @@ from opensourceleg.hardware.joints import Joint
 from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import (
     Data,
-    MockDephyActpack,
-    dephyactpack_mock,
-    dephyactpack_patched,
-    patch_dephyactpack,
+    MockActpackObj,
+    ActpackObj_mock,
+    ActpackObj_patched,
+    patch_ActpackObj,
 )
 
 
-def test_patching(dephyactpack_patched: DephyActpack):
+def test_patching(ActpackObj_patched: ActpackObj):
     """
-    Test the patching of the DephyActpack class with the MockDephyActpack class\n
-    Assert the patched class is an instance of the MockDephyActpack class
+    Test the patching of the ActpackObj class with the MockActpackObj class\n
+    Assert the patched class is an instance of the MockActpackObj class
     """
 
-    patched_dap = dephyactpack_patched
-    assert isinstance(patched_dap, MockDephyActpack)
+    patched_dap = ActpackObj_patched
+    assert isinstance(patched_dap, MockActpackObj)
 
 
-class MockJoint(Joint, MockDephyActpack):
+class MockJoint(Joint, MockActpackObj):
     """
     Mock Joint class for testing the Joint class\n
-    Inherits everything from the Joint class and the MockDephyActpack class
+    Inherits everything from the Joint class and the MockActpackObj class
     except for the Joint constructor.
     """
 
@@ -53,7 +53,7 @@ class MockJoint(Joint, MockDephyActpack):
         dephy_log: bool = False,
     ) -> None:
 
-        MockDephyActpack.__init__(self, port)
+        MockActpackObj.__init__(self, port)
         self._gear_ratio: float = gear_ratio
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell
@@ -102,7 +102,7 @@ def joint_mock() -> MockJoint:
 @pytest.fixture
 def patch_joint(mocker, joint_mock: MockJoint):
     """
-    Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
+    Fixture that patches the ActpackObj class with the newly made MockActpackObj class
     """
 
     mocker.patch("opensourceleg.hardware.joints.Joint.__new__", return_value=joint_mock)

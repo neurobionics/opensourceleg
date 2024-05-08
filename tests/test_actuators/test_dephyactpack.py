@@ -7,9 +7,9 @@ from pytest_mock import mocker
 
 from opensourceleg.hardware.actuators import (
     ActpackControlModes,
-    ActpackMode,
+    ActuatorMode,
     CurrentMode,
-    DephyActpack,
+    ActpackObj,
     ImpedanceMode,
     PositionMode,
     VoltageMode,
@@ -18,12 +18,12 @@ from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
 
 
-# MockDephyActpack class definition for testing
-# This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
-class MockDephyActpack(DephyActpack):
+# MockActuator class definition for testing
+# This class inherits everything from the ActpackObj class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
+class MockActpackObj(ActpackObj):
     """
-    MockDephyActpack class definition for testing.\n
-    This class inherits everything from the DephyActpack class but
+    MockActpackObj class definition for testing.\n
+    This class inherits everything from the ActpackObj class but
     deletes the super().__init__() call in the constructor so the
     constructor does not try to connect to a device. It also overrides
     some of the methods to allow for testing without a device, and adds
@@ -32,7 +32,7 @@ class MockDephyActpack(DephyActpack):
 
     def __init__(
         self,
-        name: str = "MockDephyActpack",
+        name: str = "MockActuator",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -41,10 +41,10 @@ class MockDephyActpack(DephyActpack):
         dephy_log: bool = False,
     ) -> None:
         """
-        Initializes the MockDephyActpack class
+        Initializes the MockActuator class
 
         Args:
-            name (str): _description_. Defaults to "MockDephyActpack".
+            name (str): _description_. Defaults to "MockActuator".
             port (str): _description_
             baud_rate (int): _description_. Defaults to 230400.
             frequency (int): _description_. Defaults to 500.
@@ -101,7 +101,7 @@ class MockDephyActpack(DephyActpack):
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: ActpackMode = self.control_modes.voltage
+        self._mode: ActuatorMode = self.control_modes.voltage
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
@@ -206,63 +206,63 @@ class Data:
 
 
 @pytest.fixture
-def dephyactpack_mock() -> MockDephyActpack:
+def ActpackObj_mock() -> MockActpackObj:
     """
-    Fixture that returns a MockDephyActpack object
+    Fixture that returns a MockActpackObj object
     """
 
-    return MockDephyActpack()
+    return MockActpackObj()
 
 
 @pytest.fixture
-def patch_dephyactpack(mocker, dephyactpack_mock: MockDephyActpack):
+def patch_ActpackObj(mocker, ActpackObj_mock: MockActpackObj):
     """
-    Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
+    Fixture that patches the ActpackObj class with the newly made MockActpackObj class
     """
 
     mocker.patch(
-        "opensourceleg.hardware.actuators.DephyActpack.__new__",
-        return_value=dephyactpack_mock,
+        "opensourceleg.hardware.actuators.ActpackObj.__new__",
+        return_value=ActpackObj_mock,
     )
 
 
 @pytest.fixture
-def dephyactpack_patched(patch_dephyactpack) -> DephyActpack:
+def ActpackObj_patched(patch_ActpackObj) -> ActpackObj:
     """
-    Fixture that returns a MockDephyActpack object when the DephyActpack class is called
+    Fixture that returns a MockActpackObj object when the ActpackObj class is called
     """
 
-    obj = DephyActpack()
+    obj = ActpackObj()
     return obj
 
 
-def test_patching(dephyactpack_patched: DephyActpack):
+def test_patching(ActpackObj_patched: ActpackObj):
     """
-    Initializes a DephyActpack object using the dephyactpack_patched fixture
-    and asserts that it is an instance of the MockDephyActpack class.
+    Initializes a ActpackObj object using the ActpackObj_patched fixture
+    and asserts that it is an instance of the MockActpackObj class.
     """
 
-    patched_dap = dephyactpack_patched
-    assert isinstance(patched_dap, MockDephyActpack)
+    patched_dap = ActpackObj_patched
+    assert isinstance(patched_dap, MockActpackObj)
 
 
-def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
+def test_mockActpackObj_open(ActpackObj_mock: MockActpackObj):
     """
-    Tests the open method of the MockDephyActpack class.\n
-    This test initializes a MockDephyActpack object, creates a logger of
+    Tests the open method of the MockActpackObj class.\n
+    This test initializes a MockActpackObj object, creates a logger of
     the lowest stream level, and calls the open method without and with
     erroring arguments. It then asserts that the proper log messages were
     written.
     """
 
-    mocked_dap = dephyactpack_mock
+    mocked_dap = ActpackObj_mock
     mocked_dap._log = Logger(
-        file_path="tests/test_actuators/test_mockdephyactpack_open_log"
+        file_path="tests/test_actuators/test_mockActpackObj_open_log"
     )
     mocked_dap._log.set_stream_level("DEBUG")
     # Tests the open method with non-erroring arguments
     mocked_dap.open(freq=10, log_level=4, log_enabled=False)
-    with open("tests/test_actuators/test_mockdephyactpack_open_log.log") as f:
+    with open("tests/test_actuators/test_mockActpackObj_open_log.log") as f:
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
     # Tests the open method with erroring arguments
@@ -270,14 +270,14 @@ def test_mockdephyactpack_open(dephyactpack_mock: MockDephyActpack):
         mocked_dap.open(freq=100, log_level=5, log_enabled=True)
 
 
-def test_properties_zero(dephyactpack_patched: DephyActpack):
+def test_properties_zero(ActpackObj_patched: ActpackObj):
     """
-    Tests the default properties of the MockDephyActpack class.\n
-    This test initializes a MockDephyActpack object and asserts that the
+    Tests the default properties of the MockActpackObj class.\n
+    This test initializes a MockActpackObj object and asserts that the
     properties are set to their default values.
     """
 
-    mock_dap = dephyactpack_patched
+    mock_dap = ActpackObj_patched
 
     assert mock_dap.frequency == 500
     assert mock_dap.mode == VoltageMode(device=mock_dap)
@@ -306,15 +306,15 @@ def test_properties_zero(dephyactpack_patched: DephyActpack):
     assert mock_dap.gyroz == 0
 
 
-def test_properties_nonzero(dephyactpack_patched: DephyActpack):
+def test_properties_nonzero(ActpackObj_patched: ActpackObj):
     """
-    Tests the properties of the MockDephyActpack class when the data
-    attribute has non-zero values.\n This test initializes a MockDephyActpack
+    Tests the properties of the MockActpackObj class when the data
+    attribute has non-zero values.\n This test initializes a MockActpackObj
     object, sets the data attribute to non-zero values, and asserts that
     the properties are calulated correctly and set to the proper values.
     """
 
-    mock_dap1 = dephyactpack_patched
+    mock_dap1 = ActpackObj_patched
 
     mock_dap1._data = Data(
         batt_volt=10,
@@ -366,15 +366,15 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     assert mock_dap1.gyroz == 20 * float(np.pi / 180 / 32.8)
 
 
-def test_mode_prop(dephyactpack_patched: DephyActpack):
+def test_mode_prop(ActpackObj_patched: ActpackObj):
     """
-    Tests the mode property of the DephyActpack class where the device
-    is an instance of the MockDephyActpack class.\n This test initializes
-    a MockDephyActpack object and asserts that the mode property returns
-    the proper ActpackMode object.
+    Tests the mode property of the ActpackObj class where the device
+    is an instance of the MockActpackObj class.\n This test initializes
+    a MockActpackObj object and asserts that the mode property returns
+    the proper ActuatorMode object.
     """
 
-    mock_dap1 = dephyactpack_patched
+    mock_dap1 = ActpackObj_patched
     mock_dap1._mode = VoltageMode(device=mock_dap1)
     assert mock_dap1.mode == VoltageMode(device=mock_dap1)
     mock_dap1._mode = PositionMode(device=mock_dap1)
@@ -385,46 +385,46 @@ def test_mode_prop(dephyactpack_patched: DephyActpack):
     assert mock_dap1.mode == ImpedanceMode(device=mock_dap1)
 
 
-def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
+def test_set_motor_zero_position(ActpackObj_patched: ActpackObj):
     """
-    Tests the set_motor_zero_position method of the DephyActpack class.\n
-    This test initializes a MockDephyActpack object and asserts that the
+    Tests the set_motor_zero_position method of the ActpackObj class.\n
+    This test initializes a MockActpackObj object and asserts that the
     _motor_zero_position attribute is set to the proper value when initialized
     and when updated.
     """
 
-    mock_dap2 = dephyactpack_patched
+    mock_dap2 = ActpackObj_patched
     mock_dap2.set_motor_zero_position(10)
     assert mock_dap2._motor_zero_position == 10
     mock_dap2.set_motor_zero_position(-20)
     assert mock_dap2._motor_zero_position == -20
 
 
-def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
+def test_set_joint_zero_position(ActpackObj_patched: ActpackObj):
     """
-    Tests the set_joint_zero_position method of the DephyActpack class.\n
-    This test initializes a MockDephyActpack object and asserts that the
+    Tests the set_joint_zero_position method of the ActpackObj class.\n
+    This test initializes a MockActpackObj object and asserts that the
     _joint_zero_position attribute is set to the proper value when initialized
     and when updated.
     """
 
-    mock_dap3 = dephyactpack_patched
+    mock_dap3 = ActpackObj_patched
     mock_dap3.set_joint_zero_position(10)
     assert mock_dap3._joint_zero_position == 10
     mock_dap3.set_joint_zero_position(-20)
     assert mock_dap3._joint_zero_position == -20
 
 
-def test_voltagemode(dephyactpack_patched: DephyActpack):
+def test_voltagemode(ActpackObj_patched: ActpackObj):
     """
     Tests the VoltageMode class.\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, and tests the entry and exit
     methods of the VoltageMode class. It then asserts that the proper log
     messages were written and that the proper motor command was sent.
     """
 
-    mock_dap4 = dephyactpack_patched
+    mock_dap4 = ActpackObj_patched
     mock_dap4._log = Logger(file_path="tests/test_actuators/test_voltagemode_log")
     mock_dap4._log.set_stream_level("DEBUG")
     mock_dap4._mode = VoltageMode(mock_dap4)
@@ -444,18 +444,18 @@ def test_voltagemode(dephyactpack_patched: DephyActpack):
     assert mock_dap4._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_currentmode(dephyactpack_patched: DephyActpack):
+def test_currentmode(ActpackObj_patched: ActpackObj):
     """
     Tests the CurrentMode class.\n
-    This test initializes a MockDephyActpack object, sets the _log
+    This test initializes a MockActpackObj object, sets the _log
     attribute to a Logger of the lowest stream level, and tests the
     entry and exit methods of the CurrentMode class. It then asserts
     that the proper log messages were written, that the proper gains
     were set, and that the proper motor command was sent.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap5 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap5 = ActpackObj_patched
     mock_dap5._log = Logger(file_path="tests/test_actuators/test_currentmode_log")
     mock_dap5._log.set_stream_level("DEBUG")
     mock_dap5._mode = CurrentMode(mock_dap5)
@@ -480,18 +480,18 @@ def test_currentmode(dephyactpack_patched: DephyActpack):
     assert mock_dap5._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_positionmode(dephyactpack_patched: DephyActpack):
+def test_positionmode(ActpackObj_patched: ActpackObj):
     """
     Tests the PositionMode class.\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, and tests the entry and exit
     methods of the PositionMode class. It then asserts that the proper log
     messages were written, that the proper gains were set, and that the
     proper motor command was sent.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap6 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap6 = ActpackObj_patched
     mock_dap6._data = Data(
         mot_ang=10,
     )
@@ -519,18 +519,18 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     assert mock_dap6._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_impedancemode(dephyactpack_patched: DephyActpack):
+def test_impedancemode(ActpackObj_patched: ActpackObj):
     """
     Tests the ImpedanceMode class.\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, and tests the entry and exit
     methods of the ImpedanceMode class. It then asserts that the proper log
     messages were written, that the proper gains were set, and that the
     proper motor command was sent.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap7 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap7 = ActpackObj_patched
     mock_dap7._data = Data(
         mot_ang=10,
     )
@@ -565,23 +565,23 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     assert mock_dap7._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_start(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack start method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj start method\n
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, sets the _data attribute to a
     Data object with non-zero values, and calls the start method. It then
     asserts that the proper log messages were written and that the _data
     attribute was updated properly.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap8 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap8 = ActpackObj_patched
     mock_dap8._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_start8_log"
+        file_path="tests/test_actuators/test_ActpackObj_start8_log"
     )
     mock_dap8._log.set_stream_level("DEBUG")
-    # Defines the _data attribute of the MockDephyActpack instance
+    # Defines the _data attribute of the MockActpackObj instance
     mock_dap8._data = Data(
         batt_volt=10,
         batt_curr=10,
@@ -606,10 +606,10 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
         gyroy=10,
         gyroz=10,
     )
-    # Calls the start method of the MockDephyActpack instance
+    # Calls the start method of the MockActpackObj instance
     mock_dap8.start()
     # Asserts the proper log messages are written
-    with open("tests/test_actuators/test_dephyactpack_start8_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_start8_log.log") as f:
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
@@ -638,22 +638,22 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
     assert mock_dap8._data.gyroz == 25
 
 
-def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_stop(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack stop method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj stop method\n
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, sets the mode to Current Mode,
     and calls the stop method. It then asserts that the mode was set to
     Voltage Mode and that the proper motor command was sent.
     """
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap10 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap10 = ActpackObj_patched
     mock_dap10._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_stop_log"
+        file_path="tests/test_actuators/test_ActpackObj_stop_log"
     )
     mock_dap10._log.set_stream_level("DEBUG")
     mock_dap10._mode = CurrentMode(device=mock_dap10)
-    # Calls the stop method of the MockDephyActpack instance
+    # Calls the stop method of the MockActpackObj instance
     mock_dap10.stop()
     # Asserts the set_mode method was called properly
     assert mock_dap10._mode == VoltageMode(device=mock_dap10)
@@ -661,38 +661,38 @@ def test_dephyactpack_stop(dephyactpack_patched: DephyActpack):
     assert mock_dap10._motor_command == "Control Mode: c_int(1), Value: 0"
 
 
-def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_update(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack update method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj update method\n
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, sets the _data attribute to a
     Data object with some non-zero values, and calls the update method. It then
     asserts that the proper log messages were written and that the _data
     attribute was updated properly.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap11 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap11 = ActpackObj_patched
     mock_dap11._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_update_log"
+        file_path="tests/test_actuators/test_ActpackObj_update_log"
     )
     mock_dap11._log.set_stream_level("DEBUG")
     # Sets the data values needed for testing the update method
     mock_dap11._data = Data(mot_cur=13, temperature=12)
-    # Calls the update method of the MockDephyActpack instance
+    # Calls the update method of the MockActpackObj instance
     mock_dap11.update()
     # Asserts the proper log messages are written for an unopened device
-    with open("tests/test_actuators/test_dephyactpack_update_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_update_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Please open() the device before streaming data."
+            "WARNING: [ActpackObj[MockActuator]] Please open() the device before streaming data."
             in contents
         )
     # Set the is_streaming attribute to True to simulate an open device
     mock_dap11.is_streaming = True
     # Assert the default thermal model was properly initialized
     assert mock_dap11._thermal_model.T_w == 21
-    # Calls the update method of the MockDephyActpack instance
+    # Calls the update method of the MockActpackObj instance
     mock_dap11.update()
     # Asserts the update method properly updated the _data attribute
     assert mock_dap11._data.batt_volt == 15
@@ -738,20 +738,20 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     )
 
 
-def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_mode(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_mode method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_mode method\n
+    This test initializes a MockActpackObj object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Current Mode,
     and calls the set_mode method with valid modes and invalid modes. It then
     asserts that the mode was set properly for valid modes and that the proper
     log messages were written for an invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap12 = dephyactpack_patched
+    # Creates a MockActpackObj instance with a Logger of the lowest stream level
+    mock_dap12 = ActpackObj_patched
     mock_dap12._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_mode_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_mode_log"
     )
     mock_dap12._log.set_stream_level("DEBUG")
     mock_dap12._mode = CurrentMode(device=mock_dap12)
@@ -764,28 +764,28 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     # Calls the set_mode method with invalid mode
     mock_dap12.set_mode("badmode")
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_mode_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_mode_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Mode badmode not found"
+            "WARNING: [ActpackObj[MockActuator]] Mode badmode not found"
             in contents
         )
 
 
-def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_position_gains(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_position_gains method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_position_gains method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Position Mode,
     and calls the set_position_gains method with no arguments and with arguments.
     It then asserts that the gains were set properly and that the proper log
     messages were written for an invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap13 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap13 = ActpackObj_patched
     mock_dap13._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_position_gains_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_position_gains_log"
     )
     mock_dap13._log.set_stream_level("DEBUG")
     mock_dap13._mode = PositionMode(device=mock_dap13)
@@ -816,28 +816,28 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
     # Calls the set_position_gains method with no arguments in CurrentMode
     mock_dap13.set_position_gains()
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_position_gains_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_position_gains_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set position gains in mode c_int(2)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set position gains in mode c_int(2)"
             in contents
         )
 
 
-def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_current_gains(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_current_gains method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_current_gains method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Current Mode,
     and calls the set_current_gains method with no arguments and with arguments.
     It then asserts that the gains were set properly and that the proper log
     messages were written for an invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap14 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap14 = ActpackObj_patched
     mock_dap14._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_current_gains_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_current_gains_log"
     )
     mock_dap14._log.set_stream_level("DEBUG")
     mock_dap14._mode = CurrentMode(device=mock_dap14)
@@ -868,28 +868,28 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
     # Calls the set_current_gains method with no arguments in PositionMode
     mock_dap14.set_current_gains()
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_current_gains_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_current_gains_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current gains in mode c_int(0)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set current gains in mode c_int(0)"
             in contents
         )
 
 
-def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_impedance_gains(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_impedance_gains method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_impedance_gains method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Impedance Mode,
     and calls the set_impedance_gains method with no arguments and with arguments.
     It then asserts that the gains were set properly and that the proper log
     messages were written for an invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap15 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap15 = ActpackObj_patched
     mock_dap15._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_impedance_gains_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_impedance_gains_log"
     )
     mock_dap15._log.set_stream_level("DEBUG")
     mock_dap15._mode = ImpedanceMode(device=mock_dap15)
@@ -921,29 +921,29 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
     mock_dap15.set_impedance_gains()
     # Asserts the proper log messages are written for an invalid mode
     with open(
-        "tests/test_actuators/test_dephyactpack_set_impedance_gains_log.log"
+        "tests/test_actuators/test_ActpackObj_set_impedance_gains_log.log"
     ) as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set impedance gains in mode c_int(2)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set impedance gains in mode c_int(2)"
             in contents
         )
 
 
-def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_voltage(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_voltage method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_voltage method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Voltage Mode,
     and calls the set_voltage method. It then asserts that the proper motor
     command was sent and that the proper log messages were written for an
     invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap16 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap16 = ActpackObj_patched
     mock_dap16._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_voltage_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_voltage_log"
     )
     mock_dap16._log.set_stream_level("DEBUG")
     mock_dap16._mode = VoltageMode(device=mock_dap16)
@@ -956,28 +956,28 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     # Calls the set_voltage method in PositionMode
     mock_dap16.set_voltage(value=4.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_voltage_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set voltage in mode c_int(0)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set voltage in mode c_int(0)"
             in contents
         )
 
 
-def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_current(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_current method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_current method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Current Mode,
     and calls the set_current method. It then asserts that the proper motor
     command was sent and that the proper log messages were written for an
     invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap17 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap17 = ActpackObj_patched
     mock_dap17._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_current_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_current_log"
     )
     mock_dap17._log.set_stream_level("DEBUG")
     mock_dap17._mode = CurrentMode(device=mock_dap17)
@@ -990,28 +990,28 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     # Calls the set_current method in PositionMode
     mock_dap17.set_current(value=6.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_current_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_current_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current in mode c_int(0)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set current in mode c_int(0)"
             in contents
         )
 
 
-def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_motor_torque(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_motor_torque method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_motor_torque method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Current Mode,
     and calls the set_motor_torque method. It then asserts that the proper motor
     command was sent and that the proper log messages were written for an
     invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap18 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap18 = ActpackObj_patched
     mock_dap18._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_motor_torque_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_motor_torque_log"
     )
     mock_dap18._log.set_stream_level("DEBUG")
     mock_dap18._mode = CurrentMode(device=mock_dap18)
@@ -1025,28 +1025,28 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     # Calls the set_motor_torque method in PositionMode
     mock_dap18.set_motor_torque(torque=7.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_motor_torque_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_motor_torque_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor_torque in mode c_int(0)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set motor_torque in mode c_int(0)"
             in contents
         )
 
 
-def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
+def test_ActpackObj_set_motor_position(ActpackObj_patched: ActpackObj):
     """
-    Tests the DephyActpack set_motor_position method\n
-    This test initializes a MockDephyActpack object, sets the _log attribute
+    Tests the ActpackObj set_motor_position method\n
+    This test initializes a MockActuator object, sets the _log attribute
     to a Logger of the lowest stream level, changes the mode to Position Mode,
     and calls the set_motor_position method. It then asserts that the proper motor
     command was sent and that the proper log messages were written for an
     invalid mode.
     """
 
-    # Creates a MockDephyActpack instance with a Logger of the lowest stream level
-    mock_dap19 = dephyactpack_patched
+    # Creates a MockActuator instance with a Logger of the lowest stream level
+    mock_dap19 = ActpackObj_patched
     mock_dap19._log = Logger(
-        file_path="tests/test_actuators/test_dephyactpack_set_motor_position_log"
+        file_path="tests/test_actuators/test_ActpackObj_set_motor_position_log"
     )
     mock_dap19._log.set_stream_level("DEBUG")
     mock_dap19._mode = PositionMode(device=mock_dap19)
@@ -1067,9 +1067,9 @@ def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     # Calls the set_motor_position method in CurrentMode
     mock_dap19.set_motor_position(position=10.0)
     # Asserts the proper log messages are written for an invalid mode
-    with open("tests/test_actuators/test_dephyactpack_set_motor_position_log.log") as f:
+    with open("tests/test_actuators/test_ActpackObj_set_motor_position_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor position in mode c_int(2)"
+            "WARNING: [ActpackObj[MockActuator]] Cannot set motor position in mode c_int(2)"
             in contents
         )

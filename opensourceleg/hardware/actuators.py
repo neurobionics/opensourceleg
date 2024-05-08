@@ -3,6 +3,7 @@ Actuators Interface Generalized
 05/2024
 """
 
+from site import abs_paths
 from typing import Any, Callable, Union, overload
 
 import ctypes
@@ -167,7 +168,7 @@ class ModeBase(ABC):
             bool: True if the mode has gains, False otherwise
         """
         return self._has_gains
-
+    
     @abstractmethod
     def _entry(self) -> None:
         pass
@@ -225,6 +226,35 @@ class ModeBase(ABC):
     def _set_motor_position(self, counts: int) -> None:
         pass
 
+class ActuatorMode(ModeBase):
+    def __init__(self, control_mode: c_int, device: "ActpackObj") -> None:
+        super().__init__(control_mode, device)
+
+    def _entry(self) -> None:
+        pass
+
+    def _exit(self) -> None:
+        pass
+
+    @property
+    def mode(self) -> c_int:
+        """
+        Control mode
+
+        Returns:
+            c_int: Control mode
+        """
+        return self._control_mode
+
+    @property
+    def has_gains(self) -> bool:
+        """
+        Whether the mode has gains
+
+        Returns:
+            bool: True if the mode has gains, False otherwise
+        """
+        return self._has_gains
 
 class VoltageMode(ModeBase):
     def __init__(self, device: "ActpackObj") -> None:
@@ -608,53 +638,44 @@ class ActuatorBase(ABC):
         pass
 
     @property
-    @abstractmethod
     def frequency(self) -> int:
         return self._frequency
 
     @property
-    @abstractmethod
     def mode(self) -> ModeBase:
         return self._mode
 
     @property
-    @abstractmethod
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
         return self._encoder_map
 
     @property
-    @abstractmethod
     def motor_zero_position(self) -> float:
         """Motor encoder zero position in radians."""
         return self._motor_zero_position
 
     @property
-    @abstractmethod
     def joint_zero_position(self) -> float:
         """Joint encoder zero position in radians."""
         return self._joint_zero_position
 
     @property
-    @abstractmethod
     def joint_offset(self) -> float:
         """Joint encoder offset in radians."""
         return self._joint_offset
 
     @property
-    @abstractmethod
     def motor_offset(self) -> float:
         """Motor encoder offset in radians."""
         return self._motor_offset
 
     @property
-    @abstractmethod
     def joint_direction(self) -> float:
         """Joint direction: 1 or -1"""
         return self._joint_direction
 
     @property
-    @abstractmethod
     def battery_voltage(self) -> float:
         """Battery voltage in mV."""
         if self._data is not None:
@@ -663,7 +684,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def battery_current(self) -> float:
         """Battery current in mA."""
         if self._data is not None:
@@ -672,7 +692,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def motor_voltage(self) -> float:
         """Q-axis motor voltage in mV."""
         if self._data is not None:
@@ -681,7 +700,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def motor_current(self) -> float:
         """Q-axis motor current in mA."""
         if self._data is not None:
@@ -690,7 +708,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def motor_torque(self) -> float:
         """
         Torque at motor output in Nm.
@@ -702,7 +719,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def motor_position(self) -> float:
         """Angle of the motor in radians."""
         if self._data is not None:
@@ -715,19 +731,16 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def motor_encoder_counts(self) -> int:
         """Raw reading from motor encoder in counts."""
         return int(self._data.mot_ang)
 
     @property
-    @abstractmethod
     def joint_encoder_counts(self) -> int:
         """Raw reading from joint encoder in counts."""
         return int(self._data.ank_ang)
 
     @property
-    @abstractmethod
     def motor_velocity(self) -> float:
         """Motor velocity in rad/s."""
         if self._data is not None:
@@ -736,7 +749,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def motor_acceleration(self) -> float:
         """Motor acceleration in rad/s^2."""
         if self._data is not None:
@@ -745,7 +757,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
@@ -761,7 +772,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
@@ -770,7 +780,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def case_temperature(self) -> float:
         """Case temperature in celsius."""
         if self._data is not None:
@@ -779,7 +788,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def winding_temperature(self) -> float:
         """
         ESTIMATED temperature of the windings in celsius.
@@ -791,7 +799,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
@@ -801,7 +808,6 @@ class ActuatorBase(ABC):
         return float(self._thermal_scale)
 
     @property
-    @abstractmethod
     def genvars(self):
         """Dephy's 'genvars' object."""
         if self._data is not None:
@@ -819,7 +825,6 @@ class ActuatorBase(ABC):
             return np.zeros(shape=6)
 
     @property
-    @abstractmethod
     def accelx(self) -> float:
         """
         Acceleration in x direction in m/s^2.
@@ -831,7 +836,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def accely(self) -> float:
         """
         Acceleration in y direction in m/s^2.
@@ -843,7 +847,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def accelz(self) -> float:
         """
         Acceleration in z direction in m/s^2.
@@ -855,7 +858,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def gyrox(self) -> float:
         """
         Angular velocity in x direction in rad/s.
@@ -867,7 +869,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def gyroy(self) -> float:
         """
         Angular velocity in y direction in rad/s.
@@ -879,7 +880,6 @@ class ActuatorBase(ABC):
             return 0.0
 
     @property
-    @abstractmethod
     def gyroz(self) -> float:
         """
         Angular velocity in z direction in rad/s.
@@ -923,7 +923,7 @@ class ActpackObj(ActuatorBase, Device):
         debug_level: int,
         dephy_log: bool,
     ) -> None:
-        Device().__init__(port=port, baud_rate=baud_rate)
+        Device(port=port, baud_rate=baud_rate)
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
@@ -1186,7 +1186,6 @@ class ActpackObj(ActuatorBase, Device):
                 / RAD_PER_COUNT
             ),
         )
-
 
 # _MockActuator class definition for testing
 # MockData class definition for testing without a data stream
