@@ -5,11 +5,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "opensourceleg"
-version = "2.2.0"
+version = "3.1.0"
 description = "An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses."
 readme = "README.md"
 authors = ["Open-source Leg <opensourceleg@gmail.com>"]
-license = "GNU LGPL v2.1"
+license = "GNU LESSER GENERAL PUBLIC LICENSE v2.1"
 repository = "https://github.com/neurobionics/opensourceleg"
 homepage = "https://github.com/neurobionics/opensourceleg"
 
@@ -31,9 +31,9 @@ classifiers = [  #! Update me
 in-project = true
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0.0"
+python = ">=3.11,<4.0.0"
 pyserial = "^3.5"
-flexsea = "^8.0.1"
+flexsea = "^12.0.3"
 smbus2 = "^0.4.2"
 numpy = "^1.24.3"
 

@@ -125,7 +125,7 @@ def patch_time_time3(monkeypatch):
 
 
 def test_softrealtimeloop_del():
-    srtld = SoftRealtimeLoop(report=True)
+    srtld = SoftRealtimeLoop(report=False)
     srtld.n = 2
     del srtld
 
