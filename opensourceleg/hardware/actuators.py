@@ -119,12 +119,12 @@ DEFAULT_IMPEDANCE_GAINS = Gains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 class ModeBase(ABC):
     """
     Base class for Actpack modes
-
     Args:
         control_mode (c_int): Control mode
         device (ActuatorBase): Dephy Actpack
     * To be changed to ABC
     """
+
     @abstractmethod
     def __init__(self, control_mode: c_int, device: "ActpackObj") -> None:
         """
@@ -175,7 +175,6 @@ class ModeBase(ABC):
     @abstractmethod
     def _exit(self) -> None:
         pass
-    
 
     def enter(self) -> None:
         """
@@ -204,8 +203,8 @@ class ModeBase(ABC):
         self,
         kp: int,
         ki: int,
-        kd: int, 
-        K: int, 
+        kd: int,
+        K: int,
         B: int,
         ff: int,
     ) -> None:
@@ -217,13 +216,11 @@ class ModeBase(ABC):
         """
         pass
 
-
     def _set_current(self, current: int) -> None:
         """
         This method should be implemented by the child class. It should set the q axis current.
         """
         pass
-
 
     def _set_motor_position(self, counts: int) -> None:
         pass
@@ -273,8 +270,8 @@ class CurrentMode(ModeBase):
         self,
         kp: int = DEFAULT_CURRENT_GAINS.kp,
         ki: int = DEFAULT_CURRENT_GAINS.ki,
-        Kd: int = 0, 
-        K: int = 0, 
+        Kd: int = 0,
+        K: int = 0,
         B: int = 0,
         ff: int = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
@@ -322,7 +319,7 @@ class PositionMode(ModeBase):
         kp: int = DEFAULT_POSITION_GAINS.kp,
         ki: int = DEFAULT_POSITION_GAINS.ki,
         kd: int = DEFAULT_POSITION_GAINS.kd,
-        K: int = 0, 
+        K: int = 0,
         B: int = 0,
         ff: int = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
@@ -379,7 +376,7 @@ class ImpedanceMode(ModeBase):
         self,
         kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: int = 0, 
+        kd: int = 0,
         K: int = DEFAULT_IMPEDANCE_GAINS.K,
         B: int = DEFAULT_IMPEDANCE_GAINS.B,
         ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
@@ -426,6 +423,7 @@ class ActpackControlModes:
 
 class ActuatorBase(ABC):
     """Generalized Abstract Base Class for Actuator Object"""
+
     @abstractmethod
     def __init__(
         self,
@@ -467,8 +465,7 @@ class ActuatorBase(ABC):
         self.control_modes: ActpackControlModes
 
         self._mode: ModeBase = self.control_modes.voltage
-        
-        
+
     @abstractmethod
     def __repr__(self) -> str:
         pass
@@ -915,6 +912,7 @@ class ActpackObj(ActuatorBase, Device):
     Returns:
         _type_: _description_
     """
+
     def __init__(
         self,
         name: str,
@@ -956,8 +954,7 @@ class ActpackObj(ActuatorBase, Device):
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: ModeBase = self.control_modes.voltage
-        
-        
+
     def __repr__(self) -> str:
         return f"ActuatorBase[{self._name}]"
 
