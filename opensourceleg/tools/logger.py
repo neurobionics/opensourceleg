@@ -21,7 +21,7 @@ Usage Guide:
 2. Optionally, set the logging levels for file and stream handlers using
    `set_file_level` and `set_stream_level` methods.
 3. Add class instances and attributes to log using the `add_attributes` method.
-4. Start logging data using the `data` method.
+4. Start logging data using the `update` method.
 5. Optionally, close the CSV file using the `close` method.
 
 Note:
@@ -86,6 +86,9 @@ class Logger(logging.Logger):
 
         self._is_logging = False
 
+        self._header_data: list[str] = []
+        self._data: list[Any] = []
+
     def __repr__(self) -> str:
         return f"Logger"
 
@@ -127,44 +130,47 @@ class Logger(logging.Logger):
         self._containers.append(container)
         self._attributes.append(attributes)
 
-    def data(self) -> None:
+    def update(self) -> None:
         """
         Logs the attributes of the class instance to the csv file
         """
-        header_data = []
-        data = []
+        if not self._containers:
+            return
 
         if not self._is_logging:
             for container, attributes in zip(self._containers, self._attributes):
                 for attribute in attributes:
                     if type(container) is dict:
                         if "__main__" in container.values():
-                            header_data.append(f"{attribute}")
+                            self._header_data.append(f"{attribute}")
                         else:
-                            header_data.append(f"{container}:{attribute}")
+                            self._header_data.append(f"{container}:{attribute}")
                     else:
                         if type(container).__repr__ is not object.__repr__:
-                            header_data.append(f"{container}:{attribute}")
+                            self._header_data.append(f"{container}:{attribute}")
                         else:
-                            header_data.append(f"{attribute}")
+                            self._header_data.append(f"{attribute}")
 
-            self._writer.writerow(header_data)
+            self._writer.writerow(self._header_data)
             self._is_logging = True
 
         for container, attributes in zip(self._containers, self._attributes):
             if isinstance(container, dict):
                 for attribute in attributes:
-                    data.append(container.get(attribute))
+                    self._data.append(container.get(attribute))
             else:
                 for attribute in attributes:
-                    data.append(getattr(container, attribute))
+                    self._data.append(getattr(container, attribute))
 
-        self._writer.writerow(data)
+        self._writer.writerow(self._data)
+
+        self._data.clear()
+        self._header_data.clear()
         self._file.flush()
 
-    def close(self) -> None:
+    def __del__(self) -> None:
         """
-        Closes the csv file
+        Closes the file when the object is deleted
         """
         self._file.close()
 
@@ -186,7 +192,5 @@ if __name__ == "__main__":
     simple_class = SimpleClass()
 
     local_logger.add_attributes(locals(), ["local_variable_1"])
-    # local_logger.add_attributes(simple_class, ["a", "b", "c"])
-    local_logger.data()
-
-    print(locals().__eq__)
+    local_logger.add_attributes(simple_class, ["a", "b", "c"])
+    local_logger.update()

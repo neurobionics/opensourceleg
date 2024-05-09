@@ -44,7 +44,7 @@ class OpenSourceLeg:
         frequency : int, optional
             The frequency of the control loop, by default 200
         file_name : str, optional
-            The name of the log file, by default "./osl.log"
+            The name of the log file (without the extension), by default "./osl"
         """
 
         self._frequency: int = frequency
@@ -326,7 +326,6 @@ class OpenSourceLeg:
 
     def update(
         self,
-        log_data: bool = False,
     ) -> None:
         if self.has_knee:
             self._knee.update()
@@ -351,8 +350,7 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.update()
 
-        if log_data:
-            self.log.data()
+        self.log.update()
 
         if hasattr(self, "_safety_attributes"):
             for safety_attribute_name in self._safety_attributes:

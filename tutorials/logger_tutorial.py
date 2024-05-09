@@ -16,6 +16,5 @@ class SimpleClass:
 simple_class = SimpleClass()
 
 local_logger.add_attributes(container=simple_class, attributes=["a", "b", "c"])
-local_logger.data()
+local_logger.update()
 local_logger.debug("message")
-local_logger.close()
