@@ -641,257 +641,213 @@ class ActuatorBase(ABC):
         pass
 
     @property
+    @abstractmethod
     def frequency(self) -> int:
-        return self._frequency
+        pass
 
     @property
+    @abstractmethod
+    # @abstractmethod
     def mode(self) -> ModeBase:
-        return self._mode
+        pass
 
     @property
+    @abstractmethod
+    # @abstractmethod
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
+        pass
 
     @property
+    @abstractmethod
+    # @abstractmethod
     def motor_zero_position(self) -> float:
         """Motor encoder zero position in radians."""
-        return self._motor_zero_position
+        pass
 
     @property
+    @abstractmethod
     def joint_zero_position(self) -> float:
         """Joint encoder zero position in radians."""
-        return self._joint_zero_position
+        pass
 
     @property
+    @abstractmethod
     def joint_offset(self) -> float:
         """Joint encoder offset in radians."""
-        return self._joint_offset
+        pass
 
     @property
+    @abstractmethod
     def motor_offset(self) -> float:
         """Motor encoder offset in radians."""
-        return self._motor_offset
+        pass
 
     @property
+    @abstractmethod
     def joint_direction(self) -> float:
         """Joint direction: 1 or -1"""
-        return self._joint_direction
+        pass
 
     @property
+    @abstractmethod
     def battery_voltage(self) -> float:
         """Battery voltage in mV."""
-        if self._data is not None:
-            return float(self._data.batt_volt)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def battery_current(self) -> float:
         """Battery current in mA."""
-        if self._data is not None:
-            return float(self._data.batt_curr)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def motor_voltage(self) -> float:
         """Q-axis motor voltage in mV."""
-        if self._data is not None:
-            return float(self._data.mot_volt)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def motor_current(self) -> float:
         """Q-axis motor current in mA."""
-        if self._data is not None:
-            return float(self._data.mot_cur)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def motor_torque(self) -> float:
         """
         Torque at motor output in Nm.
         This is calculated using the motor current and torque constant.
         """
-        if self._data is not None:
-            return float(self._data.mot_cur * NM_PER_MILLIAMP)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def motor_position(self) -> float:
         """Angle of the motor in radians."""
-        if self._data is not None:
-            return (
-                float(self._data.mot_ang * RAD_PER_COUNT)
-                - self._motor_zero_position
-                - self.motor_offset
-            )
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def motor_encoder_counts(self) -> int:
         """Raw reading from motor encoder in counts."""
-        return int(self._data.mot_ang)
+        pass
 
     @property
+    @abstractmethod
     def joint_encoder_counts(self) -> int:
         """Raw reading from joint encoder in counts."""
-        return int(self._data.ank_ang)
+        pass
 
     @property
+    @abstractmethod
     def motor_velocity(self) -> float:
         """Motor velocity in rad/s."""
-        if self._data is not None:
-            return int(self._data.mot_vel) * RAD_PER_DEG
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def motor_acceleration(self) -> float:
         """Motor acceleration in rad/s^2."""
-        if self._data is not None:
-            return float(self._data.mot_acc)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
-        if self._data is not None:
-            if self.encoder_map is not None:
-                return float(self.encoder_map(self._data.ank_ang))
-            else:
-                return (
-                    float(self._data.ank_ang * RAD_PER_COUNT)
-                    - self.joint_zero_position
-                    - self.joint_offset
-                ) * self.joint_direction
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
-        if self._data is not None:
-            return float(self._data.ank_vel * RAD_PER_COUNT)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def case_temperature(self) -> float:
         """Case temperature in celsius."""
-        if self._data is not None:
-            return float(self._data.temperature)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def winding_temperature(self) -> float:
         """
         ESTIMATED temperature of the windings in celsius.
         This is calculated based on the thermal model using motor current.
         """
-        if self._data is not None:
-            return float(self._thermal_model.T_w)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
         If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
         For a proof, see paper referenced in thermal model.
         """
-        return float(self._thermal_scale)
+        pass
 
     @property
+    @abstractmethod
     def genvars(self):
         """Dephy's 'genvars' object."""
-        if self._data is not None:
-            return np.array(
-                object=[
-                    self._data.genvar_0,
-                    self._data.genvar_1,
-                    self._data.genvar_2,
-                    self._data.genvar_3,
-                    self._data.genvar_4,
-                    self._data.genvar_5,
-                ]
-            )
-        else:
-            return np.zeros(shape=6)
+        pass
 
     @property
+    @abstractmethod
     def accelx(self) -> float:
         """
         Acceleration in x direction in m/s^2.
         Measured using actpack's onboard IMU.
         """
-        if self._data is not None:
-            return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def accely(self) -> float:
         """
         Acceleration in y direction in m/s^2.
         Measured using actpack's onboard IMU.
         """
-        if self._data is not None:
-            return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def accelz(self) -> float:
         """
         Acceleration in z direction in m/s^2.
         Measured using actpack's onboard IMU.
         """
-        if self._data is not None:
-            return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def gyrox(self) -> float:
         """
         Angular velocity in x direction in rad/s.
         Measured using actpack's onboard IMU.
         """
-        if self._data is not None:
-            return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def gyroy(self) -> float:
         """
         Angular velocity in y direction in rad/s.
         Measured using actpack's onboard IMU.
         """
-        if self._data is not None:
-            return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
+        pass
 
     @property
+    @abstractmethod
     def gyroz(self) -> float:
         """
         Angular velocity in z direction in rad/s.
         Measured using actpack's onboard IMU.
         """
-        if self._data is not None:
-            return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
+        pass
 
 
 class ActpackObj(ActuatorBase, Device):
@@ -1190,6 +1146,262 @@ class ActpackObj(ActuatorBase, Device):
                 / RAD_PER_COUNT
             ),
         )
+
+    @property
+    def frequency(self) -> int:
+        return self._frequency
+
+    @property
+    # @abstractmethod
+    def mode(self) -> ModeBase:
+        return self._mode
+
+    @property
+    # @abstractmethod
+    def encoder_map(self):
+        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+        return self._encoder_map
+
+    @property
+    # @abstractmethod
+    def motor_zero_position(self) -> float:
+        """Motor encoder zero position in radians."""
+        return self._motor_zero_position
+
+    @property
+    def joint_zero_position(self) -> float:
+        """Joint encoder zero position in radians."""
+        return self._joint_zero_position
+
+    @property
+    def joint_offset(self) -> float:
+        """Joint encoder offset in radians."""
+        return self._joint_offset
+
+    @property
+    def motor_offset(self) -> float:
+        """Motor encoder offset in radians."""
+        return self._motor_offset
+
+    @property
+    def joint_direction(self) -> float:
+        """Joint direction: 1 or -1"""
+        return self._joint_direction
+
+    @property
+    def battery_voltage(self) -> float:
+        """Battery voltage in mV."""
+        if self._data is not None:
+            return float(self._data.batt_volt)
+        else:
+            return 0.0
+
+    @property
+    def battery_current(self) -> float:
+        """Battery current in mA."""
+        if self._data is not None:
+            return float(self._data.batt_curr)
+        else:
+            return 0.0
+
+    @property
+    def motor_voltage(self) -> float:
+        """Q-axis motor voltage in mV."""
+        if self._data is not None:
+            return float(self._data.mot_volt)
+        else:
+            return 0.0
+
+    @property
+    def motor_current(self) -> float:
+        """Q-axis motor current in mA."""
+        if self._data is not None:
+            return float(self._data.mot_cur)
+        else:
+            return 0.0
+
+    @property
+    def motor_torque(self) -> float:
+        """
+        Torque at motor output in Nm.
+        This is calculated using the motor current and torque constant.
+        """
+        if self._data is not None:
+            return float(self._data.mot_cur * NM_PER_MILLIAMP)
+        else:
+            return 0.0
+
+    @property
+    def motor_position(self) -> float:
+        """Angle of the motor in radians."""
+        if self._data is not None:
+            return (
+                float(self._data.mot_ang * RAD_PER_COUNT)
+                - self._motor_zero_position
+                - self.motor_offset
+            )
+        else:
+            return 0.0
+
+    @property
+    def motor_encoder_counts(self) -> int:
+        """Raw reading from motor encoder in counts."""
+        return int(self._data.mot_ang)
+
+    @property
+    def joint_encoder_counts(self) -> int:
+        """Raw reading from joint encoder in counts."""
+        return int(self._data.ank_ang)
+
+    @property
+    def motor_velocity(self) -> float:
+        """Motor velocity in rad/s."""
+        if self._data is not None:
+            return int(self._data.mot_vel) * RAD_PER_DEG
+        else:
+            return 0.0
+
+    @property
+    def motor_acceleration(self) -> float:
+        """Motor acceleration in rad/s^2."""
+        if self._data is not None:
+            return float(self._data.mot_acc)
+        else:
+            return 0.0
+
+    @property
+    def joint_position(self) -> float:
+        """Measured angle from the joint encoder in radians."""
+        if self._data is not None:
+            if self.encoder_map is not None:
+                return float(self.encoder_map(self._data.ank_ang))
+            else:
+                return (
+                    float(self._data.ank_ang * RAD_PER_COUNT)
+                    - self.joint_zero_position
+                    - self.joint_offset
+                ) * self.joint_direction
+        else:
+            return 0.0
+
+    @property
+    def joint_velocity(self) -> float:
+        """Measured velocity from the joint encoder in rad/s."""
+        if self._data is not None:
+            return float(self._data.ank_vel * RAD_PER_COUNT)
+        else:
+            return 0.0
+
+    @property
+    def case_temperature(self) -> float:
+        """Case temperature in celsius."""
+        if self._data is not None:
+            return float(self._data.temperature)
+        else:
+            return 0.0
+
+    @property
+    def winding_temperature(self) -> float:
+        """
+        ESTIMATED temperature of the windings in celsius.
+        This is calculated based on the thermal model using motor current.
+        """
+        if self._data is not None:
+            return float(self._thermal_model.T_w)
+        else:
+            return 0.0
+
+    @property
+    def thermal_scaling_factor(self) -> float:
+        """
+        Scale factor to use in torque control, in [0,1].
+        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        For a proof, see paper referenced in thermal model.
+        """
+        return float(self._thermal_scale)
+
+    @property
+    def genvars(self):
+        """Dephy's 'genvars' object."""
+        if self._data is not None:
+            return np.array(
+                object=[
+                    self._data.genvar_0,
+                    self._data.genvar_1,
+                    self._data.genvar_2,
+                    self._data.genvar_3,
+                    self._data.genvar_4,
+                    self._data.genvar_5,
+                ]
+            )
+        else:
+            return np.zeros(shape=6)
+
+    @property
+    def accelx(self) -> float:
+        """
+        Acceleration in x direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            return 0.0
+
+    @property
+    def accely(self) -> float:
+        """
+        Acceleration in y direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            return 0.0
+
+    @property
+    def accelz(self) -> float:
+        """
+        Acceleration in z direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            return 0.0
+
+    @property
+    def gyrox(self) -> float:
+        """
+        Angular velocity in x direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
+        else:
+            return 0.0
+
+    @property
+    def gyroy(self) -> float:
+        """
+        Angular velocity in y direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
+        else:
+            return 0.0
+
+    @property
+    def gyroz(self) -> float:
+        """
+        Angular velocity in z direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
+        else:
+            return 0.0
 
 
 # _MockActuator class definition for testing
