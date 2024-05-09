@@ -10,15 +10,13 @@ import os
 import time
 from abc import ABC, abstractmethod
 from ctypes import c_int
-from curses import baudrate
 from dataclasses import dataclass
-from doctest import debug
 
-# To be removed after Generalization
+# To be changed after Generalization
 import flexsea.fx_enums as fxe
 import numpy as np
 
-# To be removed after Generalization
+# To be changed after Generalization
 from flexsea.device import Device
 
 from ..tools.logger import Logger
@@ -54,7 +52,6 @@ Usage Guide:
 class ControlModes:
     """
     Control modes for the Dephy Actpack.
-
     Available modes are Voltage, Current, Position, Impedance.
     """
 
@@ -493,9 +490,9 @@ class ActuatorBase(ABC):
         )
         self._thermal_scale: float = 1.0
 
-        self.control_modes: ActpackControlModes = None
+        self.control_modes: ActpackControlModes
 
-        self._mode: ModeBase = None
+        self._mode: ModeBase
 
     @abstractmethod
     def __repr__(self) -> str:
