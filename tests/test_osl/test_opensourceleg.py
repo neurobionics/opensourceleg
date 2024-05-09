@@ -527,7 +527,7 @@ def test_osl_update_log_data(joint_patched: Joint, mock_get_active_ports, patch_
     test_osl_u_ld.log.add_attributes(
         container=test_class_instance, attributes=["a", "b", "c"]
     )
-    test_osl_u_ld.update(log_data=True)
+    test_osl_u_ld.update()
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
     with open("tests/test_osl/test_osl_u_ld.csv", newline="") as f:
         reader = csv.reader(f)

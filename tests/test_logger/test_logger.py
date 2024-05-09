@@ -100,18 +100,6 @@ def test_add_attributes():
     assert test_Logger1._attributes == [["a", "b", "c"], ["a", "b", "c"]]
 
 
-def test_close():
-    """
-    Tests the Logger close method\n
-    This test initializes a Logger instance and then calls the close method then
-    asserts the file is closed after the close method is called.
-    """
-
-    test_Logger3 = Logger(file_path="tests/test_logger/test_log3")
-    test_Logger3.close()
-    assert test_Logger3._file.closed == True
-
-
 def test_data():
     """
     Tests the Logger data method\n
@@ -129,7 +117,7 @@ def test_data():
         container=test_container, attributes=["a", "b", "c"]
     )
     # Asserts the data method works properly when passed a single class instance
-    test_Logger_data.data()
+    test_Logger_data.update()
     expected_rows = [["a", "b", "c"], ["1", "2", "3"]]
     with open("tests/test_logger/test_log_data.csv", newline="") as f:
         reader = csv.reader(f)
@@ -140,7 +128,7 @@ def test_data():
         container=test_container2, attributes=["a", "b", "c"]
     )
     # Asserts the data method works properly when passed multiple class instances
-    test_Logger_data.data()
+    test_Logger_data.update()
     expected_rows2 = [["a", "b", "c"], ["1", "2", "3"], ["1", "2", "3", "1", "2", "3"]]
     with open("tests/test_logger/test_log_data.csv", newline="") as f:
         reader = csv.reader(f)
