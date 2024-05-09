@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from ctypes import c_int
 from curses import baudrate
 from dataclasses import dataclass
-from site import abs_paths
+from doctest import debug
 
 # To be removed after Generalization
 import flexsea.fx_enums as fxe
@@ -461,8 +461,6 @@ class ActuatorBase(ABC):
     def __init__(
         self,
         name: str,
-        port: str,
-        baud_rate: int,
         frequency: int,
         logger: Logger,
         debug_level: int,
@@ -493,11 +491,11 @@ class ActuatorBase(ABC):
             temp_limit_case=70,
             soft_border_C_case=10,
         )
-        self._thermal_scale: float
+        self._thermal_scale: float = 1.0
 
-        self.control_modes: ActpackControlModes
+        self.control_modes: ActpackControlModes = None
 
-        self._mode: ModeBase = self.control_modes.voltage
+        self._mode: ModeBase = None
 
     @abstractmethod
     def __repr__(self) -> str:
@@ -875,15 +873,26 @@ class ActpackObj(ActuatorBase, Device):
     def __init__(
         self,
         name: str,
-        port: str,
-        baud_rate: int,
         frequency: int,
         logger: Logger,
         debug_level: int,
         dephy_log: bool,
+        port: str,
+        baud_rate: int,
     ) -> None:
 
-        Device(port=port, baud_rate=baud_rate)
+        ActuatorBase.__init__(
+            self,
+            name=name,
+            frequency=frequency,
+            logger=logger,
+            debug_level=debug_level,
+            dephy_log=dephy_log,
+        )
+        Device.__init__(self, port=port, baud_rate=baud_rate)
+
+        # Device(port=port, baud_rate=baud_rate)
+
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
         self._frequency: int = frequency
@@ -1598,10 +1607,10 @@ class MockActuator(ActpackObj):
 if __name__ == "__main__":
     act_obj = ActpackObj(
         name="knee",
-        port="/dev/ttyACM0",
-        baud_rate=98400,
         frequency=200,
         logger=Logger(),
         debug_level=6,
         dephy_log=False,
+        port="/dev/ttyACM0",
+        baud_rate=98400,
     )
