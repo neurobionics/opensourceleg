@@ -10,7 +10,7 @@ class SafetyManager:
     def __init__(self):
         self._safe_objects: dict[object, dict[str, list[Callable]]] = {}
 
-    def add_safety(self, instance: object, attribute: str, decorator: Callable):
+    def add_safety(self, instance: object, attribute: str, decorator: Callable):  # type: ignore
         """Applies a decorator to the getter of a property for a specific instance by creating or updating a subclass."""
 
         if instance in self._safe_objects.keys():
