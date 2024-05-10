@@ -17,12 +17,9 @@ def is_changing(
 
     Args:
         attribute_name (str): Name of the attribute.
-        max_points (int, optional): Number of points to consider. Defaults to 10.
-        threshold (float, optional): Threshold for the standard deviation. Defaults to 1e-6.
-        proxy_attribute_name (str, optional): Name of the proxy attribute to return if the property is not changing. Defaults to None.
-
-    Raises:
-        ValueError: If the property is not changing and no proxy attribute is provided.
+        max_points (int): Number of points to consider. Defaults to 10.
+        threshold (float): Threshold for the standard deviation. Defaults to 1e-6.
+        proxy_attribute_name (str): Name of the proxy attribute to return if the property is not changing. Defaults to None.
 
     Returns:
         Callable: Decorator function.
@@ -67,7 +64,7 @@ def is_negative(clamp: bool = False):
     Creates a decorator to check if a property's value is negative.
 
     Args:
-        clamp (bool, optional): If True, the decorator will return 0 instead of raising an error. Defaults to False.
+        clamp (bool): If True, the decorator will return 0 instead of raising an error. Defaults to False.
 
     Returns:
         Callable: Decorator function.
@@ -92,7 +89,7 @@ def is_positive(clamp: bool = False):
     Creates a decorator to check if a property's value is positive.
 
     Args:
-        clamp (bool, optional): If True, the decorator will return 0 instead of raising an error. Defaults to False.
+        clamp (bool): If True, the decorator will return 0 instead of raising an error. Defaults to False.
 
     Returns:
         Callable: Decorator function.
@@ -119,7 +116,7 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
     Args:
         min_value (float): Minimum value of the range.
         max_value (float): Maximum value of the range.
-        clamp (bool, optional): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
 
     Returns:
         Callable: Decorator function.
@@ -145,7 +142,7 @@ def is_greater_than(min_value: float, clamp: bool = False):
 
     Args:
         min_value (float): Minimum value to check against.
-        clamp (bool, optional): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
 
     Returns:
         Callable: Decorator function.
@@ -171,7 +168,7 @@ def is_less_than(max_value: float, clamp: bool = False):
 
     Args:
         max_value (float): Maximum value to check against.
-        clamp (bool, optional): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
 
     Returns:
         Callable: Decorator function.
