@@ -3,7 +3,7 @@ Control
 =======
 
 Compiled Controller
----------
+-------------------
 .. automodule:: opensourceleg.control.compiled_controller
    :members:   
 
