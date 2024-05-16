@@ -623,4 +623,5 @@ opensourceleg/ankle_encoder_map.npy
 
 
 localtest.py
-# opensourceleg/hardware/actuators_base.py
+opensourceleg/hardware/Re_Actuators.md
+opensourceleg/hardware/actuators_base.py

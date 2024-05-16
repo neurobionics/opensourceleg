@@ -9,8 +9,8 @@ from .actuators import (
     NM_PER_RAD_TO_K,
     NM_S_PER_RAD_TO_B,
     RAD_PER_COUNT,
-    ActpackObj,
-    MockActuator,
+    DephyActpack,
+    MockDephyActpack,
 )
 
 """
@@ -32,7 +32,7 @@ Usage Guide:
 """
 
 
-class Joint(ActpackObj):
+class Joint(DephyActpack):
     def __init__(
         self,
         name: str = "knee",
@@ -356,10 +356,10 @@ class Joint(ActpackObj):
         return self.motor_torque * self.gear_ratio
 
 
-class MockJoint(Joint, MockActuator):
+class MockJoint(Joint, MockDephyActpack):
     """
     Mock Joint class for testing the Joint class\n
-    Inherits everything from the Joint class and the MockActuator class
+    Inherits everything from the Joint class and the MockDephyActpack class
     except for the Joint constructor.
     """
 
@@ -376,7 +376,7 @@ class MockJoint(Joint, MockActuator):
         dephy_log: bool = False,
     ) -> None:
 
-        MockActuator.__init__(self, name, port)
+        MockDephyActpack.__init__(self, name, port)
         self._gear_ratio: float = gear_ratio
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell
