@@ -35,6 +35,7 @@ from .thermal import ThermalModel
 
 
 @dataclass
+# Optional
 class ControlModes:
     """
     Control modes definition.
@@ -49,11 +50,20 @@ class ControlModes:
     mode_position: ctypes.c_int
     mode_impedance: ctypes.c_int
 
+    def __post_init__(self) -> None:
+        # Force type conversion
+        self.mode_voltage = ctypes.c_int(self.mode_voltage)
+        self.mode_current = ctypes.c_int(self.mode_current)
+        self.mode_position = ctypes.c_int(self.mode_position)
+        self.mode_impedance = ctypes.c_int(self.mode_impedance)
+        # TODO: check the logics here
+
     def __repr__(self) -> str:
         return f"ControlModes"
 
 
 @dataclass
+# Mandatory
 class ControlGains:
     """
     Dataclass for controller gains
@@ -79,6 +89,7 @@ class ControlGains:
 
 
 @dataclass
+# Mandatory
 class MecheConsts:
     """
     Imports necessary constants, compute the rest and protects them by @property
@@ -143,6 +154,7 @@ class ActuatorComm:
 
 
 @dataclass
+# Mandatory?
 class SafetySpec:
     MAX_VOLTAGE = 0
     MAX_CURRENT = 0
@@ -161,6 +173,7 @@ class SafetySpec:
     MAX_CURRENT_KD = 0
 
 
+# Don't need to be imported by user
 class ActuatorMode:
 
     def __init__(self, device: "Actuator") -> None:
@@ -237,6 +250,7 @@ class ActuatorMode:
     #     return self._which_mode
 
 
+# Don't need to be imported by user
 class ActuatorAction(SafetySpec):
     """
     This class contains all the methods a
@@ -259,10 +273,12 @@ class ActuatorAction(SafetySpec):
             if self.safety_check("voltage", voltage_value) == True:
                 pass
             else:
-                # should raise an error here
+                # TODO: Raise an error here
+                # TODO: log or interrupt the whole program?
                 pass
         else:
-            # should raise an error here
+            # TODO: Raise an error here
+            # TODO: log or interrupt the whole program?
             pass
 
     def _set_current(
@@ -272,10 +288,12 @@ class ActuatorAction(SafetySpec):
             if self.safety_check("current", current_value, CurrentGain) == True:
                 pass
             else:
-                # should raise an error here
+                # TODO: Raise an error here
+                # TODO: log or interrupt the whole program?
                 pass
         else:
-            # should raise an error here
+            # TODO: Raise an error here
+            # TODO: log or interrupt the whole program?
             pass
 
     def _set_impedance(self, which_mode: str, ImpedanceGains: ControlGains):
@@ -283,11 +301,13 @@ class ActuatorAction(SafetySpec):
             if self.safety_check("impedance", ImpedanceGains) == True:
                 pass
             else:
-                # should raise an error here
+                # TODO: Raise an error here
+                # TODO: log or interrupt the whole program?
                 pass
 
         else:
-            # should raise an error here
+            # TODO: Raise an error here
+            # TODO: log or interrupt the whole program?
             pass
 
     def _set_position(self, which_mode: str, PositionGains: ControlGains):
@@ -295,10 +315,12 @@ class ActuatorAction(SafetySpec):
             if self.safety_check("impedance", PositionGains) == True:
                 pass
             else:
-                # should raise an error here
+                # TODO: Raise an error here
+                # TODO: log or interrupt the whole program?
                 pass
         else:
-            # should raise an error here
+            # TODO: Raise an error here
+            # TODO: log or interrupt the whole program?
             pass
 
     # @abstractmethod
@@ -307,7 +329,7 @@ class ActuatorAction(SafetySpec):
             if type(argv[1]) == float:
                 return True
             else:
-                # should raise an error here
+                # TODO: Raise an error here
                 return False
         elif which_mode == "current":
             if type(argv[1]) == float & type(argv[2] == ControlGains):
@@ -317,7 +339,7 @@ class ActuatorAction(SafetySpec):
                 # check for max current
                 return True
             else:
-                # should raise an error here
+                # TODO: Raise an error here
                 return False
         elif which_mode == "impedance":
             if type(argv[1]) == ControlGains:
@@ -328,7 +350,7 @@ class ActuatorAction(SafetySpec):
                 assert 0 <= argv[2].B, "B must be greater than 0"
                 return True
             else:
-                # should raise an error here
+                # TODO: Raise an error here
                 return False
         elif which_mode == "position":
             if type(argv[1]) == ControlGains:
@@ -337,30 +359,35 @@ class ActuatorAction(SafetySpec):
                 assert 0 <= argv[2].kd <= 1000, "kd must be between 0 and 1000"
                 return True
             else:
-                # should raise an error here
+                # TODO: Raise an error here
                 return False
         else:
-            # error: control mode error
+            # TODO: Raise an error here
             return False
 
 
+# Mandatory
 class Actuator(ActuatorAction, ABC):
 
     def __init__(
         self,
+        port: str,
+        baud_rate: int,
         Gains: ControlGains,
         MecheSpecs: MecheConsts,
-        Communication: ActuatorComm,
+        # Communication: ActuatorComm,
         Safety: SafetySpec,
         *args,
         **kwargs,
     ) -> None:
         # super().__init__()
+        self._port: str = port
+        self._baud_rate: int = baud_rate
         ActuatorAction.__init__(self, device=self)
         self._Gains: ControlGains = Gains
         self._MecheConsts: MecheConsts = MecheSpecs
-        self._Communication: ActuatorComm = Communication
-        self._frequency = self._Communication.frequency
+        # self._Communication: ActuatorComm = Communication
+        # self._frequency = self._Communication.frequency
         self._mode: ActuatorMode = ActuatorMode(device=self)
 
         self._which_mode: str = self._mode._which_mode
@@ -387,6 +414,7 @@ class Actuator(ActuatorAction, ABC):
             soft_border_C_case=10,
         )
         self._thermal_scale: float = 1.0
+        # TODO: use *argv and **kwargs to allow passing additional info
 
     @abstractmethod
     def start(self) -> None:
@@ -431,9 +459,9 @@ class Actuator(ActuatorAction, ABC):
             self._log.warning(msg=f"[{self.__repr__()}] Mode {which_mode} not found")
             return
 
-    @property
-    def frequency(self) -> int:
-        return self._frequency
+    # @property
+    # def frequency(self) -> int:
+    #     return self._frequency
 
     @property
     def mode(self) -> ActuatorMode:
@@ -733,89 +761,10 @@ class Actuator(ActuatorAction, ABC):
             pass
 
 
-class DephyActpack(Actuator, Device):
-    def __init__(
-        self,
-        Gains: ControlGains,
-        MecheSpecs: MecheConsts,
-        Communication: ActuatorComm,
-        Safety: SafetySpec,
-        *args,
-        **kwargs,
-    ) -> None:
-        Actuator.__init__(self, Gains, MecheSpecs, Communication, Safety)
-        Device.__init__(
-            self, port=Communication.port, baud_rate=Communication.baud_rate
-        )
-
-    @abstractmethod
-    def start(self) -> None:
-        super().start()
-        self.open(
-            freq=self._Communication.frequency,
-            log_level=self._Communication.debug_level,
-            log_enabled=self._Communication.log,
-        )
-
-    def stop(self) -> None:
-        self.set_mode(which_mode="voltage", mode_pass=self._mode_pass)
-        self.set_voltage(voltage_value=0, mode_pass=self._mode_pass)
-
-        time.sleep(0.1)
-        self.close()
-
-    @abstractmethod
-    def update(self) -> None:
-        if self.is_streaming:
-            self._sensor = self.read()
-            self._thermal_model.T_c = self.case_temperature
-            self._thermal_scale = self._thermal_model.update_and_get_scale(
-                dt=(1 / self._frequency),
-                motor_current=self.motor_current,
-            )
-
-            if hasattr(self, "_safety_attributes"):
-                for safety_attribute_name in self._safety_attributes:
-                    self._log.debug(
-                        msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
-                    )
-        else:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
-            )
-
-    def set_voltage(self, voltage_value: float, mode_pass: c_int):
-        super()._set_voltage(self._which_mode, voltage_value=voltage_value)
-        # transfer value here
-        self.send_motor_command(ctrl_mode=mode_pass, value=voltage_value)
-
-    def set_current(
-        self, current_value: float, CurrentGain: ControlGains, mode_pass: c_int
-    ):
-        super()._set_current(self._which_mode, current_value, CurrentGain)
-        # transfer value here
-        self.send_motor_command(ctrl_mode=mode_pass, value=current_value)
-
-    def set_impedance(
-        self, PositionCount: int, ImpedanceGains: ControlGains, mode_pass: c_int
-    ):
-        super()._set_impedance(self._which_mode, ImpedanceGains=ImpedanceGains)
-        self.send_motor_command(ctrl_mode=mode_pass, value=PositionCount)
-        # transfer value here
-        pass
-
-    def set_position(
-        self, PositionCount: int, PositionGains: ControlGains, mode_pass: c_int
-    ):
-        super()._set_position(self._which_mode, PositionGains=PositionGains)
-        self._set_gains(Gains=PositionGains)
-        self.send_motor_command(ctrl_mode=mode_pass, value=PositionCount)
-        # transfer value here
-        pass
+# intended instantiation
 
 
-# MockDephyActpack class definition for testing
-# MockData class definition for testing without a data stream
+# Don't need to be imported by user
 class MockData:
     def __init__(
         self,
@@ -869,74 +818,176 @@ class MockData:
         return f"MockData"
 
 
-class MockDephyActpack(DephyActpack):
-    def __init__(
-        self,
-        Gains: ControlGains,
-        MecheSpecs: MecheConsts,
-        Communication: ActuatorComm,
-        Safety: SafetySpec,
-        *args,
-        **kwargs,
-    ) -> None:
-        Actuator.__init__(self, Gains, MecheSpecs, Communication, Safety)
-        # Device.__init__(
-        #     self, port=Communication.port, baud_rate=Communication.baud_rate
-        # )
-        self._sensor = MockData()
-
-    # Overrides the open method to function without a device
-    def open(self, freq, log_level, log_enabled):
-        self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
-        self.is_streaming = True
-
-    # Overrides the send_motor_command method to set the new _motor_command attribute
-    def send_motor_command(self, ctrl_mode, value):
-        self._motor_command = (
-            f"[{self.__repr__()}] Control Mode: {ctrl_mode}, Value: {value}"
-        )
-
-    # Overrides the set_gains method to set the gains in the new _gains attribute
-    def set_gains(self, kp, ki, kd, k, b, ff):
-        self._Gains["kp"] = kp
-        self._Gains["ki"] = ki
-        self._Gains["kd"] = kd
-        self._Gains["k"] = k
-        self._Gains["b"] = b
-        self._Gains["ff"] = ff
-
-    # Overrides the read method to modify the data incrementally instead of through a device data stream
-    def read(self):
-        small_noise = np.random.normal(0, 0.01)
-
-        self._sensor.batt_volt += small_noise
-        self._sensor.batt_curr += 0.0
-        self._sensor.mot_volt += 0.0
-        self._sensor.mot_cur += 0.0
-        self._sensor.mot_ang += 0.0
-        self._sensor.ank_ang += 0.0
-        self._sensor.mot_vel += small_noise
-        self._sensor.mot_acc += small_noise
-        self._sensor.ank_vel += small_noise
-        self._sensor.temperature += small_noise
-        self._sensor.genvar_0 += 0.0
-        self._sensor.genvar_1 += 0.0
-        self._sensor.genvar_2 += 0.0
-        self._sensor.genvar_3 += 0.0
-        self._sensor.genvar_4 += 0.0
-        self._sensor.genvar_5 += 0.0
-        self._sensor.accelx += small_noise
-        self._sensor.accely += small_noise
-        self._sensor.accelz += small_noise
-        self._sensor.gyrox += small_noise
-        self._sensor.gyroy += small_noise
-        self._sensor.gyroz += small_noise
-        return self._sensor
-
-    # Overrides the close method to do nothing
-    def close(self):
-        pass
-
-
 if __name__ == "__main__":
-    pass
+
+    class DephyActpack(Actuator, Device):
+        def __init__(
+            self,
+            port: str,
+            baud_rate: int,
+            Gains: ControlGains,
+            MecheSpecs: MecheConsts,
+            # Communication: ActuatorComm,
+            Safety: SafetySpec,
+            *args,
+            **kwargs,
+        ) -> None:
+            Actuator.__init__(
+                self,
+                port=port,
+                baud_rate=baud_rate,
+                Gains=Gains,
+                MecheSpecs=MecheSpecs,
+                Safety=Safety,
+            )
+            Device.__init__(self, port=port, baud_rate=baud_rate)
+
+        def start(self) -> None:
+            super().start()
+            self.open(
+                freq=self._Communication.frequency,
+                log_level=self._Communication.debug_level,
+                log_enabled=self._Communication.log,
+            )
+
+        def stop(self) -> None:
+            self.set_mode(which_mode="voltage", mode_pass=self._mode_pass)
+            self.set_voltage(voltage_value=0, mode_pass=self._mode_pass)
+
+            time.sleep(0.1)
+            self.close()
+
+        def update(self) -> None:
+            if self.is_streaming:
+                self._sensor = self.read()
+                self._thermal_model.T_c = self.case_temperature
+                self._thermal_scale = self._thermal_model.update_and_get_scale(
+                    dt=(1 / self._frequency),
+                    motor_current=self.motor_current,
+                )
+
+                if hasattr(self, "_safety_attributes"):
+                    for safety_attribute_name in self._safety_attributes:
+                        self._log.debug(
+                            msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
+                        )
+            else:
+                self._log.warning(
+                    msg=f"[{self.__repr__()}] Please open() the device before streaming data."
+                )
+
+        def set_voltage(self, voltage_value: float, mode_pass: c_int):
+            super()._set_voltage(self._which_mode, voltage_value=voltage_value)
+            # transfer value here
+            self.send_motor_command(ctrl_mode=mode_pass, value=voltage_value)
+
+        def set_current(
+            self, current_value: float, CurrentGain: ControlGains, mode_pass: c_int
+        ):
+            super()._set_current(self._which_mode, current_value, CurrentGain)
+            # transfer value here
+            self.send_motor_command(ctrl_mode=mode_pass, value=current_value)
+
+        def set_impedance(
+            self, PositionCount: int, ImpedanceGains: ControlGains, mode_pass: c_int
+        ):
+            super()._set_impedance(self._which_mode, ImpedanceGains=ImpedanceGains)
+            self.send_motor_command(ctrl_mode=mode_pass, value=PositionCount)
+            # transfer value here
+            pass
+
+        def set_position(
+            self, PositionCount: int, PositionGains: ControlGains, mode_pass: c_int
+        ):
+            super()._set_position(self._which_mode, PositionGains=PositionGains)
+            self._set_gains(Gains=PositionGains)
+            self.send_motor_command(ctrl_mode=mode_pass, value=PositionCount)
+            # transfer value here
+            pass
+
+    # intended instantiation
+    class MockDephyActpack(DephyActpack):
+        def __init__(
+            self,
+            port: str,
+            baud_rate: int,
+            Gains: ControlGains,
+            MecheSpecs: MecheConsts,
+            # Communication: ActuatorComm,
+            Safety: SafetySpec,
+            *args,
+            **kwargs,
+        ) -> None:
+            Actuator.__init__(
+                self,
+                port=port,
+                baud_rate=baud_rate,
+                Gains=Gains,
+                MecheSpecs=MecheSpecs,
+                Safety=Safety,
+            )
+            # Device.__init__(
+            #     self, port=Communication.port, baud_rate=Communication.baud_rate
+            # )
+            self._sensor = MockData()
+
+        # Overrides the open method to function without a device
+        def open(self, freq, log_level, log_enabled):
+            self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
+            self.is_streaming = True
+
+        # Overrides the send_motor_command method to set the new _motor_command attribute
+        def send_motor_command(self, ctrl_mode, value):
+            self._motor_command = (
+                f"[{self.__repr__()}] Control Mode: {ctrl_mode}, Value: {value}"
+            )
+
+        # Overrides the set_gains method to set the gains in the new _gains attribute
+        def set_gains(self, kp, ki, kd, k, b, ff):
+            self._Gains["kp"] = kp
+            self._Gains["ki"] = ki
+            self._Gains["kd"] = kd
+            self._Gains["k"] = k
+            self._Gains["b"] = b
+            self._Gains["ff"] = ff
+
+        # Overrides the read method to modify the data incrementally instead of through a device data stream
+        def read(self):
+            small_noise = np.random.normal(0, 0.01)
+
+            self._sensor.batt_volt += small_noise
+            self._sensor.batt_curr += 0.0
+            self._sensor.mot_volt += 0.0
+            self._sensor.mot_cur += 0.0
+            self._sensor.mot_ang += 0.0
+            self._sensor.ank_ang += 0.0
+            self._sensor.mot_vel += small_noise
+            self._sensor.mot_acc += small_noise
+            self._sensor.ank_vel += small_noise
+            self._sensor.temperature += small_noise
+            self._sensor.genvar_0 += 0.0
+            self._sensor.genvar_1 += 0.0
+            self._sensor.genvar_2 += 0.0
+            self._sensor.genvar_3 += 0.0
+            self._sensor.genvar_4 += 0.0
+            self._sensor.genvar_5 += 0.0
+            self._sensor.accelx += small_noise
+            self._sensor.accely += small_noise
+            self._sensor.accelz += small_noise
+            self._sensor.gyrox += small_noise
+            self._sensor.gyroy += small_noise
+            self._sensor.gyroz += small_noise
+            return self._sensor
+
+        # Overrides the close method to do nothing
+        def close(self):
+            pass
+
+    Act = DephyActpack(
+        port="/dev/ttyACM0",
+        baud_rate=230400,
+        Gains=ControlGains(),
+        MecheSpecs=MecheConsts(),
+        Safety=SafetySpec(),
+    )
+    Act.open(freq=500, log_level=0, log_enabled=False)
