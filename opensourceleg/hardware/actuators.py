@@ -497,11 +497,13 @@ class DephyActpack(Device):
                 motor_current=self.motor_current,
             )
 
-            if hasattr(self, "_safety_attributes"):
-                for safety_attribute_name in self._safety_attributes:
-                    self._log.debug(
-                        msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
-                    )
+            if self.case_temperature > self.max_temperature:
+                self.log.warning(
+                    msg=f"[KNEE] Thermal limit {self.max_temperature} reached. Stopping motor."
+                )
+                self.__exit__()
+                exit()
+
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."

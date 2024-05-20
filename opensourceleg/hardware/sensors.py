@@ -190,12 +190,6 @@ class Loadcell:
                 - loadcell_zero
             )
 
-        if hasattr(self, "_safety_attributes"):
-            for safety_attribute_name in self._safety_attributes:
-                self._log.debug(
-                    msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
-                )
-
     def initialize(self, number_of_iterations: int = 2000) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero.
