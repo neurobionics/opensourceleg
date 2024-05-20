@@ -4,14 +4,7 @@ import time
 import numpy as np
 
 from ..tools.logger import Logger
-from .actuators import (
-    MAX_CASE_TEMPERATURE,
-    NM_PER_RAD_TO_K,
-    NM_S_PER_RAD_TO_B,
-    RAD_PER_COUNT,
-    DephyActpack,
-    MockDephyActpack,
-)
+from .actuators import DephyActpack, MecheConsts, MockDephyActpack
 
 """
 Module Overview:
@@ -63,7 +56,7 @@ class Joint(DephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = MAX_CASE_TEMPERATURE
+        self._max_temperature: float = MecheConsts.MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -275,8 +268,8 @@ class Joint(DephyActpack):
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
-            K=int(K * NM_PER_RAD_TO_K),
-            B=int(B * NM_S_PER_RAD_TO_B),
+            K=int(K * MecheConsts.NM_PER_RAD_TO_K),
+            B=int(B * MecheConsts.NM_S_PER_RAD_TO_B),
             ff=ff,
         )
 
@@ -384,7 +377,7 @@ class MockJoint(Joint, MockDephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = MAX_CASE_TEMPERATURE
+        self._max_temperature: float = MecheConsts.MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name

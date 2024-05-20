@@ -620,3 +620,8 @@ MigrationBackup/
 # End of https://www.gitignore.io/api/osx,python,pycharm,windows,visualstudio,visualstudiocode
 opensourceleg/knee_encoder_map.npy
 opensourceleg/ankle_encoder_map.npy
+
+
+localtest.py
+opensourceleg/hardware/Re_Actuators.md
+opensourceleg/hardware/actuators_base.py
