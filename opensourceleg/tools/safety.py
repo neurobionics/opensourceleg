@@ -1,46 +1,29 @@
+from typing import Callable, List
+
 from collections import deque
+from dataclasses import dataclass
 
 import numpy as np
 
 
-def add_safety(instance, prop_name, decorator):
-    """Applies a decorator to the getter of a property for a specific instance by creating or updating a subclass."""
-    safety_attributes_key = f"_safety_attributes"
-    instance.__dict__.setdefault(safety_attributes_key, [])
-    instance.__dict__[safety_attributes_key].append(prop_name)
+def is_changing(
+    attribute_name: str,
+    max_points: int = 10,
+    threshold: float = 1e-6,
+    proxy_attribute_name: str = None,
+):
+    """
+    Creates a decorator to check if a property's value is changing. If the standard deviation of the last 'max_points' values is less than 'threshold', the decorator will raise an error or return a proxy attribute.
 
-    subclass = type(f"{instance.__class__.__name__}:S", (instance.__class__,), {})
+    Args:
+        attribute_name (str): Name of the attribute.
+        max_points (int): Number of points to consider. Defaults to 10.
+        threshold (float): Threshold for the standard deviation. Defaults to 1e-6.
+        proxy_attribute_name (str): Name of the proxy attribute to return if the property is not changing. Defaults to None.
 
-    safety_decorators_key = f"_safety_decorators_{prop_name}"
-
-    # Initialize or append the new decorator
-    if not hasattr(instance, safety_decorators_key):
-        setattr(instance, safety_decorators_key, [])
-    getattr(instance, safety_decorators_key).append(decorator)
-
-    # Fetch the original property
-    original_property = getattr(instance.__class__, prop_name)
-    if not isinstance(original_property, property):
-        raise TypeError(f"The attribute {prop_name} is not a property.")
-
-    # Stack all decorators
-    decorated_getter = original_property.fget
-    for dec in reversed(
-        getattr(instance, safety_decorators_key)
-    ):  # Apply decorators in the order added
-        decorated_getter = dec(decorated_getter)
-
-    # Set the new property with all decorators applied
-    setattr(
-        subclass,
-        prop_name,
-        property(decorated_getter, original_property.fset, original_property.fdel),
-    )
-    instance.__class__ = subclass
-
-
-def is_changing(attribute_name, max_points, threshold, proxy_attribute_name=None):
-    """Decorator to monitor the standard deviation of an attribute's values."""
+    Returns:
+        Callable: Decorator function.
+    """
     history_key = f"_{attribute_name}_history"
     proxy_key = f"_{attribute_name}_proxy"
 
@@ -57,7 +40,7 @@ def is_changing(attribute_name, max_points, threshold, proxy_attribute_name=None
             value = func(instance, *args, **kwargs)
             history = getattr(instance, history_key)
             history.append(value)
-            if len(history) == max_points:  # Ensure full history before checking
+            if len(history) == max_points:
                 current_std = np.std(list(history))
                 if current_std < threshold:
                     if proxy_attribute_name is not None:
@@ -76,15 +59,21 @@ def is_changing(attribute_name, max_points, threshold, proxy_attribute_name=None
     return decorator
 
 
-def is_negative(can_be_zero=True, clamp=False):
-    """Decorator to check if a property's value is negative."""
+def is_negative(clamp: bool = False):
+    """
+    Creates a decorator to check if a property's value is negative.
+
+    Args:
+        clamp (bool): If True, the decorator will return 0 instead of raising an error. Defaults to False.
+
+    Returns:
+        Callable: Decorator function.
+    """
 
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value >= 0:
-                if can_be_zero and value == 0:
-                    return value
+            if value > 0:
                 if clamp:
                     return 0
                 raise ValueError("Value must be negative")
@@ -95,15 +84,21 @@ def is_negative(can_be_zero=True, clamp=False):
     return decorator
 
 
-def is_positive(can_be_zero=True, clamp=False):
-    """Decorator to check if a property's value is positive."""
+def is_positive(clamp: bool = False):
+    """
+    Creates a decorator to check if a property's value is positive.
+
+    Args:
+        clamp (bool): If True, the decorator will return 0 instead of raising an error. Defaults to False.
+
+    Returns:
+        Callable: Decorator function.
+    """
 
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value <= 0:
-                if can_be_zero and value == 0:
-                    return value
+            if value < 0:
                 if clamp:
                     return 0
                 raise ValueError("Value must be positive")
@@ -114,8 +109,18 @@ def is_positive(can_be_zero=True, clamp=False):
     return decorator
 
 
-def is_within_range(min_value, max_value, clamp=False):
-    """Decorator to check if a property's value is within a given range."""
+def is_within_range(min_value: float, max_value: float, clamp: bool = False):
+    """
+    Creates a decorator to check if a property's value is within a given range.
+
+    Args:
+        min_value (float): Minimum value of the range.
+        max_value (float): Maximum value of the range.
+        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+
+    Returns:
+        Callable: Decorator function.
+    """
 
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
@@ -131,16 +136,179 @@ def is_within_range(min_value, max_value, clamp=False):
     return decorator
 
 
+def is_greater_than(min_value: float, clamp: bool = False):
+    """
+    Creates a decorator to check if a property's value is greater than a given value.
+
+    Args:
+        min_value (float): Minimum value to check against.
+        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+
+    Returns:
+        Callable: Decorator function.
+    """
+
+    def decorator(func):
+        def wrapper(instance, *args, **kwargs):
+            value = func(instance, *args, **kwargs)
+            if value < min_value:
+                if clamp:
+                    return min_value
+                raise ValueError(f"Value must be greater than {min_value}")
+            return value
+
+        return wrapper
+
+    return decorator
+
+
+def is_less_than(max_value: float, clamp: bool = False):
+    """
+    Creates a decorator to check if a property's value is less than a given value.
+
+    Args:
+        max_value (float): Maximum value to check against.
+        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+
+    Returns:
+        Callable: Decorator function.
+    """
+
+    def decorator(func):
+        def wrapper(instance, *args, **kwargs):
+            value = func(instance, *args, **kwargs)
+            if value > max_value:
+                if clamp:
+                    return max_value
+                raise ValueError(f"Value must be less than {max_value}")
+            return value
+
+        return wrapper
+
+    return decorator
+
+
+def custom_criteria(criteria: Callable):  # type: ignore
+    """
+    Creates a decorator to check if a property's value meets a custom criteria. The criteria is a function that takes the property's value as an argument and returns a boolean.
+
+    Args:
+        criteria (Callable): Custom criteria function.
+
+    Returns:
+        Callable: Decorator function.
+    """
+
+    def decorator(func):
+        def wrapper(instance, *args, **kwargs):
+            value = func(instance, *args, **kwargs)
+            if not criteria(value):
+                raise ValueError(f"Value does not meet custom criteria")
+            return value
+
+        return wrapper
+
+    return decorator
+
+
+@dataclass
+class SafetyDecorators:
+    """
+    Dataclass that contains all safety decorators.
+    """
+
+    is_changing = is_changing
+    is_negative = is_negative
+    is_positive = is_positive
+    is_within_range = is_within_range
+    is_greater_than = is_greater_than
+    is_less_than = is_less_than
+    custom_criteria = custom_criteria
+
+
+class SafetyManager:
+    """
+    The SafetyManager class enables the addition of safety decorators to an object's properties, specifically to their getters. When the 'start' method is invoked, these decorators are applied to the properties of the objects stored in the 'safe_objects' dictionary. The original objects are then replaced with subclasses that incorporate the decorated properties. Invoking the 'update' method accesses the properties of the objects in the 'safe_objects' dictionary, thereby triggering the decorators.
+    """
+
+    def __init__(self):
+        self._safe_objects: dict[object, dict[str, list[Callable]]] = {}
+
+    def add_safety(self, instance: object, attribute: str, decorator: Callable):  # type: ignore
+        """
+        Adds a safety decorator to the given object's attribute. The decorator will be applied to the property's getter.
+
+        Args:
+            instance (object): Object that contains the attribute.
+            attribute (str): Name of the attribute.
+            decorator (Callable): Safety decorator to be applied to the attribute.
+        """
+
+        if not hasattr(instance, attribute):
+            print(
+                f"Error: The attribute '{attribute}' does not exist in the given object."
+            )
+            return
+
+        original_attribute = getattr(instance.__class__, attribute, None)
+        if not isinstance(original_attribute, property):
+            print(
+                f"Warning: The attribute '{attribute}' is not a property. The SafetyManager only works on properties."
+            )
+            return
+
+        if instance in self._safe_objects.keys():
+            if attribute in self._safe_objects[instance].keys():
+                self._safe_objects[instance][attribute].append(decorator)
+            else:
+                self._safe_objects[instance][attribute] = [decorator]
+        else:
+            self._safe_objects[instance] = {attribute: [decorator]}
+
+    def start(self):
+        """
+        Applies all decorators to the properties of the objects in the safe_objects dictionary.
+        """
+        for container, safe_attributes in self.safe_objects.items():
+            container_subclass = type(
+                f"{container.__class__.__name__}:SAFE", (container.__class__,), {}
+            )
+            for attribute_name, attribute_decorators in safe_attributes.items():
+
+                original_property = getattr(container.__class__, attribute_name)
+                decorated_getter = original_property.fget
+                for attribute_decorator in reversed(attribute_decorators):
+                    decorated_getter = attribute_decorator(decorated_getter)
+
+                setattr(
+                    container_subclass,
+                    attribute_name,
+                    property(
+                        decorated_getter, original_property.fset, original_property.fdel
+                    ),
+                )
+
+            container.__class__ = container_subclass
+
+    def update(self):
+        """
+        Accesses the properties of the objects in the safe_objects dictionary, thereby triggering the decorators.
+        """
+        for container, safe_attributes in self.safe_objects.items():
+            for attribute_name, _ in safe_attributes.items():
+                getattr(container, attribute_name)
+
+    @property
+    def safe_objects(self):
+        return self._safe_objects
+
+
 if __name__ == "__main__":
 
     class Sensor:
         def __init__(self, value):
             self._value = value
-            self._proxy_value = 0.0
-
-        @property
-        def proxy_value(self):
-            return self._proxy_value
+            self._a = 10
 
         @property
         def value(self):
@@ -150,42 +318,23 @@ if __name__ == "__main__":
         def value(self, value):
             self._value = value
 
-        def update(self):
-            # check if there are safety attributes
-            safety_attributes_key = "_safety_attributes"
-            if hasattr(self, safety_attributes_key):
-                print(f"Checking safety attributes for {self.__class__.__name__}")
+        @property
+        def a(self):
+            return self._a
 
-                for attribute in getattr(self, safety_attributes_key):
-                    print(f"Safety in-place for {getattr(self, attribute)}")
+        @a.setter
+        def a(self, value):
+            self._a = value
 
-        def __enter__(self):
-            print("Hey! I'm entering the context manager")
+    sensor = Sensor(100)
+    safety_manager = SafetyManager()
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            print("Hey! I'm exiting the context manager")
+    safety_manager.add_safety(sensor, "value", SafetyDecorators.is_changing("value"))
+    safety_manager.add_safety(sensor, "a", SafetyDecorators.is_positive())
+    safety_manager.start()
 
-    sensor_proxy = Sensor(100)
-
-    # Apply positive check
-    add_safety(sensor_proxy, "value", is_positive())
-    try:
-        sensor_proxy.value = -10  # Should raise ValueError
-        sensor_proxy.update()
-    except ValueError as e:
-        print(e)
-
-    # Apply standard deviation monitoring
-    add_safety(sensor_proxy, "value", is_changing("value", 5, 1e-6, "proxy_value"))
-    # Now, updating the value should check both conditions
-
-    # Simulate values for standard deviation check
-    values = [-1, -1, -1, -1]
-    for val in values:
-        sensor_proxy.value = val
-        try:
-            sensor_proxy.update()
-        except ValueError as e:
-            print(e)
-
-    # print(sensor_proxy.value)  # Check if it passes through all decorators
+    for i in range(10):
+        sensor.value = i
+        sensor.a = 5 - i
+        print(sensor.value, sensor.a)
+        safety_manager.update()
