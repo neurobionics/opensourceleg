@@ -143,14 +143,7 @@ class CurrentMode(base.CurrentMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._gains = base.ControlGains(
-            DEFAULT_CURRENT_GAINS.kp,
-            DEFAULT_CURRENT_GAINS.ki,
-            DEFAULT_CURRENT_GAINS.kd,
-            DEFAULT_CURRENT_GAINS.K,
-            DEFAULT_CURRENT_GAINS.B,
-            DEFAULT_CURRENT_GAINS.ff,
-        )
+        self._gains = DEFAULT_CURRENT_GAINS
 
         self._control_mode: c_int = fxe.FX_CURRENT
 
@@ -211,19 +204,11 @@ class PositionMode(base.PositionMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._gains = base.ControlGains(
-            DEFAULT_POSITION_GAINS.kp,
-            DEFAULT_POSITION_GAINS.ki,
-            DEFAULT_POSITION_GAINS.kd,
-            DEFAULT_POSITION_GAINS.K,
-            DEFAULT_POSITION_GAINS.B,
-            DEFAULT_POSITION_GAINS.ff,
-        )
+        self._gains = DEFAULT_POSITION_GAINS
         self._control_mode: c_int = fxe.FX_POSITION
         pass
 
     def _entry(self) -> None:
-        # TODO: check log instance
         self._device._log.debug(msg=f"[Actpack] Entering Position mode.")
 
         if not self.has_gains:
@@ -232,7 +217,6 @@ class PositionMode(base.PositionMode):
         self.set_position(encoder_count=0)
 
     def _exit(self) -> None:
-        # TODO: check log instance
         self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
         self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(0.1)
@@ -240,10 +224,8 @@ class PositionMode(base.PositionMode):
     def set_position(
         self,
         encoder_count: int,
-        #  Gains: actuators.ControlGains
     ) -> None:
         super().set_position(encoder_count=encoder_count)
-        # self._gains = self.set_gains(Mode=self, Gains=Gains)
         self._device.send_motor_command(ctrl_mode=fxe.FX_POSITION, value=encoder_count)
         pass
 
@@ -268,14 +250,7 @@ class ImpedanceMode(base.ImpedanceMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._gains = base.ControlGains(
-            DEFAULT_IMPEDANCE_GAINS.kp,
-            DEFAULT_IMPEDANCE_GAINS.ki,
-            DEFAULT_IMPEDANCE_GAINS.kd,
-            DEFAULT_IMPEDANCE_GAINS.K,
-            DEFAULT_IMPEDANCE_GAINS.B,
-            DEFAULT_IMPEDANCE_GAINS.ff,
-        )
+        self._gains = DEFAULT_IMPEDANCE_GAINS
         self._control_mode: c_int = fxe.FX_IMPEDANCE
         pass
 
@@ -312,18 +287,14 @@ class ImpedanceMode(base.ImpedanceMode):
     def set_position(
         self,
         encoder_count: int,
-        #  Gains: actuators.ControlGains,
     ) -> None:
         super().set_position(encoder_count=encoder_count)
-        # self._gains = self.set_gains(Mode=self, Gains=Gains)
         self._device.send_motor_command(ctrl_mode=fxe.FX_IMPEDANCE, value=encoder_count)
         pass
 
 
 @dataclass(init=False)
-class ActpackControlModes(
-    # actuators.ActuatorControlModes
-):
+class ActpackControlModes:
     """
     Actpack modes
 
@@ -380,10 +351,8 @@ class DephyActpack(base.Actuator, Device):
         self._frequency: int = frequency
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
-        # self._data: Any = None
         self._name: str = name
         self._log: Logger = logger
-        # self._state = None
         self._encoder_map = None
 
         self._motor_zero_position = 0.0
@@ -461,8 +430,6 @@ class DephyActpack(base.Actuator, Device):
             pass
 
     def set_voltage(self, voltage_value: float):
-        # super().set_voltage(self._which_mode, voltage_value=voltage_value)
-        # transfer value here
         if self._mode != self.control_modes.voltage:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
@@ -472,7 +439,6 @@ class DephyActpack(base.Actuator, Device):
         self._mode.set_voltage(
             int(voltage_value),
         )
-        # self.send_motor_command(ctrl_mode=mode_pass, value=voltage_value)
 
     def set_current(
         self,
@@ -487,10 +453,6 @@ class DephyActpack(base.Actuator, Device):
         self._mode.set_current(
             int(current_value),
         )
-        # super()._set_current(self._which_mode, current_value, CurrentGain)
-        # # transfer value here
-        # self.send_motor_command(ctrl_mode=mode_pass, value=current_value)
-        pass
 
     def set_motor_torque(self, torque: float) -> None:
         """
@@ -508,17 +470,6 @@ class DephyActpack(base.Actuator, Device):
         self._mode.set_current(
             int(torque / self._MecheConsts.NM_PER_MILLIAMP),
         )
-
-    # def set_impedance(
-    #     self,
-    #     PositionCount: int,
-    #     ImpedanceGains: actuators.ControlGains,
-    #     mode_pass: c_int,
-    # ):
-    #     super()._set_impedance(self._which_mode, ImpedanceGains=ImpedanceGains)
-    #     self.send_motor_command(ctrl_mode=mode_pass, value=PositionCount)
-    #     # transfer value here
-    #     pass
 
     def set_motor_position(self, position: float) -> None:
         """
@@ -894,7 +845,7 @@ class DephyActpack(base.Actuator, Device):
 class MockData:
     def __init__(
         self,
-        batt_volt=30,
+        batt_volt=0,
         batt_curr=0,
         mot_volt=0,
         mot_cur=0,
@@ -903,7 +854,7 @@ class MockData:
         mot_vel=0,
         mot_acc=0,
         ank_vel=0,
-        temperature=25,
+        temperature=0,
         genvar_0=0,
         genvar_1=0,
         genvar_2=0,
@@ -977,19 +928,19 @@ class MockDephyActpack(DephyActpack):
             dephy_log (bool): _description_. Defaults to False.
         """
         DephyActpack.__init__(self)
-        self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
-        self._frequency: int = frequency
-        # self._data: MockData = MockData()
-        self._name: str = name
+        # self._debug_level: int = debug_level
+        # self._dephy_log: bool = dephy_log
+        # self._frequency: int = frequency
+        # # self._data: MockData = MockData()
+        # self._name: str = name
 
-        self.log: Logger = logger
-        self._state = None
+        # self.log: Logger = logger
+        # self._state = None
 
-        # New attributes to be used for testing
+        # # New attributes to be used for testing
 
-        # This is used in the open() method to display the port the device should be connected to
-        self.port: str = port
+        # # This is used in the open() method to display the port the device should be connected to
+        # self.port: str = port
 
         # This is used in the send_motor_command() method to display the motor command that was sent
         self._motor_command: str = "None"
@@ -1006,16 +957,14 @@ class MockDephyActpack(DephyActpack):
 
         self._data: MockData = MockData()
 
-    # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
-        self._log.debug(msg=f"[{self.__repr__()}] Opening Device at {self.port}")
-        self.is_streaming = True
+        if freq == 100 and log_level == 5 and log_enabled:
+            raise OSError
+        else:
+            self._log.debug(msg=f"Opening Device at {self.port}")
 
-    # Overrides the send_motor_command method to set the new _motor_command attribute
     def send_motor_command(self, ctrl_mode, value):
-        self._motor_command = (
-            f"[{self.__repr__()}] Control Mode: {ctrl_mode}, Value: {value}"
-        )
+        self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
 
     # Overrides the set_gains method to set the gains in the new _gains attribute
     def set_gains(self, kp, ki, kd, k, b, ff):
@@ -1028,30 +977,29 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
-        small_noise = np.random.normal(0, 0.01)
+        self._data.batt_volt += 15
+        self._data.batt_curr += 15
+        self._data.mot_volt += 15
+        self._data.mot_cur += 15
+        self._data.mot_ang += 15
+        self._data.ank_ang += 15
+        self._data.mot_vel += 15
+        self._data.mot_acc += 15
+        self._data.ank_vel += 15
+        self._data.temperature += 15
+        self._data.genvar_0 += 15
+        self._data.genvar_1 += 15
+        self._data.genvar_2 += 15
+        self._data.genvar_3 += 15
+        self._data.genvar_4 += 15
+        self._data.genvar_5 += 15
+        self._data.accelx += 15
+        self._data.accely += 15
+        self._data.accelz += 15
+        self._data.gyrox += 15
+        self._data.gyroy += 15
+        self._data.gyroz += 15
 
-        self._data.batt_volt += small_noise
-        self._data.batt_curr += 0.0
-        self._data.mot_volt += 0.0
-        self._data.mot_cur += 0.0
-        self._data.mot_ang += 0.0
-        self._data.ank_ang += 0.0
-        self._data.mot_vel += small_noise
-        self._data.mot_acc += small_noise
-        self._data.ank_vel += small_noise
-        self._data.temperature += small_noise
-        self._data.genvar_0 += 0.0
-        self._data.genvar_1 += 0.0
-        self._data.genvar_2 += 0.0
-        self._data.genvar_3 += 0.0
-        self._data.genvar_4 += 0.0
-        self._data.genvar_5 += 0.0
-        self._data.accelx += small_noise
-        self._data.accely += small_noise
-        self._data.accelz += small_noise
-        self._data.gyrox += small_noise
-        self._data.gyroy += small_noise
-        self._data.gyroz += small_noise
         return self._data
 
     # Overrides the close method to do nothing
@@ -1060,22 +1008,4 @@ class MockDephyActpack(DephyActpack):
 
 
 if __name__ == "__main__":
-    # act = MockDephyActpack()
-    # act._gains = actuators.ControlGains(1, 1, 1, 1, 1, 1)
-    # assert act._gains == {"kp": 1, "ki": 1, "kd": 1, "k": 1, "b": 1, "ff": 1}, "error"
-    # # if hasattr(act, '_MecheConsts'):
-    # #     print(f"{act._MecheConsts}")
-    # # else:
-    # #     print("attribute does not exist.")
-
     pass
-
-
-# Act = DephyActpack(
-#     port="/dev/ttyACM0",
-#     baud_rate=230400,
-#     Gains=actuators.ControlGains(),
-#     MecheSpecs=actuators.MecheConsts(),
-#     Safety=actuators.SafetySpec(),
-# )
-# Act.open(freq=500, log_level=0, log_enabled=False)
