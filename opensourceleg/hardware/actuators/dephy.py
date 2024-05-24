@@ -173,12 +173,11 @@ class CurrentMode(base.CurrentMode):
     def set_current(
         self,
         current_value: int,
-        # Gains: actuators.ControlGains,
     ) -> None:
         """Sets the Q-axis current of the motor
 
         Args:
-            current (int): _description_
+            current_value (int): _description_
         """
         super().set_current(current_value=current_value)
 
