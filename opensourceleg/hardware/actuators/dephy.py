@@ -18,9 +18,7 @@ DEFAULT_POSITION_GAINS = base.ControlGains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = base.ControlGains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
-DEFAULT_IMPEDANCE_GAINS = base.ControlGains(
-    kp=40, ki=400, kd=0, K=200, B=400, ff=128
-)
+DEFAULT_IMPEDANCE_GAINS = base.ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
 class ActpackMode:
@@ -145,7 +143,15 @@ class CurrentMode(base.CurrentMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._gains = base.ControlGains(0, 0, 0, 0, 0, 0)
+        self._gains = base.ControlGains(
+            DEFAULT_CURRENT_GAINS.kp,
+            DEFAULT_CURRENT_GAINS.ki,
+            DEFAULT_CURRENT_GAINS.kd,
+            DEFAULT_CURRENT_GAINS.K,
+            DEFAULT_CURRENT_GAINS.B,
+            DEFAULT_CURRENT_GAINS.ff,
+        )
+
         self._control_mode: c_int = fxe.FX_CURRENT
 
     def _entry(self) -> None:
@@ -154,7 +160,7 @@ class CurrentMode(base.CurrentMode):
         self._device._log.debug(msg=f"[Actpack] Entering Current mode.")
 
         if not self.has_gains:
-            self.set_gains(base.ControlGains())
+            self.set_gains(DEFAULT_CURRENT_GAINS)
 
         self.set_current(current_value=0)
 
@@ -163,13 +169,6 @@ class CurrentMode(base.CurrentMode):
         self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
         self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(1 / self._device.frequency)
-
-    # def set_gains(
-    #     self,
-    #     Gains: actuators.ControlGains,
-    # ) -> None:
-
-    #     # self._has_gains = True
 
     def set_current(
         self,
@@ -196,17 +195,15 @@ class CurrentMode(base.CurrentMode):
 
     def set_gains(
         self,
-        Gains: base.ControlGains = base.ControlGains(
-            kp=40, ki=400, kd=0, K=0, B=0, ff=128
-        ),
+        gains: base.ControlGains = DEFAULT_CURRENT_GAINS,
     ) -> None:
 
-        assert 0 <= Gains.kp <= 80, "kp must be between 0 and 80"
-        assert 0 <= Gains.ki <= 800, "ki must be between 0 and 800"
-        assert 0 <= Gains.ff <= 128, "ff must be between 0 and 128"
+        assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
+        assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
+        assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
         self._has_gains = True
-        self._gains = Gains
-        self._device.set_gains(kp=Gains.kp, ki=Gains.ki, kd=0, k=0, b=0, ff=Gains.ff)
+        self._gains = gains
+        self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
 
 
 class PositionMode(base.PositionMode):
@@ -215,7 +212,14 @@ class PositionMode(base.PositionMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._gains = base.ControlGains(0, 0, 0, 0, 0, 0)
+        self._gains = base.ControlGains(
+            DEFAULT_POSITION_GAINS.kp,
+            DEFAULT_POSITION_GAINS.ki,
+            DEFAULT_POSITION_GAINS.kd,
+            DEFAULT_POSITION_GAINS.K,
+            DEFAULT_POSITION_GAINS.B,
+            DEFAULT_POSITION_GAINS.ff,
+        )
         self._control_mode: c_int = fxe.FX_POSITION
         pass
 
@@ -224,7 +228,7 @@ class PositionMode(base.PositionMode):
         self._device._log.debug(msg=f"[Actpack] Entering Position mode.")
 
         if not self.has_gains:
-            self._set_gains(base.ControlGains())
+            self.set_gains(self._gains)
 
         self.set_position(encoder_count=0)
 
@@ -244,18 +248,18 @@ class PositionMode(base.PositionMode):
         self._device.send_motor_command(ctrl_mode=fxe.FX_POSITION, value=encoder_count)
         pass
 
-    def _set_gains(
+    def set_gains(
         self,
-        Gains: base.ControlGains = DEFAULT_POSITION_GAINS,
+        gains: base.ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
 
-        assert 0 <= Gains.kp <= 1000, "kp must be between 0 and 1000"
-        assert 0 <= Gains.ki <= 1000, "ki must be between 0 and 1000"
-        assert 0 <= Gains.kd <= 1000, "kd must be between 0 and 1000"
+        assert 0 <= gains.kp <= 1000, "kp must be between 0 and 1000"
+        assert 0 <= gains.ki <= 1000, "ki must be between 0 and 1000"
+        assert 0 <= gains.kd <= 1000, "kd must be between 0 and 1000"
         self._has_gains = True
-        self._gains = Gains
+        self._gains = gains
         self._device.set_gains(
-            kp=Gains.kp, ki=Gains.ki, kd=Gains.kd, k=0, b=0, ff=Gains.ff
+            kp=gains.kp, ki=gains.ki, kd=gains.kd, k=0, b=0, ff=gains.ff
         )
 
 
@@ -265,14 +269,21 @@ class ImpedanceMode(base.ImpedanceMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._gains = base.ControlGains(0, 0, 0, 0, 0, 0)
+        self._gains = base.ControlGains(
+            DEFAULT_IMPEDANCE_GAINS.kp,
+            DEFAULT_IMPEDANCE_GAINS.ki,
+            DEFAULT_IMPEDANCE_GAINS.kd,
+            DEFAULT_IMPEDANCE_GAINS.K,
+            DEFAULT_IMPEDANCE_GAINS.B,
+            DEFAULT_IMPEDANCE_GAINS.ff,
+        )
         self._control_mode: c_int = fxe.FX_IMPEDANCE
         pass
 
     def _entry(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Entering Impedance mode.")
         if not self.has_gains:
-            self.set_gains(Gains=base.ControlGains())
+            self.set_gains(gains=self._gains)
 
         self._device.set_motor_position(self._device.motor_position)
 
@@ -281,28 +292,23 @@ class ImpedanceMode(base.ImpedanceMode):
         self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(1 / self._device.frequency)
 
-    def set_gains(self, Gains: base.ControlGains = DEFAULT_IMPEDANCE_GAINS):
-        super().set_gains(Gains=Gains)
-        # self._device.send_motor_command(ctrl_mode=fxe.FX_IMPEDANCE, value=0)
-        # self._set_gains(Mode=self, Gains=ImpedanceGains)
+    def set_gains(self, gains: base.ControlGains = DEFAULT_IMPEDANCE_GAINS):
+        assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
+        assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
+        assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
+        assert 0 <= gains.K, "K must be greater than 0"
+        assert 0 <= gains.B, "B must be greater than 0"
 
-        assert 0 <= Gains.kp <= 80, "kp must be between 0 and 80"
-        assert 0 <= Gains.ki <= 800, "ki must be between 0 and 800"
-        assert 0 <= Gains.ff <= 128, "ff must be between 0 and 128"
-        assert 0 <= Gains.K, "K must be greater than 0"
-        assert 0 <= Gains.B, "B must be greater than 0"
         self._has_gains = True
-        self._gains = Gains
+        self._gains = gains
         self._device.set_gains(
-            kp=int(Gains.kp),
-            ki=int(Gains.ki),
-            kd=int(0),
-            k=int(Gains.K),
-            b=int(Gains.B),
-            ff=int(Gains.ff),
+            kp=gains.kp,
+            ki=gains.ki,
+            kd=0,
+            k=gains.K,
+            b=gains.B,
+            ff=gains.ff,
         )
-
-        pass
 
     def set_position(
         self,
@@ -396,22 +402,11 @@ class DephyActpack(base.Actuator, Device):
             soft_border_C_case=10,
         )
         self._thermal_scale: float = 1.0
-        self.max_temperature: float = 80
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: base.ActuatorMode = self.control_modes.voltage
         self._data: Any = None
-
-        # self._gains = actuators.ControlGains(0, 0, 0, 0, 0, 0)
-        # self._MecheConsts: actuators.MecheConsts = actuators.MecheConsts(
-        #     MOTOR_COUNT_PER_REV=16384,
-        #     NM_PER_AMP=0.1133,
-        #     IMPEDANCE_A=0.00028444,
-        #     IMPEDANCE_C=0.0007812,
-        #     MAX_CASE_TEMPERATURE=80,
-        #     M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
-        # )
 
     def __repr__(self) -> str:
         return f"DephyActpack[{self._name}]"
@@ -445,7 +440,6 @@ class DephyActpack(base.Actuator, Device):
 
     def update(self) -> None:
         super().update()
-        self._gains = self._mode._gains
         if self.is_streaming:
             self._data = self.read()
             self._thermal_model.T_c = self.case_temperature
@@ -454,12 +448,6 @@ class DephyActpack(base.Actuator, Device):
                 motor_current=self.motor_current,
             )
 
-            if self.case_temperature > self.max_temperature:
-                self.log.warning(
-                    msg=f"[KNEE] Thermal limit {self.max_temperature} reached. Stopping motor."
-                )
-                self.__exit__()
-                exit()
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
@@ -1017,49 +1005,7 @@ class MockDephyActpack(DephyActpack):
             "ff": 0,
         }
 
-        # This is used in the read() method to indicate a data stream
-        self.is_streaming: bool = False
-
-        self._encoder_map = None
-
-        self._motor_zero_position = 0.0
-        self._joint_zero_position = 0.0
-
-        self._joint_offset = 0.0
-        self._motor_offset = 0.0
-
-        self._joint_direction = 1.0
-
-        self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=80,
-            soft_border_C_windings=10,
-            temp_limit_case=70,
-            soft_border_C_case=10,
-        )
-
-        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
-
-        self._mode = self.control_modes.voltage
-
         self._data: MockData = MockData()
-
-        self._gains: dict[str, float] = {
-            "kp": 0,
-            "ki": 0,
-            "kd": 0,
-            "k": 0,
-            "b": 0,
-            "ff": 0,
-        }
-        # self._Gains = actuators.ControlGains()
-        # self._MecheConsts: actuators.MecheConsts = actuators.MecheConsts(
-        #     MOTOR_COUNT_PER_REV=16384,
-        #     NM_PER_AMP=0.1133,
-        #     IMPEDANCE_A=0.00028444,
-        #     IMPEDANCE_C=0.0007812,
-        #     MAX_CASE_TEMPERATURE=80,
-        #     M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
-        # )
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):

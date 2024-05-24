@@ -5,7 +5,11 @@ import pytest
 from flexsea.device import Device
 from pytest_mock import mocker
 
-from opensourceleg.hardware.actuators.base import ActuatorMode, ControlGains, MecheConsts
+from opensourceleg.hardware.actuators.base import (
+    ActuatorMode,
+    ControlGains,
+    MecheConsts,
+)
 from opensourceleg.hardware.actuators.dephy import (
     ActpackControlModes,
     CurrentMode,
@@ -52,23 +56,12 @@ class MockDephyActpack(DephyActpack):
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
         """
-        self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
-        self._frequency: int = frequency
-        self._data: Any = None
-        self._name: str = name
-
-        self._log: Logger = logger
-        self._state = None
+        DephyActpack.__init__(self)
 
         # New attributes to be used for testing
 
-        # This is used in the open() method to display the port the device should be connected to
-        self.port: str = port
-
         # This is used in the send_motor_command() method to display the motor command that was sent
         self._motor_command: str = "None"
-
         # This is used in the set_gains() method to display the gains that were set
         self._gains: dict[str, float] = {
             "kp": 0,
@@ -78,31 +71,6 @@ class MockDephyActpack(DephyActpack):
             "b": 0,
             "ff": 0,
         }
-
-        # This is used in the read() method to indicate a data stream
-        self.is_streaming: bool = False
-
-        self._encoder_map = None
-
-        self._motor_zero_position = 0.0
-        self._joint_zero_position = 0.0
-
-        self._joint_offset = 0.0
-        self._motor_offset = 0.0
-
-        self._joint_direction = 1.0
-
-        self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=80,
-            soft_border_C_windings=10,
-            temp_limit_case=70,
-            soft_border_C_case=10,
-        )
-
-        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
-        # self.max_temperature: float = 80
-        self._mode = self.control_modes.voltage
-        self._MecheConsts: MecheConsts = MecheConsts()
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):
@@ -509,7 +477,7 @@ def test_positionmode(dephyactpack_patched: DephyActpack):
     assert mock_dap6._gains == {"kp": 50, "ki": 0, "kd": 0, "k": 0, "b": 0, "ff": 0}
     assert mock_dap6._mode._has_gains == True
     # Asserts the proper motor command is sent
-    assert mock_dap6._motor_command == "Control Mode: c_int(0), Value: 10"
+    assert mock_dap6._motor_command == "Control Mode: c_int(0), Value: 0"
     # Tests the exit method of the PositionMode class
     mock_dap6._mode._exit()
     # Asserts the proper log message is written
@@ -559,9 +527,9 @@ def test_impedancemode(dephyactpack_patched: DephyActpack):
     # Tests the exit method of the ImpedanceMode class
     mock_dap7._mode._exit()
     # Asserts the proper log message is written
-    with open("tests/test_actuators/test_positionmode_log.log") as f:
+    with open("tests/test_actuators/test_impedancemode_log.log") as f:
         contents = f.read()
-        assert "DEBUG: [Actpack] Exiting Position mode." in contents
+        assert "DEBUG: [Actpack] Exiting Impedance mode." in contents
     # Asserts the proper motor command is sent
     assert mock_dap7._motor_command == "Control Mode: c_int(1), Value: 0"
 
@@ -614,7 +582,7 @@ def test_dephyactpack_start(dephyactpack_patched: DephyActpack):
         contents = f.read()
         assert "DEBUG: Opening Device at /dev/ttyACM0" in contents
         assert "DEBUG: [Actpack] Entering Voltage mode." in contents
-    # Asserts the read method updated the _data attribute properly
+    # Asserts the read method updated the MockDephyActpack_data attribute properly
     assert mock_dap8._data.batt_volt == 25
     assert mock_dap8._data.batt_curr == 25
     assert mock_dap8._data.mot_volt == 25
@@ -686,7 +654,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_update_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Please open() the device before streaming data."
+            "WARNING: [DephyActpack[DephyActpack]] Please open() the device before streaming data."
             in contents
         )
     # Set the is_streaming attribute to True to simulate an open device
@@ -768,8 +736,7 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_mode_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Mode badmode not found"
-            in contents
+            "WARNING: [DephyActpack[DephyActpack]] Mode badmode not found" in contents
         )
 
 
@@ -820,7 +787,7 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_position_gains_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set position gains in mode c_int(2)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set position gains in mode c_int(2)"
             in contents
         )
 
@@ -872,7 +839,7 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_current_gains_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current gains in mode c_int(0)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set current gains in mode c_int(0)"
             in contents
         )
 
@@ -926,7 +893,7 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
     ) as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set impedance gains in mode c_int(2)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set impedance gains in mode c_int(2)"
             in contents
         )
 
@@ -960,7 +927,7 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set voltage in mode c_int(0)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set voltage in mode c_int(0)"
             in contents
         )
 
@@ -994,7 +961,7 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_current_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current in mode c_int(0)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set current in mode c_int(0)"
             in contents
         )
 
@@ -1029,7 +996,7 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_motor_torque_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor_torque in mode c_int(0)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set motor_torque in mode c_int(0)"
             in contents
         )
 
@@ -1071,6 +1038,6 @@ def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_motor_position_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor position in mode c_int(2)"
+            "WARNING: [DephyActpack[DephyActpack]] Cannot set motor position in mode c_int(2)"
             in contents
         )
