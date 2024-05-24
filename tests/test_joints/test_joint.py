@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 from pytest_mock import mocker
 
-from opensourceleg.hardware.actuators import (
-    MAX_CASE_TEMPERATURE,
-    ActpackObj,
+from opensourceleg.hardware.actuators.base import MecheConsts
+from opensourceleg.hardware.actuators.dephy import (  # MAX_CASE_TEMPERATURE,
     CurrentMode,
+    DephyActpack,
     ImpedanceMode,
     PositionMode,
     VoltageMode,
@@ -15,28 +15,30 @@ from opensourceleg.hardware.actuators import (
 from opensourceleg.hardware.joints import Joint
 from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import (
-    ActpackObj_mock,
-    ActpackObj_patched,
     Data,
-    MockActpackObj,
-    patch_ActpackObj,
+    MockDephyActpack,
+    dephyactpack_mock,
+    dephyactpack_patched,
+    patch_dephyactpack,
 )
 
+MAX_CASE_TEMPERATURE = MecheConsts.MAX_CASE_TEMPERATURE
 
-def test_patching(ActpackObj_patched: ActpackObj):
+
+def test_patching(dephyactpack_patched: DephyActpack):
     """
-    Test the patching of the ActpackObj class with the MockActpackObj class\n
-    Assert the patched class is an instance of the MockActpackObj class
+    Test the patching of the DephyActpack class with the MockDephyActpack class\n
+    Assert the patched class is an instance of the MockDephyActpack class
     """
 
-    patched_dap = ActpackObj_patched
-    assert isinstance(patched_dap, MockActpackObj)
+    patched_dap = dephyactpack_patched
+    assert isinstance(patched_dap, MockDephyActpack)
 
 
-class MockJoint(Joint, MockActpackObj):
+class MockJoint(Joint, MockDephyActpack):
     """
     Mock Joint class for testing the Joint class\n
-    Inherits everything from the Joint class and the MockActpackObj class
+    Inherits everything from the Joint class and the MockDephyActpack class
     except for the Joint constructor.
     """
 
@@ -53,7 +55,7 @@ class MockJoint(Joint, MockActpackObj):
         dephy_log: bool = False,
     ) -> None:
 
-        MockActpackObj.__init__(self, port)
+        MockDephyActpack.__init__(self, port)
         self._gear_ratio: float = gear_ratio
         self._is_homed: bool = False
         self._has_loadcell: bool = has_loadcell
@@ -102,7 +104,7 @@ def joint_mock() -> MockJoint:
 @pytest.fixture
 def patch_joint(mocker, joint_mock: MockJoint):
     """
-    Fixture that patches the ActpackObj class with the newly made MockActpackObj class
+    Fixture that patches the DephyActpack class with the newly made MockDephyActpack class
     """
 
     mocker.patch("opensourceleg.hardware.joints.Joint.__new__", return_value=joint_mock)

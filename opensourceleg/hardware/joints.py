@@ -3,8 +3,10 @@ import time
 
 import numpy as np
 
+from opensourceleg.hardware.actuators.base import MecheConsts
+from opensourceleg.hardware.actuators.dephy import DephyActpack, MockDephyActpack
+
 from ..tools.logger import Logger
-from .actuators import DephyActpack, MecheConsts, MockDephyActpack
 
 """
 Module Overview:
@@ -97,7 +99,7 @@ class Joint(DephyActpack):
         homing_direction = -1.0
 
         self.set_voltage(
-            value=homing_direction * homing_voltage
+            voltage_value=homing_direction * homing_voltage
         )  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
@@ -117,11 +119,11 @@ class Joint(DephyActpack):
                     abs(self.output_velocity) <= VELOCITY_THRESHOLD
                     or abs(self.motor_current) >= CURRENT_THRESHOLD
                 ):
-                    self.set_voltage(value=0)
+                    self.set_voltage(voltage_value=0)
                     is_homing = False
 
         except KeyboardInterrupt:
-            self.set_voltage(value=0)
+            self.set_voltage(voltage_value=0)
             self._log.warning(msg="Homing interrupted.")
             return
 
@@ -268,8 +270,8 @@ class Joint(DephyActpack):
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
-            K=int(K * MecheConsts.NM_PER_RAD_TO_K),
-            B=int(B * MecheConsts.NM_S_PER_RAD_TO_B),
+            K=int(K * MecheConsts().NM_PER_RAD_TO_K),
+            B=int(B * MecheConsts().NM_S_PER_RAD_TO_B),
             ff=ff,
         )
 
