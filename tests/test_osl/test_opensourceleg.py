@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 import opensourceleg.tools.utilities as utilities
-from opensourceleg.hardware.actuators import (
+from opensourceleg.hardware.actuators.dephy import (
     CurrentMode,
     ImpedanceMode,
     PositionMode,

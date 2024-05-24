@@ -390,13 +390,13 @@ class OpenSourceLeg:
 
         if self.has_knee:
             self.knee.set_mode(mode=self.knee.control_modes.voltage)
-            self.knee.set_voltage(value=0)
+            self.knee.set_voltage(voltage_value=0)
 
             time.sleep(0.1)
 
         if self.has_ankle:
             self.ankle.set_mode(mode=self.ankle.control_modes.voltage)
-            self.ankle.set_voltage(value=0)
+            self.ankle.set_voltage(voltage_value=0)
 
             time.sleep(0.1)
 

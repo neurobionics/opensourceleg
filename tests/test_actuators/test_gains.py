@@ -1,6 +1,6 @@
 import pytest
 
-from opensourceleg.hardware.actuators import Gains
+from opensourceleg.hardware.actuators.base import ControlGains as Gains
 
 # Defining the Gains objects
 zero_gains = Gains()
