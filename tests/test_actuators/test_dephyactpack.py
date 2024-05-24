@@ -147,6 +147,8 @@ class MockDephyActpack(DephyActpack):
         self._data.gyrox += 15
         self._data.gyroy += 15
         self._data.gyroz += 15
+        self._data.status_ex = 0b00000000
+
         return self._data
 
     # Overrides the close method to do nothing
@@ -203,6 +205,7 @@ class Data:
         self.gyrox = gyrox
         self.gyroy = gyroy
         self.gyroz = gyroz
+        self.status_ex = 0b00000000
 
 
 @pytest.fixture

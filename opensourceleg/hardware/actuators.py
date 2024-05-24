@@ -991,6 +991,7 @@ class MockData:
         self.gyrox = gyrox
         self.gyroy = gyroy
         self.gyroz = gyroz
+        self.status_ex = 0b00000000
 
     def __repr__(self):
         return f"MockData"
@@ -1125,6 +1126,7 @@ class MockDephyActpack(DephyActpack):
         self._data.gyrox += small_noise
         self._data.gyroy += small_noise
         self._data.gyroz += small_noise
+        self._data.status_ex = 0b00000000
         return self._data
 
     # Overrides the close method to do nothing
