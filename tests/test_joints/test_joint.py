@@ -5,18 +5,18 @@ import pytest
 from pytest_mock import mocker
 
 from opensourceleg.hardware.actuators.base import MecheConsts
-from opensourceleg.hardware.actuators.dephy import (  # MAX_CASE_TEMPERATURE,
+from opensourceleg.hardware.actuators.dephy import (
     CurrentMode,
     DephyActpack,
     ImpedanceMode,
+    MockDephyActpack,
     PositionMode,
     VoltageMode,
 )
 from opensourceleg.hardware.joints import Joint
 from opensourceleg.tools.logger import Logger
-from tests.test_actuators.test_dephyactpack import (
+from tests.test_actuators.test_dephyactpack import (  # MockDephyActpack,
     Data,
-    MockDephyActpack,
     dephyactpack_mock,
     dephyactpack_patched,
     patch_dephyactpack,
