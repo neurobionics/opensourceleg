@@ -497,6 +497,10 @@ class DephyActpack(Device):
                 motor_current=self.motor_current,
             )
 
+            # Check for thermal fault, bit 2 of the execute status byte
+            if self._data.status_ex & 0b00000010 == 0b00000010:
+                raise RuntimeError("Actpack Thermal Limit Tripped")
+
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
@@ -987,6 +991,7 @@ class MockData:
         self.gyrox = gyrox
         self.gyroy = gyroy
         self.gyroz = gyroz
+        self.status_ex = 0b00000000
 
     def __repr__(self):
         return f"MockData"
@@ -1121,6 +1126,7 @@ class MockDephyActpack(DephyActpack):
         self._data.gyrox += small_noise
         self._data.gyroy += small_noise
         self._data.gyroz += small_noise
+        self._data.status_ex = 0b00000000
         return self._data
 
     # Overrides the close method to do nothing
