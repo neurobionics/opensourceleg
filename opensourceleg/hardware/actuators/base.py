@@ -5,33 +5,17 @@ Actuators Interface Generalized
 
 from typing import Any, Callable, Protocol, Union, overload
 
-import ctypes
-import os
-import time
 from abc import ABC, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
 
 # To be removed after Generalization
-import flexsea.fx_enums as fxe
 import numpy as np
 
 # To be removed after Generalization
-from flexsea.device import Device
 
-from ...tools.logger import Logger
-from ..thermal import ThermalModel
+"""_summary_
 
-# from opensourceleg.hardware.actuators_base import ControlModes
-# from opensourceleg.tools import safety
-
-
-"""
-    User Guide to opensourceleg.hardware.actuators
-    
-    ```
-    ```
-    
     Returns:
         _type_: _description_
 """
@@ -40,9 +24,7 @@ from ..thermal import ThermalModel
 @dataclass
 # Mandatory
 class ControlGains:
-    """
-    Dataclass for controller gains
-
+    """Dataclass for controller gains
     Args:
         kp (int): Proportional gain
         ki (int): Integral gain
@@ -64,13 +46,15 @@ class ControlGains:
 
 
 @dataclass
-# Mandatory
 class MecheConsts:
-    """
-    Imports necessary constants, compute the rest and protects them by @property
-
-    Returns:
-        _type_: _description_
+    """Dataclass for mechanical constants
+    Args:
+    MOTOR_COUNT_PER_REV: float = 16384
+    NM_PER_AMP: float = 0.1133
+    IMPEDANCE_A: float = 0.00028444
+    IMPEDANCE_C: float = 0.0007812
+    MAX_CASE_TEMPERATURE: float = 80
+    M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
     """
 
     def __repr__(self) -> str:
@@ -109,30 +93,13 @@ class MecheConsts:
         return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
 
 
-# @dataclass
-# class ActuatorComm:
-#     """
-#     Configuration of Actuator Definition & Communication.
-
-#     Args:
-#         ABC (_type_): _description_
-#     """
-
-#     name: str = "DephyActpack"
-
-#     port: str = "/dev/ttyACM0"
-#     baud_rate: int = 230400
-
-#     frequency: int = 500
-#     logger: Logger = Logger()
-
-#     debug_level: int = 0
-
-#     log: bool = False
-
-
 @dataclass
 class SafetySpec:
+    """
+    `SafetySpec` class for safety specifications of the actuator.
+    To be linked to safety module
+    """
+
     MAX_VOLTAGE = 0
     MAX_CURRENT = 0
     MAX_POSITION_COUNT = 0
@@ -150,14 +117,16 @@ class SafetySpec:
     MAX_CURRENT_KD = 0
 
 
-# Don't need to be imported by user
 class ActuatorMode:
+    """Base mode class for the actuator mode transfer
+    Args:
+        mode_pass (c_int): Mode pass / flag for the actuator
+        device (Actuator): Actuator instance
+    """
 
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
 
-        # self._which_mode: str = which_mode
         self._control_mode: c_int = mode_pass
-        # self._device: Actuator = device
         self._has_gains: bool = False
         self._gains: Any = None
         self._entry_callback: Callable[[], None] = lambda: None
@@ -177,17 +146,17 @@ class ActuatorMode:
     @property
     def mode(self) -> c_int:
         """
-        Control mode
+        Control Mode (Read Only)
 
         Returns:
-            c_int: Control mode
+            c_int: Control mode pass / flag
         """
         return self._control_mode
 
     @property
     def has_gains(self) -> bool:
         """
-        Whether the mode has gains
+        Whether the mode has gains (Read Only)
 
         Returns:
             bool: True if the mode has gains, False otherwise
@@ -217,9 +186,6 @@ class ActuatorMode:
         """
         self.exit()
         to_state.enter()
-        # self._which_mode = to_which_mode
-        # self._control_mode = to_mode_pass
-        # self.enter()
 
     def set_voltage(self, voltage: int) -> None:
         """
@@ -241,16 +207,35 @@ class ActuatorMode:
 
 
 class VoltageMode(ActuatorMode, ABC):
+    """Base Mode for Voltage Mode of Actuator
+
+    Args:
+        mode_pass (c_int): Mode pass / flag for the actuator
+        device (Actuator): Actuator instance
+    """
+
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
         super().__init__(mode_pass=mode_pass, device=device)
         pass
 
     @abstractmethod
     def set_voltage(self, voltage_value: int):
+        """set_voltage method for the voltage mode
+
+        Args:
+            voltage_value (int): voltage value applied
+        """
         pass
 
 
 class CurrentMode(ActuatorMode):
+    """Base Mode for Current Mode of Actuator
+
+    Args:
+        mode_pass (c_int): Mode pass / flag for the actuator
+        device (Actuator): Actuator instance
+    """
+
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
         super().__init__(mode_pass=mode_pass, device=device)
         pass
@@ -259,36 +244,31 @@ class CurrentMode(ActuatorMode):
     def set_current(
         self,
         current_value: int,
-        # Gains: ControlGains,
     ) -> None:
-        # self._gains = Gains
+        """set_current method for the current mode
+
+        Args:
+            current_value (int): current value applied
+        """
         pass
 
     @abstractmethod
     def set_gains(self, Gains: ControlGains) -> None:
-        # if self._mode == CurrentMode:
-        #     return ControlGains(
-        #         kp=Gains.kp, ki=Gains.ki, kd=0, K=0, B=0, ff=Gains.ff
-        #     )
-        #     self._has_gains = True
-        # if self._mode == ImpedanceMode:
-        #     return ControlGains(
-        #         kp=Gains.kp, ki=Gains.ki, kd=0, K=Gains.K, B=Gains.B, ff=Gains.ff
-        #     )
-        #     self._has_gains = True
-        # if self._mode == PositionMode:
-        #     return ControlGains(
-        #         kp=Gains.kp, ki=Gains.ki, kd=Gains.kd, K=0, B=0, ff=Gains.ff
-        #     )
-        #     self._has_gains = True
-        # else:
-        #     # TODO: should raise an error here
-        #     pass
+        """set_gains method for the current mode
+        Args:
+            Gains (ControlGains): control gains applied
+        """
         self._gains = Gains
         self._has_gains = True
 
 
 class PositionMode(ActuatorMode):
+    """Base Mode for Position Mode of Actuator
+    Args:
+        mode_pass (c_int): Mode pass / flag for the actuator
+        device (Actuator): Actuator instance
+    """
+
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
         super().__init__(mode_pass=mode_pass, device=device)
         pass
@@ -297,205 +277,101 @@ class PositionMode(ActuatorMode):
     def set_position(
         self,
         encoder_count: int,
-        #  Gains: ControlGains,
     ) -> None:
-        # self._gains = Gains
+        """set_position method for the position mode
+
+        Args:
+            encoder_count (int): encoder count applied
+        """
         pass
 
     def set_gains(self, Gains: ControlGains) -> None:
-        # if self._mode == CurrentMode:
-        #     return ControlGains(
-        #         kp=Gains.kp, ki=Gains.ki, kd=0, K=0, B=0, ff=Gains.ff
-        #     )
-        #     self._has_gains = True
-        # if self._mode == ImpedanceMode:
-        #     return ControlGains(
-        #         kp=Gains.kp, ki=Gains.ki, kd=0, K=Gains.K, B=Gains.B, ff=Gains.ff
-        #     )
-        #     self._has_gains = True
-        # if self._mode == PositionMode:
-        #     return ControlGains(
-        #         kp=Gains.kp, ki=Gains.ki, kd=Gains.kd, K=0, B=0, ff=Gains.ff
-        #     )
-        #     self._has_gains = True
-        # else:
-        #     # TODO: should raise an error here
-        #     pass
+        """set_gains method for the position mode
+
+        Args:
+            Gains (ControlGains): gain values applied
+        """
         self._gains = Gains
         self._has_gains = True
 
 
 class ImpedanceMode(ActuatorMode):
+    """Base Mode for Impedance Mode of Actuator
+
+    Args:
+        mode_pass (c_int): Mode pass / flag for the actuator
+        device (Actuator): Actuator instance
+    """
+
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
         super().__init__(mode_pass=mode_pass, device=device)
         pass
 
     @abstractmethod
     def set_gains(self, Gains: ControlGains):
+        """set_gains method for the impedance mode
+        Args:
+            Gains (ControlGains): control gains applied
+        """
         self._gains = Gains
         self._has_gains = True
-        # self._set_gains(Mode=self, Gains=ImpedanceGains)
         pass
 
     @abstractmethod
     def set_position(
         self,
         encoder_count: int,
-        #  Gains: ControlGains
     ) -> None:
-        # self._gains = Gains
+        """set_position method for the impedance mode
+
+        Args:
+            encoder_count (int): encoder count applied
+        """
         pass
 
 
-# @dataclass(init=False)
-# class ActuatorControlModes:
-#     """
-#     Actpack modes
-
-#     Args:
-#         voltage (VoltageMode): Voltage mode
-#         current (CurrentMode): Current mode
-#         position (PositionMode): Position mode
-#         impedance (ImpedanceMode): Impedance mode
-#     """
-
-#     voltage: VoltageMode
-#     current: CurrentMode
-#     position: PositionMode
-#     impedance: ImpedanceMode
-
-#     def __init__(self, device: "Actuator") -> None:
-#         self.voltage = VoltageMode(device=device)
-#         self.current = CurrentMode(device=device)
-#         self.position = PositionMode(device=device)
-#         self.impedance = ImpedanceMode(device=device)
-
-#     def __repr__(self) -> str:
-#         return f"ActuatorControlModes"
-
-
-# Mandatory
 class Actuator(ABC):
+    """Base class for the Actuator
+
+    Args:
+        Gains (ControlGains): control gains applied
+        MecheSpecs (MecheConsts): mechanical constants applied
+    """
 
     def __init__(
         self,
-        # port: str,
-        # baud_rate: int,
         Gains: ControlGains = ControlGains(),
-        MecheSpecs: MecheConsts = MecheConsts(
-            # MOTOR_COUNT_PER_REV=16384,
-            # NM_PER_AMP=0.1133,
-            # IMPEDANCE_A=0.00028444,
-            # IMPEDANCE_C=0.0007812,
-            # MAX_CASE_TEMPERATURE=80,
-            # M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
-        ),
-        # Communication: ActuatorComm,
-        # Safety: SafetySpec,
+        MecheSpecs: MecheConsts = MecheConsts(),
         *args,
         **kwargs,
     ) -> None:
-        # super().__init__()
-        # self._port: str = port
-        # self._baud_rate: int = baud_rate
-        # ActuatorAction.__init__(self, device=self)
         self._gains: Any = Gains
-        # self._actuator_mode_manager =
         self._MecheConsts: MecheConsts = MecheSpecs
-        # self._Communication: ActuatorComm = Communication
-        # self._frequency = self._Communication.frequency
         self._mode: Any = None
-
-        # self._which_mode: str = self._mode._which_mode
-        # self._mode_pass: c_int
-        # self._safety: SafetySpec = Safety
-        # self._log: Logger = Logger()
-
-        # self._has_gains: bool = self._mode._has_gains
-
-        # self._sensor: Any = None
-
-        # self._encoder_map = None
-
-        # self._motor_zero_position = 0.0
-        # self._joint_zero_position = 0.0
-
-        # self._joint_offset = 0.0
-        # self._motor_offset = 0.0
-
-        # self._joint_direction = 1.0
-
-        # self._thermal_model: ThermalModel = ThermalModel(
-        #     temp_limit_windings=80,
-        #     soft_border_C_windings=10,
-        #     temp_limit_case=70,
-        #     soft_border_C_case=10,
-        # )
-        # self._thermal_scale: float = 1.0
-
-        # self.port = kwargs["port"]
-        # self.baud_rate = kwargs["baud_rate"]
-        # self._frequency = kwargs["frequency"]
-        # TODO: use *argv and **kwargs to allow passing additional info
 
     @abstractmethod
     def start(self) -> None:
-        # self.set_mode(which_mode="voltage", mode_pass=self._mode_pass)
-        # self.set_voltage(voltage_value=0, mode_pass=self._mode_pass)
-        # try:
-        #     self.open(
-        #         freq=self._frequency,
-        #         log_level=self._debug_level,
-        #         log_enabled=self._dephy_log,
-        #     )
-        # except OSError as e:
-        #     print("\n")
-        #     self._log.error(
-        #         msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
-        #     )
-        #     os._exit(status=1)
-        # time.sleep(0.1)
-        # # self._sensor = self.read()
-        # self._mode.enter()
+        """Start method for the actuator"""
         pass
 
     @abstractmethod
     def stop(self) -> None:
-        """
-        This is the stop method for the actuator. It should be called before the program exits.
-
-        A few best practices to follow:
-        1. Set the actuator to voltage mode and set the voltage to 0.
-        2. Close the serial port.
-        3. Sleep for a short duration to allow the actuator to stop.
-
-        """
-        # self.set_mode(mode=ActuatorControlModes.voltage)
-        # self.set_voltage(voltage_value=0, mode_pass=self._mode_pass)
-
-        # time.sleep(0.1)
-        # self.close()
+        """Stop method for the actuator"""
         pass
 
     @abstractmethod
     def update(self) -> None:
-        # self._gains = self._mode._gains
+        """update method for the actuator"""
         pass
 
     @abstractmethod
     def set_mode(self, mode: ActuatorMode) -> None:
-        # if type(mode) in ActuatorControlModes:
-        #     self._mode.transition(to_state=mode)
-        #     self._mode = mode
-        # else:
-        #     # TODO: check method of raising error
-        #     # raise ValueError("Invalid mode")
-        #     pass
-        pass
+        """set_mode method for the actuator
 
-    # @property
-    # def frequency(self) -> int:
-    #     return self._frequency
+        Args:
+            mode (ActuatorMode): mode applied to the actuator
+        """
+        pass
 
     @property
     def mode(self) -> Any:
@@ -503,8 +379,11 @@ class Actuator(ABC):
 
     @abstractmethod
     def set_voltage(self, voltage_value: float):
-        # self._mode.set_voltage(voltage_value=voltage_value)
-        # take motor steps here
+        """set_voltage method for the actuator
+
+        Args:
+            voltage_value (float): voltage value applied
+        """
         pass
 
     @abstractmethod
@@ -512,25 +391,23 @@ class Actuator(ABC):
         self,
         current_value: float,
     ):
-        # self._mode._set_current(current_value=current_value, Gains=CurrentGain)
-        # take motor steps here
-        pass
+        """set_current method for the actuator
 
-    # @abstractmethod
-    # def set_impedance(
-    #     self, PositionCount: int, ImpedanceGains: ControlGains, mode_pass: c_int
-    # ):
-    #     # self._mode._set_impedance(ImpedanceGains=ImpedanceGains)
-    #     # take motor steps here
-    #     pass
+        Args:
+            current_value (float): current value applied
+        """
+        pass
 
     @abstractmethod
     def set_motor_position(
         self,
         PositionCount: int,
     ):
-        # self._mode._set_position(encoder_count=PositionCount, Gains=PositionGains)
-        # take motor steps here
+        """set_motor_position method for the actuator
+
+        Args:
+            PositionCount (int): encoder count for the motor position
+        """
         pass
 
 
