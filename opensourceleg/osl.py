@@ -352,12 +352,6 @@ class OpenSourceLeg:
 
         self.log.update()
 
-        if hasattr(self, "_safety_attributes"):
-            for safety_attribute_name in self._safety_attributes:
-                self.log.debug(
-                    msg=f"[{self.__repr__()}] Safety mechanism in-place for {safety_attribute_name}: {getattr(self, safety_attribute_name)}"
-                )
-
         self._timestamp = time.time()
 
     def home(self) -> None:

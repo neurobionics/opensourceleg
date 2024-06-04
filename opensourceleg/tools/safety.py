@@ -109,6 +109,31 @@ def is_positive(clamp: bool = False):
     return decorator
 
 
+def is_zero(clamp: bool = False):
+    """
+    Creates a decorator to check if a property's value is zero.
+
+    Args:
+        clamp (bool): If True, the decorator will return 0 instead of raising an error. Defaults to False.
+
+    Returns:
+        Callable: Decorator function.
+    """
+
+    def decorator(func):
+        def wrapper(instance, *args, **kwargs):
+            value = func(instance, *args, **kwargs)
+            if value != 0:
+                if clamp:
+                    return 0
+                raise ValueError("Value must be zero")
+            return value
+
+        return wrapper
+
+    return decorator
+
+
 def is_within_range(min_value: float, max_value: float, clamp: bool = False):
     """
     Creates a decorator to check if a property's value is within a given range.

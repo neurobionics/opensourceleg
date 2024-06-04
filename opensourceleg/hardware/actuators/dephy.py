@@ -416,6 +416,10 @@ class DephyActpack(base.Actuator, Device):
                 motor_current=self.motor_current,
             )
 
+            # Check for thermal fault, bit 2 of the execute status byte
+            if self._data.status_ex & 0b00000010 == 0b00000010:
+                raise RuntimeError("Actpack Thermal Limit Tripped")
+
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
@@ -890,6 +894,7 @@ class MockData:
         self.gyrox = gyrox
         self.gyroy = gyroy
         self.gyroz = gyroz
+        self.status_ex = 0b00000000
 
     def __repr__(self):
         return f"MockData"
@@ -977,29 +982,31 @@ class MockDephyActpack(DephyActpack):
 
     # Overrides the read method to modify the data incrementally instead of through a device data stream
     def read(self):
-        self._data.batt_volt += 15
-        self._data.batt_curr += 15
-        self._data.mot_volt += 15
-        self._data.mot_cur += 15
-        self._data.mot_ang += 15
-        self._data.ank_ang += 15
-        self._data.mot_vel += 15
-        self._data.mot_acc += 15
-        self._data.ank_vel += 15
-        self._data.temperature += 15
-        self._data.genvar_0 += 15
-        self._data.genvar_1 += 15
-        self._data.genvar_2 += 15
-        self._data.genvar_3 += 15
-        self._data.genvar_4 += 15
-        self._data.genvar_5 += 15
-        self._data.accelx += 15
-        self._data.accely += 15
-        self._data.accelz += 15
-        self._data.gyrox += 15
-        self._data.gyroy += 15
-        self._data.gyroz += 15
+        small_noise = np.random.normal(0, 0.01)
 
+        self._data.batt_volt += small_noise
+        self._data.batt_curr += 0.0
+        self._data.mot_volt += 0.0
+        self._data.mot_cur += 0.0
+        self._data.mot_ang += 0.0
+        self._data.ank_ang += 0.0
+        self._data.mot_vel += small_noise
+        self._data.mot_acc += small_noise
+        self._data.ank_vel += small_noise
+        self._data.temperature += small_noise
+        self._data.genvar_0 += 0.0
+        self._data.genvar_1 += 0.0
+        self._data.genvar_2 += 0.0
+        self._data.genvar_3 += 0.0
+        self._data.genvar_4 += 0.0
+        self._data.genvar_5 += 0.0
+        self._data.accelx += small_noise
+        self._data.accely += small_noise
+        self._data.accelz += small_noise
+        self._data.gyrox += small_noise
+        self._data.gyroy += small_noise
+        self._data.gyroz += small_noise
+        self._data.status_ex = 0b00000000
         return self._data
 
     # Overrides the close method to do nothing
