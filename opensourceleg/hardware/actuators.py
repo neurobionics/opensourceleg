@@ -457,7 +457,7 @@ class DephyActpack(Device):
         self._mode: ActpackMode = self.control_modes.voltage
 
     def __repr__(self) -> str:
-        return f"DephyActpack[{self._name}]"
+        return f"{self._name}[DephyActpack]"
 
     def start(self) -> None:
         try:
