@@ -138,10 +138,10 @@ class Logger(logging.Logger):
                 if "__main__" in container.values():
                     self._container_names.append("")
                 else:
-                    self._container_names.append(f":{container}")
+                    self._container_names.append(f"{container}:")
             else:
                 if type(container).__repr__ is not object.__repr__:
-                    self._container_names.append(f":{container}")
+                    self._container_names.append(f"{container}:")
                 else:
                     self._container_names.append(f"")
         else:
