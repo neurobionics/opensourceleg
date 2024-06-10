@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import moteus
 import moteus_pi3hat as pihat
 
-# import flexsea.fx_enums as fxe
+import flexsea.fx_enums as fxe
 import numpy as np
 
 import opensourceleg.hardware.actuators.base as base
@@ -262,14 +262,14 @@ class MoteusObject(base.Actuator, moteus.Controller):
             ),
         )
 
-        Device.__init__(self, port=port, baud_rate=baud_rate)
+        # Device.__init__(self, port=port, baud_rate=baud_rate)
 
-        # self._frequency: int = frequency
-        # self._debug_level: int = debug_level
-        # self._dephy_log: bool = dephy_log
-        # self._name: str = name
-        # self._log: Logger = logger
-        # self._encoder_map = None
+        self._frequency: int = frequency
+        self._debug_level: int = debug_level
+        self._dephy_log: bool = dephy_log
+        self._name: str = name
+        self._log: Logger = logger
+        self._encoder_map = None
 
         self._CAN_slow = pihat.CanConfiguration()
         self._CAN_slow.slow_bitrate = 125000

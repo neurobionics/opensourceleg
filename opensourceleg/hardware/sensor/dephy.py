@@ -8,6 +8,7 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
+import opensourceleg.hardware.sensor.base as base
 from opensourceleg.hardware.joints import Joint
 from opensourceleg.tools.logger import Logger
 
@@ -30,7 +31,7 @@ Usage Guide:
 """
 
 
-class StrainAmp:
+class StrainAmp(base.StrainAmp):
     """
     A class to directly manage the 6ch strain gauge amplifier over I2C.
     An instance of this class is created by the loadcell class.
@@ -64,8 +65,8 @@ class StrainAmp:
         self.data: list[int] = []
         self.failed_reads = 0
 
-    def __repr__(self) -> str:
-        return f"StrainAmp"
+    # def __repr__(self) -> str:
+    #     return f"StrainAmp"
 
     def _read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
@@ -114,7 +115,7 @@ class StrainAmp:
         )
 
 
-class Loadcell:
+class Loadcell(base.Loadcell):
     def __init__(
         self,
         dephy_mode: bool = False,
@@ -148,9 +149,6 @@ class Loadcell:
         )
         self._zeroed = False
         self._log: Logger = logger  # type: ignore
-
-    def __repr__(self) -> str:
-        return f"Loadcell"
 
     def reset(self):
         self._zeroed = False
@@ -451,7 +449,7 @@ class IMUDataClass:
     imu_filter_gps_time_week_num: float = 0
 
 
-class IMULordMicrostrain:
+class IMULordMicrostrain(base.SensorIMU):
     """
     Sensor class for the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).
@@ -522,9 +520,6 @@ class IMULordMicrostrain:
             self.timeout
         )  # Clean the internal circular buffer.
         self.imu_data = IMUDataClass()
-
-    def __repr__(self) -> str:
-        return f"IMULordMicrostrain"
 
     def start_streaming(self):
         self.imu.resume()
