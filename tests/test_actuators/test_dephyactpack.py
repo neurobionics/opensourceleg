@@ -688,7 +688,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_update_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Please open() the device before streaming data."
+            "WARNING: [MockDephyActpack[DephyActpack]] Please open() the device before streaming data."
             in contents
         )
     # Set the is_streaming attribute to True to simulate an open device
@@ -770,7 +770,7 @@ def test_dephyactpack_set_mode(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_mode_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Mode badmode not found"
+            "WARNING: [MockDephyActpack[DephyActpack]] Mode badmode not found"
             in contents
         )
 
@@ -822,7 +822,7 @@ def test_dephyactpack_set_position_gains(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_position_gains_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set position gains in mode c_int(2)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set position gains in mode c_int(2)"
             in contents
         )
 
@@ -874,7 +874,7 @@ def test_dephyactpack_set_current_gains(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_current_gains_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current gains in mode c_int(0)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set current gains in mode c_int(0)"
             in contents
         )
 
@@ -928,7 +928,7 @@ def test_dephyactpack_set_impedance_gains(dephyactpack_patched: DephyActpack):
     ) as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set impedance gains in mode c_int(2)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set impedance gains in mode c_int(2)"
             in contents
         )
 
@@ -962,7 +962,7 @@ def test_dephyactpack_set_voltage(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_voltage_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set voltage in mode c_int(0)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set voltage in mode c_int(0)"
             in contents
         )
 
@@ -996,7 +996,7 @@ def test_dephyactpack_set_current(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_current_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set current in mode c_int(0)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set current in mode c_int(0)"
             in contents
         )
 
@@ -1031,7 +1031,7 @@ def test_dephyactpack_set_motor_torque(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_motor_torque_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor_torque in mode c_int(0)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set motor_torque in mode c_int(0)"
             in contents
         )
 
@@ -1073,6 +1073,6 @@ def test_dephyactpack_set_motor_position(dephyactpack_patched: DephyActpack):
     with open("tests/test_actuators/test_dephyactpack_set_motor_position_log.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [DephyActpack[MockDephyActpack]] Cannot set motor position in mode c_int(2)"
+            "WARNING: [MockDephyActpack[DephyActpack]] Cannot set motor position in mode c_int(2)"
             in contents
         )
