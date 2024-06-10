@@ -118,7 +118,7 @@ class VoltageMode(base.VoltageMode):
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: DephyActpack = device
-        self._control_mode: c_int = fxe.FX_VOLTAGE
+        # self._control_mode: c_int = fxe.FX_VOLTAGE
 
     def _entry(self) -> None:
         # TODO: check log instance
@@ -145,7 +145,7 @@ class CurrentMode(base.CurrentMode):
         self._device: DephyActpack = device
         self._gains = DEFAULT_CURRENT_GAINS
 
-        self._control_mode: c_int = fxe.FX_CURRENT
+        # self._control_mode: c_int = fxe.FX_CURRENT
 
     def _entry(self) -> None:
 
@@ -205,7 +205,7 @@ class PositionMode(base.PositionMode):
         self._exit_callback = self._exit
         self._device: DephyActpack = device
         self._gains = DEFAULT_POSITION_GAINS
-        self._control_mode: c_int = fxe.FX_POSITION
+        # self._control_mode: c_int = fxe.FX_POSITION
         pass
 
     def _entry(self) -> None:
@@ -251,7 +251,7 @@ class ImpedanceMode(base.ImpedanceMode):
         self._exit_callback = self._exit
         self._device: DephyActpack = device
         self._gains = DEFAULT_IMPEDANCE_GAINS
-        self._control_mode: c_int = fxe.FX_IMPEDANCE
+        # self._control_mode: c_int = fxe.FX_IMPEDANCE
         pass
 
     def _entry(self) -> None:
