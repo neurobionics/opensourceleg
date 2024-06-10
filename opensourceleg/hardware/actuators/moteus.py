@@ -8,10 +8,9 @@ from calendar import c
 from ctypes import c_int
 from dataclasses import dataclass
 
+import flexsea.fx_enums as fxe
 import moteus
 import moteus_pi3hat as pihat
-
-import flexsea.fx_enums as fxe
 import numpy as np
 
 import opensourceleg.hardware.actuators.base as base
