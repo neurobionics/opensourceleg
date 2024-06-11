@@ -239,12 +239,17 @@ class MoteusObject(base.Actuator, moteus.Controller):
     def __init__(
         self,
         name: str = "MoteusObject",
-        port: str = "/dev/ttyACM0",
-        baud_rate: int = 230400,
+        dev_id: int = 11,
+        addr_map={
+            1: [11],
+            2: [12],
+            3: [13],
+            4: [14],
+        },
         frequency: int = 500,
         logger: Logger = Logger(),
         debug_level: int = 0,
-        dephy_log: bool = False,
+        # dephy_log: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -260,12 +265,12 @@ class MoteusObject(base.Actuator, moteus.Controller):
                 M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
             ),
         )
-
-        # Device.__init__(self, port=port, baud_rate=baud_rate)
+        self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
+        moteus.Controller.__init__(self, id=dev_id, transport=self._transport)
 
         self._frequency: int = frequency
         self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
+        # self._dephy_log: bool = dephy_log
         self._name: str = name
         self._log: Logger = logger
         self._encoder_map = None
@@ -302,11 +307,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
     def start(self) -> None:
         super().start()
         try:
-            self.open(
-                freq=self._frequency,
-                log_level=self._debug_level,
-                log_enabled=self._dephy_log,
-            )
+            self._transport.cycle([self.make_stop()])
         except OSError as e:
             print("\n")
             self._log.error(
