@@ -12,7 +12,7 @@ from opensourceleg.hardware.actuators.dephy import (
     VoltageMode,
 )
 from opensourceleg.hardware.joints import Joint
-from opensourceleg.hardware.sensor.dephy import Loadcell
+from opensourceleg.hardware.sensor.lordimu import Loadcell
 from opensourceleg.osl import OpenSourceLeg
 from opensourceleg.tools.logger import Logger
 from opensourceleg.tools.utilities import SoftRealtimeLoop

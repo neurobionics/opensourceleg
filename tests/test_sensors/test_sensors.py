@@ -3,7 +3,7 @@ import pytest
 from pytest_mock import mocker
 
 from opensourceleg.hardware.joints import Joint
-from opensourceleg.hardware.sensor.dephy import Loadcell, StrainAmp
+from opensourceleg.hardware.sensor.lordimu import Loadcell, StrainAmp
 from opensourceleg.tools.logger import Logger
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import MockJoint, patch_sleep
@@ -146,7 +146,7 @@ def patch_strainamp(mocker, strainamp_mock: MockStrainAmp):
     """
 
     mocker.patch(
-        "opensourceleg.hardware.sensor.dephy.StrainAmp.__new__",
+        "opensourceleg.hardware.sensor.lordimu.StrainAmp.__new__",
         return_value=strainamp_mock,
     )
 
@@ -177,7 +177,7 @@ def patch_loadcell(mocker, loadcell_mock: MockLoadcell):
     """
 
     mocker.patch(
-        "opensourceleg.hardware.sensor.dephy.Loadcell.__new__",
+        "opensourceleg.hardware.sensor.lordimu.Loadcell.__new__",
         return_value=loadcell_mock,
     )
 

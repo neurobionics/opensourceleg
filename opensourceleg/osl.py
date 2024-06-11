@@ -7,7 +7,7 @@ import numpy as np
 sys.path.append("../")
 
 from .hardware.joints import Joint, MockJoint
-from .hardware.sensor.dephy import Loadcell, MockLoadcell
+from .hardware.sensor.lordimu import Loadcell, MockLoadcell
 from .tools import utilities
 from .tools.logger import Logger
 from .tools.utilities import SoftRealtimeLoop

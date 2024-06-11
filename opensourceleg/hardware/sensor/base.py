@@ -63,6 +63,3 @@ class SensorIMU(ABC):
     @abstractmethod
     def get_data(self):
         pass
-
-    def __repr__(self) -> str:
-        return f"IMULordMicrostrain"

@@ -554,6 +554,9 @@ class IMULordMicrostrain(base.SensorIMU):
 
         return self.imu_data
 
+    def __repr__(self) -> str:
+        return f"IMULordMicrostrain"
+
 
 if __name__ == "__main__":
     pass
