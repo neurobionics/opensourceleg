@@ -718,8 +718,8 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
     lc_initialize._is_dephy = True
     lc_initialize._zeroed = True
     # Patch the input method to return "y" when running pytest
-    mocker.patch("builtins.input", return_value="y")
-    lc_initialize.initialize()
+    # mocker.patch("builtins.input", return_value="y")
+    lc_initialize.calibrate(reset=True)
     # Assert the proper log messages are written for the else statement in the if statement in the if statement
     with open("tests/test_sensors/test_loadcell_initialize_log.log") as f:
         contents = f.read()
@@ -743,7 +743,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
         genvar_4=5,
         genvar_5=6,
     )
-    lc_initialize.initialize(number_of_iterations=1)
+    lc_initialize.calibrate(number_of_iterations=1)
     # Assert the data was properly updated
     assert lc_initialize._zeroed == True
     assert lc_initialize._joint._data.batt_volt == 15
@@ -921,7 +921,7 @@ def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
         genvar_4=5,
         genvar_5=6,
     )
-    lc_initialize_else.initialize(number_of_iterations=1)
+    lc_initialize_else.calibrate(number_of_iterations=1)
     # Assert the proper values are returned with a couple significant figures
     assert round(lc_initialize_else.fx, -2) == round(
         loadcell_signed_dot_added_and_transposed[0][0], -2

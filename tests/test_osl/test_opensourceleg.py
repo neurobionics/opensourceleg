@@ -570,14 +570,13 @@ def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
 
     test_osl_cl = OpenSourceLeg()
     test_osl_cl.add_loadcell(loadcell_matrix=LOADCELL_MATRIX)
-    test_osl_cl._loadcell._zeroed = True
     test_osl_cl.log = Logger(file_path="tests/test_osl/test_osl_cl")
     test_osl_cl.log.set_stream_level("DEBUG")
     test_osl_cl.calibrate_loadcell()
     with open("tests/test_osl/test_osl_cl.log") as f:
         contents = f.read()
         assert "[OSL] Calibrating loadcell." in contents
-    assert test_osl_cl._loadcell._zeroed == False
+    assert test_osl_cl._loadcell._zeroed == True
 
 
 def test_osl_reset(joint_patched: Joint, mock_get_active_ports, patch_sleep):
