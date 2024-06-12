@@ -3,6 +3,7 @@
 import numpy as np
 
 import opensourceleg.hardware.sensor.base as base
+from opensourceleg.hardware.actuators.dephy import DephyActpack
 
 # from flexsea.device import Device
 
@@ -28,36 +29,36 @@ class DephySensor(base.SensorIMU):
             self.data = self.device.read()
 
 
-class DephyIMU(base.SensorIMU):
-    def __init__():
-        pass
+# class DephyIMU(base.SensorIMU):
+#     def __init__():
+#         pass
 
-    def start_streaming(self):
-        pass
+#     def start_streaming(self):
+#         pass
 
-    def stop_streaming(self):
-        pass
-
-
-class DephyJointEncoder(base.Encoder):
-    pass
+#     def stop_streaming(self):
+#         pass
 
 
-class DephyActpack:
-    def __init__(self, port, baud_rate, **kwargs):
-        super().__init__(port, baud_rate, **kwargs)
-        self.imu = DephyIMU(self)
+# class DephyJointEncoder(base.Encoder):
+#     pass
 
-    def update(self):
-        self.data = self.read()
-        self.imu.update(self.data)
-        self.joint_encoder.update(self.data)
 
-    @property
-    def data(self):
-        return self.data
+# class DephyActpack:
+#     def __init__(self, port, baud_rate, **kwargs):
+#         super().__init__(port, baud_rate, **kwargs)
+#         self.imu = DephyIMU(self)
+
+#     def update(self):
+#         self.data = self.read()
+#         self.imu.update(self.data)
+#         self.joint_encoder.update(self.data)
+
+#     @property
+#     def data(self):
+#         return self.data
 
 
 if __name__ == "__main__":
     dephy_actpack = DephyActpack(port="/dev/ttyUSB0", baud_rate=115200)
-    my_dephy_imu = DephyIMU(dephy_actpack)
+    # my_dephy_imu = DephyIMU(dephy_actpack)
