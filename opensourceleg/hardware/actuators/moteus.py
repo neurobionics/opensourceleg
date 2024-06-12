@@ -42,25 +42,25 @@ class VoltageMode(base.VoltageMode):
     def _exit(self) -> None:
         # TODO: check log instance
         self._device._log.debug(msg=f"[Actpack] Exiting Voltage mode.")
-        self.set_voltage(voltage_value=0)
+        # self.set_voltage(voltage_value=0)
         time.sleep(0.1)
 
     def set_voltage(self, voltage_value: int) -> None:
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=voltage_value,
+        # TODO: Check instances here
+        self._device._transport.cycle(
+            self._device._servo.set_vfoc(voltage=voltage_value)
         )
 
 
 class CurrentMode(base.CurrentMode):
     def __init__(self, device: "MoteusObject") -> None:
-        super().__init__(mode_pass=fxe.FX_CURRENT, device=device)
+        super().__init__(mode_pass=moteus.Mode.CURRENT, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: MoteusObject = device
         self._gains = DEFAULT_CURRENT_GAINS
 
-        self._control_mode: c_int = fxe.FX_CURRENT
+        self._control_mode = moteus.Mode.CURRENT
 
     def _entry(self) -> None:
 
@@ -75,7 +75,7 @@ class CurrentMode(base.CurrentMode):
     def _exit(self) -> None:
         # TODO: check log instance
         self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
-        self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
+        # self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(1 / self._device.frequency)
 
     def set_current(
@@ -94,10 +94,9 @@ class CurrentMode(base.CurrentMode):
         # assert 0 <= Gains.ff <= 128, "ff must be between 0 and 128"
 
         # self._device.set_gains(kp=Gains.kp, ki=Gains.ki, kd=0, k=0, b=0, ff=Gains.ff)
-
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=current_value,
+        # TODO: Check instances here
+        self._device._transport.cycle(
+            self._device._servo.set_current(q_A=current_value)
         )
 
     def set_gains(
@@ -110,17 +109,18 @@ class CurrentMode(base.CurrentMode):
         assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
         self._has_gains = True
         self._gains = gains
-        self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
+        # TODO: Check Gain Instances
+        # self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
 
 
 class PositionMode(base.PositionMode):
     def __init__(self, device: "MoteusObject") -> None:
-        super().__init__(mode_pass=fxe.FX_POSITION, device=device)
+        super().__init__(mode_pass=moteus.Mode.POSITION, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: MoteusObject = device
         self._gains = DEFAULT_POSITION_GAINS
-        self._control_mode: c_int = fxe.FX_POSITION
+        self._control_mode = moteus.Mode.POSITION
         pass
 
     def _entry(self) -> None:
@@ -133,7 +133,7 @@ class PositionMode(base.PositionMode):
 
     def _exit(self) -> None:
         self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
-        self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
+        # self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(0.1)
 
     def set_position(
@@ -141,7 +141,9 @@ class PositionMode(base.PositionMode):
         encoder_count: int,
     ) -> None:
         super().set_position(encoder_count=encoder_count)
-        self._device.send_motor_command(ctrl_mode=fxe.FX_POSITION, value=encoder_count)
+        self._device._transport.cycle(
+            self._device._servo.set_position(position=encoder_count)
+        )
         pass
 
     def set_gains(
@@ -154,58 +156,59 @@ class PositionMode(base.PositionMode):
         assert 0 <= gains.kd <= 1000, "kd must be between 0 and 1000"
         self._has_gains = True
         self._gains = gains
-        self._device.set_gains(
-            kp=gains.kp, ki=gains.ki, kd=gains.kd, k=0, b=0, ff=gains.ff
-        )
+        # TODO: Check Gain Instances
+        # self._device.set_gains(
+        #     kp=gains.kp, ki=gains.ki, kd=gains.kd, k=0, b=0, ff=gains.ff
+        # )
 
 
-class ImpedanceMode(base.ImpedanceMode):
-    def __init__(self, device: "MoteusObject") -> None:
-        super().__init__(mode_pass=fxe.FX_IMPEDANCE, device=device)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-        self._device: MoteusObject = device
-        self._gains = DEFAULT_IMPEDANCE_GAINS
-        self._control_mode: c_int = fxe.FX_IMPEDANCE
-        pass
+# class ImpedanceMode(base.ImpedanceMode):
+#     def __init__(self, device: "MoteusObject") -> None:
+#         super().__init__(mode_pass=fxe.FX_IMPEDANCE, device=device)
+#         self._entry_callback = self._entry
+#         self._exit_callback = self._exit
+#         self._device: MoteusObject = device
+#         self._gains = DEFAULT_IMPEDANCE_GAINS
+#         self._control_mode: c_int = fxe.FX_IMPEDANCE
+#         pass
 
-    def _entry(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Entering Impedance mode.")
-        if not self.has_gains:
-            self.set_gains(gains=self._gains)
+#     def _entry(self) -> None:
+#         self._device._log.debug(msg=f"[Actpack] Entering Impedance mode.")
+#         if not self.has_gains:
+#             self.set_gains(gains=self._gains)
 
-        self._device.set_motor_position(self._device.motor_position)
+#         self._device.set_motor_position(self._device.motor_position)
 
-    def _exit(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
-        self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
-        time.sleep(1 / self._device.frequency)
+#     def _exit(self) -> None:
+#         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
+#         self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
+#         time.sleep(1 / self._device.frequency)
 
-    def set_gains(self, gains: base.ControlGains = DEFAULT_IMPEDANCE_GAINS):
-        assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
-        assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
-        assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
-        assert 0 <= gains.K, "K must be greater than 0"
-        assert 0 <= gains.B, "B must be greater than 0"
+#     def set_gains(self, gains: base.ControlGains = DEFAULT_IMPEDANCE_GAINS):
+#         assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
+#         assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
+#         assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
+#         assert 0 <= gains.K, "K must be greater than 0"
+#         assert 0 <= gains.B, "B must be greater than 0"
 
-        self._has_gains = True
-        self._gains = gains
-        self._device.set_gains(
-            kp=gains.kp,
-            ki=gains.ki,
-            kd=0,
-            k=gains.K,
-            b=gains.B,
-            ff=gains.ff,
-        )
+#         self._has_gains = True
+#         self._gains = gains
+#         self._device.set_gains(
+#             kp=gains.kp,
+#             ki=gains.ki,
+#             kd=0,
+#             k=gains.K,
+#             b=gains.B,
+#             ff=gains.ff,
+#         )
 
-    def set_position(
-        self,
-        encoder_count: int,
-    ) -> None:
-        super().set_position(encoder_count=encoder_count)
-        self._device.send_motor_command(ctrl_mode=fxe.FX_IMPEDANCE, value=encoder_count)
-        pass
+#     def set_position(
+#         self,
+#         encoder_count: int,
+#     ) -> None:
+#         super().set_position(encoder_count=encoder_count)
+#         self._device.send_motor_command(ctrl_mode=fxe.FX_IMPEDANCE, value=encoder_count)
+#         pass
 
 
 @dataclass(init=False)
@@ -223,13 +226,13 @@ class MoteusControlModes:
     voltage: VoltageMode
     current: CurrentMode
     position: PositionMode
-    impedance: ImpedanceMode
+    # impedance: ImpedanceMode
 
     def __init__(self, device: "MoteusObject") -> None:
         self.voltage = VoltageMode(device=device)
         self.current = CurrentMode(device=device)
         self.position = PositionMode(device=device)
-        self.impedance = ImpedanceMode(device=device)
+        # self.impedance = ImpedanceMode(device=device)
 
     def __repr__(self) -> str:
         return f"ActpackControlModes"
@@ -266,7 +269,6 @@ class MoteusObject(base.Actuator, moteus.Controller):
             ),
         )
         self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
-        moteus.Controller.__init__(self, id=dev_id, transport=self._transport)
 
         self._frequency: int = frequency
         self._debug_level: int = debug_level
@@ -300,6 +302,8 @@ class MoteusObject(base.Actuator, moteus.Controller):
 
         self._mode: base.ActuatorMode = self.control_modes.voltage
         self._data: Any = None
+
+        self._servo = moteus.Controller(id=dev_id, transport=self._transport)
 
     def __repr__(self) -> str:
         return f"MoteusObject[{self._name}]"
@@ -347,7 +351,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
             )
 
     def set_mode(self, mode: base.ActuatorMode) -> None:
-        if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
+        if type(mode) in [VoltageMode, CurrentMode, PositionMode]:
             self._mode.transition(to_state=mode)
             self._mode = mode
         else:
@@ -406,7 +410,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
         """
         if self._mode not in [
             self.control_modes.position,
-            self.control_modes.impedance,
+            # self.control_modes.impedance,
         ]:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
@@ -466,32 +470,32 @@ class MoteusObject(base.Actuator, moteus.Controller):
 
         self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=0, B=0, ff=ff))  # type: ignore
 
-    def set_impedance_gains(
-        self,
-        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
-        K: int = DEFAULT_IMPEDANCE_GAINS.K,
-        B: int = DEFAULT_IMPEDANCE_GAINS.B,
-        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
-    ) -> None:
-        """
-        Sets the impedance gains in arbitrary actpack units.
-        See Dephy's webpage for conversions or use other library methods that handle conversion for you.
+    # def set_impedance_gains(
+    #     self,
+    #     kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
+    #     ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
+    #     K: int = DEFAULT_IMPEDANCE_GAINS.K,
+    #     B: int = DEFAULT_IMPEDANCE_GAINS.B,
+    #     ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+    # ) -> None:
+    #     """
+    #     Sets the impedance gains in arbitrary actpack units.
+    #     See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
-        Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            K (int): The spring constant
-            B (int): The damping constant
-            ff (int): The feedforward gain
-        """
-        if self._mode != self.control_modes.impedance:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
-            )
-            return
+    #     Args:
+    #         kp (int): The proportional gain
+    #         ki (int): The integral gain
+    #         K (int): The spring constant
+    #         B (int): The damping constant
+    #         ff (int): The feedforward gain
+    #     """
+    #     if self._mode != self.control_modes.impedance:
+    #         self._log.warning(
+    #             msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
+    #         )
+    #         return
 
-        self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
+    #     self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
 
     def set_motor_zero_position(self, position: float) -> None:
         """Sets motor zero position in radians"""
