@@ -1,9 +1,10 @@
 ﻿from typing import Any
 
 import numpy as np
-from flexsea.device import Device
 
 import opensourceleg.hardware.sensor.base as base
+
+# from flexsea.device import Device
 
 
 class DephySensor(base.SensorIMU):
@@ -42,7 +43,7 @@ class DephyJointEncoder(base.Encoder):
     pass
 
 
-class DephyActpack(Device):
+class DephyActpack:
     def __init__(self, port, baud_rate, **kwargs):
         super().__init__(port, baud_rate, **kwargs)
         self.imu = DephyIMU(self)
