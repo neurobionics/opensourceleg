@@ -278,22 +278,8 @@ def test_strainamp_update(strainamp_patched: StrainAmp):
     )
     # Call the update method and assert the new index is updated properly and the proper array is returned
     actual_array = msa_update.update()
-    new_indx = 1
-    expected_array = np.array([0, 0, 0, 0, 0, 0])
+    expected_array = np.array([16, 515, 64, 1286, 112, 2057])
     assert np.array_equal(actual_array, expected_array)
-    assert msa_update.indx == new_indx
-    # Call the update method again and assert the new index is updated properly and the proper array is returned
-    actual_array2 = msa_update.update()
-    new_indx2 = 2
-    expected_array2 = np.array([16, 515, 64, 1286, 112, 2057])
-    assert np.array_equal(actual_array2, expected_array2)
-    assert msa_update.indx == new_indx2
-    # Call the update method again and assert the new index is updated properly and the proper array is returned
-    actual_array3 = msa_update.update()
-    new_indx3 = 0
-    expected_array3 = np.array([16, 515, 64, 1286, 112, 2057])
-    assert np.array_equal(actual_array3, expected_array3)
-    assert msa_update.indx == new_indx3
 
 
 def test_strainamp_unpack_uncompressed_strain():

@@ -377,7 +377,7 @@ class DephyActpack(base.Actuator, Device):
         self._data: Any = None
 
     def __repr__(self) -> str:
-        return f"DephyActpack[{self._name}]"
+        return f"{self._name}[DephyActpack]"
 
     def start(self) -> None:
         super().start()

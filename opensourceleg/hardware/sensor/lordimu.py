@@ -59,8 +59,7 @@ class StrainAmp(base.StrainAmp):
         time.sleep(1)
         self.bus = bus
         self.addr = I2C_addr
-        self.genvars = np.zeros((3, 6))
-        self.indx = 0
+        self.genvars = np.zeros((1, 6))
         self.is_streaming = True
         self.data: list[int] = []
         self.failed_reads = 0
@@ -83,11 +82,10 @@ class StrainAmp(base.StrainAmp):
 
     def update(self):
         """Called to update data of strain amp. Also returns data.
-        Data is median filtered (max one sample delay) to avoid i2c issues.
+        Median filter has been removed for speed.
         """
-        self.genvars[self.indx, :] = self._read_compressed_strain()
-        self.indx: int = (self.indx + 1) % 3
-        return np.median(a=self.genvars, axis=0)
+        self.genvars = self._read_compressed_strain()
+        return self.genvars
 
     @staticmethod
     def _unpack_uncompressed_strain(data):
@@ -360,8 +358,7 @@ class MockStrainAmp(StrainAmp):
         self._SMBus = MockSMBus(bus=bus)
         self.bus = bus
         self.addr = I2C_addr
-        self.genvars = np.zeros((3, 6))
-        self.indx = 0
+        self.genvars = np.zeros((1, 6))
         self.is_streaming = True
         self.data = []
         self.failed_reads = 0
