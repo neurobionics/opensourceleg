@@ -1,4 +1,4 @@
-from typing import Union
+﻿from typing import Union
 
 import os
 import time
@@ -8,8 +8,9 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from ..tools.logger import Logger
-from .joints import Joint
+import opensourceleg.hardware.sensor.base as base
+from opensourceleg.hardware.joints import Joint
+from opensourceleg.tools.logger import Logger
 
 """
 Module Overview:
@@ -30,7 +31,7 @@ Usage Guide:
 """
 
 
-class StrainAmp:
+class StrainAmp(base.StrainAmp):
     """
     A class to directly manage the 6ch strain gauge amplifier over I2C.
     An instance of this class is created by the loadcell class.
@@ -58,14 +59,13 @@ class StrainAmp:
         time.sleep(1)
         self.bus = bus
         self.addr = I2C_addr
-        self.genvars = np.zeros((3, 6))
-        self.indx = 0
+        self.genvars = np.zeros((1, 6))
         self.is_streaming = True
         self.data: list[int] = []
         self.failed_reads = 0
 
-    def __repr__(self) -> str:
-        return f"StrainAmp"
+    # def __repr__(self) -> str:
+    #     return f"StrainAmp"
 
     def _read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
@@ -82,11 +82,10 @@ class StrainAmp:
 
     def update(self):
         """Called to update data of strain amp. Also returns data.
-        Data is median filtered (max one sample delay) to avoid i2c issues.
+        Median filter has been removed for speed.
         """
-        self.genvars[self.indx, :] = self._read_compressed_strain()
-        self.indx: int = (self.indx + 1) % 3
-        return np.median(a=self.genvars, axis=0)
+        self.genvars = self._read_compressed_strain()
+        return self.genvars
 
     @staticmethod
     def _unpack_uncompressed_strain(data):
@@ -114,7 +113,7 @@ class StrainAmp:
         )
 
 
-class Loadcell:
+class Loadcell(base.Loadcell):
     def __init__(
         self,
         dephy_mode: bool = False,
@@ -148,9 +147,6 @@ class Loadcell:
         )
         self._zeroed = False
         self._log: Logger = logger  # type: ignore
-
-    def __repr__(self) -> str:
-        return f"Loadcell"
 
     def reset(self):
         self._zeroed = False
@@ -362,8 +358,7 @@ class MockStrainAmp(StrainAmp):
         self._SMBus = MockSMBus(bus=bus)
         self.bus = bus
         self.addr = I2C_addr
-        self.genvars = np.zeros((3, 6))
-        self.indx = 0
+        self.genvars = np.zeros((1, 6))
         self.is_streaming = True
         self.data = []
         self.failed_reads = 0
@@ -451,7 +446,7 @@ class IMUDataClass:
     imu_filter_gps_time_week_num: float = 0
 
 
-class IMULordMicrostrain:
+class IMULordMicrostrain(base.SensorIMU):
     """
     Sensor class for the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).
@@ -523,9 +518,6 @@ class IMULordMicrostrain:
         )  # Clean the internal circular buffer.
         self.imu_data = IMUDataClass()
 
-    def __repr__(self) -> str:
-        return f"IMULordMicrostrain"
-
     def start_streaming(self):
         self.imu.resume()
 
@@ -558,6 +550,9 @@ class IMULordMicrostrain:
             ]
 
         return self.imu_data
+
+    def __repr__(self) -> str:
+        return f"IMULordMicrostrain"
 
 
 if __name__ == "__main__":
