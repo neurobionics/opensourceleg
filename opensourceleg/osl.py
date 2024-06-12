@@ -76,7 +76,7 @@ class OpenSourceLeg:
             self._ankle.start()
 
         if self.has_loadcell:
-            self._loadcell.initialize()
+            self._loadcell.calibrate()
 
     def __exit__(self, type=None, value=None, tb=None) -> None:
 
@@ -365,13 +365,13 @@ class OpenSourceLeg:
 
         self._is_homed = True
 
-    def calibrate_loadcell(self) -> None:
-        self.log.debug(msg="[OSL] Calibrating loadcell.")
+    def calibrate_loadcell(self, reset=True) -> None:
         if self.has_loadcell:
-            self.loadcell.reset()
+            self.log.debug(msg="[OSL] Calibrating loadcell.")
+            self.loadcell.calibrate(reset=reset)
 
     def make_encoder_maps(self, overwrite=False) -> None:
-        self.log.debug(msg="[OSL] Calibrating encoders.")
+        self.log.debug(msg="[OSL] Making encoder maps.")
 
         if self.has_knee:
             self.knee.make_encoder_map(overwrite=overwrite)
