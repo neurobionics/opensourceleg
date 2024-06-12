@@ -80,8 +80,17 @@ def test_opensourceleg_init(mock_time):
 #     assert OpenSourceLeg._instance == None
 
 
+@pytest.fixture
+def patch_input(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+
+
 def test_osl_enter(
-    mock_get_active_ports, joint_patched: Joint, loadcell_patched: Loadcell, patch_sleep
+    mock_get_active_ports,
+    joint_patched: Joint,
+    loadcell_patched: Loadcell,
+    patch_sleep,
+    patch_input,
 ):
     """
     Tests the OpenSourceLeg __enter__ method\n
@@ -559,7 +568,7 @@ def test_osl_home(joint_patched: Joint, mock_get_active_ports):
     assert test_osl_h._ankle._is_homed == True
 
 
-def test_osl_calibrate_loadcell(loadcell_patched: Loadcell):
+def test_osl_calibrate_loadcell(loadcell_patched: Loadcell, patch_input):
     """
     Tests the OpenSourceLeg calibrate_loadcell method\n
     Intializes an OpenSourceLeg object with a logger of the lowest stream level

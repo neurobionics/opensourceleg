@@ -190,6 +190,11 @@ def loadcell_patched(patch_loadcell) -> Loadcell:
     return obj
 
 
+@pytest.fixture
+def patch_input(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+
+
 def test_mockstrainamp_init():
     """
     Test the MockStrainAmp constructor\n
@@ -698,7 +703,9 @@ def test_loadcell_update(loadcell_patched: Loadcell):
     )
 
 
-def test_loadcell_initialize(loadcell_patched: Loadcell, mocker, patch_sleep):
+def test_loadcell_initialize(
+    loadcell_patched: Loadcell, mocker, patch_sleep, patch_input
+):
     """
     Tests the Loadcell initialize method\n
     This test initializes a Loadcell object and passes data into attributes needed for testing
