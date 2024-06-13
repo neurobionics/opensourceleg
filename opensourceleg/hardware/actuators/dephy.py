@@ -356,27 +356,29 @@ class DephyActpack(base.Actuator, Device):
         self._log: Logger = logger
         self._encoder_map = None
 
-        self._motor_zero_position = 0.0
-        self._joint_zero_position = 0.0
+        # self._motor_zero_position = 0.0
+        # self._joint_zero_position = 0.0
 
-        self._joint_offset = 0.0
-        self._motor_offset = 0.0
+        # self._joint_offset = 0.0
+        # self._motor_offset = 0.0
 
-        self._joint_direction = 1.0
+        # self._joint_direction = 1.0
 
-        self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=80,
-            soft_border_C_windings=10,
-            temp_limit_case=70,
-            soft_border_C_case=10,
-        )
-        self._thermal_scale: float = 1.0
+        # self._thermal_model: ThermalModel = ThermalModel(
+        #     temp_limit_windings=80,
+        #     soft_border_C_windings=10,
+        #     temp_limit_case=70,
+        #     soft_border_C_case=10,
+        # )
+        # self._thermal_scale: float = 1.0
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
         self._mode: base.ActuatorMode = self.control_modes.voltage
         self._data: Any = None
         self._sensor = DephySensor(self)
+        self._thermal_model = self._sensor._thermal._thermal_model
+        self._thermal_scale = self._sensor._thermal._thermal_scale
 
     def __repr__(self) -> str:
         return f"{self._name}[DephyActpack]"
@@ -398,7 +400,7 @@ class DephyActpack(base.Actuator, Device):
             os._exit(status=1)
         self._sensor.start_streaming()
         time.sleep(0.1)
-        self._data = self._sensor.get_data()
+        self._sensor.get_data()
         self._mode.enter()
 
     def stop(self) -> None:
@@ -414,12 +416,7 @@ class DephyActpack(base.Actuator, Device):
     def update(self) -> None:
         super().update()
         if self.is_streaming:
-            self._data = self._sensor.get_data()
-            self._thermal_model.T_c = self.case_temperature
-            self._thermal_scale = self._thermal_model.update_and_get_scale(
-                dt=(1 / self._frequency),
-                motor_current=self.motor_current,
-            )
+            self._sensor.get_data()
 
             # Check for thermal fault, bit 2 of the execute status byte
             if self._data.status_ex & 0b00000010 == 0b00000010:
@@ -579,27 +576,27 @@ class DephyActpack(base.Actuator, Device):
 
     def set_motor_zero_position(self, position: float) -> None:
         """Sets motor zero position in radians"""
-        self._motor_zero_position = position
+        self._sensor._motor._motor_zero_position = position
 
     def set_joint_zero_position(self, position: float) -> None:
         """Sets joint zero position in radians"""
-        self._joint_zero_position = position
+        self._sensor._joint_encoder._joint_zero_position = position
 
     def set_motor_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
-        self._motor_offset = position
+        self._sensor._motor._motor_offset = position
 
     def set_joint_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
-        self._joint_offset = position
+        self._sensor._joint_encoder._joint_offset = position
 
     def set_joint_direction(self, direction: float) -> None:
         """Sets joint direction to 1 or -1"""
-        self._joint_direction = direction
+        self._sensor._joint_encoder._joint_direction = direction
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
-        self._encoder_map = encoder_map
+        self._sensor._motor._encoder_map = encoder_map
 
     @property
     def frequency(self) -> int:
@@ -633,7 +630,7 @@ class DephyActpack(base.Actuator, Device):
     # TODO: Eliminate after generalization
     def motor_offset(self) -> float:
         """Motor encoder offset in radians."""
-        return self._motor_offset
+        return self._sensor._motor._motor_offset
 
     @property
     # TODO: Eliminate after generalization

@@ -20,11 +20,11 @@ class DephySensor(base.SensorIMU):
         self._thermal = DephyThermal(self)
         self._joint_encoder = JointEncoder(self)
         self._battery = DephyBattery(self)
-        self._data: Any = None
+        self.data: Any = None
         # self.status_ex = 0b00000000
 
     def start_streaming(self):
-
+        # self.get_data()
         # self.is_streaming = True
         # print("Please ensure that the actpack is connected and streaming.")
         pass
@@ -37,17 +37,34 @@ class DephySensor(base.SensorIMU):
     def is_streaming(self):
         return self._device.is_streaming
 
-    def get_data(self):
+    def get_data(self) -> None:
 
         if self._device.is_streaming:
-            self._data = self._device.read()
-            self.status_ex = self._data.status_ex
+            self.data = self._device.read()
 
+            self._kinematics.update()
+            self._motor.update()
+            self._thermal.update()
+            self._joint_encoder.update()
+            self._battery.update()
+
+            self._thermal._thermal_model.T_c = self._thermal.case_temperature
+            self._thermal._thermal_scale = (
+                self._thermal._thermal_model.update_and_get_scale(
+                    dt=(1 / self._device._frequency),
+                    motor_current=self._motor.motor_current,
+                )
+            )
+
+            self.status_ex = self.data.status_ex
+
+            self._device._data = self.data
         else:
             pass
             # TODO: should raise an error here
             # self._data = MockData()
-        return self._data
+
+        # return self.data
 
 
 class DephyKinematics:
