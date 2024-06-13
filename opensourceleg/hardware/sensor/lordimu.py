@@ -31,7 +31,7 @@ Usage Guide:
 """
 
 
-class StrainAmp(base.StrainAmp):
+class StrainAmp:
     """
     A class to directly manage the 6ch strain gauge amplifier over I2C.
     An instance of this class is created by the loadcell class.
@@ -446,7 +446,7 @@ class IMUDataClass:
     imu_filter_gps_time_week_num: float = 0
 
 
-class IMULordMicrostrain(base.SensorIMU):
+class IMULordMicrostrain:
     """
     Sensor class for the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).

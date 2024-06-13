@@ -11,6 +11,7 @@ import numpy as np
 from flexsea.device import Device
 
 import opensourceleg.hardware.actuators.base as base
+from opensourceleg.hardware.sensor.dephyembed import DephySensor, MockData
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
 
@@ -375,12 +376,14 @@ class DephyActpack(base.Actuator, Device):
 
         self._mode: base.ActuatorMode = self.control_modes.voltage
         self._data: Any = None
+        self._sensor = DephySensor(self)
 
     def __repr__(self) -> str:
         return f"{self._name}[DephyActpack]"
 
     def start(self) -> None:
         super().start()
+
         try:
             self.open(
                 freq=self._frequency,
@@ -393,13 +396,15 @@ class DephyActpack(base.Actuator, Device):
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
-
+        self._sensor.start_streaming()
         time.sleep(0.1)
-        self._data = self.read()
+        self._data = self._sensor.get_data()
         self._mode.enter()
 
     def stop(self) -> None:
         super().stop()
+
+        self._sensor.stop_streaming()
         self.set_mode(mode=self.control_modes.voltage)
         self.set_voltage(voltage_value=0)
 
@@ -409,7 +414,7 @@ class DephyActpack(base.Actuator, Device):
     def update(self) -> None:
         super().update()
         if self.is_streaming:
-            self._data = self.read()
+            self._data = self._sensor.get_data()
             self._thermal_model.T_c = self.case_temperature
             self._thermal_scale = self._thermal_model.update_and_get_scale(
                 dt=(1 / self._frequency),
@@ -601,60 +606,60 @@ class DephyActpack(base.Actuator, Device):
         return self._frequency
 
     @property
+    # TODO: Eliminate after generalization
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
+        return self._sensor._motor.encoder_map
 
     @property
+    # TODO: Eliminate after generalization
     def motor_zero_position(self) -> float:
         """Motor encoder zero position in radians."""
-        return self._motor_zero_position
+        return self._sensor._motor.motor_zero_position
 
     @property
+    # TODO: Eliminate after generalization
     def joint_zero_position(self) -> float:
         """Joint encoder zero position in radians."""
-        return self._joint_zero_position
+        return self._sensor._joint_encoder.joint_zero_position
 
     @property
+    # TODO: Eliminate after generalization
     def joint_offset(self) -> float:
         """Joint encoder offset in radians."""
-        return self._joint_offset
+        return self._sensor._joint_encoder.joint_offset
 
     @property
+    # TODO: Eliminate after generalization
     def motor_offset(self) -> float:
         """Motor encoder offset in radians."""
         return self._motor_offset
 
     @property
+    # TODO: Eliminate after generalization
     def joint_direction(self) -> float:
         """Joint direction: 1 or -1"""
-        return self._joint_direction
+        return self._sensor._joint_encoder.joint_direction
 
     @property
+    # TODO: Eliminate after generalization
     def battery_voltage(self) -> float:
-        """Battery voltage in mV."""
-        if self._data is not None:
-            return float(self._data.batt_volt)
-        else:
-            return 0.0
+        return self._sensor._battery.battery_voltage
 
     @property
+    # TODO: Eliminate after generalization
     def battery_current(self) -> float:
         """Battery current in mA."""
-        if self._data is not None:
-            return float(self._data.batt_curr)
-        else:
-            return 0.0
+        return self._sensor._battery.battery_current
 
     @property
+    # TODO: Eliminate after generalization
     def motor_voltage(self) -> float:
         """Q-axis motor voltage in mV."""
-        if self._data is not None:
-            return float(self._data.mot_volt)
-        else:
-            return 0.0
+        return self._sensor._motor.motor_voltage
 
     @property
+    # TODO: Eliminate after generalization
     def motor_current(self) -> float:
         """Q-axis motor current in mA."""
         if self._data is not None:
@@ -663,241 +668,152 @@ class DephyActpack(base.Actuator, Device):
             return 0.0
 
     @property
+    # TODO: Eliminate after generalization
     def motor_torque(self) -> float:
-        """
-        Torque at motor output in Nm.
-        This is calculated using the motor current and torque constant.
-        """
-        if self._data is not None:
-            return float(self._data.mot_cur * self._MecheConsts.NM_PER_MILLIAMP)
-        else:
-            return 0.0
+        return self._sensor._motor.motor_torque
 
     @property
+    # TODO: Eliminate after generalization
     def motor_position(self) -> float:
-        """Angle of the motor in radians."""
-        if self._data is not None:
-            return (
-                float(self._data.mot_ang * self._MecheConsts.RAD_PER_COUNT)
-                - self._motor_zero_position
-                - self.motor_offset
-            )
-        else:
-            return 0.0
+        return self._sensor._motor.motor_position
 
     @property
+    # TODO: Eliminate after generalization
     def motor_encoder_counts(self) -> int:
         """Raw reading from motor encoder in counts."""
-        return int(self._data.mot_ang)
+        return self._sensor._motor.motor_encoder_counts
 
     @property
+    # TODO: Eliminate after generalization
     def joint_encoder_counts(self) -> int:
         """Raw reading from joint encoder in counts."""
-        return int(self._data.ank_ang)
+        return self._sensor._joint_encoder.joint_encoder_counts
 
     @property
+    # TODO: Eliminate after generalization
     def motor_velocity(self) -> float:
-        """Motor velocity in rad/s."""
-        if self._data is not None:
-            return int(self._data.mot_vel) * self._MecheConsts.RAD_PER_DEG
-        else:
-            return 0.0
+        return self._sensor._motor.motor_velocity
 
     @property
+    # TODO: Eliminate after generalization
     def motor_acceleration(self) -> float:
-        """Motor acceleration in rad/s^2."""
-        if self._data is not None:
-            return float(self._data.mot_acc)
-        else:
-            return 0.0
+        return self._sensor._motor.motor_acceleration
 
     @property
+    # TODO: Eliminate after generalization
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
-        if self._data is not None:
-            if self.encoder_map is not None:
-                return float(self.encoder_map(self._data.ank_ang))
-            else:
-                return (
-                    float(self._data.ank_ang * self._MecheConsts.RAD_PER_COUNT)
-                    - self.joint_zero_position
-                    - self.joint_offset
-                ) * self.joint_direction
-        else:
-            return 0.0
+        return self._sensor._joint_encoder.joint_position
 
     @property
+    # TODO: Eliminate after generalization
     def joint_velocity(self) -> float:
-        """Measured velocity from the joint encoder in rad/s."""
-        if self._data is not None:
-            return float(self._data.ank_vel * self._MecheConsts.RAD_PER_COUNT)
-        else:
-            return 0.0
+        return self._sensor._joint_encoder.joint_velocity
 
     @property
+    # TODO: Eliminate after generalization
     def case_temperature(self) -> float:
-        """Case temperature in celsius."""
-        if self._data is not None:
-            return float(self._data.temperature)
-        else:
-            return 0.0
+        return self._sensor._thermal.case_temperature
 
     @property
+    # TODO: Eliminate after generalization
     def winding_temperature(self) -> float:
-        """
-        ESTIMATED temperature of the windings in celsius.
-        This is calculated based on the thermal model using motor current.
-        """
-        if self._data is not None:
-            return float(self._thermal_model.T_w)
-        else:
-            return 0.0
+        return self._sensor._thermal.winding_temperature
 
     @property
+    # TODO: Eliminate after generalization
     def thermal_scaling_factor(self) -> float:
-        """
-        Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
-        For a proof, see paper referenced in thermal model.
-        """
-        return float(self._thermal_scale)
+        return self._sensor._thermal.thermal_scaling_factor
 
     @property
+    # TODO: Eliminate after generalization
     def genvars(self):
-        """Dephy's 'genvars' object."""
-        if self._data is not None:
-            return np.array(
-                object=[
-                    self._data.genvar_0,
-                    self._data.genvar_1,
-                    self._data.genvar_2,
-                    self._data.genvar_3,
-                    self._data.genvar_4,
-                    self._data.genvar_5,
-                ]
-            )
-        else:
-            return np.zeros(shape=6)
+        return self._sensor._kinematics.genvars
 
     @property
+    # TODO: Eliminate after generalization
     def accelx(self) -> float:
-        """
-        Acceleration in x direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.accelx * self._MecheConsts.M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
+        return self._sensor._kinematics.accelx
 
     @property
+    # TODO: Eliminate after generalization
     def accely(self) -> float:
-        """
-        Acceleration in y direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.accely * self._MecheConsts.M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
+        return self._sensor._kinematics.accely
 
     @property
+    # TODO: Eliminate after generalization
     def accelz(self) -> float:
-        """
-        Acceleration in z direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.accelz * self._MecheConsts.M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            return 0.0
+        return self._sensor._kinematics.accelz
 
     @property
+    # TODO: Eliminate after generalization
     def gyrox(self) -> float:
-        """
-        Angular velocity in x direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.gyrox * self._MecheConsts.RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
+        return self._sensor._kinematics.gyrox
 
     @property
+    # TODO: Eliminate after generalization
     def gyroy(self) -> float:
-        """
-        Angular velocity in y direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.gyroy * self._MecheConsts.RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
+        return self._sensor._kinematics.gyroy
 
     @property
+    # TODO: Eliminate after generalization
     def gyroz(self) -> float:
-        """
-        Angular velocity in z direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data.gyroz * self._MecheConsts.RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
+        return self._sensor._kinematics.gyroz
 
 
-class MockData:
-    def __init__(
-        self,
-        batt_volt=0,
-        batt_curr=0,
-        mot_volt=0,
-        mot_cur=0,
-        mot_ang=0,
-        ank_ang=0,
-        mot_vel=0,
-        mot_acc=0,
-        ank_vel=0,
-        temperature=0,
-        genvar_0=0,
-        genvar_1=0,
-        genvar_2=0,
-        genvar_3=0,
-        genvar_4=0,
-        genvar_5=0,
-        accelx=0,
-        accely=0,
-        accelz=0,
-        gyrox=0,
-        gyroy=0,
-        gyroz=0,
-    ):
-        self.batt_volt = batt_volt
-        self.batt_curr = batt_curr
-        self.mot_volt = mot_volt
-        self.mot_cur = mot_cur
-        self.mot_ang = mot_ang
-        self.ank_ang = ank_ang
-        self.mot_vel = mot_vel
-        self.mot_acc = mot_acc
-        self.ank_vel = ank_vel
-        self.temperature = temperature
-        self.genvar_0 = genvar_0
-        self.genvar_1 = genvar_1
-        self.genvar_2 = genvar_2
-        self.genvar_3 = genvar_3
-        self.genvar_4 = genvar_4
-        self.genvar_5 = genvar_5
-        self.accelx = accelx
-        self.accely = accely
-        self.accelz = accelz
-        self.gyrox = gyrox
-        self.gyroy = gyroy
-        self.gyroz = gyroz
-        self.status_ex = 0b00000000
+# class MockData:
+#     # TODO: Eliminate after generalization
+#     def __init__(
+#         self,
+#         batt_volt=0,
+#         batt_curr=0,
+#         mot_volt=0,
+#         mot_cur=0,
+#         mot_ang=0,
+#         ank_ang=0,
+#         mot_vel=0,
+#         mot_acc=0,
+#         ank_vel=0,
+#         temperature=0,
+#         genvar_0=0,
+#         genvar_1=0,
+#         genvar_2=0,
+#         genvar_3=0,
+#         genvar_4=0,
+#         genvar_5=0,
+#         accelx=0,
+#         accely=0,
+#         accelz=0,
+#         gyrox=0,
+#         gyroy=0,
+#         gyroz=0,
+#     ):
+#         self.batt_volt = batt_volt
+#         self.batt_curr = batt_curr
+#         self.mot_volt = mot_volt
+#         self.mot_cur = mot_cur
+#         self.mot_ang = mot_ang
+#         self.ank_ang = ank_ang
+#         self.mot_vel = mot_vel
+#         self.mot_acc = mot_acc
+#         self.ank_vel = ank_vel
+#         self.temperature = temperature
+#         self.genvar_0 = genvar_0
+#         self.genvar_1 = genvar_1
+#         self.genvar_2 = genvar_2
+#         self.genvar_3 = genvar_3
+#         self.genvar_4 = genvar_4
+#         self.genvar_5 = genvar_5
+#         self.accelx = accelx
+#         self.accely = accely
+#         self.accelz = accelz
+#         self.gyrox = gyrox
+#         self.gyroy = gyroy
+#         self.gyroz = gyroz
+#         self.status_ex = 0b00000000
 
-    def __repr__(self):
-        return f"MockData"
+#     def __repr__(self):
+#         return f"MockData"
 
 
 class MockDephyActpack(DephyActpack):
