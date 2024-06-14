@@ -6,7 +6,7 @@ import numpy as np
 
 import opensourceleg.hardware.actuators.dephy as dephy
 import opensourceleg.hardware.sensor.base as base
-from opensourceleg.hardware.actuators.base import MecheConsts
+from opensourceleg.hardware.actuators.base import MechanicalConstants
 from opensourceleg.hardware.thermal import ThermalModel
 
 
@@ -16,17 +16,13 @@ class DephyIMU(base.SensorIMU):
         self._device = device
 
         self.loadcell: DephyLoadcell = DephyLoadcell(self)
-        self.motor: DephyMotor = DephyMotor(self)
         self.thermal: DephyThermal = DephyThermal(self)
         self.joint_encoder: JointEncoder = JointEncoder(self)
         self.battery: DephyBattery = DephyBattery(self)
         self.data: Any = None
-        # self.status_ex = 0b00000000
+        self.status_ex: int = 0b00000000
 
     def start_streaming(self):
-        # self.get_data()
-        # self.is_streaming = True
-        # print("Please ensure that the actpack is connected and streaming.")
         pass
 
     def stop_streaming(self):
@@ -40,17 +36,17 @@ class DephyIMU(base.SensorIMU):
     def update(self, data: Any = None) -> None:
 
         if self._device.is_streaming:
-            self.data = self._device._data
-            self.data = self._device.read()
+            self.data = data
+            # self.data = self._device.read()
 
-            self.status_ex = self.data.status_ex
+            self.status_ex = self._device._data.status_ex
             self.loadcell.update()
-            self.motor.update()
+            # self.motor.update()
             self.thermal.update()
             self.joint_encoder.update()
             self.battery.update()
 
-            self._device._data = self.data
+            # self._device._data = self.data
         else:
             # TODO: should raise an error here
             pass
@@ -59,9 +55,7 @@ class DephyIMU(base.SensorIMU):
         pass
 
 
-class DephyLoadcell(
-    # base.Loadcell
-):
+class DephyLoadcell(base.Loadcell):
     def __init__(self, Sensor: "DephyIMU") -> None:
         self._sensor = Sensor
         self._data: Any = None
@@ -93,7 +87,9 @@ class DephyLoadcell(
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.accelx * MecheConsts().M_PER_SEC_SQUARED_ACCLSB)
+            return float(
+                self._data.accelx * MechanicalConstants().M_PER_SEC_SQUARED_ACCLSB
+            )
         else:
             return 0.0
 
@@ -104,7 +100,9 @@ class DephyLoadcell(
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.accely * MecheConsts().M_PER_SEC_SQUARED_ACCLSB)
+            return float(
+                self._data.accely * MechanicalConstants().M_PER_SEC_SQUARED_ACCLSB
+            )
         else:
             return 0.0
 
@@ -115,7 +113,9 @@ class DephyLoadcell(
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.accelz * MecheConsts().M_PER_SEC_SQUARED_ACCLSB)
+            return float(
+                self._data.accelz * MechanicalConstants().M_PER_SEC_SQUARED_ACCLSB
+            )
         else:
             return 0.0
 
@@ -126,7 +126,7 @@ class DephyLoadcell(
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyrox * MecheConsts().RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyrox * MechanicalConstants().RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -137,7 +137,7 @@ class DephyLoadcell(
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyroy * MecheConsts().RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyroy * MechanicalConstants().RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -148,94 +148,7 @@ class DephyLoadcell(
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyroz * MecheConsts().RAD_PER_SEC_GYROLSB)
-        else:
-            return 0.0
-
-
-class DephyMotor:
-    def __init__(self, Sensor: "DephyIMU") -> None:
-        self._sensor = Sensor
-        self._data: Any = None
-        self._motor_zero_position = 0.0
-        self._motor_offset = 0.0
-        self._encoder_map = None
-
-    def update(self):
-        self._data = self._sensor.data
-
-    @property
-    def encoder_map(self):
-        """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
-
-    @property
-    def motor_zero_position(self) -> float:
-        """Motor encoder zero position in radians."""
-        return self._motor_zero_position
-
-    @property
-    def motor_offset(self) -> float:
-        """Motor encoder offset in radians."""
-        return self._motor_offset
-
-    @property
-    def motor_voltage(self) -> float:
-        """Q-axis motor voltage in mV."""
-        if self._data is not None:
-            return float(self._data.mot_volt)
-        else:
-            return 0.0
-
-    @property
-    def motor_current(self) -> float:
-        """Q-axis motor current in mA."""
-        if self._data is not None:
-            return float(self._data.mot_cur)
-        else:
-            return 0.0
-
-    @property
-    def motor_torque(self) -> float:
-        """
-        Torque at motor output in Nm.
-        This is calculated using the motor current and torque constant.
-        """
-        if self._data is not None:
-            return float(self._data.mot_cur * MecheConsts().NM_PER_MILLIAMP)
-        else:
-            return 0.0
-
-    @property
-    def motor_position(self) -> float:
-        """Angle of the motor in radians."""
-        if self._data is not None:
-            return (
-                float(self._data.mot_ang * MecheConsts().RAD_PER_COUNT)
-                - self._motor_zero_position
-                - self.motor_offset
-            )
-        else:
-            return 0.0
-
-    @property
-    def motor_encoder_counts(self) -> int:
-        """Raw reading from motor encoder in counts."""
-        return int(self._data.mot_ang)
-
-    @property
-    def motor_velocity(self) -> float:
-        """Motor velocity in rad/s."""
-        if self._data is not None:
-            return int(self._data.mot_vel) * MecheConsts().RAD_PER_DEG
-        else:
-            return 0.0
-
-    @property
-    def motor_acceleration(self) -> float:
-        """Motor acceleration in rad/s^2."""
-        if self._data is not None:
-            return float(self._data.mot_acc)
+            return float(self._data.gyroz * MechanicalConstants().RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -258,7 +171,7 @@ class DephyThermal:
         self._thermal_model.T_c = self.case_temperature
         self._thermal_scale = self._thermal_model.update_and_get_scale(
             dt=(1 / self._sensor._device._frequency),
-            motor_current=self._sensor.motor.motor_current,
+            motor_current=self._sensor._device.motor_current,
         )
 
     @property
@@ -326,11 +239,11 @@ class JointEncoder(base.Encoder):
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
-            if self._sensor.motor.encoder_map is not None:
-                return float(self._sensor.motor.encoder_map(self._data.ank_ang))
+            if self._sensor._device.encoder_map is not None:
+                return float(self._sensor._device.encoder_map(self._data.ank_ang))
             else:
                 return (
-                    float(self._data.ank_ang * MecheConsts().RAD_PER_COUNT)
+                    float(self._data.ank_ang * MechanicalConstants().RAD_PER_COUNT)
                     - self.joint_zero_position
                     - self.joint_offset
                 ) * self.joint_direction
@@ -341,7 +254,7 @@ class JointEncoder(base.Encoder):
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
-            return float(self._data.ank_vel * MecheConsts().RAD_PER_COUNT)
+            return float(self._data.ank_vel * MechanicalConstants().RAD_PER_COUNT)
         else:
             return 0.0
 
@@ -403,6 +316,12 @@ class MockData:
         mot_acc=0,
         ank_vel=0,
         temperature=0,
+        accelx=0,
+        accely=0,
+        accelz=0,
+        gyrox=0,
+        gyroy=0,
+        gyroz=0,
         genvar_0=0,
         genvar_1=0,
         genvar_2=0,
@@ -425,6 +344,14 @@ class MockData:
         self.genvar_4 = genvar_4
         self.genvar_5 = genvar_5
         self.status_ex = 0b00000000
+        self.accelx = accelx
+        self.accely = accely
+        self.accelz = accelz
+        self.ank_ang = ank_ang
+        self.ank_vel = ank_vel
+        self.gyrox = gyrox
+        self.gyroy = gyroy
+        self.gyroz = gyroz
 
     def __repr__(self):
         return f"MockData"

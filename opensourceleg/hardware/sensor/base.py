@@ -1,4 +1,4 @@
-﻿"""Sensor module generalized
+﻿"""Sensor Interface generalized
 06/2024
 """
 
@@ -25,17 +25,17 @@ class Loadcell(ABC):
     def __init__(self) -> None:
         pass
 
-    @abstractmethod
-    def reset(self):
-        pass
+    # @abstractmethod
+    # def reset(self):
+    #     pass
 
     @abstractmethod
     def update(self, loadcell_zero=None) -> None:
         pass
 
-    @abstractmethod
-    def initialize(self, number_of_iterations) -> None:
-        pass
+    # @abstractmethod
+    # def initialize(self, number_of_iterations) -> None:
+    #     pass
 
     def __repr__(self) -> str:
         return f"Loadcell"
@@ -64,6 +64,17 @@ class SensorIMU(ABC):
     def get_data(self):
         pass
 
+    @property
+    @abstractmethod
+    def is_streaming(self):
+        pass
+
 
 class Encoder(ABC):
-    pass
+    @abstractmethod
+    def __init__(self) -> None:
+        pass
+
+    @abstractmethod
+    def update(self) -> None:
+        pass

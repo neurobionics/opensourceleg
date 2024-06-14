@@ -259,7 +259,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
         base.Actuator.__init__(
             self,
             Gains=base.ControlGains(0, 0, 0, 0, 0, 0),
-            MecheSpecs=base.MecheConsts(
+            MecheSpecs=base.MechanicalConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
                 IMPEDANCE_A=0.00028444,

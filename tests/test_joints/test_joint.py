@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from pytest_mock import mocker
 
-from opensourceleg.hardware.actuators.base import MecheConsts
+from opensourceleg.hardware.actuators.base import MechanicalConstants
 from opensourceleg.hardware.actuators.dephy import (
     CurrentMode,
     DephyActpack,
@@ -22,7 +22,7 @@ from tests.test_actuators.test_dephyactpack import (  # MockDephyActpack,
     patch_dephyactpack,
 )
 
-MAX_CASE_TEMPERATURE = MecheConsts.MAX_CASE_TEMPERATURE
+MAX_CASE_TEMPERATURE = MechanicalConstants.MAX_CASE_TEMPERATURE
 
 
 def test_patching(dephyactpack_patched: DephyActpack):
@@ -165,8 +165,8 @@ def test_home(joint_patched: Joint, patch_sleep):
     with open(file="tests/test_joints/test_home_log.log") as f:
         contents = f.read()
         assert "INFO: [knee] Homing complete." in contents
-    assert jp1.sensor.motor._motor_zero_position == 0.005752427954571154
-    assert jp1.sensor.joint_encoder._joint_zero_position == 0.005752427954571154
+    assert jp1._motor_zero_position == 0.005752427954571154
+    assert jp1.dephyIMU.joint_encoder._joint_zero_position == 0.005752427954571154
     jpa = joint_patched
     jpa._name = "ankle"
     jpa._log = Logger(file_path="tests/test_joints/test_home_ankle_log")

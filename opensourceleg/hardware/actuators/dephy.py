@@ -338,7 +338,7 @@ class DephyActpack(base.Actuator, Device):
         base.Actuator.__init__(
             self,
             Gains=base.ControlGains(0, 0, 0, 0, 0, 0),
-            MecheSpecs=base.MecheConsts(
+            MecheSpecs=base.MechanicalConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
                 IMPEDANCE_A=0.00028444,
@@ -366,11 +366,19 @@ class DephyActpack(base.Actuator, Device):
         # self._thermal_scale: float = 1.0
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
+        self._encoder_map = None
 
+        self._motor_zero_position = 0.0
+        # self._joint_zero_position = 0.0
+
+        # self._joint_offset = 0.0
+        self._motor_offset = 0.0
+
+        # self._joint_direction = 1.0
         self._mode: base.ActuatorMode = self.control_modes.voltage
         self._data: Any = None
 
-        self.sensor = DephyIMU(self)
+        self.dephyIMU = DephyIMU(self)
 
     def __repr__(self) -> str:
         return f"{self._name}[DephyActpack]"
@@ -390,16 +398,16 @@ class DephyActpack(base.Actuator, Device):
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
-        self.sensor.start_streaming()
+        self.dephyIMU.start_streaming()
         time.sleep(0.1)
-        # self.sensor.get_data()
+        # self.dephyIMU.get_data()
 
         self._mode.enter()
 
     def stop(self) -> None:
         super().stop()
 
-        self.sensor.stop_streaming()
+        self.dephyIMU.stop_streaming()
         self.set_mode(mode=self.control_modes.voltage)
         self.set_voltage(voltage_value=0)
 
@@ -412,7 +420,7 @@ class DephyActpack(base.Actuator, Device):
         if self.is_streaming:
             self._data = self.read()
             self.dephyIMU.update(self._data)
-            self.sensor.update()
+            self.dephyIMU.update()
 
             # Check for thermal fault, bit 2 of the execute status byte
             if self._data.status_ex & 0b00000010 == 0b00000010:
@@ -570,29 +578,29 @@ class DephyActpack(base.Actuator, Device):
 
         self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
 
+    def set_encoder_map(self, encoder_map) -> None:
+        """Sets the joint encoder map"""
+        self._encoder_map = encoder_map
+
     def set_motor_zero_position(self, position: float) -> None:
         """Sets motor zero position in radians"""
-        self.sensor.motor._motor_zero_position = position
-
-    def set_joint_zero_position(self, position: float) -> None:
-        """Sets joint zero position in radians"""
-        self.sensor.joint_encoder._joint_zero_position = position
+        self._motor_zero_position = position
 
     def set_motor_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
-        self.sensor.motor._motor_offset = position
+        self._motor_offset = position
+
+    def set_joint_zero_position(self, position: float) -> None:
+        """Sets joint zero position in radians"""
+        self.dephyIMU.joint_encoder._joint_zero_position = position
 
     def set_joint_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
-        self.sensor.joint_encoder._joint_offset = position
+        self.dephyIMU.joint_encoder._joint_offset = position
 
     def set_joint_direction(self, direction: float) -> None:
         """Sets joint direction to 1 or -1"""
-        self.sensor.joint_encoder._joint_direction = direction
-
-    def set_encoder_map(self, encoder_map) -> None:
-        """Sets the joint encoder map"""
-        self.sensor.motor._encoder_map = encoder_map
+        self.dephyIMU.joint_encoder._joint_direction = direction
 
     @property
     def frequency(self) -> int:
@@ -602,152 +610,174 @@ class DephyActpack(base.Actuator, Device):
     # TODO: Eliminate after generalization
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self.sensor.motor.encoder_map
+        return self._encoder_map
 
     @property
     # TODO: Eliminate after generalization
     def motor_zero_position(self) -> float:
         """Motor encoder zero position in radians."""
-        return self.sensor.motor.motor_zero_position
-
-    @property
-    # TODO: Eliminate after generalization
-    def joint_zero_position(self) -> float:
-        """Joint encoder zero position in radians."""
-        return self.sensor.joint_encoder.joint_zero_position
-
-    @property
-    # TODO: Eliminate after generalization
-    def joint_offset(self) -> float:
-        """Joint encoder offset in radians."""
-        return self.sensor.joint_encoder.joint_offset
+        return self._motor_zero_position
 
     @property
     # TODO: Eliminate after generalization
     def motor_offset(self) -> float:
         """Motor encoder offset in radians."""
-        return self.sensor.motor._motor_offset
-
-    @property
-    # TODO: Eliminate after generalization
-    def joint_direction(self) -> float:
-        """Joint direction: 1 or -1"""
-        return self.sensor.joint_encoder.joint_direction
-
-    @property
-    # TODO: Eliminate after generalization
-    def battery_voltage(self) -> float:
-        return self.sensor.battery.battery_voltage
-
-    @property
-    # TODO: Eliminate after generalization
-    def battery_current(self) -> float:
-        """Battery current in mA."""
-        return self.sensor.battery.battery_current
+        return self._motor_offset
 
     @property
     # TODO: Eliminate after generalization
     def motor_voltage(self) -> float:
         """Q-axis motor voltage in mV."""
-        return self.sensor.motor.motor_voltage
+        if self._data is not None:
+            return float(self._data.mot_volt)
+        else:
+            return 0.0
 
     @property
     # TODO: Eliminate after generalization
     def motor_current(self) -> float:
-        return self.sensor.motor.motor_current
+        if self._data is not None:
+            return float(self._data.mot_cur)
+        else:
+            return 0.0
 
     @property
     # TODO: Eliminate after generalization
     def motor_torque(self) -> float:
-        return self.sensor.motor.motor_torque
+        if self._data is not None:
+            return float(self._data.mot_cur * self._MecheConsts.NM_PER_MILLIAMP)
+        else:
+            return 0.0
 
     @property
     # TODO: Eliminate after generalization
     def motor_position(self) -> float:
-        return self.sensor.motor.motor_position
+        if self._data is not None:
+            return (
+                float(self._data.mot_ang * self._MecheConsts.RAD_PER_COUNT)
+                - self._motor_zero_position
+                - self.motor_offset
+            )
+        else:
+            return 0.0
 
     @property
     # TODO: Eliminate after generalization
     def motor_encoder_counts(self) -> int:
         """Raw reading from motor encoder in counts."""
-        return self.sensor.motor.motor_encoder_counts
+        return int(self._data.mot_ang)
+
+    @property
+    # TODO: Eliminate after generalization
+    def motor_velocity(self) -> float:
+        if self._data is not None:
+            return int(self._data.mot_vel) * self._MecheConsts.RAD_PER_DEG
+        else:
+            return 0.0
+
+    @property
+    # TODO: Eliminate after generalization
+    def motor_acceleration(self) -> float:
+        if self._data is not None:
+            return float(self._data.mot_acc)
+        else:
+            return 0.0
+
+    @property
+    # TODO: Eliminate after generalization
+    def joint_zero_position(self) -> float:
+        """Joint encoder zero position in radians."""
+        return self.dephyIMU.joint_encoder.joint_zero_position
+
+    @property
+    # TODO: Eliminate after generalization
+    def joint_offset(self) -> float:
+        """Joint encoder offset in radians."""
+        return self.dephyIMU.joint_encoder.joint_offset
+
+    @property
+    # TODO: Eliminate after generalization
+    def joint_direction(self) -> float:
+        """Joint direction: 1 or -1"""
+        return self.dephyIMU.joint_encoder.joint_direction
+
+    @property
+    # TODO: Eliminate after generalization
+    def battery_voltage(self) -> float:
+        return self.dephyIMU.battery.battery_voltage
+
+    @property
+    # TODO: Eliminate after generalization
+    def battery_current(self) -> float:
+        """Battery current in mA."""
+        return self.dephyIMU.battery.battery_current
 
     @property
     # TODO: Eliminate after generalization
     def joint_encoder_counts(self) -> int:
         """Raw reading from joint encoder in counts."""
-        return self.sensor.joint_encoder.joint_encoder_counts
-
-    @property
-    # TODO: Eliminate after generalization
-    def motor_velocity(self) -> float:
-        return self.sensor.motor.motor_velocity
-
-    @property
-    # TODO: Eliminate after generalization
-    def motor_acceleration(self) -> float:
-        return self.sensor.motor.motor_acceleration
+        return self.dephyIMU.joint_encoder.joint_encoder_counts
 
     @property
     # TODO: Eliminate after generalization
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
-        return self.sensor.joint_encoder.joint_position
+        return self.dephyIMU.joint_encoder.joint_position
 
     @property
     # TODO: Eliminate after generalization
     def joint_velocity(self) -> float:
-        return self.sensor.joint_encoder.joint_velocity
+        return self.dephyIMU.joint_encoder.joint_velocity
 
     @property
     # TODO: Eliminate after generalization
     def case_temperature(self) -> float:
-        return self.sensor.thermal.case_temperature
+        return self.dephyIMU.thermal.case_temperature
 
     @property
     # TODO: Eliminate after generalization
     def winding_temperature(self) -> float:
-        return self.sensor.thermal.winding_temperature
+        return self.dephyIMU.thermal.winding_temperature
 
     @property
     # TODO: Eliminate after generalization
     def thermal_scaling_factor(self) -> float:
-        return self.sensor.thermal.thermal_scaling_factor
+        return self.dephyIMU.thermal.thermal_scaling_factor
 
     @property
     # TODO: Eliminate after generalization
     def genvars(self):
-        return self.sensor.loadcell.genvars
+        return self.dephyIMU.loadcell.genvars
 
     @property
     # TODO: Eliminate after generalization
     def accelx(self) -> float:
-        return self.sensor.loadcell.accelx
+        return self.dephyIMU.loadcell.accelx
 
     @property
     # TODO: Eliminate after generalization
     def accely(self) -> float:
-        return self.sensor.loadcell.accely
+        return self.dephyIMU.loadcell.accely
 
     @property
     # TODO: Eliminate after generalization
     def accelz(self) -> float:
-        return self.sensor.loadcell.accelz
+        return self.dephyIMU.loadcell.accelz
 
     @property
     # TODO: Eliminate after generalization
     def gyrox(self) -> float:
-        return self.sensor.loadcell.gyrox
+        return self.dephyIMU.loadcell.gyrox
 
     @property
     # TODO: Eliminate after generalization
     def gyroy(self) -> float:
-        return self.sensor.loadcell.gyroy
+        return self.dephyIMU.loadcell.gyroy
 
     @property
     # TODO: Eliminate after generalization
     def gyroz(self) -> float:
-        return self.sensor.loadcell.gyroz
+        return self.dephyIMU.loadcell.gyroz
 
 
 # class MockData:
@@ -850,9 +880,9 @@ class MockDephyActpack(DephyActpack):
             "ff": 0,
         }
 
-        self.sensor.data = MockData()
+        self.dephyIMU.data = MockData()
         self._data = MockData()
-        self._thermal_model = self.sensor.thermal._thermal_model
+        self._thermal_model = self.dephyIMU.thermal._thermal_model
 
     def open(self, freq, log_level, log_enabled):
         if freq == 100 and log_level == 5 and log_enabled:

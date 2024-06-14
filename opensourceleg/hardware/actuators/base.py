@@ -46,7 +46,7 @@ class ControlGains:
 
 
 @dataclass
-class MecheConsts:
+class MechanicalConstants:
     """Dataclass for mechanical constants
 
     Attributes
@@ -441,12 +441,12 @@ class Actuator(ABC):
     def __init__(
         self,
         Gains: ControlGains = ControlGains(),
-        MecheSpecs: MecheConsts = MecheConsts(),
+        MecheSpecs: MechanicalConstants = MechanicalConstants(),
         *args,
         **kwargs,
     ) -> None:
         self._gains: Any = Gains
-        self._MecheConsts: MecheConsts = MecheSpecs
+        self._MecheConsts: MechanicalConstants = MecheSpecs
         self._mode: Any = None
 
     @abstractmethod
