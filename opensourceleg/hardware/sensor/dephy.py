@@ -10,12 +10,12 @@ from opensourceleg.hardware.actuators.base import MecheConsts
 from opensourceleg.hardware.thermal import ThermalModel
 
 
-class DephySensor:
+class DephyIMU(base.SensorIMU):
 
     def __init__(self, device: "dephy.DephyActpack"):
         self._device = device
 
-        self.kinematics: DephyKinematics = DephyKinematics(self)
+        self.loadcell: DephyLoadcell = DephyLoadcell(self)
         self.motor: DephyMotor = DephyMotor(self)
         self.thermal: DephyThermal = DephyThermal(self)
         self.joint_encoder: JointEncoder = JointEncoder(self)
@@ -37,14 +37,14 @@ class DephySensor:
     def is_streaming(self):
         return self._device.is_streaming
 
-    def update(self) -> None:
+    def update(self, data: Any = None) -> None:
 
         if self._device.is_streaming:
             self.data = self._device._data
             self.data = self._device.read()
 
             self.status_ex = self.data.status_ex
-            self.kinematics.update()
+            self.loadcell.update()
             self.motor.update()
             self.thermal.update()
             self.joint_encoder.update()
@@ -55,9 +55,14 @@ class DephySensor:
             # TODO: should raise an error here
             pass
 
+    def get_data(self):
+        pass
 
-class DephyKinematics:
-    def __init__(self, Sensor: "DephySensor") -> None:
+
+class DephyLoadcell(
+    # base.Loadcell
+):
+    def __init__(self, Sensor: "DephyIMU") -> None:
         self._sensor = Sensor
         self._data: Any = None
 
@@ -149,7 +154,7 @@ class DephyKinematics:
 
 
 class DephyMotor:
-    def __init__(self, Sensor: DephySensor) -> None:
+    def __init__(self, Sensor: "DephyIMU") -> None:
         self._sensor = Sensor
         self._data: Any = None
         self._motor_zero_position = 0.0
@@ -236,7 +241,7 @@ class DephyMotor:
 
 
 class DephyThermal:
-    def __init__(self, Sensor: DephySensor) -> None:
+    def __init__(self, Sensor: "DephyIMU") -> None:
         self._sensor = Sensor
         # self._sensor: Any = None
         self._thermal_model: ThermalModel = ThermalModel(
@@ -286,8 +291,8 @@ class DephyThermal:
         return float(self._thermal_scale)
 
 
-class JointEncoder:
-    def __init__(self, Sensor: DephySensor) -> None:
+class JointEncoder(base.Encoder):
+    def __init__(self, Sensor: "DephyIMU") -> None:
         self._sensor = Sensor
         self._data: Any = None
         self._joint_offset = 0.0
@@ -343,7 +348,7 @@ class JointEncoder:
 
 class DephyBattery:
 
-    def __init__(self, Sensor: DephySensor) -> None:
+    def __init__(self, Sensor: "DephyIMU") -> None:
         self._sensor = Sensor
         self._data: Any = None
 
@@ -367,6 +372,24 @@ class DephyBattery:
             return 0.0
 
 
+class MockDephyIMUData:
+    def __init__(
+        self,
+        accelx=0,
+        accely=0,
+        accelz=0,
+        gyrox=0,
+        gyroy=0,
+        gyroz=0,
+    ):
+        self.accelx = accelx
+        self.accely = accely
+        self.accelz = accelz
+        self.gyrox = gyrox
+        self.gyroy = gyroy
+        self.gyroz = gyroz
+
+
 class MockData:
     def __init__(
         self,
@@ -386,22 +409,14 @@ class MockData:
         genvar_3=0,
         genvar_4=0,
         genvar_5=0,
-        accelx=0,
-        accely=0,
-        accelz=0,
-        gyrox=0,
-        gyroy=0,
-        gyroz=0,
     ):
         self.batt_volt = batt_volt
         self.batt_curr = batt_curr
         self.mot_volt = mot_volt
         self.mot_cur = mot_cur
         self.mot_ang = mot_ang
-        self.ank_ang = ank_ang
         self.mot_vel = mot_vel
         self.mot_acc = mot_acc
-        self.ank_vel = ank_vel
         self.temperature = temperature
         self.genvar_0 = genvar_0
         self.genvar_1 = genvar_1
@@ -409,12 +424,6 @@ class MockData:
         self.genvar_3 = genvar_3
         self.genvar_4 = genvar_4
         self.genvar_5 = genvar_5
-        self.accelx = accelx
-        self.accely = accely
-        self.accelz = accelz
-        self.gyrox = gyrox
-        self.gyroy = gyroy
-        self.gyroz = gyroz
         self.status_ex = 0b00000000
 
     def __repr__(self):

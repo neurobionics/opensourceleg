@@ -63,3 +63,7 @@ class SensorIMU(ABC):
     @abstractmethod
     def get_data(self):
         pass
+
+
+class Encoder(ABC):
+    pass

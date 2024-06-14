@@ -12,7 +12,7 @@ import numpy as np
 from flexsea.device import Device
 
 import opensourceleg.hardware.actuators.base as base
-from opensourceleg.hardware.sensor.dephyembed import DephySensor, MockData
+from opensourceleg.hardware.sensor.dephy import DephyIMU, MockData
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
 
@@ -370,7 +370,7 @@ class DephyActpack(base.Actuator, Device):
         self._mode: base.ActuatorMode = self.control_modes.voltage
         self._data: Any = None
 
-        self.sensor = DephySensor(self)
+        self.sensor = DephyIMU(self)
 
     def __repr__(self) -> str:
         return f"{self._name}[DephyActpack]"
@@ -408,7 +408,10 @@ class DephyActpack(base.Actuator, Device):
 
     def update(self) -> None:
         super().update()
+
         if self.is_streaming:
+            self._data = self.read()
+            self.dephyIMU.update(self._data)
             self.sensor.update()
 
             # Check for thermal fault, bit 2 of the execute status byte
@@ -714,37 +717,37 @@ class DephyActpack(base.Actuator, Device):
     @property
     # TODO: Eliminate after generalization
     def genvars(self):
-        return self.sensor.kinematics.genvars
+        return self.sensor.loadcell.genvars
 
     @property
     # TODO: Eliminate after generalization
     def accelx(self) -> float:
-        return self.sensor.kinematics.accelx
+        return self.sensor.loadcell.accelx
 
     @property
     # TODO: Eliminate after generalization
     def accely(self) -> float:
-        return self.sensor.kinematics.accely
+        return self.sensor.loadcell.accely
 
     @property
     # TODO: Eliminate after generalization
     def accelz(self) -> float:
-        return self.sensor.kinematics.accelz
+        return self.sensor.loadcell.accelz
 
     @property
     # TODO: Eliminate after generalization
     def gyrox(self) -> float:
-        return self.sensor.kinematics.gyrox
+        return self.sensor.loadcell.gyrox
 
     @property
     # TODO: Eliminate after generalization
     def gyroy(self) -> float:
-        return self.sensor.kinematics.gyroy
+        return self.sensor.loadcell.gyroy
 
     @property
     # TODO: Eliminate after generalization
     def gyroz(self) -> float:
-        return self.sensor.kinematics.gyroz
+        return self.sensor.loadcell.gyroz
 
 
 # class MockData:
