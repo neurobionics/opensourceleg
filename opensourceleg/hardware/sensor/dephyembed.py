@@ -10,16 +10,16 @@ from opensourceleg.hardware.actuators.base import MecheConsts
 from opensourceleg.hardware.thermal import ThermalModel
 
 
-class DephySensor(base.SensorIMU):
+class DephySensor:
 
     def __init__(self, device: "dephy.DephyActpack"):
         self._device = device
 
-        self._kinematics = DephyKinematics(self)
-        self._motor = DephyMotor(self)
-        self._thermal = DephyThermal(self)
-        self._joint_encoder = JointEncoder(self)
-        self._battery = DephyBattery(self)
+        self.kinematics: DephyKinematics = DephyKinematics(self)
+        self.motor: DephyMotor = DephyMotor(self)
+        self.thermal: DephyThermal = DephyThermal(self)
+        self.joint_encoder: JointEncoder = JointEncoder(self)
+        self.battery: DephyBattery = DephyBattery(self)
         self.data: Any = None
         # self.status_ex = 0b00000000
 
@@ -30,50 +30,39 @@ class DephySensor(base.SensorIMU):
         pass
 
     def stop_streaming(self):
-        # self.is_streaming = False
+        self.data: Any = None
         pass
 
     @property
     def is_streaming(self):
         return self._device.is_streaming
 
-    def get_data(self) -> None:
+    def update(self) -> None:
 
         if self._device.is_streaming:
+            self.data = self._device._data
             self.data = self._device.read()
 
-            self._kinematics.update()
-            self._motor.update()
-            self._thermal.update()
-            self._joint_encoder.update()
-            self._battery.update()
-
-            self._thermal._thermal_model.T_c = self._thermal.case_temperature
-            self._thermal._thermal_scale = (
-                self._thermal._thermal_model.update_and_get_scale(
-                    dt=(1 / self._device._frequency),
-                    motor_current=self._motor.motor_current,
-                )
-            )
-
             self.status_ex = self.data.status_ex
+            self.kinematics.update()
+            self.motor.update()
+            self.thermal.update()
+            self.joint_encoder.update()
+            self.battery.update()
 
             self._device._data = self.data
         else:
-            pass
             # TODO: should raise an error here
-            # self._data = MockData()
-
-        # return self.data
+            pass
 
 
 class DephyKinematics:
-    def __init__(self, Sensor: DephySensor) -> None:
-        self._device = Sensor
+    def __init__(self, Sensor: "DephySensor") -> None:
+        self._sensor = Sensor
         self._data: Any = None
 
     def update(self):
-        self._data = self._device.data
+        self._data = self._sensor.data
 
     @property
     def genvars(self):
@@ -99,7 +88,7 @@ class DephyKinematics:
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.accelx * MecheConsts.M_PER_SEC_SQUARED_ACCLSB)
+            return float(self._data.accelx * MecheConsts().M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
@@ -110,7 +99,7 @@ class DephyKinematics:
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.accely * MecheConsts.M_PER_SEC_SQUARED_ACCLSB)
+            return float(self._data.accely * MecheConsts().M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
@@ -121,7 +110,7 @@ class DephyKinematics:
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.accelz * MecheConsts.M_PER_SEC_SQUARED_ACCLSB)
+            return float(self._data.accelz * MecheConsts().M_PER_SEC_SQUARED_ACCLSB)
         else:
             return 0.0
 
@@ -132,7 +121,7 @@ class DephyKinematics:
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyrox * MecheConsts.RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyrox * MecheConsts().RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -143,7 +132,7 @@ class DephyKinematics:
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyroy * MecheConsts.RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyroy * MecheConsts().RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
@@ -154,21 +143,21 @@ class DephyKinematics:
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyroz * MecheConsts.RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyroz * MecheConsts().RAD_PER_SEC_GYROLSB)
         else:
             return 0.0
 
 
 class DephyMotor:
     def __init__(self, Sensor: DephySensor) -> None:
-        self._device = Sensor
+        self._sensor = Sensor
         self._data: Any = None
         self._motor_zero_position = 0.0
         self._motor_offset = 0.0
         self._encoder_map = None
 
     def update(self):
-        self._data = self._device.data
+        self._data = self._sensor.data
 
     @property
     def encoder_map(self):
@@ -208,7 +197,7 @@ class DephyMotor:
         This is calculated using the motor current and torque constant.
         """
         if self._data is not None:
-            return float(self._data.mot_cur * MecheConsts.NM_PER_MILLIAMP)
+            return float(self._data.mot_cur * MecheConsts().NM_PER_MILLIAMP)
         else:
             return 0.0
 
@@ -217,7 +206,7 @@ class DephyMotor:
         """Angle of the motor in radians."""
         if self._data is not None:
             return (
-                float(self._data.mot_ang * MecheConsts.RAD_PER_COUNT)
+                float(self._data.mot_ang * MecheConsts().RAD_PER_COUNT)
                 - self._motor_zero_position
                 - self.motor_offset
             )
@@ -248,8 +237,8 @@ class DephyMotor:
 
 class DephyThermal:
     def __init__(self, Sensor: DephySensor) -> None:
-        self._device = Sensor
-        self._data: Any = None
+        self._sensor = Sensor
+        # self._sensor: Any = None
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=80,
             soft_border_C_windings=10,
@@ -257,9 +246,15 @@ class DephyThermal:
             soft_border_C_case=10,
         )
         self._thermal_scale: float = 1.0
+        self._data: Any = None
 
     def update(self):
-        self._data = self._device.data
+        self._data = self._sensor.data
+        self._thermal_model.T_c = self.case_temperature
+        self._thermal_scale = self._thermal_model.update_and_get_scale(
+            dt=(1 / self._sensor._device._frequency),
+            motor_current=self._sensor.motor.motor_current,
+        )
 
     @property
     def case_temperature(self) -> float:
@@ -278,7 +273,8 @@ class DephyThermal:
         if self._data is not None:
             return float(self._thermal_model.T_w)
         else:
-            return 0.0
+            # TODO: check instance of thermal model
+            return self._thermal_model.T_a
 
     @property
     def thermal_scaling_factor(self) -> float:
@@ -292,14 +288,14 @@ class DephyThermal:
 
 class JointEncoder:
     def __init__(self, Sensor: DephySensor) -> None:
-        self._device = Sensor
+        self._sensor = Sensor
         self._data: Any = None
         self._joint_offset = 0.0
         self._joint_zero_position = 0.0
         self._joint_direction = 1.0
 
     def update(self):
-        self._data = self._device.data
+        self._data = self._sensor.data
 
     @property
     def joint_zero_position(self) -> float:
@@ -325,8 +321,8 @@ class JointEncoder:
     def joint_position(self) -> float:
         """Measured angle from the joint encoder in radians."""
         if self._data is not None:
-            if self._device._motor.encoder_map is not None:
-                return float(self._device._motor.encoder_map(self._data.ank_ang))
+            if self._sensor.motor.encoder_map is not None:
+                return float(self._sensor.motor.encoder_map(self._data.ank_ang))
             else:
                 return (
                     float(self._data.ank_ang * MecheConsts().RAD_PER_COUNT)
@@ -348,11 +344,11 @@ class JointEncoder:
 class DephyBattery:
 
     def __init__(self, Sensor: DephySensor) -> None:
-        self._device = Sensor
+        self._sensor = Sensor
         self._data: Any = None
 
     def update(self):
-        self._data = self._device.data
+        self._data = self._sensor.data
 
     @property
     def battery_voltage(self) -> float:

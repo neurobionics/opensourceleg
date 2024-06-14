@@ -165,8 +165,8 @@ def test_home(joint_patched: Joint, patch_sleep):
     with open(file="tests/test_joints/test_home_log.log") as f:
         contents = f.read()
         assert "INFO: [knee] Homing complete." in contents
-    assert jp1._motor_zero_position == 0.005752427954571154
-    assert jp1._joint_zero_position == 0.005752427954571154
+    assert jp1.sensor.motor._motor_zero_position == 0.005752427954571154
+    assert jp1.sensor.joint_encoder._joint_zero_position == 0.005752427954571154
     jpa = joint_patched
     jpa._name = "ankle"
     jpa._log = Logger(file_path="tests/test_joints/test_home_ankle_log")
@@ -181,8 +181,8 @@ def test_home(joint_patched: Joint, patch_sleep):
     with open(file="tests/test_joints/test_home_ankle_log.log") as f:
         contents = f.read()
         assert "INFO: [ankle] Homing complete." in contents
-    assert jpa._motor_zero_position == 0.0
-    assert jpa._joint_zero_position == 0.0
+    assert jpa.sensor.motor._motor_zero_position == 0.0
+    assert jpa.sensor.joint_encoder._joint_zero_position == 0.0
 
 
 @pytest.fixture

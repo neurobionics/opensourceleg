@@ -408,9 +408,9 @@ def test_set_motor_zero_position(dephyactpack_patched: DephyActpack):
 
     mock_dap2 = dephyactpack_patched
     mock_dap2.set_motor_zero_position(10)
-    assert mock_dap2._motor_zero_position == 10
+    assert mock_dap2.sensor.motor._motor_zero_position == 10
     mock_dap2.set_motor_zero_position(-20)
-    assert mock_dap2._motor_zero_position == -20
+    assert mock_dap2.sensor.motor._motor_zero_position == -20
 
 
 def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
@@ -423,9 +423,9 @@ def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
 
     mock_dap3 = dephyactpack_patched
     mock_dap3.set_joint_zero_position(10)
-    assert mock_dap3._joint_zero_position == 10
+    assert mock_dap3.sensor.joint_encoder._joint_zero_position == 10
     mock_dap3.set_joint_zero_position(-20)
-    assert mock_dap3._joint_zero_position == -20
+    assert mock_dap3.sensor.joint_encoder._joint_zero_position == -20
 
 
 def test_voltagemode(dephyactpack_patched: DephyActpack):
@@ -704,7 +704,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     # Set the is_streaming attribute to True to simulate an open device
     mock_dap11.is_streaming = True
     # Assert the default thermal model was properly initialized
-    assert mock_dap11._thermal_model.T_w == 21
+    assert mock_dap11.sensor.thermal._thermal_model.T_w == 21
     # Calls the update method of the MockDephyActpack instance
     mock_dap11.update()
     # Asserts the update method properly updated the _data attribute
@@ -731,7 +731,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     assert mock_dap11._data.gyroy == 15
     assert mock_dap11._data.gyroz == 15
     assert (
-        mock_dap11._thermal_model.T_w
+        mock_dap11.sensor.thermal._thermal_model.T_w
         == (
             (
                 (((28 * 1e-3) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
@@ -743,7 +743,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
         + 21
     )
     assert (
-        mock_dap11._thermal_model.T_c
+        mock_dap11.sensor.thermal._thermal_model.T_c
         == ((21 - 27) / 1.0702867186480716 + (21 - 27) / 1.9406620046327363)
         / 512.249065845453
         / 500
