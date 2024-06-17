@@ -49,7 +49,7 @@ class DephyIMU(base.SensorIMU):
 
         self.data = data
 
-        self.status_ex = self._device.status_ex
+        self.status_ex = self._device._data.status_ex
         self.loadcell.update()
         self.thermal.update()
         self.joint_encoder.update()
@@ -298,22 +298,22 @@ class DephyBattery:
             return 0.0
 
 
-class MockDephyIMUData:
-    def __init__(
-        self,
-        accelx=0,
-        accely=0,
-        accelz=0,
-        gyrox=0,
-        gyroy=0,
-        gyroz=0,
-    ):
-        self.accelx = accelx
-        self.accely = accely
-        self.accelz = accelz
-        self.gyrox = gyrox
-        self.gyroy = gyroy
-        self.gyroz = gyroz
+# class MockDephyIMUData:
+#     def __init__(
+#         self,
+#         accelx=0,
+#         accely=0,
+#         accelz=0,
+#         gyrox=0,
+#         gyroy=0,
+#         gyroz=0,
+#     ):
+#         self.accelx = accelx
+#         self.accely = accely
+#         self.accelz = accelz
+#         self.gyrox = gyrox
+#         self.gyroy = gyroy
+#         self.gyroz = gyroz
 
 
 class MockData:
