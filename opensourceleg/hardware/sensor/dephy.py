@@ -1,20 +1,21 @@
 ﻿from typing import Any
 
-from dataclasses import dataclass
-
 import numpy as np
 
 import opensourceleg.hardware.actuators.dephy as dephy
 import opensourceleg.hardware.sensor.base as base
-from opensourceleg.hardware.actuators.base import MechanicalConstants
+
+# from opensourceleg.hardware.actuators.base import MechanicalConstants
 from opensourceleg.hardware.thermal import ThermalModel
+
+# from dataclasses import dataclass
 
 
 class DephyIMU(base.SensorIMU):
 
     def __init__(self, device: "dephy.DephyActpack"):
         self._device = device
-
+        self._MecheConsts = self._device._MecheConsts
         self.loadcell: DephyLoadcell = DephyLoadcell(self)
         self.thermal: DephyThermal = DephyThermal(self)
         self.joint_encoder: JointEncoder = JointEncoder(self)
@@ -23,35 +24,41 @@ class DephyIMU(base.SensorIMU):
         self.status_ex: int = 0b00000000
 
     def start_streaming(self):
+        """Start streaming data from the sensor
+        dummy method for embedded sensor in dephyactpack, since it goes along with the actuator
+        """
         pass
 
     def stop_streaming(self):
-        self.data: Any = None
+        """Stop streaming data from the sensor
+        dummy method for embedded sensor in dephyactpack, since it goes along with the actuator
+        """
+        self.data = None
         pass
 
     @property
     def is_streaming(self):
+        """Check if the sensor is streaming data
+        Syncing the is_streaming property same as the actuator, since it goes along
+        Returns:
+            bool: True if the sensor is streaming data, False otherwise
+        """
         return self._device.is_streaming
 
     def update(self, data: Any = None) -> None:
 
-        if self._device.is_streaming:
-            self.data = data
-            # self.data = self._device.read()
+        self.data = data
 
-            self.status_ex = self._device._data.status_ex
-            self.loadcell.update()
-            # self.motor.update()
-            self.thermal.update()
-            self.joint_encoder.update()
-            self.battery.update()
+        self.status_ex = self._device.status_ex
+        self.loadcell.update()
+        self.thermal.update()
+        self.joint_encoder.update()
+        self.battery.update()
 
-            # self._device._data = self.data
-        else:
-            # TODO: should raise an error here
-            pass
+        pass
 
     def get_data(self):
+        """Should be erased and merged with update method"""
         pass
 
 
@@ -88,7 +95,7 @@ class DephyLoadcell(base.Loadcell):
         """
         if self._data is not None:
             return float(
-                self._data.accelx * MechanicalConstants().M_PER_SEC_SQUARED_ACCLSB
+                self._data.accelx * self._sensor._MecheConsts.M_PER_SEC_SQUARED_ACCLSB
             )
         else:
             return 0.0
@@ -101,7 +108,7 @@ class DephyLoadcell(base.Loadcell):
         """
         if self._data is not None:
             return float(
-                self._data.accely * MechanicalConstants().M_PER_SEC_SQUARED_ACCLSB
+                self._data.accely * self._sensor._MecheConsts.M_PER_SEC_SQUARED_ACCLSB
             )
         else:
             return 0.0
@@ -114,7 +121,7 @@ class DephyLoadcell(base.Loadcell):
         """
         if self._data is not None:
             return float(
-                self._data.accelz * MechanicalConstants().M_PER_SEC_SQUARED_ACCLSB
+                self._data.accelz * self._sensor._MecheConsts.M_PER_SEC_SQUARED_ACCLSB
             )
         else:
             return 0.0
@@ -126,7 +133,9 @@ class DephyLoadcell(base.Loadcell):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyrox * MechanicalConstants().RAD_PER_SEC_GYROLSB)
+            return float(
+                self._data.gyrox * self._sensor._MecheConsts.RAD_PER_SEC_GYROLSB
+            )
         else:
             return 0.0
 
@@ -137,7 +146,9 @@ class DephyLoadcell(base.Loadcell):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyroy * MechanicalConstants().RAD_PER_SEC_GYROLSB)
+            return float(
+                self._data.gyroy * self._sensor._MecheConsts.RAD_PER_SEC_GYROLSB
+            )
         else:
             return 0.0
 
@@ -148,7 +159,9 @@ class DephyLoadcell(base.Loadcell):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data.gyroz * MechanicalConstants().RAD_PER_SEC_GYROLSB)
+            return float(
+                self._data.gyroz * self._sensor._MecheConsts.RAD_PER_SEC_GYROLSB
+            )
         else:
             return 0.0
 
@@ -243,7 +256,7 @@ class JointEncoder(base.Encoder):
                 return float(self._sensor._device.encoder_map(self._data.ank_ang))
             else:
                 return (
-                    float(self._data.ank_ang * MechanicalConstants().RAD_PER_COUNT)
+                    float(self._data.ank_ang * self._sensor._MecheConsts.RAD_PER_COUNT)
                     - self.joint_zero_position
                     - self.joint_offset
                 ) * self.joint_direction
@@ -254,7 +267,7 @@ class JointEncoder(base.Encoder):
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
-            return float(self._data.ank_vel * MechanicalConstants().RAD_PER_COUNT)
+            return float(self._data.ank_vel * self._sensor._MecheConsts.RAD_PER_COUNT)
         else:
             return 0.0
 
@@ -304,6 +317,7 @@ class MockDephyIMUData:
 
 
 class MockData:
+    # TODO: Eliminate after generalization
     def __init__(
         self,
         batt_volt=0,
@@ -316,26 +330,28 @@ class MockData:
         mot_acc=0,
         ank_vel=0,
         temperature=0,
-        accelx=0,
-        accely=0,
-        accelz=0,
-        gyrox=0,
-        gyroy=0,
-        gyroz=0,
         genvar_0=0,
         genvar_1=0,
         genvar_2=0,
         genvar_3=0,
         genvar_4=0,
         genvar_5=0,
+        accelx=0,
+        accely=0,
+        accelz=0,
+        gyrox=0,
+        gyroy=0,
+        gyroz=0,
     ):
         self.batt_volt = batt_volt
         self.batt_curr = batt_curr
         self.mot_volt = mot_volt
         self.mot_cur = mot_cur
         self.mot_ang = mot_ang
+        self.ank_ang = ank_ang
         self.mot_vel = mot_vel
         self.mot_acc = mot_acc
+        self.ank_vel = ank_vel
         self.temperature = temperature
         self.genvar_0 = genvar_0
         self.genvar_1 = genvar_1
@@ -343,15 +359,13 @@ class MockData:
         self.genvar_3 = genvar_3
         self.genvar_4 = genvar_4
         self.genvar_5 = genvar_5
-        self.status_ex = 0b00000000
         self.accelx = accelx
         self.accely = accely
         self.accelz = accelz
-        self.ank_ang = ank_ang
-        self.ank_vel = ank_vel
         self.gyrox = gyrox
         self.gyroy = gyroy
         self.gyroz = gyroz
+        self.status_ex = 0b00000000
 
     def __repr__(self):
         return f"MockData"

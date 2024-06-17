@@ -62,6 +62,7 @@ class SensorIMU(ABC):
 
     @abstractmethod
     def get_data(self):
+        """Should be erased and merged with update method"""
         pass
 
     @property

@@ -357,14 +357,6 @@ class DephyActpack(base.Actuator, Device):
         self._log: Logger = logger
         self._encoder_map = None
 
-        # self._thermal_model: ThermalModel = ThermalModel(
-        #     temp_limit_windings=80,
-        #     soft_border_C_windings=10,
-        #     temp_limit_case=70,
-        #     soft_border_C_case=10,
-        # )
-        # self._thermal_scale: float = 1.0
-
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
         self._encoder_map = None
 
@@ -399,6 +391,10 @@ class DephyActpack(base.Actuator, Device):
             )
             os._exit(status=1)
         self.dephyIMU.start_streaming()
+
+        self._data = self.read()
+        self.dephyIMU.update(self._data)
+
         time.sleep(0.1)
         # self.dephyIMU.get_data()
 
@@ -420,7 +416,7 @@ class DephyActpack(base.Actuator, Device):
         if self.is_streaming:
             self._data = self.read()
             self.dephyIMU.update(self._data)
-            self.dephyIMU.update()
+            # self.dephyIMU.update()
 
             # Check for thermal fault, bit 2 of the execute status byte
             if self._data.status_ex & 0b00000010 == 0b00000010:
@@ -703,80 +699,95 @@ class DephyActpack(base.Actuator, Device):
 
     @property
     # TODO: Eliminate after generalization
-    def battery_voltage(self) -> float:
-        return self.dephyIMU.battery.battery_voltage
-
-    @property
-    # TODO: Eliminate after generalization
-    def battery_current(self) -> float:
-        """Battery current in mA."""
-        return self.dephyIMU.battery.battery_current
-
-    @property
-    # TODO: Eliminate after generalization
     def joint_encoder_counts(self) -> int:
+        self.update()
         """Raw reading from joint encoder in counts."""
         return self.dephyIMU.joint_encoder.joint_encoder_counts
 
     @property
     # TODO: Eliminate after generalization
     def joint_position(self) -> float:
+        self.update()
         """Measured angle from the joint encoder in radians."""
         return self.dephyIMU.joint_encoder.joint_position
 
     @property
     # TODO: Eliminate after generalization
     def joint_velocity(self) -> float:
+        self.update()
         return self.dephyIMU.joint_encoder.joint_velocity
 
     @property
     # TODO: Eliminate after generalization
+    def battery_voltage(self) -> float:
+        self.update()
+        return self.dephyIMU.battery.battery_voltage
+
+    @property
+    # TODO: Eliminate after generalization
+    def battery_current(self) -> float:
+        """Battery current in mA."""
+        self.update()
+        return self.dephyIMU.battery.battery_current
+
+    @property
+    # TODO: Eliminate after generalization
     def case_temperature(self) -> float:
+        self.update()
         return self.dephyIMU.thermal.case_temperature
 
     @property
     # TODO: Eliminate after generalization
     def winding_temperature(self) -> float:
+        self.update()
         return self.dephyIMU.thermal.winding_temperature
 
     @property
     # TODO: Eliminate after generalization
     def thermal_scaling_factor(self) -> float:
+        # self.update()
         return self.dephyIMU.thermal.thermal_scaling_factor
 
     @property
     # TODO: Eliminate after generalization
     def genvars(self):
+        self.update()
         return self.dephyIMU.loadcell.genvars
 
     @property
     # TODO: Eliminate after generalization
     def accelx(self) -> float:
+        self.update()
         return self.dephyIMU.loadcell.accelx
 
     @property
     # TODO: Eliminate after generalization
     def accely(self) -> float:
+        self.update()
         return self.dephyIMU.loadcell.accely
 
     @property
     # TODO: Eliminate after generalization
     def accelz(self) -> float:
+        self.update()
         return self.dephyIMU.loadcell.accelz
 
     @property
     # TODO: Eliminate after generalization
     def gyrox(self) -> float:
+        self.update()
         return self.dephyIMU.loadcell.gyrox
 
     @property
     # TODO: Eliminate after generalization
     def gyroy(self) -> float:
+        self.update()
         return self.dephyIMU.loadcell.gyroy
 
     @property
     # TODO: Eliminate after generalization
     def gyroz(self) -> float:
+        self.update()
         return self.dephyIMU.loadcell.gyroz
 
 
