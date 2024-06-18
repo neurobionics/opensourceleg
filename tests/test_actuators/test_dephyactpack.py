@@ -353,7 +353,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
         gyroy=10,
         gyroz=20,
     )
-    # mock_thermal_model =
+
     assert mock_dap1.mode == VoltageMode(device=mock_dap1)
     assert mock_dap1.control_modes == ActpackControlModes(device=mock_dap1)
     assert mock_dap1.battery_voltage == 10
