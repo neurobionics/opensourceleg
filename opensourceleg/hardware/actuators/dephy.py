@@ -332,6 +332,7 @@ class DephyActpack(base.Actuator, Device):
         logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
+        offline: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -348,7 +349,11 @@ class DephyActpack(base.Actuator, Device):
             ),
         )
 
-        Device.__init__(self, port=port, baud_rate=baud_rate)
+        if not offline:
+            Device.__init__(self, port=port, baud_rate=baud_rate)
+        else:
+            self.port = port
+            self.is_streaming: bool = False
 
         self._frequency: int = frequency
         self._debug_level: int = debug_level
@@ -720,8 +725,7 @@ class DephyActpack(base.Actuator, Device):
     @property
     # TODO: Eliminate after generalization
     def battery_voltage(self) -> float:
-        self.update()
-        return self.dephyIMU.battery.battery_voltage
+        return self._data.battery_voltage
 
     @property
     # TODO: Eliminate after generalization
@@ -878,7 +882,7 @@ class MockDephyActpack(DephyActpack):
             debug_level (int): _description_. Defaults to 0.
             dephy_log (bool): _description_. Defaults to False.
         """
-        DephyActpack.__init__(self)
+        DephyActpack.__init__(self, offline=True)
         self._motor_command: str = "None"
 
         # This is used in the set_gains() method to display the gains that were set
