@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-from opensourceleg.hardware.actuators.base import MecheConsts
+from opensourceleg.hardware.actuators.base import MechanicalConstants
 from opensourceleg.hardware.actuators.dephy import DephyActpack, MockDephyActpack
 
 from ..tools.logger import Logger
@@ -58,7 +58,7 @@ class Joint(DephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = MecheConsts.MAX_CASE_TEMPERATURE
+        self._max_temperature: float = MechanicalConstants.MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -165,7 +165,7 @@ class Joint(DephyActpack):
 
         if not self.is_homed:
             self._log.warning(
-                msg=f"[{self.__repr__()}] Please home the joint before making the encoder map."
+                msg=f"[{self.__repr__()}] Please home the {self.name} joint before making the encoder map."
             )
             return
 
@@ -188,7 +188,7 @@ class Joint(DephyActpack):
         _output_position_array = []
 
         self._log.info(
-            msg=f"[{self.__repr__()}] Please manually move the joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
+            msg=f"[{self.__repr__()}] Please manually move the {self.name} joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
         )
 
         _start_time: float = time.time()
@@ -196,7 +196,7 @@ class Joint(DephyActpack):
         try:
             while time.time() - _start_time < 10:
                 self._log.info(
-                    msg=f"[{self.__repr__()}] Mapping joint encoder: {10 - time.time() + _start_time} seconds left."
+                    msg=f"[{self.__repr__()}] Mapping the {self.name} joint encoder: {10 - time.time() + _start_time} seconds left."
                 )
                 self.update()
                 _joint_encoder_array.append(self._data.ank_ang)
@@ -207,7 +207,9 @@ class Joint(DephyActpack):
             self._log.warning(msg="Encoder map interrupted.")
             return
 
-        self._log.info(msg=f"[{self.__repr__()}] You may now stop moving the joint.")
+        self._log.info(
+            msg=f"[{self.__repr__()}] You may now stop moving the {self.name} joint."
+        )
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
@@ -270,8 +272,8 @@ class Joint(DephyActpack):
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
-            K=int(K * MecheConsts().NM_PER_RAD_TO_K),
-            B=int(B * MecheConsts().NM_S_PER_RAD_TO_B),
+            K=int(K * MechanicalConstants().NM_PER_RAD_TO_K),
+            B=int(B * MechanicalConstants().NM_S_PER_RAD_TO_B),
             ff=ff,
         )
 
@@ -379,7 +381,7 @@ class MockJoint(Joint, MockDephyActpack):
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
 
-        self._max_temperature: float = MecheConsts.MAX_CASE_TEMPERATURE
+        self._max_temperature: float = MechanicalConstants.MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name

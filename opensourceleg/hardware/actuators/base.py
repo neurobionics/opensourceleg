@@ -3,16 +3,13 @@ Actuators Interface Generalized
 05/2024
 """
 
-from typing import Any, Callable, Protocol, Union, overload
+from typing import Any, Callable
 
 from abc import ABC, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
 
-# To be removed after Generalization
 import numpy as np
-
-# To be removed after Generalization
 
 """_summary_
 
@@ -25,13 +22,16 @@ import numpy as np
 # Mandatory
 class ControlGains:
     """Dataclass for controller gains
-    Args:
-        kp (int): Proportional gain
-        ki (int): Integral gain
-        kd (int): Derivative gain
-        K (int): Stiffness of the impedance controller
-        B (int): Damping of the impedance controller
-        ff (int): Feedforward gain
+
+    Attributes
+    ----------
+    kp (int): Proportional gain
+    ki (int): Integral gain
+    kd (int): Derivative gain
+    K (int): Stiffness of the impedance controller
+    B (int): Damping of the impedance controller
+    ff (int): Feedforward gain
+
     """
 
     kp: int = 0
@@ -46,15 +46,31 @@ class ControlGains:
 
 
 @dataclass
-class MecheConsts:
+class MechanicalConstants:
     """Dataclass for mechanical constants
-    Args:
+
+    Attributes
+    ----------
     MOTOR_COUNT_PER_REV: float = 16384
     NM_PER_AMP: float = 0.1133
     IMPEDANCE_A: float = 0.00028444
     IMPEDANCE_C: float = 0.0007812
     MAX_CASE_TEMPERATURE: float = 80
     M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
+
+    Properties
+    ----------
+    NM_PER_MILLIAMP(self): float = NM_PER_AMP / 1000
+
+    RAD_PER_COUNT(self): float = return 2 * pi / MOTOR_COUNT_PER_REV
+
+    RAD_PER_DEG(self): float  = pi / 180
+
+    RAD_PER_SEC_GYROLSB(self): float = pi / 180 / 32.8
+
+    NM_PER_RAD_TO_K(self): float = RAD_PER_COUNT / IMPEDANCE_C * 1e3 / NM_PER_AMP
+
+    NM_S_PER_RAD_TO_B(self): float = RAD_PER_DEG / IMPEDANCE_A * 1e3 / NM_PER_AMP
     """
 
     def __repr__(self) -> str:
@@ -118,10 +134,34 @@ class SafetySpec:
 
 
 class ActuatorMode:
-    """Base mode class for the actuator mode transfer
-    Args:
-        mode_pass (c_int): Mode pass / flag for the actuator
-        device (Actuator): Actuator instance
+    """Base Class for new actuator mode definition
+
+    Args
+    ----
+    mode_pass (c_int): Mode pass / flag for the actuator
+    device (Actuator): Actuator instance
+
+    Properties
+    ----------
+    mode (c_int): Control Mode
+    has_gains (bool): Whether the mode has gains
+
+    Methods
+    -------
+    enter() -> None:
+
+    Calls the entry callback
+
+    exit() → None:
+
+    Calls the exit callback
+
+    transition(
+        to_state: opensourceleg.hardware.actuators.base.ActuatorMode
+    ) → None:
+
+    Transition to another mode. Calls the exit callback of the current mode and the entry callback of the new mode
+
     """
 
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
@@ -146,7 +186,7 @@ class ActuatorMode:
     @property
     def mode(self) -> c_int:
         """
-        Control Mode (Read Only)
+        Control Mode
 
         Returns:
             c_int: Control mode pass / flag
@@ -209,9 +249,17 @@ class ActuatorMode:
 class VoltageMode(ActuatorMode, ABC):
     """Base Mode for Voltage Mode of Actuator
 
-    Args:
-        mode_pass (c_int): Mode pass / flag for the actuator
-        device (Actuator): Actuator instance
+    Args
+    ----
+    mode_pass (c_int): Mode pass / flag for the actuator
+
+    device (Actuator): Actuator instance
+
+    Methods
+    -------
+    set_voltage(voltage_value: int) -> None:
+        set_voltage method for the voltage mode
+
     """
 
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
@@ -231,9 +279,18 @@ class VoltageMode(ActuatorMode, ABC):
 class CurrentMode(ActuatorMode):
     """Base Mode for Current Mode of Actuator
 
-    Args:
-        mode_pass (c_int): Mode pass / flag for the actuator
-        device (Actuator): Actuator instance
+    Args
+    ----
+    mode_pass (c_int): Mode pass / flag for the actuator
+    device (Actuator): Actuator instance
+
+    Methods
+    -------
+    set_current(current_value: int) -> None:
+        set_current method for the current mode
+
+    set_gains(Gains: ControlGains) -> None:
+        set_gains method for the current mode
     """
 
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
@@ -264,9 +321,18 @@ class CurrentMode(ActuatorMode):
 
 class PositionMode(ActuatorMode):
     """Base Mode for Position Mode of Actuator
-    Args:
-        mode_pass (c_int): Mode pass / flag for the actuator
-        device (Actuator): Actuator instance
+    Args
+    ----
+    mode_pass (c_int): Mode pass / flag for the actuator
+    device (Actuator): Actuator instance
+
+    Methods
+    -------
+    set_position(encoder_count: int) -> None:
+        set_position method for the position mode
+
+    set_gains(Gains: ControlGains) -> None:
+        set_gains method for the position mode
     """
 
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
@@ -298,9 +364,18 @@ class PositionMode(ActuatorMode):
 class ImpedanceMode(ActuatorMode):
     """Base Mode for Impedance Mode of Actuator
 
-    Args:
-        mode_pass (c_int): Mode pass / flag for the actuator
-        device (Actuator): Actuator instance
+    Args
+    ----
+    mode_pass (c_int): Mode pass / flag for the actuator
+    device (Actuator): Actuator instance
+
+    Methods:
+    --------
+    set_gains(Gains: ControlGains) -> None:
+        set_gains method for the impedance mode
+
+    set_position(encoder_count: int) -> None:
+        set_position method for the impedance mode
     """
 
     def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
@@ -333,20 +408,45 @@ class ImpedanceMode(ActuatorMode):
 class Actuator(ABC):
     """Base class for the Actuator
 
-    Args:
-        Gains (ControlGains): control gains applied
-        MecheSpecs (MecheConsts): mechanical constants applied
+    Args
+    ----
+    Gains (ControlGains): control gains applied
+    MecheSpecs (MecheConsts): mechanical constants applied
+
+    Methods
+    -------
+    start() -> None:
+        Start method for the actuator
+
+    stop() -> None:
+        Stop method for the actuator
+
+    update() -> None:
+        Update method for the actuator
+
+    set_mode(mode: ActuatorMode) -> None:
+        set_mode method for the actuator
+
+    set_voltage(voltage_value: float) -> None:
+        set_voltage method for the actuator
+
+    set_current(current_value: float) -> None:
+        set_current method for the actuator
+
+    set_motor_position(PositionCount: int) -> None:
+        set_motor_position method for the actuator
+
     """
 
     def __init__(
         self,
         Gains: ControlGains = ControlGains(),
-        MecheSpecs: MecheConsts = MecheConsts(),
+        MecheSpecs: MechanicalConstants = MechanicalConstants(),
         *args,
         **kwargs,
     ) -> None:
         self._gains: Any = Gains
-        self._MecheConsts: MecheConsts = MecheSpecs
+        self._MecheConsts: MechanicalConstants = MecheSpecs
         self._mode: Any = None
 
     @abstractmethod

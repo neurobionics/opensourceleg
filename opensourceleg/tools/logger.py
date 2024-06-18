@@ -50,6 +50,7 @@ class Logger(logging.Logger):
         self._file_path: str = file_path + ".log"
 
         self._containers: list[Union[object, dict[Any, Any]]] = []
+        self._container_names: list[str] = []
         self._attributes: list[list[str]] = []
 
         self._file = open(file_path + ".csv", "w", newline="")
@@ -117,7 +118,10 @@ class Logger(logging.Logger):
         self._stream_handler.setLevel(level=self._log_levels[level])
 
     def add_attributes(
-        self, container: Union[object, dict[Any, Any]], attributes: list[str]
+        self,
+        container: Union[object, dict[Any, Any]],
+        attributes: list[str],
+        container_name: str = None,
     ) -> None:
         """
         Adds class instance and attributes to log
@@ -126,7 +130,23 @@ class Logger(logging.Logger):
             container (object, dict): Container can either be an object (instance of a class)
                 or a Dict containing the attributes to be logged.
             attributes (list[str]): List of attributes to log
+            container_name (str): An alternative name for the container that you want to be used in the log.
+                                  Otherwise, the class's __repr__() method is used.
         """
+        if container_name is None:
+            if type(container) is dict:
+                if "__main__" in container.values():
+                    self._container_names.append("")
+                else:
+                    self._container_names.append(f"{container}:")
+            else:
+                if type(container).__repr__ is not object.__repr__:
+                    self._container_names.append(f"{container}:")
+                else:
+                    self._container_names.append(f"")
+        else:
+            self._container_names.append(container_name)
+
         self._containers.append(container)
         self._attributes.append(attributes)
 
@@ -138,18 +158,11 @@ class Logger(logging.Logger):
             return
 
         if not self._is_logging:
-            for container, attributes in zip(self._containers, self._attributes):
+            for container, attributes, container_name in zip(
+                self._containers, self._attributes, self._container_names
+            ):
                 for attribute in attributes:
-                    if type(container) is dict:
-                        if "__main__" in container.values():
-                            self._header_data.append(f"{attribute}")
-                        else:
-                            self._header_data.append(f"{container}:{attribute}")
-                    else:
-                        if type(container).__repr__ is not object.__repr__:
-                            self._header_data.append(f"{container}:{attribute}")
-                        else:
-                            self._header_data.append(f"{attribute}")
+                    self._header_data.append(container_name + f"{attribute}")
 
             self._writer.writerow(self._header_data)
             self._is_logging = True
@@ -192,5 +205,6 @@ if __name__ == "__main__":
     simple_class = SimpleClass()
 
     local_logger.add_attributes(locals(), ["local_variable_1"])
+    local_logger.add_attributes(locals(), ["local_variable_2"], "custom_container")
     local_logger.add_attributes(simple_class, ["a", "b", "c"])
     local_logger.update()

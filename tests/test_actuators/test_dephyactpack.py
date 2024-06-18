@@ -9,7 +9,7 @@ import opensourceleg
 from opensourceleg.hardware.actuators.base import (
     ActuatorMode,
     ControlGains,
-    MecheConsts,
+    MechanicalConstants,
 )
 
 # from opensourceleg.hardware.actuators.dephy import MockData as Data
@@ -27,6 +27,195 @@ from opensourceleg.hardware.actuators.dephy import (  # MockDephyActpack,; MockD
 )
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
+
+# # MockDephyActpack class definition for testing
+# # This class inherits everything from the DephyActpack class but deletes the super().__init__() call in the constructor so the constructor does not try to connect to a device. It also overrides some of the methods.
+# class MockDephyActpack(DephyActpack):
+#     """
+#     MockDephyActpack class definition for testing.\n
+#     This class inherits everything from the DephyActpack class but
+#     deletes the super().__init__() call in the constructor so the
+#     constructor does not try to connect to a device. It also overrides
+#     some of the methods to allow for testing without a device, and adds
+#     attributes used to determine if the methods were called properly.
+#     """
+
+#     def __init__(
+#         self,
+#         name: str = "MockDephyActpack",
+#         port: str = "/dev/ttyACM0",
+#         baud_rate: int = 230400,
+#         frequency: int = 500,
+#         logger: Logger = Logger(),
+#         debug_level: int = 0,
+#         dephy_log: bool = False,
+#     ) -> None:
+#         """
+#         Initializes the MockDephyActpack class
+
+#         Args:
+#             name (str): _description_. Defaults to "MockDephyActpack".
+#             port (str): _description_
+#             baud_rate (int): _description_. Defaults to 230400.
+#             frequency (int): _description_. Defaults to 500.
+#             logger (Logger): _description_
+#             debug_level (int): _description_. Defaults to 0.
+#             dephy_log (bool): _description_. Defaults to False.
+#         """
+#         self._debug_level: int = debug_level
+#         self._dephy_log: bool = dephy_log
+#         self._frequency: int = frequency
+#         self._data: Any = None
+#         self._name: str = name
+
+#         self._log: Logger = logger
+#         self._state = None
+
+#         # New attributes to be used for testing
+
+#         # This is used in the open() method to display the port the device should be connected to
+#         self.port: str = port
+
+#         # This is used in the send_motor_command() method to display the motor command that was sent
+#         self._motor_command: str = "None"
+
+#         # This is used in the set_gains() method to display the gains that were set
+#         self._gains: dict[str, float] = {
+#             "kp": 0,
+#             "ki": 0,
+#             "kd": 0,
+#             "k": 0,
+#             "b": 0,
+#             "ff": 0,
+#         }
+
+#         # This is used in the read() method to indicate a data stream
+#         self.is_streaming: bool = False
+
+#         self._encoder_map = None
+
+#         self._motor_zero_position = 0.0
+#         self._joint_zero_position = 0.0
+
+#         self._joint_offset = 0.0
+#         self._motor_offset = 0.0
+
+#         self._joint_direction = 1.0
+
+#         self._thermal_model: ThermalModel = ThermalModel(
+#             temp_limit_windings=80,
+#             soft_border_C_windings=10,
+#             temp_limit_case=70,
+#             soft_border_C_case=10,
+#         )
+
+#         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
+
+#         self._mode: ActuatorMode = self.control_modes.voltage
+
+#     # Overrides the open method to function without a device
+#     def open(self, freq, log_level, log_enabled):
+#         if freq == 100 and log_level == 5 and log_enabled:
+#             raise OSError
+#         else:
+#             self._log.debug(msg=f"Opening Device at {self.port}")
+
+#     # Overrides the send_motor_command method to set the new _motor_command attribute
+#     def send_motor_command(self, ctrl_mode, value):
+#         self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"
+
+#     # Overrides the set_gains method to set the gains in the new _gains attribute
+#     def set_gains(self, kp, ki, kd, k, b, ff):
+#         self._gains["kp"] = kp
+#         self._gains["ki"] = ki
+#         self._gains["kd"] = kd
+#         self._gains["k"] = k
+#         self._gains["b"] = b
+#         self._gains["ff"] = ff
+
+#     # Overrides the read method to modify the data incrementally instead of through a device data stream
+#     def read(self):
+#         self._data.batt_volt += 15
+#         self._data.batt_curr += 15
+#         self._data.mot_volt += 15
+#         self._data.mot_cur += 15
+#         self._data.mot_ang += 15
+#         self._data.ank_ang += 15
+#         self._data.mot_vel += 15
+#         self._data.mot_acc += 15
+#         self._data.ank_vel += 15
+#         self._data.temperature += 15
+#         self._data.genvar_0 += 15
+#         self._data.genvar_1 += 15
+#         self._data.genvar_2 += 15
+#         self._data.genvar_3 += 15
+#         self._data.genvar_4 += 15
+#         self._data.genvar_5 += 15
+#         self._data.accelx += 15
+#         self._data.accely += 15
+#         self._data.accelz += 15
+#         self._data.gyrox += 15
+#         self._data.gyroy += 15
+#         self._data.gyroz += 15
+#         self._data.status_ex = 0b00000000
+
+#         return self._data
+
+#     # Overrides the close method to do nothing
+#     def close(self):
+#         pass
+
+
+# MockData class definition for testing without a data stream
+# class Data:
+#     def __init__(
+#         self,
+#         batt_volt=0,
+#         batt_curr=0,
+#         mot_volt=0,
+#         mot_cur=0,
+#         mot_ang=0,
+#         ank_ang=0,
+#         mot_vel=0,
+#         mot_acc=0,
+#         ank_vel=0,
+#         temperature=0,
+#         genvar_0=0,
+#         genvar_1=0,
+#         genvar_2=0,
+#         genvar_3=0,
+#         genvar_4=0,
+#         genvar_5=0,
+#         accelx=0,
+#         accely=0,
+#         accelz=0,
+#         gyrox=0,
+#         gyroy=0,
+#         gyroz=0,
+#     ):
+#         self.batt_volt = batt_volt
+#         self.batt_curr = batt_curr
+#         self.mot_volt = mot_volt
+#         self.mot_cur = mot_cur
+#         self.mot_ang = mot_ang
+#         self.ank_ang = ank_ang
+#         self.mot_vel = mot_vel
+#         self.mot_acc = mot_acc
+#         self.ank_vel = ank_vel
+#         self.temperature = temperature
+#         self.genvar_0 = genvar_0
+#         self.genvar_1 = genvar_1
+#         self.genvar_2 = genvar_2
+#         self.genvar_3 = genvar_3
+#         self.genvar_4 = genvar_4
+#         self.genvar_5 = genvar_5
+#         self.accelx = accelx
+#         self.accely = accely
+#         self.accelz = accelz
+#         self.gyrox = gyrox
+#         self.gyroy = gyroy
+#         self.gyroz = gyroz
+#         self.status_ex = 0b00000000
 
 
 @pytest.fixture
@@ -164,6 +353,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
         gyroy=10,
         gyroz=20,
     )
+    # mock_thermal_model =
     assert mock_dap1.mode == VoltageMode(device=mock_dap1)
     assert mock_dap1.control_modes == ActpackControlModes(device=mock_dap1)
     assert mock_dap1.battery_voltage == 10
@@ -234,9 +424,9 @@ def test_set_joint_zero_position(dephyactpack_patched: DephyActpack):
 
     mock_dap3 = dephyactpack_patched
     mock_dap3.set_joint_zero_position(10)
-    assert mock_dap3._joint_zero_position == 10
+    assert mock_dap3.dephyIMU.joint_encoder._joint_zero_position == 10
     mock_dap3.set_joint_zero_position(-20)
-    assert mock_dap3._joint_zero_position == -20
+    assert mock_dap3.dephyIMU.joint_encoder._joint_zero_position == -20
 
 
 def test_voltagemode(dephyactpack_patched: DephyActpack):
@@ -515,7 +705,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     # Set the is_streaming attribute to True to simulate an open device
     mock_dap11.is_streaming = True
     # Assert the default thermal model was properly initialized
-    assert mock_dap11._thermal_model.T_w == 21
+    assert mock_dap11.dephyIMU.thermal._thermal_model.T_w == 21
     # Calls the update method of the MockDephyActpack instance
     mock_dap11.update()
     # Asserts the update method properly updated the _data attribute
@@ -542,7 +732,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
     assert mock_dap11._data.gyroy == 15
     assert mock_dap11._data.gyroz == 15
     assert (
-        mock_dap11._thermal_model.T_w
+        mock_dap11.dephyIMU.thermal._thermal_model.T_w
         == (
             (
                 (((28 * 1e-3) ** 2) * 0.376 * (1 + 0.393 / 100 * (21 - 65)))
@@ -554,7 +744,7 @@ def test_dephyactpack_update(dephyactpack_patched: DephyActpack):
         + 21
     )
     assert (
-        mock_dap11._thermal_model.T_c
+        mock_dap11.dephyIMU.thermal._thermal_model.T_c
         == ((21 - 27) / 1.0702867186480716 + (21 - 27) / 1.9406620046327363)
         / 512.249065845453
         / 500
