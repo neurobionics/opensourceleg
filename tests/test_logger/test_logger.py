@@ -124,12 +124,40 @@ def test_data():
         rows = list(reader)
         assert rows == expected_rows
 
+    # Asserts the data method works properly when passed a custom name
+    test_Logger_data = Logger(file_path="tests/test_logger/test_log_data")
     test_Logger_data.add_attributes(
-        container=test_container2, attributes=["a", "b", "c"]
+        container=test_container2,
+        attributes=["a", "b", "c"],
+        container_name="custom_name",
     )
-    # Asserts the data method works properly when passed multiple class instances
     test_Logger_data.update()
-    expected_rows2 = [["a", "b", "c"], ["1", "2", "3"], ["1", "2", "3", "1", "2", "3"]]
+    expected_rows2 = [
+        ["custom_name:a", "custom_name:b", "custom_name:c"],
+        ["1", "2", "3"],
+    ]
+    with open("tests/test_logger/test_log_data.csv", newline="") as f:
+        reader = csv.reader(f)
+        rows2 = list(reader)
+    assert rows2 == expected_rows2
+
+    # Asserts the data method works properly when passed multiple instances, including locals
+    test_Logger_data = Logger(file_path="tests/test_logger/test_log_data")
+    test_Logger_data.add_attributes(
+        container=test_container, attributes=["a", "b", "c"]
+    )
+    test_Logger_data.add_attributes(
+        container=test_container2,
+        attributes=["a", "b", "c"],
+        container_name="custom_name",
+    )
+    pi = 3.14159
+    test_Logger_data.add_attributes(locals(), ["pi"], "local")
+    test_Logger_data.update()
+    expected_rows2 = [
+        ["a", "b", "c", "custom_name:a", "custom_name:b", "custom_name:c", "local:pi"],
+        ["1", "2", "3", "1", "2", "3", "3.14159"],
+    ]
     with open("tests/test_logger/test_log_data.csv", newline="") as f:
         reader = csv.reader(f)
         rows2 = list(reader)
