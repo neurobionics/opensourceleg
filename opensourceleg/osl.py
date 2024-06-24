@@ -330,28 +330,13 @@ class OpenSourceLeg:
         if self.has_knee:
             self._knee.update()
 
-            if self.knee.case_temperature > self.knee.max_temperature:
-                self.log.warning(
-                    msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
-                )
-                self.__exit__()
-                exit()
-
         if self.has_ankle:
             self._ankle.update()
-
-            if self.ankle.case_temperature > self.ankle.max_temperature:
-                self.log.warning(
-                    msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
-                )
-                self.__exit__()
-                exit()
 
         if self.has_loadcell:
             self._loadcell.update()
 
         self.log.update()
-
         self._timestamp = time.time()
 
     def home(self) -> None:

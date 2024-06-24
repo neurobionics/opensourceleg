@@ -99,6 +99,7 @@ NM_PER_RAD_TO_K: float = RAD_PER_COUNT / IMPEDANCE_C * 1e3 / NM_PER_AMP
 NM_S_PER_RAD_TO_B: float = RAD_PER_DEG / IMPEDANCE_A * 1e3 / NM_PER_AMP
 
 MAX_CASE_TEMPERATURE: float = 80
+MAX_WINDING_TEMPERATURE: float = 110
 
 DEFAULT_POSITION_GAINS = Gains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
 
@@ -456,6 +457,9 @@ class DephyActpack(Device):
 
         self._mode: ActpackMode = self.control_modes.voltage
 
+        self._max_case_temperature = MAX_CASE_TEMPERATURE
+        self._max_winding_temperature = MAX_WINDING_TEMPERATURE
+
     def __repr__(self) -> str:
         return f"{self._name}[DephyActpack]"
 
@@ -496,6 +500,20 @@ class DephyActpack(Device):
                 dt=(1 / self._frequency),
                 motor_current=self.motor_current,
             )
+
+            if self.case_temperature > self.max_case_temperature:
+                self._log.warning(
+                    msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                )
+                self.stop()
+                exit()
+
+            if self.winding_temperature > self.max_winding_temperature:
+                self._log.warning(
+                    msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                )
+                self.stop()
+                exit()
 
             # Check for thermal fault, bit 2 of the execute status byte
             if self._data.status_ex & 0b00000010 == 0b00000010:
@@ -687,6 +705,24 @@ class DephyActpack(Device):
             ),
         )
 
+    def set_max_case_temperature(self, temperature: float) -> None:
+        """
+        Set the maximum temperature of the motor.
+
+        Args:
+            temperature (float): temperature in degrees Celsius
+        """
+        self._max_case_temperature = temperature
+
+    def set_max_winding_temperature(self, temperature: float) -> None:
+        """
+        Set the maximum temperature of the windings.
+
+        Args:
+            temperature (float): temperature in degrees Celsius
+        """
+        self._max_winding_temperature = temperature
+
     @property
     def frequency(self) -> int:
         return self._frequency
@@ -847,6 +883,16 @@ class DephyActpack(Device):
             return float(self._thermal_model.T_w)
         else:
             return 0.0
+
+    @property
+    def max_case_temperature(self) -> float:
+        """Maximum allowable case temperature in celsius."""
+        return self._max_case_temperature
+
+    @property
+    def max_winding_temperature(self) -> float:
+        """Maximum allowable winding temperature in celsius."""
+        return self._max_winding_temperature
 
     @property
     def thermal_scaling_factor(self) -> float:
@@ -1079,6 +1125,9 @@ class MockDephyActpack(DephyActpack):
 
         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
         self._mode: ActpackMode = self.control_modes.voltage
+
+        self._max_case_temperature = MAX_CASE_TEMPERATURE
+        self._max_winding_temperature = MAX_WINDING_TEMPERATURE
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):

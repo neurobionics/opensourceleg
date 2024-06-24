@@ -222,20 +222,6 @@ def patch_time_time(monkeypatch):
     monkeypatch.setattr(time, "monotonic", lambda: values.pop(0))
 
 
-def test_set_max_temperature(joint_patched: Joint):
-    """
-    Test the set_max_temperature method of the Joint class\n
-    This test creates an instance of the MockJoint class asserts the default max_temperature
-    is 80. The set_max_temperature method is called with a max_temperature of 100. It then
-    asserts the max_temperature is set to 100.
-    """
-
-    jp4 = joint_patched
-    assert jp4._max_temperature == 80
-    jp4.set_max_temperature(100)
-    assert jp4._max_temperature == 100
-
-
 def test_set_output_torque(joint_patched: Joint):
     """
     Test the set_output_torque method of the Joint class\n

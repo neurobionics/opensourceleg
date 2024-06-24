@@ -345,14 +345,18 @@ def test_osl_update_knee(
     test_osl_u_knee.log = Logger(file_path="tests/test_osl/test_osl_u_knee")
     test_osl_u_knee.log.set_stream_level("DEBUG")
     test_osl_u_knee.add_joint(name="knee")
+    test_osl_u_knee._knee._log = test_osl_u_knee.log
     test_osl_u_knee._knee._data = Data()
     test_osl_u_knee._knee.is_streaming = True
-    test_osl_u_knee._knee._max_temperature = 1.0
+    test_osl_u_knee._knee.set_max_case_temperature(1.0)
     test_osl_u_knee.update()
     assert test_osl_u_knee._knee._data.batt_volt == 15
     with open("tests/test_osl/test_osl_u_knee.log") as f:
         contents = f.read()
-        assert "WARNING: [KNEE] Thermal limit 1.0 reached. Stopping motor." in contents
+        assert (
+            "WARNING: [KNEE] Case thermal limit 1.0 reached. Stopping motor."
+            in contents
+        )
 
 
 def test_osl_update_ankle(
@@ -369,14 +373,18 @@ def test_osl_update_ankle(
     test_osl_u_ankle.log = Logger(file_path="tests/test_osl/test_osl_u_ankle")
     test_osl_u_ankle.log.set_stream_level("DEBUG")
     test_osl_u_ankle.add_joint(name="ankle")
+    test_osl_u_ankle._ankle._log = test_osl_u_ankle.log
     test_osl_u_ankle._ankle._data = Data()
     test_osl_u_ankle._ankle.is_streaming = True
-    test_osl_u_ankle._ankle._max_temperature = 1.0
+    test_osl_u_ankle._ankle._max_case_temperature = 1.0
     test_osl_u_ankle.update()
     assert test_osl_u_ankle._ankle._data.batt_volt == 15
     with open("tests/test_osl/test_osl_u_ankle.log") as f:
         contents = f.read()
-        assert "WARNING: [ANKLE] Thermal limit 1.0 reached. Stopping motor." in contents
+        assert (
+            "WARNING: [ANKLE] Case thermal limit 1.0 reached. Stopping motor."
+            in contents
+        )
 
 
 def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):
