@@ -317,7 +317,7 @@ def test_mockjoint_default_properties(joint_patched: Joint):
     jp1 = joint_patched
     assert jp1.name == "knee"
     assert jp1.gear_ratio == 41.4999
-    assert jp1.max_temperature == 80
+    assert jp1.max_case_temperature == 80
     assert jp1.is_homed == False
     assert jp1.encoder_map == None
     assert jp1.output_position == 0.0
@@ -336,13 +336,13 @@ def test_mockjoint_nondefaultproperties(joint_patched):
     jp2._data = Data(mot_ang=20, mot_vel=10, mot_cur=20)
     jp2._name = "ankle"
     jp2._gear_ratio = 50.0
-    jp2._max_temperature = 100.0
+    jp2.set_max_case_temperature(100.0)
     jp2._is_homed = True
     # jp2._encoder_map = np.polynomial.polynomial.Polynomial(coef=[1, 2, 3])
 
     assert jp2.name == "ankle"
     assert jp2.gear_ratio == 50.0
-    assert jp2.max_temperature == 100
+    assert jp2.max_case_temperature == 100
     assert jp2.is_homed == True
     assert jp2.encoder_map == None
     assert jp2.output_position == 20 * 2 * np.pi / 16384 / 50

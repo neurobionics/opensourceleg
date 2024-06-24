@@ -242,7 +242,7 @@ def test_osl_add_joint_one_port(joint_patched: Joint, mock_get_active_ports1):
     assert test_osl_ajop._knee.name == "knee"
     assert test_osl_ajop._knee.port == "/dev/ttyACM0"
     assert test_osl_ajop._knee.gear_ratio == 1.0
-    assert test_osl_ajop._knee.max_temperature == 80
+    assert test_osl_ajop._knee.max_case_temperature == 80
     assert test_osl_ajop._knee.is_homed == False
     assert test_osl_ajop._knee.encoder_map == None
     assert test_osl_ajop._knee.output_position == 0.0
@@ -268,7 +268,7 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._knee.name == "knee"
     assert test_osl_aj._knee.port == "/dev/ttyACM0"
     assert test_osl_aj._knee.gear_ratio == 1.0
-    assert test_osl_aj._knee.max_temperature == 80
+    assert test_osl_aj._knee.max_case_temperature == 80
     assert test_osl_aj._knee.is_homed == False
     assert test_osl_aj._knee.encoder_map == None
     assert test_osl_aj._knee.output_position == 0.0
@@ -279,7 +279,7 @@ def test_osl_add_joint_ports_available(joint_patched: Joint, mock_get_active_por
     assert test_osl_aj._ankle.name == "ankle"
     assert test_osl_aj._ankle.port == "/dev/ttyACM0"
     assert test_osl_aj._ankle.gear_ratio == 1.0
-    assert test_osl_aj._ankle.max_temperature == 80
+    assert test_osl_aj._ankle.max_case_temperature == 80
     assert test_osl_aj._ankle.is_homed == False
     assert test_osl_aj._ankle.encoder_map == None
     assert test_osl_aj._ankle.output_position == 0.0
