@@ -45,7 +45,14 @@ class VoltageMode(base.VoltageMode):
 
     def set_voltage(self, voltage_value: int) -> None:
         # TODO: Check instances here
-        pass
+        self._device._transport.cycle(
+            # TODO: Check servo mappings
+            self._device._servos[1].make_vfoc(
+                theta = 0, 
+                voltage = voltage_value, 
+                query=True
+            )
+        )
 
 
 class CurrentMode(base.CurrentMode):
@@ -92,7 +99,11 @@ class CurrentMode(base.CurrentMode):
         # self._device.set_gains(kp=Gains.kp, ki=Gains.ki, kd=0, k=0, b=0, ff=Gains.ff)
         # TODO: Check instances here
         self._device._transport.cycle(
-            self._device._servo.set_current(q_A=current_value)
+            self._device._servos[1].make_current(
+                # TODO: Check servo mappings
+                q_A = current_value, 
+                query = True,
+            )
         )
 
     def set_gains(
@@ -138,7 +149,12 @@ class PositionMode(base.PositionMode):
     ) -> None:
         super().set_position(encoder_count=encoder_count)
         self._device._transport.cycle(
-            self._device._servo.set_position(position=encoder_count)
+            self._device._servos[1].make_position(
+                # TODO: Check servo mappings
+                position=encoder_count,
+                velocity = 0.1, 
+                query = True
+                )
         )
         pass
 
@@ -189,7 +205,6 @@ class MoteusObject(base.Actuator):
     def __init__(
         self,
         name: str = "MoteusObject",
-        dev_id: int = 11,
         addr_map: dict = {
             1: [11],
             2: [12],
@@ -202,15 +217,16 @@ class MoteusObject(base.Actuator):
     ) -> None:
         base.Actuator.__init__(
             self,
-            Gains=base.ControlGains(0, 0, 0, 0, 0, 0),
+            Gains=base.ControlGains(),
             MecheSpecs=base.MechanicalConstants(),
         )
         self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
-        
+
         self._servos = {
-            servo_id : moteus.Controller(id=servo_id, transport=self._transport)
+            servo_id: moteus.Controller(id=servo_id, transport=self._transport)
             for servo_id in addr_map
         }
+        self._name:str = name
 
         # self._frequency: int = frequency
         # self._debug_level: int = debug_level
@@ -230,11 +246,9 @@ class MoteusObject(base.Actuator):
 
         self.control_modes: MoteusControlModes = MoteusControlModes(device=self)
 
-        # self._mode: base.ActuatorMode = self.control_modes.voltage
         self._mode: base.ActuatorMode
         self._data: Any = None
 
-        self._servo = moteus.Controller(id=dev_id, transport=self._transport)
         self._result: Any = None
 
     def __repr__(self) -> str:
@@ -243,9 +257,9 @@ class MoteusObject(base.Actuator):
     def start(self) -> None:
         super().start()
         try:
-            self._transport.cycle([x.make_stop()] 
-                                  for x in self._servos.values())
-            self._result = self._transport.cycle([x.make_stop() for x in self._servos.values()])
+            self._result = self._transport.cycle(
+                [x.make_stop() for x in self._servos.values()]
+            )
         except OSError as e:
             print("\n")
             self._log.error(
@@ -258,17 +272,18 @@ class MoteusObject(base.Actuator):
 
     def stop(self) -> None:
         super().stop()
-        self._transport.cycle([x.make_stop()] 
-                                  for x in self._servos.values())
+        self._transport.cycle(
+            [x.make_stop()] for x in self._servos.values()
+        )
 
         time.sleep(0.1)
         self.close()
 
     def update(self) -> None:
         super().update()
-        if hasattr(self._result, 'id'):
+        if hasattr(self._result, "id"):
             # TODO: check instance here
-            self._result = self._transport.cycle()
+            self._result = self._transport.read()
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
@@ -305,7 +320,6 @@ class MoteusObject(base.Actuator):
         self._mode.set_current(
             int(current_value),
         )
-
 
     def set_motor_position(self, position: float) -> None:
         """
@@ -380,7 +394,6 @@ class MoteusObject(base.Actuator):
     def set_motor_zero_position(self, position: float) -> None:
         """Sets motor zero position in radians"""
         self._motor_zero_position = position
-
 
     def set_motor_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
