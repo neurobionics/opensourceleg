@@ -354,9 +354,9 @@ def test_osl_update_knee(
     with open("tests/test_osl/test_osl_u_knee.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [KNEE] Case thermal limit 1.0 reached. Stopping motor."
-            in contents
+            "ERROR: [KNEE] Case thermal limit 1.0 reached. Stopping motor." in contents
         )
+        assert "ERROR: [OSL] Software thermal limit exceeded. Exiting." in contents
 
 
 def test_osl_update_ankle(
@@ -382,9 +382,10 @@ def test_osl_update_ankle(
     with open("tests/test_osl/test_osl_u_ankle.log") as f:
         contents = f.read()
         assert (
-            "WARNING: [ANKLE] Case thermal limit 1.0 reached. Stopping motor."
-            in contents
+            "ERROR: [ANKLE] Case thermal limit 1.0 reached. Stopping motor." in contents
         )
+
+        assert "ERROR: [OSL] Software thermal limit exceeded. Exiting." in contents
 
 
 def test_osl_update_loadcell(loadcell_patched: Loadcell, patch_sleep):

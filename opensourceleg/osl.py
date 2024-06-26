@@ -10,6 +10,7 @@ from .hardware.joints import Joint, MockJoint
 from .hardware.sensors import Loadcell, MockLoadcell
 from .tools import utilities
 from .tools.logger import Logger
+from .tools.safety import ThermalLimitExceeded
 from .tools.utilities import SoftRealtimeLoop
 
 
@@ -221,7 +222,6 @@ class OpenSourceLeg:
                     self.log.warning(msg="[OSL] Joint name is not recognized.")
 
             else:
-
                 if "knee" in name.lower():
                     if self.has_ankle:
                         if self.ankle.port == port:
@@ -328,10 +328,18 @@ class OpenSourceLeg:
         self,
     ) -> None:
         if self.has_knee:
-            self._knee.update()
+            try:
+                self._knee.update()
+            except ThermalLimitExceeded as e:
+                self.log.error(msg=f"[{self.__repr__()}] {e}")
+                exit()
 
         if self.has_ankle:
-            self._ankle.update()
+            try:
+                self._ankle.update()
+            except ThermalLimitExceeded as e:
+                self.log.error(msg=f"[{self.__repr__()}] {e}")
+                exit()
 
         if self.has_loadcell:
             self._loadcell.update()

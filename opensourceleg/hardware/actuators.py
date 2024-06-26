@@ -11,6 +11,7 @@ import numpy as np
 from flexsea.device import Device
 
 from ..tools.logger import Logger
+from ..tools.safety import ThermalLimitExceeded
 from .thermal import ThermalModel
 
 """
@@ -481,12 +482,14 @@ class DephyActpack(Device):
         self._data = self.read()
         self._mode.enter()
 
-    def stop(self) -> None:
+    def stop(self, close_communication=True) -> None:
         self.set_mode(mode=self.control_modes.voltage)
         self.set_voltage(value=0)
 
         time.sleep(0.1)
-        self.close()
+
+        if close_communication:
+            self.close()
 
     def update(self) -> None:
         """
@@ -502,18 +505,16 @@ class DephyActpack(Device):
             )
 
             if self.case_temperature > self.max_case_temperature:
-                self._log.warning(
+                self._log.error(
                     msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
                 )
-                self.stop()
-                exit()
+                raise ThermalLimitExceeded()
 
             if self.winding_temperature > self.max_winding_temperature:
-                self._log.warning(
+                self._log.error(
                     msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
                 )
-                self.stop()
-                exit()
+                raise ThermalLimitExceeded()
 
             # Check for thermal fault, bit 2 of the execute status byte
             if self._data.status_ex & 0b00000010 == 0b00000010:
