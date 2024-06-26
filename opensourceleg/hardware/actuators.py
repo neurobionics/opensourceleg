@@ -504,13 +504,13 @@ class DephyActpack(Device):
                 motor_current=self.motor_current,
             )
 
-            if self.case_temperature > self.max_case_temperature:
+            if self.case_temperature >= self.max_case_temperature:
                 self._log.error(
                     msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
                 )
                 raise ThermalLimitExceeded()
 
-            if self.winding_temperature > self.max_winding_temperature:
+            if self.winding_temperature >= self.max_winding_temperature:
                 self._log.error(
                     msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
                 )
