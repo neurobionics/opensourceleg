@@ -5,7 +5,6 @@ import numpy as np
 
 from ..tools.logger import Logger
 from .actuators import (
-    MAX_CASE_TEMPERATURE,
     NM_PER_RAD_TO_K,
     NM_S_PER_RAD_TO_B,
     RAD_PER_COUNT,
@@ -62,8 +61,6 @@ class Joint(DephyActpack):
 
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
-
-        self._max_temperature: float = MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
@@ -226,15 +223,6 @@ class Joint(DephyActpack):
         np.save(file=f"./{self._name}_encoder_map.npy", arr=_coeffs)
         self._log.info(msg=f"[{self.__repr__()}] Encoder map saved.")
 
-    def set_max_temperature(self, temperature: float) -> None:
-        """
-        Set the maximum temperature of the motor.
-
-        Args:
-            temperature (float): temperature in degrees Celsius
-        """
-        self._max_temperature = temperature
-
     def set_output_torque(self, torque: float) -> None:
         """
         Set the output torque of the joint.
@@ -322,11 +310,6 @@ class Joint(DephyActpack):
         return self._gear_ratio
 
     @property
-    def max_temperature(self) -> float:
-        """Max allowed temperature of the actuator case in celsius."""
-        return self._max_temperature
-
-    @property
     def is_homed(self) -> bool:
         """Indicates if the homing routine has been called yet."""
         return self._is_homed
@@ -385,8 +368,6 @@ class MockJoint(Joint, MockDephyActpack):
 
         self._motor_zero_pos = 0.0
         self._joint_zero_pos = 0.0
-
-        self._max_temperature: float = MAX_CASE_TEMPERATURE
 
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name

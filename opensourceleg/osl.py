@@ -10,6 +10,7 @@ from .hardware.joints import Joint, MockJoint
 from .hardware.sensors import Loadcell, MockLoadcell
 from .tools import utilities
 from .tools.logger import Logger
+from .tools.safety import ThermalLimitException
 from .tools.utilities import SoftRealtimeLoop
 
 
@@ -221,7 +222,6 @@ class OpenSourceLeg:
                     self.log.warning(msg="[OSL] Joint name is not recognized.")
 
             else:
-
                 if "knee" in name.lower():
                     if self.has_ankle:
                         if self.ankle.port == port:
@@ -328,30 +328,23 @@ class OpenSourceLeg:
         self,
     ) -> None:
         if self.has_knee:
-            self._knee.update()
-
-            if self.knee.case_temperature > self.knee.max_temperature:
-                self.log.warning(
-                    msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
-                )
-                self.__exit__()
+            try:
+                self._knee.update()
+            except ThermalLimitException as e:
+                self.log.error(msg=f"[{self.__repr__()}] {e}")
                 exit()
 
         if self.has_ankle:
-            self._ankle.update()
-
-            if self.ankle.case_temperature > self.ankle.max_temperature:
-                self.log.warning(
-                    msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
-                )
-                self.__exit__()
+            try:
+                self._ankle.update()
+            except ThermalLimitException as e:
+                self.log.error(msg=f"[{self.__repr__()}] {e}")
                 exit()
 
         if self.has_loadcell:
             self._loadcell.update()
 
         self.log.update()
-
         self._timestamp = time.time()
 
     def home(self) -> None:
