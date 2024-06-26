@@ -45,14 +45,16 @@ class VoltageMode(base.VoltageMode):
 
     def set_voltage(self, voltage_value: int) -> None:
         # TODO: Check instances here
-        self._device._transport.cycle(
             # TODO: Check servo mappings
-            self._device._servos[1].make_vfoc(
-                theta = 0, 
-                voltage = voltage_value, 
-                query=True
+            self._device._commands.append(
+                self._device._servos[1].make_vfoc(
+                    theta = 0, 
+                    voltage = voltage_value, 
+                    query=True
+                )
             )
-        )
+            
+        
 
 
 class CurrentMode(base.CurrentMode):
@@ -98,7 +100,7 @@ class CurrentMode(base.CurrentMode):
 
         # self._device.set_gains(kp=Gains.kp, ki=Gains.ki, kd=0, k=0, b=0, ff=Gains.ff)
         # TODO: Check instances here
-        self._device._transport.cycle(
+        self._device._commands.append(
             self._device._servos[1].make_current(
                 # TODO: Check servo mappings
                 q_A = current_value, 
@@ -148,15 +150,14 @@ class PositionMode(base.PositionMode):
         encoder_count: int,
     ) -> None:
         super().set_position(encoder_count=encoder_count)
-        self._device._transport.cycle(
+        self._device._commands.append(
             self._device._servos[1].make_position(
                 # TODO: Check servo mappings
                 position=encoder_count,
                 velocity = 0.1, 
                 query = True
-                )
+            )
         )
-        pass
 
     def set_gains(
         self,
@@ -215,12 +216,15 @@ class MoteusObject(base.Actuator):
         *args,
         **kwargs,
     ) -> None:
+        #TODO: check for better ways!!!
+        os.system("sudo bash")
         base.Actuator.__init__(
             self,
             Gains=base.ControlGains(),
             MecheSpecs=base.MechanicalConstants(),
         )
         self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
+        self._commands: list = []
 
         self._servos = {
             servo_id: moteus.Controller(id=servo_id, transport=self._transport)
@@ -283,7 +287,7 @@ class MoteusObject(base.Actuator):
         super().update()
         if hasattr(self._result, "id"):
             # TODO: check instance here
-            self._result = self._transport.read()
+            self._result = self._transport.cycle(self._commands)
         else:
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
