@@ -825,7 +825,7 @@ class DephyActpack(Device):
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
-            return float(self._data.ank_vel * RAD_PER_COUNT)
+            return float(self._data.ank_vel * RAD_PER_DEG) * self.joint_direction
         else:
             return 0.0
 
