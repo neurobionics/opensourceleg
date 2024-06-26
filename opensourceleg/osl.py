@@ -10,7 +10,7 @@ from .hardware.joints import Joint, MockJoint
 from .hardware.sensors import Loadcell, MockLoadcell
 from .tools import utilities
 from .tools.logger import Logger
-from .tools.safety import ThermalLimitExceeded
+from .tools.safety import ThermalLimitException
 from .tools.utilities import SoftRealtimeLoop
 
 
@@ -330,14 +330,14 @@ class OpenSourceLeg:
         if self.has_knee:
             try:
                 self._knee.update()
-            except ThermalLimitExceeded as e:
+            except ThermalLimitException as e:
                 self.log.error(msg=f"[{self.__repr__()}] {e}")
                 exit()
 
         if self.has_ankle:
             try:
                 self._ankle.update()
-            except ThermalLimitExceeded as e:
+            except ThermalLimitException as e:
                 self.log.error(msg=f"[{self.__repr__()}] {e}")
                 exit()
 
