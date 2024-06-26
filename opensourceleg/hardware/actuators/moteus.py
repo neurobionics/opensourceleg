@@ -45,16 +45,12 @@ class VoltageMode(base.VoltageMode):
 
     def set_voltage(self, voltage_value: int) -> None:
         # TODO: Check instances here
-            # TODO: Check servo mappings
-            self._device._commands.append(
-                self._device._servos[1].make_vfoc(
-                    theta = 0, 
-                    voltage = voltage_value, 
-                    query=True
-                )
+        # TODO: Check servo mappings
+        self._device._commands.append(
+            self._device._servos[1].make_vfoc(
+                theta=0, voltage=voltage_value, query=True
             )
-            
-        
+        )
 
 
 class CurrentMode(base.CurrentMode):
@@ -81,7 +77,6 @@ class CurrentMode(base.CurrentMode):
         # TODO: check log instance
         self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
         # self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
-        time.sleep(1 / self._device.frequency)
 
     def set_current(
         self,
@@ -103,8 +98,8 @@ class CurrentMode(base.CurrentMode):
         self._device._commands.append(
             self._device._servos[1].make_current(
                 # TODO: Check servo mappings
-                q_A = current_value, 
-                query = True,
+                q_A=current_value,
+                query=True,
             )
         )
 
@@ -154,8 +149,8 @@ class PositionMode(base.PositionMode):
             self._device._servos[1].make_position(
                 # TODO: Check servo mappings
                 position=encoder_count,
-                velocity = 0.1, 
-                query = True
+                velocity=0.1,
+                query=True,
             )
         )
 
@@ -206,7 +201,7 @@ class MoteusObject(base.Actuator):
     def __init__(
         self,
         name: str = "MoteusObject",
-        addr_map: dict = {
+        addr_map = {
             1: [11],
             2: [12],
         },
@@ -216,7 +211,7 @@ class MoteusObject(base.Actuator):
         *args,
         **kwargs,
     ) -> None:
-        #TODO: check for better ways!!!
+        # TODO: check for better ways!!!
         os.system("sudo bash")
         base.Actuator.__init__(
             self,
@@ -224,13 +219,13 @@ class MoteusObject(base.Actuator):
             MecheSpecs=base.MechanicalConstants(),
         )
         self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
-        self._commands: list = []
+        self._commands: list[moteus.Command]
 
         self._servos = {
             servo_id: moteus.Controller(id=servo_id, transport=self._transport)
             for servo_id in addr_map
         }
-        self._name:str = name
+        self._name: str = name
 
         # self._frequency: int = frequency
         # self._debug_level: int = debug_level
@@ -267,7 +262,7 @@ class MoteusObject(base.Actuator):
         except OSError as e:
             print("\n")
             self._log.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -276,12 +271,10 @@ class MoteusObject(base.Actuator):
 
     def stop(self) -> None:
         super().stop()
-        self._transport.cycle(
-            [x.make_stop()] for x in self._servos.values()
-        )
+        self._transport.cycle([x.make_stop()] for x in self._servos.values())
 
         time.sleep(0.1)
-        self.close()
+        # self.close()
 
     def update(self) -> None:
         super().update()
@@ -294,7 +287,7 @@ class MoteusObject(base.Actuator):
             )
 
     def set_mode(self, mode: base.ActuatorMode) -> None:
-        if type(mode) in MoteusControlModes:
+        if type(mode) in [VoltageMode, CurrentMode, PositionMode]:
             self._mode.transition(to_state=mode)
             self._mode = mode
         else:
@@ -407,9 +400,6 @@ class MoteusObject(base.Actuator):
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map
 
-    @property
-    def frequency(self) -> int:
-        return self._frequency
 
     @property
     def encoder_map(self):
