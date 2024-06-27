@@ -8,6 +8,7 @@ from ctypes import c_int
 from dataclasses import dataclass
 
 import moteus
+import moteus.moteus_tool
 import moteus_pi3hat as pihat
 import numpy as np
 
@@ -201,9 +202,9 @@ class MoteusObject(base.Actuator):
     def __init__(
         self,
         name: str = "MoteusObject",
-        addr_map = {
+        addr_map={
             1: [11],
-            2: [12],
+            2: [1],
         },
         bitrate: int = 125000,
         logger: Logger = Logger(),
@@ -218,6 +219,7 @@ class MoteusObject(base.Actuator):
             Gains=base.ControlGains(),
             MecheSpecs=base.MechanicalConstants(),
         )
+        self._map: dict[int, list[int]] = addr_map
         self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
         self._commands: list[moteus.Command]
 
@@ -267,7 +269,7 @@ class MoteusObject(base.Actuator):
             os._exit(status=1)
 
         time.sleep(0.1)
-        self._mode.enter()
+        # self._mode.enter()
 
     def stop(self) -> None:
         super().stop()
@@ -278,13 +280,11 @@ class MoteusObject(base.Actuator):
 
     def update(self) -> None:
         super().update()
-        if hasattr(self._result, "id"):
-            # TODO: check instance here
-            self._result = self._transport.cycle(self._commands)
-        else:
-            self._log.warning(
-                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
-            )
+        # TODO: check instance here
+        self._result = self._transport.cycle(self._commands)
+        # self._log.warning(
+        #     msg=f"[{self.__repr__()}] Please open() the device before streaming data."
+        # )
 
     def set_mode(self, mode: base.ActuatorMode) -> None:
         if type(mode) in [VoltageMode, CurrentMode, PositionMode]:
@@ -337,7 +337,7 @@ class MoteusObject(base.Actuator):
 
         self._mode.set_position(
             int(
-                (position + self.motor_zero_position + self.motor_offset)
+                (position + self._motor_zero_position + self._motor_offset)
                 / self._MecheConsts.RAD_PER_COUNT
             ),
         )
@@ -400,21 +400,46 @@ class MoteusObject(base.Actuator):
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map
 
+    def auto_map(self) -> None:
+        # TODO: auto change the servo controller mapping based on the configuration
+        pass
 
-    @property
-    def encoder_map(self):
-        """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
+    def fault_code(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[int(str(moteus.Register.FAULT))]
 
-    @property
-    def motor_zero_position(self) -> float:
-        """Motor encoder zero position in radians."""
-        return self._motor_zero_position
+    def motor_position(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[int(str(moteus.Register.POSITION))]
 
-    @property
-    def motor_offset(self) -> float:
-        """Motor encoder offset in radians."""
-        return self._motor_offset
+    def motor_velocity(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[int(str(moteus.Register.VELOCITY))]
+
+    def temperature(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[
+                        int(str(moteus.Register.TEMPERATURE))
+                    ]
+
+    def bus_voltage(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return (self._result[id].values[int(str(moteus.Register.VOLTAGE))])
+
+    # @property
+    # def bus_voltage(self):
+    #     if self._result != []:
+    #         return self._result.values[13]
 
 
 if __name__ == "__main__":
