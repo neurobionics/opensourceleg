@@ -15,6 +15,8 @@ from opensourceleg.hardware.actuators.base import (
     Actuator,
     ActuatorMode,
     ControlGains,
+    ControlModeFlags,
+    ControlModeNames,
     MotorConstants,
 )
 from opensourceleg.hardware.sensor.dephy import DephyIMU, MockData
@@ -27,213 +29,153 @@ DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
 DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
+DEPHY_SLEEP_DURATION = 0.1
 
-class VoltageMode(ActuatorMode):
-    def __init__(self, device: "DephyActpack") -> None:
-        super().__init__(mode_pass=fxe.FX_VOLTAGE, device=device)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-        self._device: DephyActpack = device
-        # self._control_mode: c_int = fxe.FX_VOLTAGE
 
-    def _entry(self) -> None:
-        # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Entering Voltage mode.")
-
-    def _exit(self) -> None:
-        # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Exiting Voltage mode.")
-        self.set_voltage(voltage_value=0)
-        time.sleep(0.1)
-
-    def set_voltage(self, voltage_value: int) -> None:
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=voltage_value,
+class DephyVoltageMode(ActuatorMode):
+    def __init__(self, actuator: "DephyActpack") -> None:
+        super().__init__(
+            control_mode_index=ControlModeFlags.VOLTAGE,
+            control_mode_name=ControlModeNames.VOLTAGE,
+            actuator=actuator,
+            entry_callbacks=[self._entry],
+            exit_callbacks=[self._exit],
         )
 
-
-class CurrentMode(ActuatorMode):
-    def __init__(self, device: "DephyActpack") -> None:
-        super().__init__(mode_pass=fxe.FX_CURRENT, device=device)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-        self._device: DephyActpack = device
-        self._gains = DEFAULT_CURRENT_GAINS
-
-        # self._control_mode: c_int = fxe.FX_CURRENT
+    def __repr__(self) -> str:
+        return f"DephyActuatorMode[{self.name}]"
 
     def _entry(self) -> None:
-
         # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Entering Current mode.")
-
-        if not self.has_gains:
-            self.set_gains(DEFAULT_CURRENT_GAINS)
-
-        self.set_current(current_value=0)
-
-    def _exit(self) -> None:
-        # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
-        self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
-        time.sleep(1 / self._device.frequency)
-
-    def set_current(
-        self,
-        current_value: int,
-    ) -> None:
-        """Sets the Q-axis current of the motor
-
-        Args:
-            current_value (int): _description_
-        """
-        super().set_current(current_value=current_value)
-
-        # assert 0 <= Gains.kp <= 80, "kp must be between 0 and 80"
-        # assert 0 <= Gains.ki <= 800, "ki must be between 0 and 800"
-        # assert 0 <= Gains.ff <= 128, "ff must be between 0 and 128"
-
-        # self._device.set_gains(kp=Gains.kp, ki=Gains.ki, kd=0, k=0, b=0, ff=Gains.ff)
-
-        self._device.send_motor_command(
-            ctrl_mode=self.mode,
-            value=current_value,
+        self._actuator._log.debug(
+            msg=f"[DephyActuatorMode] Entering {self.name} control mode."
         )
 
-    def set_gains(
-        self,
-        gains: ControlGains = DEFAULT_CURRENT_GAINS,
-    ) -> None:
+    def _exit(self) -> None:
+        # TODO: check log instance
+        self._actuator._log.debug(
+            msg=f"[DephyActuatorMode] Exiting {self.name} control mode."
+        )
+        self.set_command(value=0)
+        time.sleep(DEPHY_SLEEP_DURATION)
 
-        assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
-        assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
-        assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
-        self._has_gains = True
-        self._gains = gains
-        self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
+    def set_gains(self, gains: ControlGains) -> None:
+        self._actuator._log.info(
+            msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
+        )
+
+    def set_command(self, value: float | int) -> None:
+        return super().set_command(value)
 
 
-class PositionMode(ActuatorMode):
-    def __init__(self, device: "DephyActpack") -> None:
-        super().__init__(mode_pass=fxe.FX_POSITION, device=device)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-        self._device: DephyActpack = device
-        self._gains = DEFAULT_POSITION_GAINS
-        # self._control_mode: c_int = fxe.FX_POSITION
-        pass
+class DephyCurrentMode(ActuatorMode):
+    def __init__(self, actuator: "DephyActpack") -> None:
+        super().__init__(
+            control_mode_index=ControlModeFlags.CURRENT,
+            control_mode_name=ControlModeNames.CURRENT,
+            actuator=actuator,
+            entry_callbacks=[self._entry],
+            exit_callbacks=[self._exit],
+            max_gains=ControlGains(kp=80, ki=800, kd=0, K=0, B=0, ff=128),
+        )
+
+    def __repr__(self) -> str:
+        return f"DephyActuatorMode[{self.name}]"
 
     def _entry(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Entering Position mode.")
+
+        # TODO: check log instance
+        self._actuator._log.debug(msg=f"[DephyActuatorMode] Entering {self.name} mode.")
 
         if not self.has_gains:
-            self.set_gains(self._gains)
+            self.set_gains()
 
-        self.set_position(encoder_count=0)
+        self.set_command(value=0)
 
     def _exit(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
-        self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
-        time.sleep(0.1)
+        # TODO: check log instance
+        self._actuator._log.debug(msg=f"[DephyActuatorMode] Exiting {self.name} mode.")
 
-    def set_position(
-        self,
-        encoder_count: int,
-    ) -> None:
-        super().set_position(encoder_count=encoder_count)
-        self._device.send_motor_command(ctrl_mode=fxe.FX_POSITION, value=encoder_count)
-        pass
+        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
+        self._actuator.send_motor_command(ctrl_mode=ControlModeFlags.VOLTAGE, value=0)
+        time.sleep(1 / self._actuator.frequency)
+
+    def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
+        return super().set_gains(gains)
+
+    def set_command(self, value: float | int) -> None:
+        return super().set_command(value)
+
+
+class DephyPositionMode(ActuatorMode):
+    def __init__(self, actuator: "DephyActpack") -> None:
+        super().__init__(
+            control_mode_index=ControlModeFlags.POSITION,
+            control_mode_name=ControlModeNames.POSITION,
+            actuator=actuator,
+            entry_callbacks=[self._entry],
+            exit_callbacks=[self._exit],
+            max_gains=ControlGains(kp=1000, ki=1000, kd=1000, K=0, B=0, ff=0),
+        )
+
+    def _entry(self) -> None:
+        self._actuator._log.debug(msg=f"[DephyActuatorMode] Entering {self.name} mode.")
+
+        if not self.has_gains:
+            self.set_gains()
+
+        self.set_command(value=0)
+
+    def _exit(self) -> None:
+        self._actuator._log.debug(msg=f"[DephyActuatorMode] Exiting {self.name} mode.")
+
+        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
+        self._actuator.send_motor_command(ctrl_mode=ControlModeFlags.VOLTAGE, value=0)
+        time.sleep(0.1)
 
     def set_gains(
         self,
         gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
+        return super().set_gains(gains)
 
-        assert 0 <= gains.kp <= 1000, "kp must be between 0 and 1000"
-        assert 0 <= gains.ki <= 1000, "ki must be between 0 and 1000"
-        assert 0 <= gains.kd <= 1000, "kd must be between 0 and 1000"
-        self._has_gains = True
-        self._gains = gains
-        self._device.set_gains(
-            kp=gains.kp, ki=gains.ki, kd=gains.kd, k=0, b=0, ff=gains.ff
+    def set_command(self, value: float | int) -> None:
+        return super().set_command(value)
+
+
+class DephyImpedanceMode(ActuatorMode):
+    def __init__(self, actuator: "DephyActpack") -> None:
+        super().__init__(
+            control_mode_index=ControlModeFlags.IMPEDANCE,
+            control_mode_name=ControlModeNames.IMPEDANCE,
+            actuator=actuator,
+            entry_callbacks=[self._entry],
+            exit_callbacks=[self._exit],
+            max_gains=ControlGains(kp=80, ki=800, kd=0, K=0, B=0, ff=128),
         )
-
-
-class ImpedanceMode(ActuatorMode):
-    def __init__(self, device: "DephyActpack") -> None:
-        super().__init__(mode_pass=fxe.FX_IMPEDANCE, device=device)
-        self._entry_callback = self._entry
-        self._exit_callback = self._exit
-        self._device: DephyActpack = device
-        self._gains = DEFAULT_IMPEDANCE_GAINS
-        # self._control_mode: c_int = fxe.FX_IMPEDANCE
-        pass
 
     def _entry(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Entering Impedance mode.")
+        self._actuator._log.debug(msg=f"[DephyActuatorMode] Entering {self.name} mode.")
         if not self.has_gains:
-            self.set_gains(gains=self._gains)
+            self.set_gains()
 
-        self._device.set_motor_position(self._device.motor_position)
+        self.set_command(self._actuator.motor_position)
 
     def _exit(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
-        self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
-        time.sleep(1 / self._device.frequency)
+        self._actuator._log.debug(msg=f"[DephyActuatorMode] Exiting {self.name} mode.")
+
+        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
+        self._actuator.send_motor_command(ctrl_mode=ControlModeFlags.VOLTAGE, value=0)
+        time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
-        assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
-        assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
-        assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
-        assert 0 <= gains.K, "K must be greater than 0"
-        assert 0 <= gains.B, "B must be greater than 0"
+        return super().set_gains(gains)
 
-        self._has_gains = True
-        self._gains = gains
-        self._device.set_gains(
-            kp=gains.kp,
-            ki=gains.ki,
-            kd=0,
-            k=gains.K,
-            b=gains.B,
-            ff=gains.ff,
-        )
-
-    def set_position(
+    def set_command(
         self,
-        encoder_count: int,
+        value: float | int,
     ) -> None:
-        super().set_position(encoder_count=encoder_count)
-        self._device.send_motor_command(ctrl_mode=fxe.FX_IMPEDANCE, value=encoder_count)
-        pass
-
-
-@dataclass(init=False)
-class ActpackControlModes:
-    """
-    Actpack modes
-
-    Args:
-        voltage (VoltageMode): Voltage mode
-        current (CurrentMode): Current mode
-        position (PositionMode): Position mode
-        impedance (ImpedanceMode): Impedance mode
-    """
-
-    voltage: VoltageMode
-    current: CurrentMode
-    position: PositionMode
-    impedance: ImpedanceMode
-
-    def __init__(self, device: "DephyActpack") -> None:
-        self.voltage = VoltageMode(device=device)
-        self.current = CurrentMode(device=device)
-        self.position = PositionMode(device=device)
-        self.impedance = ImpedanceMode(device=device)
-
-    def __repr__(self) -> str:
-        return f"ActpackControlModes"
+        super().set_command(value=value)
 
 
 class DephyActpack(Actuator, Device):
@@ -247,12 +189,14 @@ class DephyActpack(Actuator, Device):
         debug_level: int = 0,
         dephy_log: bool = False,
         offline: bool = False,
-        *args,
-        **kwargs,
     ) -> None:
         Actuator.__init__(
-            self,
-            gains=ControlGains(0, 0, 0, 0, 0, 0),
+            control_modes=[
+                DephyPositionMode(actuator=self),
+                DephyVoltageMode(actuator=self),
+                DephyCurrentMode(actuator=self),
+                DephyImpedanceMode(actuator=self),
+            ],
             motor_constants=MotorConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
@@ -276,7 +220,6 @@ class DephyActpack(Actuator, Device):
         self._log: Logger = logger
         self._encoder_map = None
 
-        self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
         self._encoder_map = None
 
         self._motor_zero_position = 0.0
@@ -347,7 +290,7 @@ class DephyActpack(Actuator, Device):
             )
 
     def set_mode(self, mode: ActuatorMode) -> None:
-        if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
+        if type(mode) in self.control_modes:
             self._mode.transition(to_state=mode)
             self._mode = mode
         else:

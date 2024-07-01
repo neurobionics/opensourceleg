@@ -19,7 +19,7 @@ import numpy as np
 """
 
 
-class ControlModeIndices(Enum):
+class ControlModeFlags(Enum):
     """ModeIndices Enum for the actuator modes
 
     This class shares the same values as Dephy's flexSEA fxEnums
@@ -39,6 +39,28 @@ class ControlModeIndices(Enum):
     CURRENT = c_int(2)
     IMPEDANCE = c_int(3)
     NONE = c_int(4)
+
+
+class ControlModeNames(Enum):
+    """ModeNames Enum for the actuator modes
+
+    This class shares the same values as Dephy's flexSEA fxEnums
+
+    Attributes
+    ----------
+    POSITION (str): Position Mode
+    VOLTAGE (str): Voltage Mode
+    CURRENT (str): Current Mode
+    IMPEDANCE (str): Impedance Mode
+    NONE (str): No Mode
+
+    """
+
+    POSITION = "position"
+    VOLTAGE = "voltage"
+    CURRENT = "current"
+    IMPEDANCE = "impedance"
+    NONE = "none"
 
 
 @dataclass
@@ -191,7 +213,7 @@ class ActuatorMode(ABC):
         return str(object=self.index)
 
     def __repr__(self) -> str:
-        return f"ActpackMode[{self.name}]"
+        return f"ActuatorMode[{self.name}]"
 
     def enter(self) -> None:
         """
@@ -214,7 +236,7 @@ class ActuatorMode(ABC):
         and the entry callback of the new mode.
 
         Args:
-            to_mode (ActpackMode): Mode to transition to
+            to_mode (ActuatorMode): Mode to transition to
         """
         self.exit()
         to_mode.enter()
@@ -240,19 +262,25 @@ class ActuatorMode(ABC):
         self._actuator.set_gains(**vars(gains))
 
     @abstractmethod
-    def set_command(self, command: float | int) -> None:
+    def set_command(self, value: float | int) -> None:
         """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
         Args:
             command (Any): command applied
         """
         if self.max_command is not None:
-            assert 0 <= command <= self._max_command
+            assert 0 <= value <= self._max_command
 
         # TODO: Modify this for new flexsea API, send_motor_command is deprecated
         self._actuator.send_motor_command(
             ctrl_mode=self.index,
-            value=command,
+            value=value,
         )
+
+    def set_max_command(self, value: float | int) -> None:
+        self._max_command = value
+
+    def set_max_gains(self, gains: ControlGains) -> None:
+        self._max_gains = gains
 
     @property
     def index(self) -> c_int:
@@ -340,14 +368,13 @@ class Actuator(ABC):
 
     def __init__(
         self,
-        gains: ControlGains = ControlGains(),
-        motor_constants: MotorConstants = MotorConstants(),
+        control_modes: list[ActuatorMode],
+        motor_constants: MotorConstants,
         *args,
         **kwargs,
     ) -> None:
-        self._gains: ControlGains = gains
-        self._MotorConstants: MotorConstants = motor_constants
-        self._mode: Any = None
+        self._control_modes = control_modes
+        self._motor_constants: MotorConstants = motor_constants
 
     @abstractmethod
     def start(self) -> None:
@@ -463,6 +490,24 @@ class Actuator(ABC):
             ff (int): Feedforward gain
         """
         pass
+
+    @property
+    def control_modes(self) -> list[ActuatorMode]:
+        """Control Modes (Read Only)
+
+        Returns:
+            List[ActuatorMode]: List of control modes
+        """
+        return self._control_modes
+
+    @property
+    def motor_constants(self) -> MotorConstants:
+        """Motor Constants (Read Only)
+
+        Returns:
+            MotorConstants: Motor Constants
+        """
+        return self._motor_constants
 
 
 if __name__ == "__main__":
