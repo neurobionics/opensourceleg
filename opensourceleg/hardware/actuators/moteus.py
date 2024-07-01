@@ -1,5 +1,6 @@
 ﻿from typing import Any, Callable, Union, overload
 
+import asyncio
 import ctypes
 import enum
 import os
@@ -48,7 +49,7 @@ class VoltageMode(base.VoltageMode):
         # TODO: Check instances here
         # TODO: Check servo mappings
         self._device._commands.append(
-            self._device._servos[1].make_vfoc(
+            self._device._servos[11].make_vfoc(
                 theta=0, voltage=voltage_value, query=True
             )
         )
@@ -97,7 +98,7 @@ class CurrentMode(base.CurrentMode):
         # self._device.set_gains(kp=Gains.kp, ki=Gains.ki, kd=0, k=0, b=0, ff=Gains.ff)
         # TODO: Check instances here
         self._device._commands.append(
-            self._device._servos[1].make_current(
+            self._device._servos[11].make_current(
                 # TODO: Check servo mappings
                 q_A=current_value,
                 query=True,
@@ -147,7 +148,7 @@ class PositionMode(base.PositionMode):
     ) -> None:
         super().set_position(encoder_count=encoder_count)
         self._device._commands.append(
-            self._device._servos[1].make_position(
+            self._device._servos[11].make_position(
                 # TODO: Check servo mappings
                 position=encoder_count,
                 velocity=0.1,
@@ -204,16 +205,14 @@ class MoteusObject(base.Actuator):
         name: str = "MoteusObject",
         addr_map={
             1: [11],
-            2: [1],
         },
-        bitrate: int = 125000,
         logger: Logger = Logger(),
         # dephy_log: bool = False,
         *args,
         **kwargs,
     ) -> None:
         # TODO: check for better ways!!!
-        os.system("sudo bash")
+        # os.system("sudo bash")
         base.Actuator.__init__(
             self,
             Gains=base.ControlGains(),
@@ -221,11 +220,21 @@ class MoteusObject(base.Actuator):
         )
         self._map: dict[int, list[int]] = addr_map
         self._transport = pihat.Pi3HatRouter(servo_bus_map=addr_map)
-        self._commands: list[moteus.Command]
+        self._hat_bus = []
+        self._controller_id = []
+        for index, (hat_bus, controller_id) in enumerate(self._map.items()):
+            self._hat_bus.append(hat_bus)
+            self._controller_id.append(controller_id)
+        
+        
+        self._commands: list[moteus.Command] = []
 
         self._servos = {
-            servo_id: moteus.Controller(id=servo_id, transport=self._transport)
-            for servo_id in addr_map
+            item: moteus.Controller(
+                id = item, 
+                transport=self._transport,          
+            )
+            for row in self._controller_id for item in row
         }
         self._name: str = name
 
@@ -237,7 +246,6 @@ class MoteusObject(base.Actuator):
         self._encoder_map = None
 
         self._CANbus = pihat.CanConfiguration()
-        self._CANbus.bitrate = bitrate
         self._CANbus.fdcan_frame = False
         self._CANbus.bitrate_switch = False
 
@@ -247,7 +255,7 @@ class MoteusObject(base.Actuator):
 
         self.control_modes: MoteusControlModes = MoteusControlModes(device=self)
 
-        self._mode: base.ActuatorMode
+        self._mode: base.ActuatorMode = None
         self._data: Any = None
 
         self._result: Any = None
@@ -255,41 +263,35 @@ class MoteusObject(base.Actuator):
     def __repr__(self) -> str:
         return f"MoteusObject[{self._name}]"
 
-    def start(self) -> None:
+    async def start(self) -> None:
         super().start()
-        try:
-            self._result = self._transport.cycle(
-                [x.make_stop() for x in self._servos.values()]
-            )
-        except OSError as e:
-            print("\n")
-            self._log.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
-            )
-            os._exit(status=1)
-
-        time.sleep(0.1)
+        
+        self._result = await self._transport.cycle(
+            [x.make_stop() for x in self._servos.values()]
+        )
+        await asyncio.sleep(0.02)
         # self._mode.enter()
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         super().stop()
-        self._transport.cycle([x.make_stop()] for x in self._servos.values())
+        await self._transport.cycle([x.make_stop()] for x in self._servos.values())
 
-        time.sleep(0.1)
+        await asyncio.sleep(0.02)
         # self.close()
 
-    def update(self) -> None:
-        super().update()
+    async def update(self) -> None:
         # TODO: check instance here
-        self._result = self._transport.cycle(self._commands)
+        self._result = await self._transport.cycle(commands=self._commands)
+        self._commands = []
         # self._log.warning(
         #     msg=f"[{self.__repr__()}] Please open() the device before streaming data."
         # )
 
     def set_mode(self, mode: base.ActuatorMode) -> None:
         if type(mode) in [VoltageMode, CurrentMode, PositionMode]:
-            self._mode.transition(to_state=mode)
             self._mode = mode
+            self._mode.transition(to_state=mode)
+            
         else:
             self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
 
@@ -408,19 +410,19 @@ class MoteusObject(base.Actuator):
         if self._result != []:
             for num in range(len(self._result)):
                 if id == self._result[num].id:
-                    return self._result[id].values[int(str(moteus.Register.FAULT))]
+                    return self._result[id].values[moteus.Register.FAULT]
 
     def motor_position(self, id: int):
         if self._result != []:
             for num in range(len(self._result)):
                 if id == self._result[num].id:
-                    return self._result[id].values[int(str(moteus.Register.POSITION))]
+                    return self._result[id].values[moteus.Register.POSITION]
 
     def motor_velocity(self, id: int):
         if self._result != []:
             for num in range(len(self._result)):
                 if id == self._result[num].id:
-                    return self._result[id].values[int(str(moteus.Register.VELOCITY))]
+                    return self._result[id].values[moteus.Register.VELOCITY]
 
     def temperature(self, id: int):
         if self._result != []:
@@ -434,7 +436,7 @@ class MoteusObject(base.Actuator):
         if self._result != []:
             for num in range(len(self._result)):
                 if id == self._result[num].id:
-                    return (self._result[id].values[int(str(moteus.Register.VOLTAGE))])
+                    return self._result[id].values[moteus.Register.VOLTAGE]
 
     # @property
     # def bus_voltage(self):
