@@ -11,110 +11,24 @@ import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-import opensourceleg.hardware.actuators.base as base
+from opensourceleg.hardware.actuators.base import (
+    Actuator,
+    ActuatorMode,
+    ControlGains,
+    MotorConstants,
+)
 from opensourceleg.hardware.sensor.dephy import DephyIMU, MockData
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
 
-DEFAULT_POSITION_GAINS = base.ControlGains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
+DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
 
-DEFAULT_CURRENT_GAINS = base.ControlGains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
+DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
 
-DEFAULT_IMPEDANCE_GAINS = base.ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
-
-
-class ActpackMode:
-    """
-    Base class for Actpack modes
-
-    Args:
-        control_mode (c_int): Control mode
-        device (DephyActpack): Dephy Actpack
-    """
-
-    def __init__(self, control_mode: c_int, device: "DephyActpack") -> None:
-
-        self._control_mode: c_int = control_mode
-        self._device: DephyActpack = device
-        self._entry_callback: Callable[[], None] = lambda: None
-        self._exit_callback: Callable[[], None] = lambda: None
-
-        self._has_gains = False
-
-    def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, ActpackMode):
-            return self._control_mode == __o._control_mode
-        return False
-
-    def __str__(self) -> str:
-        return str(object=self._control_mode)
-
-    def __repr__(self) -> str:
-        return f"ActpackMode[{self._control_mode}]"
-
-    @property
-    def mode(self) -> c_int:
-        """
-        Control mode
-
-        Returns:
-            c_int: Control mode
-        """
-        return self._control_mode
-
-    @property
-    def has_gains(self) -> bool:
-        """
-        Whether the mode has gains
-
-        Returns:
-            bool: True if the mode has gains, False otherwise
-        """
-        return self._has_gains
-
-    def enter(self) -> None:
-        """
-        Calls the entry callback
-        """
-        self._entry_callback()
-
-    def exit(self) -> None:
-        """
-        Calls the exit callback
-        """
-        self._exit_callback()
-
-    def transition(self, to_state: "ActpackMode") -> None:
-        """
-        Transition to another mode. Calls the exit callback of the current mode
-        and the entry callback of the new mode.
-
-        Args:
-            to_state (ActpackMode): Mode to transition to
-        """
-        self.exit()
-        to_state.enter()
-
-    def _set_voltage(self, voltage: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the q axis voltage.
-        """
-        pass
-
-    def _set_current(self, current: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the q axis current.
-        """
-        pass
-
-    def _set_motor_position(self, counts: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the motor position.
-        """
-        pass
+DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
-class VoltageMode(base.VoltageMode):
+class VoltageMode(ActuatorMode):
     def __init__(self, device: "DephyActpack") -> None:
         super().__init__(mode_pass=fxe.FX_VOLTAGE, device=device)
         self._entry_callback = self._entry
@@ -139,7 +53,7 @@ class VoltageMode(base.VoltageMode):
         )
 
 
-class CurrentMode(base.CurrentMode):
+class CurrentMode(ActuatorMode):
     def __init__(self, device: "DephyActpack") -> None:
         super().__init__(mode_pass=fxe.FX_CURRENT, device=device)
         self._entry_callback = self._entry
@@ -189,7 +103,7 @@ class CurrentMode(base.CurrentMode):
 
     def set_gains(
         self,
-        gains: base.ControlGains = DEFAULT_CURRENT_GAINS,
+        gains: ControlGains = DEFAULT_CURRENT_GAINS,
     ) -> None:
 
         assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
@@ -200,7 +114,7 @@ class CurrentMode(base.CurrentMode):
         self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
 
 
-class PositionMode(base.PositionMode):
+class PositionMode(ActuatorMode):
     def __init__(self, device: "DephyActpack") -> None:
         super().__init__(mode_pass=fxe.FX_POSITION, device=device)
         self._entry_callback = self._entry
@@ -233,7 +147,7 @@ class PositionMode(base.PositionMode):
 
     def set_gains(
         self,
-        gains: base.ControlGains = DEFAULT_POSITION_GAINS,
+        gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
 
         assert 0 <= gains.kp <= 1000, "kp must be between 0 and 1000"
@@ -246,7 +160,7 @@ class PositionMode(base.PositionMode):
         )
 
 
-class ImpedanceMode(base.ImpedanceMode):
+class ImpedanceMode(ActuatorMode):
     def __init__(self, device: "DephyActpack") -> None:
         super().__init__(mode_pass=fxe.FX_IMPEDANCE, device=device)
         self._entry_callback = self._entry
@@ -268,7 +182,7 @@ class ImpedanceMode(base.ImpedanceMode):
         self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(1 / self._device.frequency)
 
-    def set_gains(self, gains: base.ControlGains = DEFAULT_IMPEDANCE_GAINS):
+    def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
         assert 0 <= gains.kp <= 80, "kp must be between 0 and 80"
         assert 0 <= gains.ki <= 800, "ki must be between 0 and 800"
         assert 0 <= gains.ff <= 128, "ff must be between 0 and 128"
@@ -322,7 +236,7 @@ class ActpackControlModes:
         return f"ActpackControlModes"
 
 
-class DephyActpack(base.Actuator, Device):
+class DephyActpack(Actuator, Device):
     def __init__(
         self,
         name: str = "DephyActpack",
@@ -336,10 +250,10 @@ class DephyActpack(base.Actuator, Device):
         *args,
         **kwargs,
     ) -> None:
-        base.Actuator.__init__(
+        Actuator.__init__(
             self,
-            Gains=base.ControlGains(0, 0, 0, 0, 0, 0),
-            MecheSpecs=base.MechanicalConstants(
+            gains=ControlGains(0, 0, 0, 0, 0, 0),
+            motor_constants=MotorConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
                 IMPEDANCE_A=0.00028444,
@@ -372,7 +286,7 @@ class DephyActpack(base.Actuator, Device):
         self._motor_offset = 0.0
 
         # self._joint_direction = 1.0
-        self._mode: base.ActuatorMode = self.control_modes.voltage
+        self._mode: ActuatorMode = self.control_modes.voltage
         self._data: Any = None
 
         self.dephyIMU = DephyIMU(self)
@@ -432,7 +346,7 @@ class DephyActpack(base.Actuator, Device):
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
-    def set_mode(self, mode: base.ActuatorMode) -> None:
+    def set_mode(self, mode: ActuatorMode) -> None:
         if type(mode) in [VoltageMode, CurrentMode, PositionMode, ImpedanceMode]:
             self._mode.transition(to_state=mode)
             self._mode = mode
@@ -528,7 +442,7 @@ class DephyActpack(base.Actuator, Device):
             )
             return
 
-        self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=kd, K=0, B=0, ff=ff))  # type: ignore
+        self._mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, K=0, B=0, ff=ff))  # type: ignore
 
     def set_current_gains(
         self,
@@ -550,7 +464,7 @@ class DephyActpack(base.Actuator, Device):
             )
             return
 
-        self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=0, B=0, ff=ff))  # type: ignore
+        self._mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, K=0, B=0, ff=ff))  # type: ignore
 
     def set_impedance_gains(
         self,
@@ -577,7 +491,7 @@ class DephyActpack(base.Actuator, Device):
             )
             return
 
-        self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
+        self._mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""

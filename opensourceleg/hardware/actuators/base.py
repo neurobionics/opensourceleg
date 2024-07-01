@@ -3,11 +3,12 @@ Actuators Interface Generalized
 05/2024
 """
 
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 from abc import ABC, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
+from enum import Enum
 
 import numpy as np
 
@@ -18,8 +19,29 @@ import numpy as np
 """
 
 
+class ControlModeIndices(Enum):
+    """ModeIndices Enum for the actuator modes
+
+    This class shares the same values as Dephy's flexSEA fxEnums
+
+    Attributes
+    ----------
+    POSITION (c_int): Position Mode
+    VOLTAGE (c_int): Voltage Mode
+    CURRENT (c_int): Current Mode
+    IMPEDANCE (c_int): Impedance Mode
+    NONE (c_int): No Mode
+
+    """
+
+    POSITION = c_int(0)
+    VOLTAGE = c_int(1)
+    CURRENT = c_int(2)
+    IMPEDANCE = c_int(3)
+    NONE = c_int(4)
+
+
 @dataclass
-# Mandatory
 class ControlGains:
     """Dataclass for controller gains
 
@@ -46,7 +68,7 @@ class ControlGains:
 
 
 @dataclass
-class MechanicalConstants:
+class MotorConstants:
     """Dataclass for mechanical constants
 
     Attributes
@@ -74,7 +96,7 @@ class MechanicalConstants:
     """
 
     def __repr__(self) -> str:
-        return f"MecheConsts"
+        return f"MotorConstants"
 
     MOTOR_COUNT_PER_REV: float = 16384
     NM_PER_AMP: float = 0.1133
@@ -109,36 +131,12 @@ class MechanicalConstants:
         return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
 
 
-@dataclass
-class SafetySpec:
-    """
-    `SafetySpec` class for safety specifications of the actuator.
-    To be linked to safety module
-    """
-
-    MAX_VOLTAGE = 0
-    MAX_CURRENT = 0
-    MAX_POSITION_COUNT = 0
-    MAX_IMPEDANCE_KP = 0
-    MAX_IMPEDANCE_KI = 0
-    MAX_IMPEDANCE_KD = 0
-    MAX_IMPEDANCE_K = 0
-    MAX_IMPEDANCE_B = 0
-    MAX_IMPEDANCE_FF = 0
-    MAX_POSITION_KP = 0
-    MAX_POSITION_KI = 0
-    MAX_POSITION_KD = 0
-    MAX_CURRENT_KP = 0
-    MAX_CURRENT_KI = 0
-    MAX_CURRENT_KD = 0
-
-
-class ActuatorMode:
+class ActuatorMode(ABC):
     """Base Class for new actuator mode definition
 
     Args
     ----
-    mode_pass (c_int): Mode pass / flag for the actuator
+    control_mode_index (c_int): Mode pass / flag for the actuator
     device (Actuator): Actuator instance
 
     Properties
@@ -157,41 +155,124 @@ class ActuatorMode:
     Calls the exit callback
 
     transition(
-        to_state: opensourceleg.hardware.actuators.base.ActuatorMode
+        to_mode: opensourceleg.hardware.actuators.base.ActuatorMode
     ) → None:
 
     Transition to another mode. Calls the exit callback of the current mode and the entry callback of the new mode
 
     """
 
-    def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
-
-        self._control_mode: c_int = mode_pass
+    def __init__(
+        self,
+        control_mode_index: c_int,
+        control_mode_name: str,
+        actuator: "Actuator",
+        entry_callbacks: list[Callable[[], None]] = [lambda: None],
+        exit_callbacks: list[Callable[[], None]] = [lambda: None],
+        max_command: float | int | None = None,
+        max_gains: ControlGains | None = None,
+    ) -> None:
+        self._control_mode_index: c_int = control_mode_index
+        self._control_mode_name: str = control_mode_name
         self._has_gains: bool = False
         self._gains: Any = None
-        self._entry_callback: Callable[[], None] = lambda: None
-        self._exit_callback: Callable[[], None] = lambda: None
+        self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
+        self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
+        self._actuator: "Actuator" = actuator
+        self._max_command: float | int | None = max_command
+        self._max_gains: ControlGains | None = max_gains
 
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, ActuatorMode):
-            return self._control_mode == __o._control_mode
+            return self.index == __o.index
         return False
 
     def __str__(self) -> str:
-        return str(object=self._control_mode)
+        return str(object=self.index)
 
     def __repr__(self) -> str:
-        return f"ActpackMode[{self._control_mode}]"
+        return f"ActpackMode[{self.name}]"
+
+    def enter(self) -> None:
+        """
+        Calls the entry callback
+        """
+        for _callback in self._entry_callbacks:
+            _callback()
+
+    def exit(self) -> None:
+        """
+        Calls the exit callback
+        """
+        for _callback in self._exit_callbacks:
+            _callback()
+
+    # To be modified
+    def transition(self, to_mode: "ActuatorMode") -> None:
+        """
+        Transition to another mode. Calls the exit callback of the current mode
+        and the entry callback of the new mode.
+
+        Args:
+            to_mode (ActpackMode): Mode to transition to
+        """
+        self.exit()
+        to_mode.enter()
+
+    @abstractmethod
+    def set_gains(self, gains: ControlGains) -> None:
+        """set_gains method for the control mode.
+        Please use the super method only if applicable to the child class if not override this method
+
+        Args:
+            Gains (ControlGains): control gains applied
+        """
+        if self.max_gains is not None:
+            assert 0 <= gains.kp <= self._max_gains.kp
+            assert 0 <= gains.ki <= self._max_gains.ki
+            assert 0 <= gains.kd <= self._max_gains.kd
+            assert 0 <= gains.K <= self._max_gains.K
+            assert 0 <= gains.B <= self._max_gains.B
+            assert 0 <= gains.ff <= self._max_gains.ff
+
+        self._gains = gains
+        self._has_gains = True
+        self._actuator.set_gains(**vars(gains))
+
+    @abstractmethod
+    def set_command(self, command: float | int) -> None:
+        """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
+        Args:
+            command (Any): command applied
+        """
+        if self.max_command is not None:
+            assert 0 <= command <= self._max_command
+
+        # TODO: Modify this for new flexsea API, send_motor_command is deprecated
+        self._actuator.send_motor_command(
+            ctrl_mode=self.index,
+            value=command,
+        )
 
     @property
-    def mode(self) -> c_int:
+    def index(self) -> c_int:
         """
         Control Mode
 
         Returns:
             c_int: Control mode pass / flag
         """
-        return self._control_mode
+        return self._control_mode_index
+
+    @property
+    def name(self) -> str:
+        """
+        Control Mode Name
+
+        Returns:
+            str: Control mode name
+        """
+        return self._control_mode_name
 
     @property
     def has_gains(self) -> bool:
@@ -203,206 +284,25 @@ class ActuatorMode:
         """
         return self._has_gains
 
-    def enter(self) -> None:
+    @property
+    def max_gains(self) -> ControlGains | None:
         """
-        Calls the entry callback
+        Maximum gains for the mode (Read Only)
+
+        Returns:
+            ControlGains | None: Maximum gains for the mode
         """
-        self._entry_callback()
+        return self._max_gains
 
-    def exit(self) -> None:
+    @property
+    def max_command(self) -> float | int | None:
         """
-        Calls the exit callback
+        Maximum command for the mode (Read Only)
+
+        Returns:
+            float | int | None: Maximum command for the mode
         """
-        self._exit_callback()
-
-    # To be modified
-    def transition(self, to_state: "ActuatorMode") -> None:
-        """
-        Transition to another mode. Calls the exit callback of the current mode
-        and the entry callback of the new mode.
-
-        Args:
-            to_state (ActpackMode): Mode to transition to
-        """
-        self.exit()
-        to_state.enter()
-
-    def set_voltage(self, voltage: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the q axis voltage.
-        """
-        pass
-
-    def set_current(self, current: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the q axis current.
-        """
-        pass
-
-    def set_position(self, counts: int) -> None:
-        """
-        This method should be implemented by the child class. It should set the motor position.
-        """
-        pass
-
-
-class VoltageMode(ActuatorMode, ABC):
-    """Base Mode for Voltage Mode of Actuator
-
-    Args
-    ----
-    mode_pass (c_int): Mode pass / flag for the actuator
-
-    device (Actuator): Actuator instance
-
-    Methods
-    -------
-    set_voltage(voltage_value: int) -> None:
-        set_voltage method for the voltage mode
-
-    """
-
-    def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
-        super().__init__(mode_pass=mode_pass, device=device)
-        pass
-
-    @abstractmethod
-    def set_voltage(self, voltage_value: int):
-        """set_voltage method for the voltage mode
-
-        Args:
-            voltage_value (int): voltage value applied
-        """
-        pass
-
-
-class CurrentMode(ActuatorMode):
-    """Base Mode for Current Mode of Actuator
-
-    Args
-    ----
-    mode_pass (c_int): Mode pass / flag for the actuator
-    device (Actuator): Actuator instance
-
-    Methods
-    -------
-    set_current(current_value: int) -> None:
-        set_current method for the current mode
-
-    set_gains(Gains: ControlGains) -> None:
-        set_gains method for the current mode
-    """
-
-    def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
-        super().__init__(mode_pass=mode_pass, device=device)
-        pass
-
-    @abstractmethod
-    def set_current(
-        self,
-        current_value: int,
-    ) -> None:
-        """set_current method for the current mode
-
-        Args:
-            current_value (int): current value applied
-        """
-        pass
-
-    @abstractmethod
-    def set_gains(self, Gains: ControlGains) -> None:
-        """set_gains method for the current mode
-        Args:
-            Gains (ControlGains): control gains applied
-        """
-        self._gains = Gains
-        self._has_gains = True
-
-
-class PositionMode(ActuatorMode):
-    """Base Mode for Position Mode of Actuator
-    Args
-    ----
-    mode_pass (c_int): Mode pass / flag for the actuator
-    device (Actuator): Actuator instance
-
-    Methods
-    -------
-    set_position(encoder_count: int) -> None:
-        set_position method for the position mode
-
-    set_gains(Gains: ControlGains) -> None:
-        set_gains method for the position mode
-    """
-
-    def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
-        super().__init__(mode_pass=mode_pass, device=device)
-        pass
-
-    @abstractmethod
-    def set_position(
-        self,
-        encoder_count: int,
-    ) -> None:
-        """set_position method for the position mode
-
-        Args:
-            encoder_count (int): encoder count applied
-        """
-        pass
-
-    def set_gains(self, Gains: ControlGains) -> None:
-        """set_gains method for the position mode
-
-        Args:
-            Gains (ControlGains): gain values applied
-        """
-        self._gains = Gains
-        self._has_gains = True
-
-
-class ImpedanceMode(ActuatorMode):
-    """Base Mode for Impedance Mode of Actuator
-
-    Args
-    ----
-    mode_pass (c_int): Mode pass / flag for the actuator
-    device (Actuator): Actuator instance
-
-    Methods:
-    --------
-    set_gains(Gains: ControlGains) -> None:
-        set_gains method for the impedance mode
-
-    set_position(encoder_count: int) -> None:
-        set_position method for the impedance mode
-    """
-
-    def __init__(self, mode_pass: c_int, device: "Actuator") -> None:
-        super().__init__(mode_pass=mode_pass, device=device)
-        pass
-
-    @abstractmethod
-    def set_gains(self, Gains: ControlGains):
-        """set_gains method for the impedance mode
-        Args:
-            Gains (ControlGains): control gains applied
-        """
-        self._gains = Gains
-        self._has_gains = True
-        pass
-
-    @abstractmethod
-    def set_position(
-        self,
-        encoder_count: int,
-    ) -> None:
-        """set_position method for the impedance mode
-
-        Args:
-            encoder_count (int): encoder count applied
-        """
-        pass
+        return self._max_command
 
 
 class Actuator(ABC):
@@ -411,7 +311,7 @@ class Actuator(ABC):
     Args
     ----
     Gains (ControlGains): control gains applied
-    MecheSpecs (MecheConsts): mechanical constants applied
+    motor_constants (MotorConstants): mechanical constants applied
 
     Methods
     -------
@@ -424,8 +324,8 @@ class Actuator(ABC):
     update() -> None:
         Update method for the actuator
 
-    set_mode(mode: ActuatorMode) -> None:
-        set_mode method for the actuator
+    set_control_mode(mode: ActuatorMode) -> None:
+        set_control_mode method for the actuator
 
     set_voltage(voltage_value: float) -> None:
         set_voltage method for the actuator
@@ -440,13 +340,13 @@ class Actuator(ABC):
 
     def __init__(
         self,
-        Gains: ControlGains = ControlGains(),
-        MecheSpecs: MechanicalConstants = MechanicalConstants(),
+        gains: ControlGains = ControlGains(),
+        motor_constants: MotorConstants = MotorConstants(),
         *args,
         **kwargs,
     ) -> None:
-        self._gains: Any = Gains
-        self._MecheConsts: MechanicalConstants = MecheSpecs
+        self._gains: ControlGains = gains
+        self._MotorConstants: MotorConstants = motor_constants
         self._mode: Any = None
 
     @abstractmethod
@@ -465,20 +365,16 @@ class Actuator(ABC):
         pass
 
     @abstractmethod
-    def set_mode(self, mode: ActuatorMode) -> None:
-        """set_mode method for the actuator
+    def set_control_mode(self, mode: ActuatorMode) -> None:
+        """set_control_mode method for the actuator
 
         Args:
             mode (ActuatorMode): mode applied to the actuator
         """
         pass
 
-    @property
-    def mode(self) -> Any:
-        return self._mode
-
     @abstractmethod
-    def set_voltage(self, voltage_value: float):
+    def set_motor_voltage(self, value: float | int) -> None:
         """set_voltage method for the actuator
 
         Args:
@@ -487,9 +383,9 @@ class Actuator(ABC):
         pass
 
     @abstractmethod
-    def set_current(
+    def set_motor_current(
         self,
-        current_value: float,
+        value=float | int,
     ):
         """set_current method for the actuator
 
@@ -501,12 +397,70 @@ class Actuator(ABC):
     @abstractmethod
     def set_motor_position(
         self,
-        PositionCount: int,
+        value=float | int,
     ):
         """set_motor_position method for the actuator
 
         Args:
             PositionCount (int): encoder count for the motor position
+        """
+        pass
+
+    @abstractmethod
+    def set_current_gains(
+        self,
+        kp: int,
+        ki: int,
+        kd: int,
+        ff: int,
+    ):
+        """set_current_gains method for the actuator
+
+        Args:
+            kp (int): Proportional gain
+            ki (int): Integral gain
+            kd (int): Derivative gain
+            ff (int): Feedforward gain
+        """
+        pass
+
+    @abstractmethod
+    def set_position_gains(
+        self,
+        kp: int,
+        ki: int,
+        kd: int,
+        ff: int,
+    ):
+        """set_position_gains method for the actuator
+
+        Args:
+            kp (int): Proportional gain
+            ki (int): Integral gain
+            kd (int): Derivative gain
+            ff (int): Feedforward gain
+        """
+        pass
+
+    @abstractmethod
+    def set_impedance_gains(
+        self,
+        kp: int,
+        ki: int,
+        kd: int,
+        K: int,
+        B: int,
+        ff: int,
+    ):
+        """set_impedance_gains method for the actuator
+
+        Args:
+            kp (int): Proportional gain
+            ki (int): Integral gain
+            kd (int): Derivative gain
+            K (int): Stiffness of the impedance controller
+            B (int): Damping of the impedance controller
+            ff (int): Feedforward gain
         """
         pass
 
