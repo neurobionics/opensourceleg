@@ -191,12 +191,15 @@ class DephyActpack(Actuator, Device):
         offline: bool = False,
     ) -> None:
         Actuator.__init__(
+            actuator_name=name,
             control_modes=[
                 DephyPositionMode(actuator=self),
                 DephyVoltageMode(actuator=self),
                 DephyCurrentMode(actuator=self),
                 DephyImpedanceMode(actuator=self),
             ],
+            frequency=frequency,
+            logger=logger,
             motor_constants=MotorConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
@@ -213,12 +216,8 @@ class DephyActpack(Actuator, Device):
             self.port = port
             self.is_streaming: bool = False
 
-        self._frequency: int = frequency
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
-        self._name: str = name
-        self._log: Logger = logger
-        self._encoder_map = None
 
         self._encoder_map = None
 
@@ -230,7 +229,6 @@ class DephyActpack(Actuator, Device):
 
         # self._joint_direction = 1.0
         self._mode: ActuatorMode = self.control_modes.voltage
-        self._data: Any = None
 
         self.dephyIMU = DephyIMU(self)
 
@@ -288,14 +286,6 @@ class DephyActpack(Actuator, Device):
             self._log.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
-
-    def set_mode(self, mode: ActuatorMode) -> None:
-        if type(mode) in self.control_modes:
-            self._mode.transition(to_state=mode)
-            self._mode = mode
-        else:
-            self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
-            pass
 
     def set_voltage(self, voltage_value: float):
         if self._mode != self.control_modes.voltage:

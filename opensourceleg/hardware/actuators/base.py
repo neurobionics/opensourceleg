@@ -12,6 +12,8 @@ from enum import Enum
 
 import numpy as np
 
+from opensourceleg.tools.logger import Logger
+
 """_summary_
 
     Returns:
@@ -19,48 +21,46 @@ import numpy as np
 """
 
 
-class ControlModeFlags(Enum):
-    """ModeIndices Enum for the actuator modes
+class ControlModesBase(ABC, Enum):
+    @abstractmethod
+    def __new__(cls, c_int_value, str_value):
+        obj = object.__new__(cls)
+        obj._value_ = c_int_value
+        obj.str_value = str_value
+        return obj
 
-    This class shares the same values as Dephy's flexSEA fxEnums
+    @abstractmethod
+    def __int__(self):
+        return self.value.value
 
-    Attributes
-    ----------
-    POSITION (c_int): Position Mode
-    VOLTAGE (c_int): Voltage Mode
-    CURRENT (c_int): Current Mode
-    IMPEDANCE (c_int): Impedance Mode
-    NONE (c_int): No Mode
+    @abstractmethod
+    def __str__(self):
+        return self.str_value
 
-    """
-
-    POSITION = c_int(0)
-    VOLTAGE = c_int(1)
-    CURRENT = c_int(2)
-    IMPEDANCE = c_int(3)
-    NONE = c_int(4)
+    @property
+    @abstractmethod
+    def index(self):
+        return int(self.value)
 
 
-class ControlModeNames(Enum):
-    """ModeNames Enum for the actuator modes
-
-    This class shares the same values as Dephy's flexSEA fxEnums
+class ControlModeException(Exception):
+    """Control Mode Exception
 
     Attributes
     ----------
-    POSITION (str): Position Mode
-    VOLTAGE (str): Voltage Mode
-    CURRENT (str): Current Mode
-    IMPEDANCE (str): Impedance Mode
-    NONE (str): No Mode
+    message (str): Error message
 
     """
 
-    POSITION = "position"
-    VOLTAGE = "voltage"
-    CURRENT = "current"
-    IMPEDANCE = "impedance"
-    NONE = "none"
+    def __init__(
+        self,
+        actuator_name: str,
+        expected_mode: str,
+        current_mode: str,
+    ) -> None:
+        super().__init__(
+            f"Expected the {actuator_name} to be in {expected_mode} mode but it was in {current_mode} mode"
+        )
 
 
 @dataclass
@@ -262,11 +262,19 @@ class ActuatorMode(ABC):
         self._actuator.set_gains(**vars(gains))
 
     @abstractmethod
-    def set_command(self, value: float | int) -> None:
+    def set_command(self, value: float | int, expected_mode: c_int) -> None:
         """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
         Args:
             command (Any): command applied
         """
+
+        if self.index != expected_mode:
+            raise ControlModeException(
+                actuator_name=self._actuator._actuator_name,
+                expected_mode=expected_mode,
+                current_mode=self.name,
+            )
+
         if self.max_command is not None:
             assert 0 <= value <= self._max_command
 
@@ -283,14 +291,14 @@ class ActuatorMode(ABC):
         self._max_gains = gains
 
     @property
-    def index(self) -> c_int:
+    def index(self) -> int:
         """
         Control Mode
 
         Returns:
             c_int: Control mode pass / flag
         """
-        return self._control_mode_index
+        return int(self._control_mode_index)
 
     @property
     def name(self) -> str:
@@ -368,13 +376,22 @@ class Actuator(ABC):
 
     def __init__(
         self,
+        actuator_name: str,
         control_modes: list[ActuatorMode],
         motor_constants: MotorConstants,
+        frequency: int = 1000,
+        logger: Logger = Logger(),
         *args,
         **kwargs,
     ) -> None:
         self._control_modes = control_modes
         self._motor_constants: MotorConstants = motor_constants
+
+        self._actuator_name: str = actuator_name
+        self._frequency: int = frequency
+        self._data: Any = None
+
+        self.logger: Logger = logger
 
     @abstractmethod
     def start(self) -> None:
@@ -398,7 +415,11 @@ class Actuator(ABC):
         Args:
             mode (ActuatorMode): mode applied to the actuator
         """
-        pass
+        if mode in self.control_modes:
+            self._mode.transition(to_mode=mode)
+            self._mode = mode
+        else:
+            self.logger.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
 
     @abstractmethod
     def set_motor_voltage(self, value: float | int) -> None:
@@ -407,7 +428,7 @@ class Actuator(ABC):
         Args:
             voltage_value (float): voltage value applied
         """
-        pass
+        self.mode.set_command(value=value)
 
     @abstractmethod
     def set_motor_current(
