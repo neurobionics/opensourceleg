@@ -18,20 +18,22 @@ from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import LOGGER
 
 
-DEFAULT_POSITION_GAINS = base.ControlGains(kp=0, ki=0, kd=0, K=0, B=0, ff=0)
 
-DEFAULT_CURRENT_GAINS = base.ControlGains(kp=0, ki=0, kd=0, K=0, B=0, ff=0)
+DEFAULT_POSITION_GAINS = base.ControlGains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
 
-DEFAULT_IMPEDANCE_GAINS = base.ControlGains(kp=0, ki=0, kd=0, K=0, B=0, ff=0)
+DEFAULT_CURRENT_GAINS = base.ControlGains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
+
+DEFAULT_IMPEDANCE_GAINS = base.ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
 
 
-class VoltageMode(base.VoltageMode):
+class VoltageMode(base.ActuatorMode):
+    
     def __init__(self, device: "MoteusObject") -> None:
         super().__init__(mode_pass=moteus.Mode.VOLTAGE, device=device)
         self._entry_callback = self._entry
         self._exit_callback = self._exit
         self._device: MoteusObject = device
-        # self._control_mode = moteus.Mode.VOLTAGE
+        self._control_mode = moteus.Mode.VOLTAGE
 
     def _entry(self) -> None:
         # TODO: check log instance
@@ -53,7 +55,7 @@ class VoltageMode(base.VoltageMode):
         )
 
 
-class CurrentMode(base.CurrentMode):
+class CurrentMode(base.ActuatorMode):
     def __init__(self, device: "MoteusObject") -> None:
         super().__init__(mode_pass=moteus.Mode.CURRENT, device=device)
         self._entry_callback = self._entry
@@ -117,7 +119,7 @@ class CurrentMode(base.CurrentMode):
         # self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
 
 
-class PositionMode(base.PositionMode):
+class PositionMode(base.ActuatorMode):
     def __init__(self, device: "MoteusObject") -> None:
         super().__init__(mode_pass=moteus.Mode.POSITION, device=device)
         self._entry_callback = self._entry
@@ -170,8 +172,6 @@ class PositionMode(base.PositionMode):
         # )
 
 
-<<<<<<< HEAD
-=======
 # class ImpedanceMode(base.ImpedanceMode):
 #     def __init__(self, device: "MoteusObject") -> None:
 #         super().__init__(mode_pass=fxe.FX_IMPEDANCE, device=device)
@@ -221,7 +221,6 @@ class PositionMode(base.PositionMode):
 #         pass
 
 
->>>>>>> upstream/integration
 @dataclass(init=False)
 class MoteusControlModes:
     """
@@ -256,12 +255,9 @@ class MoteusObject(base.Actuator):
         addr_map={
             1: [11],
         },
-<<<<<<< HEAD
         logger: Logger = Logger(),
-=======
         frequency: int = 500,
         debug_level: int = 0,
->>>>>>> upstream/integration
         # dephy_log: bool = False,
         *args,
         **kwargs,
@@ -292,15 +288,12 @@ class MoteusObject(base.Actuator):
             for row in self._controller_id for item in row
         }
         self._name: str = name
-<<<<<<< HEAD
 
         # self._frequency: int = frequency
         # self._debug_level: int = debug_level
         # # self._dephy_log: bool = dephy_log
         # self._name: str = name
         self._log: Logger = logger
-=======
->>>>>>> upstream/integration
         self._encoder_map = None
 
         self._CANbus = pihat.CanConfiguration()
@@ -323,14 +316,14 @@ class MoteusObject(base.Actuator):
 
     async def start(self) -> None:
         super().start()
-<<<<<<< HEAD
         
         self._result = await self._transport.cycle(
             [x.make_stop() for x in self._servos.values()]
         )
         await asyncio.sleep(0.02)
         # self._mode.enter()
-=======
+
+    async def stop(self) -> None:
         try:
             self._transport.cycle([self.make_stop()])
         except OSError as e:
@@ -343,16 +336,14 @@ class MoteusObject(base.Actuator):
         time.sleep(0.1)
         self._data = self.read()
         self._mode.enter()
->>>>>>> upstream/integration
 
-    async def stop(self) -> None:
+    def stop(self) -> None:
         super().stop()
         await self._transport.cycle([x.make_stop()] for x in self._servos.values())
 
         await asyncio.sleep(0.02)
         # self.close()
 
-<<<<<<< HEAD
     async def update(self) -> None:
         # TODO: check instance here
         self._result = await self._transport.cycle(commands=self._commands)
@@ -360,12 +351,24 @@ class MoteusObject(base.Actuator):
         # self._log.warning(
         #     msg=f"[{self.__repr__()}] Please open() the device before streaming data."
         # )
-=======
+    def update(self) -> None:
+        super().update()
+        if self.is_streaming:
+            self._data = self.read()
+            self._thermal_model.T_c = self.case_temperature
+            self._thermal_scale = self._thermal_model.update_and_get_scale(
+                dt=(1 / self._frequency),
+                motor_current=self.motor_current,
+            )
+
+            # Check for thermal fault, bit 2 of the execute status byte
+            if self._data.status_ex & 0b00000010 == 0b00000010:
+                raise RuntimeError("Actpack Thermal Limit Tripped")
+
         else:
             LOGGER.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
->>>>>>> upstream/integration
 
     def set_mode(self, mode: base.ActuatorMode) -> None:
         if type(mode) in [VoltageMode, CurrentMode, PositionMode]:
@@ -373,12 +376,9 @@ class MoteusObject(base.Actuator):
             self._mode.transition(to_state=mode)
             
         else:
-<<<<<<< HEAD
             self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
-=======
             LOGGER.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
             pass
->>>>>>> upstream/integration
 
     def set_voltage(self, voltage_value: float):
         if self._mode != self.control_modes.voltage:
@@ -405,8 +405,6 @@ class MoteusObject(base.Actuator):
             int(current_value),
         )
 
-<<<<<<< HEAD
-=======
     def set_motor_torque(self, torque: float) -> None:
         """
         Sets the motor torque in Nm.
@@ -424,7 +422,6 @@ class MoteusObject(base.Actuator):
             int(torque / self._MecheConsts.NM_PER_MILLIAMP),
         )
 
->>>>>>> upstream/integration
     def set_motor_position(self, position: float) -> None:
         """
         Sets the motor position in radians.
@@ -495,8 +492,6 @@ class MoteusObject(base.Actuator):
 
         self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=0, B=0, ff=ff))  # type: ignore
 
-<<<<<<< HEAD
-=======
     # def set_impedance_gains(
     #     self,
     #     kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
@@ -524,7 +519,6 @@ class MoteusObject(base.Actuator):
 
     #     self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
 
->>>>>>> upstream/integration
     def set_motor_zero_position(self, position: float) -> None:
         """Sets motor zero position in radians"""
         self._motor_zero_position = position
@@ -537,10 +531,46 @@ class MoteusObject(base.Actuator):
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map
 
-<<<<<<< HEAD
     def auto_map(self) -> None:
         # TODO: auto change the servo controller mapping based on the configuration
-=======
+        pass
+
+    def fault_code(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[moteus.Register.FAULT]
+
+    def motor_position(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[moteus.Register.POSITION]
+
+    def motor_velocity(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[moteus.Register.VELOCITY]
+
+    def temperature(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[
+                        int(str(moteus.Register.TEMPERATURE))
+                    ]
+
+    def bus_voltage(self, id: int):
+        if self._result != []:
+            for num in range(len(self._result)):
+                if id == self._result[num].id:
+                    return self._result[id].values[moteus.Register.VOLTAGE]
+
+    # @property
+    # def bus_voltage(self):
+    #     if self._result != []:
+    #         return self._result.values[13]
     @property
     def frequency(self) -> int:
         return self._frequency
@@ -955,45 +985,7 @@ class MockMoteusObject(MoteusObject):
 
     # Overrides the close method to do nothing
     def close(self):
->>>>>>> upstream/integration
         pass
-
-    def fault_code(self, id: int):
-        if self._result != []:
-            for num in range(len(self._result)):
-                if id == self._result[num].id:
-                    return self._result[id].values[moteus.Register.FAULT]
-
-    def motor_position(self, id: int):
-        if self._result != []:
-            for num in range(len(self._result)):
-                if id == self._result[num].id:
-                    return self._result[id].values[moteus.Register.POSITION]
-
-    def motor_velocity(self, id: int):
-        if self._result != []:
-            for num in range(len(self._result)):
-                if id == self._result[num].id:
-                    return self._result[id].values[moteus.Register.VELOCITY]
-
-    def temperature(self, id: int):
-        if self._result != []:
-            for num in range(len(self._result)):
-                if id == self._result[num].id:
-                    return self._result[id].values[
-                        int(str(moteus.Register.TEMPERATURE))
-                    ]
-
-    def bus_voltage(self, id: int):
-        if self._result != []:
-            for num in range(len(self._result)):
-                if id == self._result[num].id:
-                    return self._result[id].values[moteus.Register.VOLTAGE]
-
-    # @property
-    # def bus_voltage(self):
-    #     if self._result != []:
-    #         return self._result.values[13]
 
 
 if __name__ == "__main__":
