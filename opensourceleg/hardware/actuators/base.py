@@ -12,7 +12,7 @@ from enum import Enum, EnumMeta
 
 import numpy as np
 
-from opensourceleg.tools.logger import LOGGER, Logger
+from opensourceleg.tools.logger import LOGGER
 
 """_summary_
 
