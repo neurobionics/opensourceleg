@@ -15,7 +15,7 @@ import numpy as np
 
 import opensourceleg.hardware.actuators.base as base
 from opensourceleg.hardware.thermal import ThermalModel
-from opensourceleg.tools.logger import Logger
+from opensourceleg.tools.logger import LOGGER
 
 # from flexsea.device import Device
 
@@ -37,11 +37,11 @@ class VoltageMode(base.VoltageMode):
 
     def _entry(self) -> None:
         # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Entering Voltage mode.")
+        LOGGER.debug(msg=f"[Actpack] Entering Voltage mode.")
 
     def _exit(self) -> None:
         # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Exiting Voltage mode.")
+        LOGGER.debug(msg=f"[Actpack] Exiting Voltage mode.")
         # self.set_voltage(voltage_value=0)
         time.sleep(0.1)
 
@@ -65,7 +65,7 @@ class CurrentMode(base.CurrentMode):
     def _entry(self) -> None:
 
         # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Entering Current mode.")
+        LOGGER.debug(msg=f"[Actpack] Entering Current mode.")
 
         if not self.has_gains:
             self.set_gains(DEFAULT_CURRENT_GAINS)
@@ -74,7 +74,7 @@ class CurrentMode(base.CurrentMode):
 
     def _exit(self) -> None:
         # TODO: check log instance
-        self._device._log.debug(msg=f"[Actpack] Exiting Current mode.")
+        LOGGER.debug(msg=f"[Actpack] Exiting Current mode.")
         # self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(1 / self._device.frequency)
 
@@ -124,7 +124,7 @@ class PositionMode(base.PositionMode):
         pass
 
     def _entry(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Entering Position mode.")
+        LOGGER.debug(msg=f"[Actpack] Entering Position mode.")
 
         if not self.has_gains:
             self.set_gains(self._gains)
@@ -132,7 +132,7 @@ class PositionMode(base.PositionMode):
         self.set_position(encoder_count=0)
 
     def _exit(self) -> None:
-        self._device._log.debug(msg=f"[Actpack] Exiting Position mode.")
+        LOGGER.debug(msg=f"[Actpack] Exiting Position mode.")
         # self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
         time.sleep(0.1)
 
@@ -173,14 +173,14 @@ class PositionMode(base.PositionMode):
 #         pass
 
 #     def _entry(self) -> None:
-#         self._device._log.debug(msg=f"[Actpack] Entering Impedance mode.")
+#         LOGGER.debug(msg=f"[Actpack] Entering Impedance mode.")
 #         if not self.has_gains:
 #             self.set_gains(gains=self._gains)
 
 #         self._device.set_motor_position(self._device.motor_position)
 
 #     def _exit(self) -> None:
-#         self._device._log.debug(msg=f"[Actpack] Exiting Impedance mode.")
+#         LOGGER.debug(msg=f"[Actpack] Exiting Impedance mode.")
 #         self._device.send_motor_command(ctrl_mode=fxe.FX_VOLTAGE, value=0)
 #         time.sleep(1 / self._device.frequency)
 
@@ -250,7 +250,6 @@ class MoteusObject(base.Actuator, moteus.Controller):
             4: [14],
         },
         frequency: int = 500,
-        logger: Logger = Logger(),
         debug_level: int = 0,
         # dephy_log: bool = False,
         *args,
@@ -274,7 +273,6 @@ class MoteusObject(base.Actuator, moteus.Controller):
         self._debug_level: int = debug_level
         # self._dephy_log: bool = dephy_log
         self._name: str = name
-        self._log: Logger = logger
         self._encoder_map = None
 
         self._CAN_slow = pihat.CanConfiguration()
@@ -314,7 +312,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
             self._transport.cycle([self.make_stop()])
         except OSError as e:
             print("\n")
-            self._log.error(
+            LOGGER.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
@@ -346,7 +344,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
                 raise RuntimeError("Actpack Thermal Limit Tripped")
 
         else:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
@@ -355,12 +353,12 @@ class MoteusObject(base.Actuator, moteus.Controller):
             self._mode.transition(to_state=mode)
             self._mode = mode
         else:
-            self._log.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
+            LOGGER.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
             pass
 
     def set_voltage(self, voltage_value: float):
         if self._mode != self.control_modes.voltage:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
             )
             return
@@ -374,7 +372,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
         current_value: float,
     ):
         if self._mode != self.control_modes.current:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set current in mode {self._mode}"
             )
             return
@@ -391,7 +389,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
             torque (float): The torque to set in Nm.
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set motor_torque in mode {self._mode}"
             )
             return
@@ -412,7 +410,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
             self.control_modes.position,
             # self.control_modes.impedance,
         ]:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
             )
             return
@@ -441,7 +439,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.position:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set position gains in mode {self._mode}"
             )
             return
@@ -463,7 +461,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(
+            LOGGER.warning(
                 f"[{self.__repr__()}] Cannot set current gains in mode {self._mode}"
             )
             return
@@ -490,7 +488,7 @@ class MoteusObject(base.Actuator, moteus.Controller):
     #         ff (int): The feedforward gain
     #     """
     #     if self._mode != self.control_modes.impedance:
-    #         self._log.warning(
+    #         LOGGER.warning(
     #             msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
     #         )
     #         return
@@ -841,7 +839,6 @@ class MockMoteusObject(MoteusObject):
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
-        logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -891,7 +888,7 @@ class MockMoteusObject(MoteusObject):
         if freq == 100 and log_level == 5 and log_enabled:
             raise OSError
         else:
-            self._log.debug(msg=f"Opening Device at {self.port}")
+            LOGGER.debug(msg=f"Opening Device at {self.port}")
 
     def send_motor_command(self, ctrl_mode, value):
         self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"

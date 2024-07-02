@@ -12,16 +12,16 @@ import numpy as np
 from flexsea.device import Device
 
 from opensourceleg.hardware.actuators.base import (
-    Actuator,
-    ActuatorMode,
+    ActuatorBase,
     ControlGains,
-    ControlModeFlags,
-    ControlModeNames,
+    ControlModeBase,
+    ControlModesBase,
+    ControlModesMapping,
     MotorConstants,
 )
 from opensourceleg.hardware.sensor.dephy import DephyIMU, MockData
 from opensourceleg.hardware.thermal import ThermalModel
-from opensourceleg.tools.logger import Logger
+from opensourceleg.tools.logger import LOGGER
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
 
@@ -32,35 +32,31 @@ DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128
 DEPHY_SLEEP_DURATION = 0.1
 
 
-class DephyVoltageMode(ActuatorMode):
+class DephyVoltageMode(ControlModeBase):
     def __init__(self, actuator: "DephyActpack") -> None:
         super().__init__(
-            control_mode_index=ControlModeFlags.VOLTAGE,
-            control_mode_name=ControlModeNames.VOLTAGE,
+            control_mode_index=ControlModesMapping.VOLTAGE,
+            control_mode_name=str(ControlModesMapping.VOLTAGE),
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
         )
 
     def __repr__(self) -> str:
-        return f"DephyActuatorMode[{self.name}]"
+        return f"DephyControlMode[{self.name}]"
 
     def _entry(self) -> None:
         # TODO: check log instance
-        self._actuator._log.debug(
-            msg=f"[DephyActuatorMode] Entering {self.name} control mode."
-        )
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} control mode.")
 
     def _exit(self) -> None:
         # TODO: check log instance
-        self._actuator._log.debug(
-            msg=f"[DephyActuatorMode] Exiting {self.name} control mode."
-        )
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
         self.set_command(value=0)
         time.sleep(DEPHY_SLEEP_DURATION)
 
     def set_gains(self, gains: ControlGains) -> None:
-        self._actuator._log.info(
+        LOGGER.info(
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
@@ -68,11 +64,11 @@ class DephyVoltageMode(ActuatorMode):
         return super().set_command(value)
 
 
-class DephyCurrentMode(ActuatorMode):
+class DephyCurrentMode(ControlModeBase):
     def __init__(self, actuator: "DephyActpack") -> None:
         super().__init__(
-            control_mode_index=ControlModeFlags.CURRENT,
-            control_mode_name=ControlModeNames.CURRENT,
+            control_mode_index=ControlModesMapping.CURRENT,
+            control_mode_name=str(ControlModesMapping.CURRENT),
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
@@ -80,12 +76,12 @@ class DephyCurrentMode(ActuatorMode):
         )
 
     def __repr__(self) -> str:
-        return f"DephyActuatorMode[{self.name}]"
+        return f"DephyControlMode[{self.name}]"
 
     def _entry(self) -> None:
 
         # TODO: check log instance
-        self._actuator._log.debug(msg=f"[DephyActuatorMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
 
         if not self.has_gains:
             self.set_gains()
@@ -94,10 +90,12 @@ class DephyCurrentMode(ActuatorMode):
 
     def _exit(self) -> None:
         # TODO: check log instance
-        self._actuator._log.debug(msg=f"[DephyActuatorMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.send_motor_command(ctrl_mode=ControlModeFlags.VOLTAGE, value=0)
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE, value=0
+        )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
@@ -107,11 +105,11 @@ class DephyCurrentMode(ActuatorMode):
         return super().set_command(value)
 
 
-class DephyPositionMode(ActuatorMode):
+class DephyPositionMode(ControlModeBase):
     def __init__(self, actuator: "DephyActpack") -> None:
         super().__init__(
-            control_mode_index=ControlModeFlags.POSITION,
-            control_mode_name=ControlModeNames.POSITION,
+            control_mode_index=ControlModesMapping.POSITION,
+            control_mode_name=str(ControlModesMapping.POSITION),
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
@@ -119,7 +117,7 @@ class DephyPositionMode(ActuatorMode):
         )
 
     def _entry(self) -> None:
-        self._actuator._log.debug(msg=f"[DephyActuatorMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
 
         if not self.has_gains:
             self.set_gains()
@@ -127,10 +125,12 @@ class DephyPositionMode(ActuatorMode):
         self.set_command(value=0)
 
     def _exit(self) -> None:
-        self._actuator._log.debug(msg=f"[DephyActuatorMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.send_motor_command(ctrl_mode=ControlModeFlags.VOLTAGE, value=0)
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE, value=0
+        )
         time.sleep(0.1)
 
     def set_gains(
@@ -143,11 +143,11 @@ class DephyPositionMode(ActuatorMode):
         return super().set_command(value)
 
 
-class DephyImpedanceMode(ActuatorMode):
+class DephyImpedanceMode(ControlModeBase):
     def __init__(self, actuator: "DephyActpack") -> None:
         super().__init__(
-            control_mode_index=ControlModeFlags.IMPEDANCE,
-            control_mode_name=ControlModeNames.IMPEDANCE,
+            control_mode_index=ControlModesMapping.IMPEDANCE,
+            control_mode_name=str(ControlModesMapping.IMPEDANCE),
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
@@ -155,17 +155,19 @@ class DephyImpedanceMode(ActuatorMode):
         )
 
     def _entry(self) -> None:
-        self._actuator._log.debug(msg=f"[DephyActuatorMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
         if not self.has_gains:
             self.set_gains()
 
         self.set_command(self._actuator.motor_position)
 
     def _exit(self) -> None:
-        self._actuator._log.debug(msg=f"[DephyActuatorMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.send_motor_command(ctrl_mode=ControlModeFlags.VOLTAGE, value=0)
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE, value=0
+        )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
@@ -178,19 +180,35 @@ class DephyImpedanceMode(ActuatorMode):
         super().set_command(value=value)
 
 
-class DephyActpack(Actuator, Device):
+@dataclass(init=False)
+class DephyActpackControlModes(ControlModesBase):
+    VOLTAGE: DephyVoltageMode
+    CURRENT: DephyCurrentMode
+    POSITION: DephyPositionMode
+    IMPEDANCE: DephyImpedanceMode
+
+    def __init__(self, actuator: "DephyActpack") -> None:
+        self.VOLTAGE = DephyVoltageMode(actuator=actuator)
+        self.CURRENT = DephyCurrentMode(actuator=actuator)
+        self.POSITION = DephyPositionMode(actuator=actuator)
+        self.IMPEDANCE = DephyImpedanceMode(actuator=actuator)
+
+    def __repr__(self) -> str:
+        return f"DephyActpackControlModes"
+
+
+class DephyActpack(ActuatorBase, Device):
     def __init__(
         self,
         name: str = "DephyActpack",
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
-        logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
         offline: bool = False,
     ) -> None:
-        Actuator.__init__(
+        ActuatorBase.__init__(
             actuator_name=name,
             control_modes=[
                 DephyPositionMode(actuator=self),
@@ -199,7 +217,6 @@ class DephyActpack(Actuator, Device):
                 DephyImpedanceMode(actuator=self),
             ],
             frequency=frequency,
-            logger=logger,
             motor_constants=MotorConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
@@ -228,7 +245,7 @@ class DephyActpack(Actuator, Device):
         self._motor_offset = 0.0
 
         # self._joint_direction = 1.0
-        self._mode: ActuatorMode = self.control_modes.voltage
+        self._mode: ControlModeBase = self.control_modes.voltage
 
         self.dephyIMU = DephyIMU(self)
 
@@ -246,7 +263,7 @@ class DephyActpack(Actuator, Device):
             )
         except OSError as e:
             print("\n")
-            self._log.error(
+            LOGGER.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
@@ -264,7 +281,7 @@ class DephyActpack(Actuator, Device):
         super().stop()
 
         self.dephyIMU.stop_streaming()
-        self.set_mode(mode=self.control_modes.voltage)
+        self.set_control_mode(mode=self.control_modes.voltage)
         self.set_voltage(voltage_value=0)
 
         time.sleep(0.1)
@@ -283,13 +300,13 @@ class DephyActpack(Actuator, Device):
                 raise RuntimeError("Actpack Thermal Limit Tripped")
 
         else:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
     def set_voltage(self, voltage_value: float):
         if self._mode != self.control_modes.voltage:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
             )
             return
@@ -303,7 +320,7 @@ class DephyActpack(Actuator, Device):
         current_value: float,
     ):
         if self._mode != self.control_modes.current:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set current in mode {self._mode}"
             )
             return
@@ -320,7 +337,7 @@ class DephyActpack(Actuator, Device):
             torque (float): The torque to set in Nm.
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set motor_torque in mode {self._mode}"
             )
             return
@@ -341,7 +358,7 @@ class DephyActpack(Actuator, Device):
             self.control_modes.position,
             self.control_modes.impedance,
         ]:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set motor position in mode {self._mode}"
             )
             return
@@ -370,7 +387,7 @@ class DephyActpack(Actuator, Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.position:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set position gains in mode {self._mode}"
             )
             return
@@ -392,7 +409,7 @@ class DephyActpack(Actuator, Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.current:
-            self._log.warning(
+            LOGGER.warning(
                 f"[{self.__repr__()}] Cannot set current gains in mode {self._mode}"
             )
             return
@@ -419,7 +436,7 @@ class DephyActpack(Actuator, Device):
             ff (int): The feedforward gain
         """
         if self._mode != self.control_modes.impedance:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set impedance gains in mode {self._mode}"
             )
             return
@@ -713,7 +730,6 @@ class MockDephyActpack(DephyActpack):
         port: str = "/dev/ttyACM0",
         baud_rate: int = 230400,
         frequency: int = 500,
-        logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -750,7 +766,7 @@ class MockDephyActpack(DephyActpack):
         if freq == 100 and log_level == 5 and log_enabled:
             raise OSError
         else:
-            self._log.debug(msg=f"Opening Device at {self.port}")
+            LOGGER.debug(msg=f"Opening Device at {self.port}")
 
     def send_motor_command(self, ctrl_mode, value):
         self._motor_command = f"Control Mode: {ctrl_mode}, Value: {value}"

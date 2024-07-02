@@ -2,6 +2,8 @@ from typing import Any, Callable, List, Union
 
 import csv
 import logging
+import os
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 """
@@ -29,6 +31,8 @@ Note:
 This file is referenced by the OSL class and is instantiated manually when an OSL
 is instantiated.
 
+TODO: Add support for user-defined log file names.
+
 """
 
 
@@ -41,54 +45,83 @@ class Logger(logging.Logger):
         log(self) -> None
     """
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(
         self,
-        file_path: str = "./osl",
+        log_path: str = "./",
         log_format: str = "[%(asctime)s] %(levelname)s: %(message)s",
+        file_level: str = "DEBUG",
+        stream_level: str = "INFO",
+        file_max_bytes: int = 0,
+        file_backup_count: int = 5,
     ) -> None:
+        """
+        Custom logger class that logs robot debug information to a .log file and data to a .csv file.
+        It extends the default logging.Logger class by adding a rotating file handler, stream handler, and a data logging method.
 
-        self._file_path: str = file_path + ".log"
+        Args:
+            log_path (str): Path to the log file. Default is "./"
+            log_format (str): Format of the log message. Default is "[%(asctime)s] %(levelname)s: %(message)s"
+            file_level (str): Level of the log file. Default is "DEBUG"
+            stream_level (str): Level of the stream handler. Default is "INFO"
+            file_max_bytes (int): Maximum size of the log file. If the file exceeds this size, it will be rotated out and a new file will be created. Default is 0, which means no rotation.
+            file_backup_count (int): Number of backup log files to keep. If the number of log files exceeds this count, the oldest file will be deleted. Default is 5.
+        """
+        if not hasattr(self, "_file_path"):
 
-        self._containers: list[Union[object, dict[Any, Any]]] = []
-        self._container_names: list[str] = []
-        self._attributes: list[list[str]] = []
+            now = datetime.now()
+            timestamp = now.strftime("%Y%m%d_%H%M%S")
+            script_name = os.path.basename(__file__).split(".")[0]
+            file_path = os.path.join(log_path, f"{script_name}_{timestamp}")
 
-        self._file = open(file_path + ".csv", "w", newline="")
-        self._writer = csv.writer(self._file)
+            self._file_path: str = file_path + ".log"
 
-        self._log_levels = {
-            "DEBUG": logging.DEBUG,
-            "INFO": logging.INFO,
-            "WARNING": logging.WARNING,
-            "ERROR": logging.ERROR,
-            "CRITICAL": logging.CRITICAL,
-        }
+            self._containers: list[Union[object, dict[Any, Any]]] = []
+            self._container_names: list[str] = []
+            self._attributes: list[list[str]] = []
 
-        super().__init__(__name__)
-        self.setLevel(logging.DEBUG)
+            self._file = open(file_path + ".csv", "w", newline="")
+            self._writer = csv.writer(self._file)
 
-        self._std_formatter = logging.Formatter(log_format)
+            self._log_levels = {
+                "DEBUG": logging.DEBUG,
+                "INFO": logging.INFO,
+                "WARNING": logging.WARNING,
+                "ERROR": logging.ERROR,
+                "CRITICAL": logging.CRITICAL,
+            }
 
-        self._file_handler = RotatingFileHandler(
-            filename=self._file_path,
-            mode="w",
-            maxBytes=0,
-            backupCount=10,
-        )
-        self._file_handler.setLevel(level=logging.DEBUG)
-        self._file_handler.setFormatter(fmt=self._std_formatter)
+            super().__init__(__name__)
+            self.setLevel(level=self._log_levels[file_level])
 
-        self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(level=logging.INFO)
-        self._stream_handler.setFormatter(fmt=self._std_formatter)
+            self._std_formatter = logging.Formatter(log_format)
 
-        self.addHandler(hdlr=self._stream_handler)
-        self.addHandler(hdlr=self._file_handler)
+            self._file_handler = RotatingFileHandler(
+                filename=self._file_path,
+                mode="a",
+                maxBytes=file_max_bytes,
+                backupCount=file_backup_count,
+            )
+            self._file_handler.setLevel(level=self._log_levels[file_level])
+            self._file_handler.setFormatter(fmt=self._std_formatter)
 
-        self._is_logging = False
+            self._stream_handler = logging.StreamHandler()
+            self._stream_handler.setLevel(level=self._log_levels[stream_level])
+            self._stream_handler.setFormatter(fmt=self._std_formatter)
 
-        self._header_data: list[str] = []
-        self._data: list[Any] = []
+            self.addHandler(hdlr=self._stream_handler)
+            self.addHandler(hdlr=self._file_handler)
+
+            self._is_logging = False
+
+            self._header_data: list[str] = []
+            self._data: list[Any] = []
 
     def __repr__(self) -> str:
         return f"Logger"
@@ -188,23 +221,9 @@ class Logger(logging.Logger):
         self._file.close()
 
 
+# Initialize a global logger instance to be used throughout the library
+LOGGER = Logger()
+
+
 if __name__ == "__main__":
-    local_logger = Logger(file_path="./test_log")
-    local_variable_1 = 100
-    local_variable_2 = 101200
-
-    class SimpleClass:
-        def __init__(self):
-            self.a = 1
-            self.b = 2
-            self.c = 3
-
-        def __repr__(self) -> str:
-            return f"SimpleClass"
-
-    simple_class = SimpleClass()
-
-    local_logger.add_attributes(locals(), ["local_variable_1"])
-    local_logger.add_attributes(locals(), ["local_variable_2"], "custom_container")
-    local_logger.add_attributes(simple_class, ["a", "b", "c"])
-    local_logger.update()
+    pass
