@@ -9,15 +9,13 @@ from ctypes import c_int
 from dataclasses import dataclass
 
 import moteus
-import moteus.moteus_tool
+# import moteus.moteus_tool
 import moteus_pi3hat as pihat
 import numpy as np
 
 import opensourceleg.hardware.actuators.base as base
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import Logger
-
-# from flexsea.device import Device
 
 
 DEFAULT_POSITION_GAINS = base.ControlGains(kp=0, ki=0, kd=0, K=0, B=0, ff=0)
