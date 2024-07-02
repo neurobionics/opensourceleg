@@ -19,7 +19,6 @@ from opensourceleg.hardware.actuators.base import (
     ControlModesMapping,
     MotorConstants,
 )
-from opensourceleg.hardware.sensor.dephy import DephyIMU, MockData
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import LOGGER
 
@@ -33,7 +32,7 @@ DEPHY_SLEEP_DURATION = 0.1
 
 
 class DephyVoltageMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActpack") -> None:
+    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
             control_mode_index=ControlModesMapping.VOLTAGE,
             control_mode_name=str(ControlModesMapping.VOLTAGE),
@@ -60,12 +59,12 @@ class DephyVoltageMode(ControlModeBase):
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
-    def set_command(self, value: float | int) -> None:
+    def set_command(self, value: Union[float, int]) -> None:
         return super().set_command(value)
 
 
 class DephyCurrentMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActpack") -> None:
+    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
             control_mode_index=ControlModesMapping.CURRENT,
             control_mode_name=str(ControlModesMapping.CURRENT),
@@ -101,12 +100,12 @@ class DephyCurrentMode(ControlModeBase):
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
         return super().set_gains(gains)
 
-    def set_command(self, value: float | int) -> None:
+    def set_command(self, value: Union[float, int]) -> None:
         return super().set_command(value)
 
 
 class DephyPositionMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActpack") -> None:
+    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
             control_mode_index=ControlModesMapping.POSITION,
             control_mode_name=str(ControlModesMapping.POSITION),
@@ -139,12 +138,12 @@ class DephyPositionMode(ControlModeBase):
     ) -> None:
         return super().set_gains(gains)
 
-    def set_command(self, value: float | int) -> None:
+    def set_command(self, value: Union[float, int]) -> None:
         return super().set_command(value)
 
 
 class DephyImpedanceMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActpack") -> None:
+    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
             control_mode_index=ControlModesMapping.IMPEDANCE,
             control_mode_name=str(ControlModesMapping.IMPEDANCE),
@@ -175,26 +174,24 @@ class DephyImpedanceMode(ControlModeBase):
 
     def set_command(
         self,
-        value: float | int,
+        value: Union[float, int],
     ) -> None:
         super().set_command(value=value)
 
 
 @dataclass(init=False)
 class DephyActpackControlModes(ControlModesBase):
-    VOLTAGE: DephyVoltageMode
-    CURRENT: DephyCurrentMode
-    POSITION: DephyPositionMode
-    IMPEDANCE: DephyImpedanceMode
+    VOLTAGE = DephyVoltageMode()
+    CURRENT = DephyCurrentMode()
+    POSITION = DephyPositionMode()
+    IMPEDANCE = DephyImpedanceMode()
 
     def __init__(self, actuator: "DephyActpack") -> None:
-        self.VOLTAGE = DephyVoltageMode(actuator=actuator)
-        self.CURRENT = DephyCurrentMode(actuator=actuator)
-        self.POSITION = DephyPositionMode(actuator=actuator)
-        self.IMPEDANCE = DephyImpedanceMode(actuator=actuator)
 
-    def __repr__(self) -> str:
-        return f"DephyActpackControlModes"
+        self.VOLTAGE.add_actuator(actuator)
+        self.CURRENT.add_actuator(actuator)
+        self.POSITION.add_actuator(actuator)
+        self.IMPEDANCE.add_actuator(actuator)
 
 
 class DephyActpack(ActuatorBase, Device):
@@ -209,14 +206,9 @@ class DephyActpack(ActuatorBase, Device):
         offline: bool = False,
     ) -> None:
         ActuatorBase.__init__(
+            self,
             actuator_name=name,
-            control_modes=[
-                DephyPositionMode(actuator=self),
-                DephyVoltageMode(actuator=self),
-                DephyCurrentMode(actuator=self),
-                DephyImpedanceMode(actuator=self),
-            ],
-            frequency=frequency,
+            control_modes=DephyActpackControlModes(self),
             motor_constants=MotorConstants(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
@@ -225,32 +217,31 @@ class DephyActpack(ActuatorBase, Device):
                 MAX_CASE_TEMPERATURE=80,
                 M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
             ),
+            frequency=frequency,
+            offline=offline,
         )
 
-        if not offline:
+        if not self.is_offline:
             Device.__init__(self, port=port, baud_rate=baud_rate)
         else:
             self.port = port
             self.is_streaming: bool = False
+            self.is_open: bool = False
 
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
 
         self._encoder_map = None
-
         self._motor_zero_position = 0.0
-        # self._joint_zero_position = 0.0
-
-        # self._joint_offset = 0.0
         self._motor_offset = 0.0
 
-        # self._joint_direction = 1.0
-        self._mode: ControlModeBase = self.control_modes.voltage
-
-        self.dephyIMU = DephyIMU(self)
+        self._mode: ControlModeBase = self.control_modes.VOLTAGE
+        self.dephyIMU = (
+            None  # TODO: Fix this, this shouldn't be used to return actpack variables
+        )
 
     def __repr__(self) -> str:
-        return f"{self._name}[DephyActpack]"
+        return f"{self.actuator_name}[DephyActpack]"
 
     def start(self) -> None:
         super().start()
@@ -267,10 +258,8 @@ class DephyActpack(ActuatorBase, Device):
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
-        self.dephyIMU.start_streaming()
 
         self._data = self.read()
-        self.dephyIMU.update(self._data)
 
         time.sleep(0.1)
         # self.dephyIMU.get_data()
@@ -280,7 +269,6 @@ class DephyActpack(ActuatorBase, Device):
     def stop(self) -> None:
         super().stop()
 
-        self.dephyIMU.stop_streaming()
         self.set_control_mode(mode=self.control_modes.voltage)
         self.set_voltage(voltage_value=0)
 
@@ -292,7 +280,6 @@ class DephyActpack(ActuatorBase, Device):
 
         if self.is_streaming:
             self._data = self.read()
-            self.dephyIMU.update(self._data)
             # self.dephyIMU.update()
 
             # Check for thermal fault, bit 2 of the execute status byte
@@ -304,7 +291,10 @@ class DephyActpack(ActuatorBase, Device):
                 msg=f"[{self.__repr__()}] Please open() the device before streaming data."
             )
 
-    def set_voltage(self, voltage_value: float):
+    def set_control_mode(self, mode: ControlModeBase) -> None:
+        super().set_control_mode(mode)
+
+    def set_motor_voltage(self, voltage_value: float):
         if self._mode != self.control_modes.voltage:
             LOGGER.warning(
                 msg=f"[{self.__repr__()}] Cannot set voltage in mode {self._mode}"
@@ -315,7 +305,7 @@ class DephyActpack(ActuatorBase, Device):
             int(voltage_value),
         )
 
-    def set_current(
+    def set_motor_current(
         self,
         current_value: float,
     ):
@@ -659,61 +649,6 @@ class DephyActpack(ActuatorBase, Device):
         return self.dephyIMU.loadcell.gyroz
 
 
-# class MockData:
-#     # TODO: Eliminate after generalization
-#     def __init__(
-#         self,
-#         batt_volt=0,
-#         batt_curr=0,
-#         mot_volt=0,
-#         mot_cur=0,
-#         mot_ang=0,
-#         ank_ang=0,
-#         mot_vel=0,
-#         mot_acc=0,
-#         ank_vel=0,
-#         temperature=0,
-#         genvar_0=0,
-#         genvar_1=0,
-#         genvar_2=0,
-#         genvar_3=0,
-#         genvar_4=0,
-#         genvar_5=0,
-#         accelx=0,
-#         accely=0,
-#         accelz=0,
-#         gyrox=0,
-#         gyroy=0,
-#         gyroz=0,
-#     ):
-#         self.batt_volt = batt_volt
-#         self.batt_curr = batt_curr
-#         self.mot_volt = mot_volt
-#         self.mot_cur = mot_cur
-#         self.mot_ang = mot_ang
-#         self.ank_ang = ank_ang
-#         self.mot_vel = mot_vel
-#         self.mot_acc = mot_acc
-#         self.ank_vel = ank_vel
-#         self.temperature = temperature
-#         self.genvar_0 = genvar_0
-#         self.genvar_1 = genvar_1
-#         self.genvar_2 = genvar_2
-#         self.genvar_3 = genvar_3
-#         self.genvar_4 = genvar_4
-#         self.genvar_5 = genvar_5
-#         self.accelx = accelx
-#         self.accely = accely
-#         self.accelz = accelz
-#         self.gyrox = gyrox
-#         self.gyroy = gyroy
-#         self.gyroz = gyroz
-#         self.status_ex = 0b00000000
-
-#     def __repr__(self):
-#         return f"MockData"
-
-
 class MockDephyActpack(DephyActpack):
     """
     MockDephyActpack class definition for testing.\n
@@ -815,4 +750,6 @@ class MockDephyActpack(DephyActpack):
 
 
 if __name__ == "__main__":
-    pass
+    print("hola")
+    dcm = DephyActpackControlModes(2)
+    print(dcm)
