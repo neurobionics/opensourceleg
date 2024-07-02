@@ -5,42 +5,20 @@ Actuators Interface Generalized
 
 from typing import Any, Callable, List
 
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, EnumMeta
 
 import numpy as np
 
-from opensourceleg.tools.logger import Logger
+from opensourceleg.tools.logger import LOGGER, Logger
 
 """_summary_
 
     Returns:
         _type_: _description_
 """
-
-
-class ControlModesBase(ABC, Enum):
-    @abstractmethod
-    def __new__(cls, c_int_value, str_value):
-        obj = object.__new__(cls)
-        obj._value_ = c_int_value
-        obj.str_value = str_value
-        return obj
-
-    @abstractmethod
-    def __int__(self):
-        return self.value.value
-
-    @abstractmethod
-    def __str__(self):
-        return self.str_value
-
-    @property
-    @abstractmethod
-    def index(self):
-        return int(self.value)
 
 
 class ControlModeException(Exception):
@@ -61,6 +39,61 @@ class ControlModeException(Exception):
         super().__init__(
             f"Expected the {actuator_name} to be in {expected_mode} mode but it was in {current_mode} mode"
         )
+
+
+class VoltageModeMissingException(Exception):
+    """Voltage Mode Missing Exception
+
+    Attributes
+    ----------
+    message (str): Error message
+
+    """
+
+    def __init__(self, actuator_name: str) -> None:
+        super().__init__(f"{actuator_name} must have a voltage mode")
+
+
+class ControlModesMapping(Enum):
+    """Control Modes Dictionary
+
+    Attributes
+    ----------
+    VOLTAGE (c_int): Voltage control mode
+    CURRENT (c_int): Current control mode
+    POSITION (c_int): Position control mode
+    IMPEDANCE (c_int): Impedance control mode
+
+    """
+
+    VOLTAGE = c_int(0), "voltage"
+    CURRENT = c_int(1), "current"
+    POSITION = c_int(2), "position"
+    IMPEDANCE = c_int(3), "impedance"
+
+    def __new__(cls, c_int_value, str_value):
+        obj = object.__new__(cls)
+        obj._value_ = c_int_value
+        obj.str_value = str_value
+        return obj
+
+    def __int__(self):
+        return self.value.value
+
+    def __str__(self):
+        return str.upper(self.str_value)
+
+
+class ControlModesMeta(ABCMeta, EnumMeta):
+    pass
+
+
+class ControlModesBase(ABC, Enum, metaclass=ControlModesMeta):
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if "VOLTAGE" not in cls._member_names_:
+            raise VoltageModeMissingException(cls.__name__)
 
 
 @dataclass
@@ -153,7 +186,7 @@ class MotorConstants:
         return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
 
 
-class ActuatorMode(ABC):
+class ControlModeBase(ABC):
     """Base Class for new actuator mode definition
 
     Args
@@ -177,7 +210,7 @@ class ActuatorMode(ABC):
     Calls the exit callback
 
     transition(
-        to_mode: opensourceleg.hardware.actuators.base.ActuatorMode
+        to_mode: opensourceleg.hardware.actuators.base.ControlModeBase
     ) → None:
 
     Transition to another mode. Calls the exit callback of the current mode and the entry callback of the new mode
@@ -188,7 +221,7 @@ class ActuatorMode(ABC):
         self,
         control_mode_index: c_int,
         control_mode_name: str,
-        actuator: "Actuator",
+        actuator: "ActuatorBase",
         entry_callbacks: list[Callable[[], None]] = [lambda: None],
         exit_callbacks: list[Callable[[], None]] = [lambda: None],
         max_command: float | int | None = None,
@@ -200,12 +233,12 @@ class ActuatorMode(ABC):
         self._gains: Any = None
         self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
         self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
-        self._actuator: "Actuator" = actuator
+        self._actuator: "ActuatorBase" = actuator
         self._max_command: float | int | None = max_command
         self._max_gains: ControlGains | None = max_gains
 
     def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, ActuatorMode):
+        if isinstance(__o, ControlModeBase):
             return self.index == __o.index
         return False
 
@@ -213,7 +246,7 @@ class ActuatorMode(ABC):
         return str(object=self.index)
 
     def __repr__(self) -> str:
-        return f"ActuatorMode[{self.name}]"
+        return f"ControlModeBase[{self.name}]"
 
     def enter(self) -> None:
         """
@@ -230,13 +263,13 @@ class ActuatorMode(ABC):
             _callback()
 
     # To be modified
-    def transition(self, to_mode: "ActuatorMode") -> None:
+    def transition(self, to_mode: "ControlModeBase") -> None:
         """
         Transition to another mode. Calls the exit callback of the current mode
         and the entry callback of the new mode.
 
         Args:
-            to_mode (ActuatorMode): Mode to transition to
+            to_mode (ControlModeBase): Mode to transition to
         """
         self.exit()
         to_mode.enter()
@@ -341,7 +374,7 @@ class ActuatorMode(ABC):
         return self._max_command
 
 
-class Actuator(ABC):
+class ActuatorBase(ABC):
     """Base class for the Actuator
 
     Args
@@ -360,7 +393,7 @@ class Actuator(ABC):
     update() -> None:
         Update method for the actuator
 
-    set_control_mode(mode: ActuatorMode) -> None:
+    set_control_mode(mode: ControlModeBase) -> None:
         set_control_mode method for the actuator
 
     set_voltage(voltage_value: float) -> None:
@@ -377,21 +410,19 @@ class Actuator(ABC):
     def __init__(
         self,
         actuator_name: str,
-        control_modes: list[ActuatorMode],
+        control_modes: ControlModesBase,
         motor_constants: MotorConstants,
         frequency: int = 1000,
-        logger: Logger = Logger(),
         *args,
         **kwargs,
     ) -> None:
-        self._control_modes = control_modes
+        self._control_modes: ControlModesBase = control_modes
         self._motor_constants: MotorConstants = motor_constants
 
         self._actuator_name: str = actuator_name
         self._frequency: int = frequency
         self._data: Any = None
-
-        self.logger: Logger = logger
+        self._mode: ControlModeBase = None
 
     @abstractmethod
     def start(self) -> None:
@@ -409,17 +440,17 @@ class Actuator(ABC):
         pass
 
     @abstractmethod
-    def set_control_mode(self, mode: ActuatorMode) -> None:
+    def set_control_mode(self, mode: ControlModeBase) -> None:
         """set_control_mode method for the actuator
 
         Args:
-            mode (ActuatorMode): mode applied to the actuator
+            mode (ControlModeBase): mode applied to the actuator
         """
         if mode in self.control_modes:
             self._mode.transition(to_mode=mode)
             self._mode = mode
         else:
-            self.logger.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
+            LOGGER.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
 
     @abstractmethod
     def set_motor_voltage(self, value: float | int) -> None:
@@ -513,11 +544,11 @@ class Actuator(ABC):
         pass
 
     @property
-    def control_modes(self) -> list[ActuatorMode]:
+    def control_modes(self) -> list[ControlModeBase]:
         """Control Modes (Read Only)
 
         Returns:
-            List[ActuatorMode]: List of control modes
+            List[ControlModeBase]: List of control modes
         """
         return self._control_modes
 
@@ -529,6 +560,15 @@ class Actuator(ABC):
             MotorConstants: Motor Constants
         """
         return self._motor_constants
+
+    @property
+    def mode(self) -> ControlModeBase:
+        """Current Control Mode (Read Only)
+
+        Returns:
+            ControlModeBase: Current control mode
+        """
+        return self._mode
 
 
 if __name__ == "__main__":

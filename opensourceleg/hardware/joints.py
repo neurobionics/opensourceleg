@@ -6,7 +6,7 @@ import numpy as np
 from opensourceleg.hardware.actuators.base import MechanicalConstants
 from opensourceleg.hardware.actuators.dephy import DephyActpack, MockDephyActpack
 
-from ..tools.logger import Logger
+from ..tools.logger import LOGGER
 
 """
 Module Overview:
@@ -36,7 +36,6 @@ class Joint(DephyActpack):
         frequency: int = 500,
         gear_ratio: float = 41.4999,
         has_loadcell: bool = False,
-        logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -46,7 +45,6 @@ class Joint(DephyActpack):
             port=port,
             baud_rate=baud_rate,
             frequency=frequency,
-            logger=logger,
             debug_level=debug_level,
             dephy_log=dephy_log,
         )
@@ -63,14 +61,14 @@ class Joint(DephyActpack):
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
         else:
-            self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
+            LOGGER.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return
 
         if os.path.isfile(path=f"./{self._name}_encoder_map.npy"):
             coefficients = np.load(file=f"./{self._name}_encoder_map.npy")
             self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
         else:
-            self._log.debug(
+            LOGGER.debug(
                 msg=f"[{self._name}] No encoder map found. Please run the make_encoder_map routine if you need more accurate joint position."
             )
 
@@ -124,7 +122,7 @@ class Joint(DephyActpack):
 
         except KeyboardInterrupt:
             self.set_voltage(voltage_value=0)
-            self._log.warning(msg="Homing interrupted.")
+            LOGGER.warning(msg="Homing interrupted.")
             return
 
         self.set_motor_zero_position(position=self.motor_position)
@@ -145,7 +143,7 @@ class Joint(DephyActpack):
             self.set_motor_offset(0.0)
 
         self._is_homed = True
-        self._log.info(f"[{self._name}] Homing complete.")
+        LOGGER.info(f"[{self._name}] Homing complete.")
 
     def make_encoder_map(self, overwrite=False) -> None:
         """
@@ -164,13 +162,13 @@ class Joint(DephyActpack):
         """
 
         if not self.is_homed:
-            self._log.warning(
+            LOGGER.warning(
                 msg=f"[{self.__repr__()}] Please home the {self.name} joint before making the encoder map."
             )
             return
 
         if os.path.exists(f"./{self._name}_encoder_map.npy") and not overwrite:
-            self._log.info(
+            LOGGER.info(
                 msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation."
             )
             return
@@ -187,7 +185,7 @@ class Joint(DephyActpack):
         _joint_encoder_array = []
         _output_position_array = []
 
-        self._log.info(
+        LOGGER.info(
             msg=f"[{self.__repr__()}] Please manually move the {self.name} joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
         )
 
@@ -195,7 +193,7 @@ class Joint(DephyActpack):
 
         try:
             while time.time() - _start_time < 10:
-                self._log.info(
+                LOGGER.info(
                     msg=f"[{self.__repr__()}] Mapping the {self.name} joint encoder: {10 - time.time() + _start_time} seconds left."
                 )
                 self.update()
@@ -204,10 +202,10 @@ class Joint(DephyActpack):
                 time.sleep(1 / self.frequency)
 
         except KeyboardInterrupt:
-            self._log.warning(msg="Encoder map interrupted.")
+            LOGGER.warning(msg="Encoder map interrupted.")
             return
 
-        self._log.info(
+        LOGGER.info(
             msg=f"[{self.__repr__()}] You may now stop moving the {self.name} joint."
         )
 
@@ -219,7 +217,7 @@ class Joint(DephyActpack):
         self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
 
         np.save(file=f"./{self._name}_encoder_map.npy", arr=_coeffs)
-        self._log.info(msg=f"[{self.__repr__()}] Encoder map saved.")
+        LOGGER.info(msg=f"[{self.__repr__()}] Encoder map saved.")
 
     def set_max_temperature(self, temperature: float) -> None:
         """
@@ -368,7 +366,6 @@ class MockJoint(Joint, MockDephyActpack):
         frequency: int = 500,
         gear_ratio: float = 41.4999,
         has_loadcell: bool = False,
-        logger: Logger = Logger(),
         debug_level: int = 0,
         dephy_log: bool = False,
     ) -> None:
@@ -386,7 +383,7 @@ class MockJoint(Joint, MockDephyActpack):
         if "knee" in name.lower() or "ankle" in name.lower():
             self._name: str = name
         else:
-            self._log.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
+            LOGGER.warning(msg=f"[{self.__repr__()}] Invalid joint name: {name}")
             return
 
 

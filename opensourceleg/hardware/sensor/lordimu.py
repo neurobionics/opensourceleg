@@ -10,7 +10,7 @@ from smbus2 import SMBus
 
 import opensourceleg.hardware.sensor.base as base
 from opensourceleg.hardware.joints import Joint
-from opensourceleg.tools.logger import Logger
+from opensourceleg.tools.logger import LOGGER
 
 """
 Module Overview:
@@ -121,7 +121,6 @@ class Loadcell(base.Loadcell):
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix=None,
-        logger: Logger = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
         self._joint: Joint = joint  # type: ignore
@@ -146,7 +145,6 @@ class Loadcell(base.Loadcell):
             shape=(1, 6), dtype=np.double
         )
         self._zeroed = False
-        self._log: Logger = logger  # type: ignore
 
     def reset(self):
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
@@ -194,7 +192,7 @@ class Loadcell(base.Loadcell):
         ideal_loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
 
         if not self._zeroed:
-            self._log.info(
+            LOGGER.info(
                 f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force.\n{input('Press any key to start.')}"
             )
 
@@ -203,7 +201,7 @@ class Loadcell(base.Loadcell):
                     self._joint.update()
                     self.update()
                 else:
-                    self._log.warning(
+                    LOGGER.warning(
                         msg=f"[{self.__repr__()}] {self._joint.name} joint isn't streaming data. Please start streaming data before initializing loadcell."
                     )
                     return
@@ -218,14 +216,14 @@ class Loadcell(base.Loadcell):
                 self._loadcell_zero = (loadcell_offset + self._loadcell_zero) / 2.0
 
             self._zeroed = True
-            self._log.info(f"[{self.__repr__()}] Zeroing routine complete.")
+            LOGGER.info(f"[{self.__repr__()}] Zeroing routine complete.")
 
         elif reset:
             self.reset()
             self.calibrate()
 
         else:
-            self._log.info(
+            LOGGER.info(
                 f"[{self.__repr__()}] Loadcell has already been zeroed. To recalibrate, set reset=True in the calibrate method or call reset() first."
             )
 
@@ -381,7 +379,6 @@ class MockLoadcell(Loadcell):
         amp_gain: float = 125.0,
         exc: float = 5.0,
         loadcell_matrix: npt.NDArray[np.double] = None,
-        logger: Logger = None,
     ) -> None:
         self._is_dephy: bool = dephy_mode
         self._joint: Joint = joint  # type: ignore
@@ -404,7 +401,6 @@ class MockLoadcell(Loadcell):
 
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
         self._zeroed = False
-        self._log: Logger = logger  # type: ignore
 
     def __repr__(self) -> str:
         return f"MockLoadcell"

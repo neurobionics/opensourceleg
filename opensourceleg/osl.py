@@ -9,7 +9,7 @@ sys.path.append("../")
 from .hardware.joints import Joint, MockJoint
 from .hardware.sensor.lordimu import Loadcell, MockLoadcell
 from .tools import utilities
-from .tools.logger import Logger
+from .tools.logger import LOGGER
 from .tools.utilities import SoftRealtimeLoop
 
 
@@ -58,10 +58,6 @@ class OpenSourceLeg:
         self._knee: Joint = None  # type: ignore
         self._ankle: Joint = None  # type: ignore
         self._loadcell: Loadcell = None  # type: ignore
-
-        self.log = Logger(
-            file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
-        )
 
         self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
 
@@ -130,7 +126,6 @@ class OpenSourceLeg:
                     frequency=self._frequency,
                     gear_ratio=gear_ratio,
                     has_loadcell=has_loadcell,
-                    logger=self.log,
                     debug_level=debug_level,
                     dephy_log=dephy_log,
                 )
@@ -144,14 +139,13 @@ class OpenSourceLeg:
                     frequency=self._frequency,
                     gear_ratio=gear_ratio,
                     has_loadcell=has_loadcell,
-                    logger=self.log,
                     debug_level=debug_level,
                     dephy_log=dephy_log,
                 )
                 self._has_ankle = True
 
             else:
-                self.log.warning(msg="[OSL] Joint name is not recognized.")
+                LOGGER.warning(msg="[OSL] Joint name is not recognized.")
 
         else:
             if port is None:
@@ -161,7 +155,7 @@ class OpenSourceLeg:
                 port_2: str = ""
 
                 if len(ports) == 0:
-                    self.log.warning(
+                    LOGGER.warning(
                         msg="No active ports found, please ensure that the motor is connected and powered on."
                     )
 
@@ -190,7 +184,7 @@ class OpenSourceLeg:
                         frequency=self._frequency,
                         gear_ratio=gear_ratio,
                         has_loadcell=has_loadcell,
-                        logger=self.log,
+                        logger=LOGGER,
                         debug_level=debug_level,
                         dephy_log=dephy_log,
                     )
@@ -212,20 +206,19 @@ class OpenSourceLeg:
                         frequency=self._frequency,
                         gear_ratio=gear_ratio,
                         has_loadcell=has_loadcell,
-                        logger=self.log,
                         debug_level=debug_level,
                         dephy_log=dephy_log,
                     )
                     self._has_ankle = True
                 else:
-                    self.log.warning(msg="[OSL] Joint name is not recognized.")
+                    LOGGER.warning(msg="[OSL] Joint name is not recognized.")
 
             else:
 
                 if "knee" in name.lower():
                     if self.has_ankle:
                         if self.ankle.port == port:
-                            self.log.warning(
+                            LOGGER.warning(
                                 msg="[OSL] Knee and Ankle joints cant have the same port. Please specify a different port for the knee joint."
                             )
 
@@ -238,7 +231,6 @@ class OpenSourceLeg:
                         frequency=self._frequency,
                         gear_ratio=gear_ratio,
                         has_loadcell=has_loadcell,
-                        logger=self.log,
                         debug_level=debug_level,
                         dephy_log=dephy_log,
                     )
@@ -247,7 +239,7 @@ class OpenSourceLeg:
                 elif "ankle" in name.lower():
                     if self.has_knee:
                         if self.knee.port == port:
-                            self.log.warning(
+                            LOGGER.warning(
                                 msg="[OSL] Knee and Ankle joints cant have the same port. Please specify a different port for the ankle joint."
                             )
 
@@ -260,14 +252,13 @@ class OpenSourceLeg:
                         frequency=self._frequency,
                         gear_ratio=gear_ratio,
                         has_loadcell=has_loadcell,
-                        logger=self.log,
                         debug_level=debug_level,
                         dephy_log=dephy_log,
                     )
                     self._has_ankle = True
 
                 else:
-                    self.log.warning(msg="[OSL] Joint name is not recognized.")
+                    LOGGER.warning(msg="[OSL] Joint name is not recognized.")
 
     def add_loadcell(
         self,
@@ -296,7 +287,7 @@ class OpenSourceLeg:
         """
 
         if loadcell_matrix is None:
-            self.log.warning(
+            LOGGER.warning(
                 msg="[OSL] Loadcell matrix is not specified. Please provide the loadcell calibration matrix to the add_loadcell method."
             )
 
@@ -310,7 +301,6 @@ class OpenSourceLeg:
                     amp_gain=amp_gain,
                     exc=exc,
                     loadcell_matrix=loadcell_matrix,
-                    logger=self.log,
                 )
             else:
                 self._loadcell = Loadcell(
@@ -319,7 +309,6 @@ class OpenSourceLeg:
                     amp_gain=amp_gain,
                     exc=exc,
                     loadcell_matrix=loadcell_matrix,
-                    logger=self.log,
                 )
 
             self._has_loadcell = True
@@ -331,7 +320,7 @@ class OpenSourceLeg:
             self._knee.update()
 
             if self.knee.case_temperature > self.knee.max_temperature:
-                self.log.warning(
+                LOGGER.warning(
                     msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
                 )
                 self.__exit__()
@@ -341,7 +330,7 @@ class OpenSourceLeg:
             self._ankle.update()
 
             if self.ankle.case_temperature > self.ankle.max_temperature:
-                self.log.warning(
+                LOGGER.warning(
                     msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
                 )
                 self.__exit__()
@@ -350,28 +339,28 @@ class OpenSourceLeg:
         if self.has_loadcell:
             self._loadcell.update()
 
-        self.log.update()
+        LOGGER.update()
 
         self._timestamp = time.time()
 
     def home(self) -> None:
         if self.has_knee:
-            self.log.info(msg="[OSL] Homing knee joint.")
+            LOGGER.info(msg="[OSL] Homing knee joint.")
             self.knee.home()
 
         if self.has_ankle:
-            self.log.info(msg="[OSL] Homing ankle joint.")
+            LOGGER.info(msg="[OSL] Homing ankle joint.")
             self.ankle.home()
 
         self._is_homed = True
 
     def calibrate_loadcell(self, reset=True) -> None:
         if self.has_loadcell:
-            self.log.debug(msg="[OSL] Calibrating loadcell.")
+            LOGGER.debug(msg="[OSL] Calibrating loadcell.")
             self.loadcell.calibrate(reset=reset)
 
     def make_encoder_maps(self, overwrite=False) -> None:
-        self.log.debug(msg="[OSL] Making encoder maps.")
+        LOGGER.debug(msg="[OSL] Making encoder maps.")
 
         if self.has_knee:
             self.knee.make_encoder_map(overwrite=overwrite)
@@ -380,7 +369,7 @@ class OpenSourceLeg:
             self.ankle.make_encoder_map(overwrite=overwrite)
 
     def reset(self) -> None:
-        self.log.debug(msg="[OSL] Resetting OSL.")
+        LOGGER.debug(msg="[OSL] Resetting OSL.")
 
         if self.has_knee:
             self.knee.set_mode(mode=self.knee.control_modes.voltage)
@@ -403,21 +392,21 @@ class OpenSourceLeg:
         if self.has_knee:
             return self._knee
         else:
-            self.log.warning(msg="[OSL] Knee is not connected.")
+            LOGGER.warning(msg="[OSL] Knee is not connected.")
 
     @property
     def ankle(self):
         if self.has_ankle:
             return self._ankle
         else:
-            self.log.warning(msg="[OSL] Ankle is not connected.")
+            LOGGER.warning(msg="[OSL] Ankle is not connected.")
 
     @property
     def loadcell(self):
         if self.has_loadcell:
             return self._loadcell
         else:
-            self.log.warning(msg="[OSL] Loadcell is not connected.")
+            LOGGER.warning(msg="[OSL] Loadcell is not connected.")
 
     @property
     def has_knee(self) -> bool:
