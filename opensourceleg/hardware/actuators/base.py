@@ -13,7 +13,7 @@ from functools import wraps
 
 import numpy as np
 
-from opensourceleg.tools.logger import LOGGER, Logger
+from opensourceleg.tools.logger import LOGGER
 
 """_summary_
 
@@ -22,25 +22,95 @@ from opensourceleg.tools.logger import LOGGER, Logger
 """
 
 
-def verify_control_mode(func):
+def check_actuator_control_mode(param):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.mode != param:
+                raise ControlModeException(
+                    actuator_name=self.actuator_name,
+                    expected_mode=param,
+                    current_mode=self.mode,
+                )
+
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def check_actuator_connection(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self.actuator.mode != self:
-            raise ControlModeException(
-                actuator_name=self.actuator.actuator_name,
-                expected_mode=self.name,
-                current_mode=self.actuator.mode.name,
-            )
+        if self.is_offline:
+            raise ActuatorConnectionException(actuator_name=self.actuator_name)
+
         return func(self, *args, **kwargs)
 
     return wrapper
+
+
+def check_actuator_open(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.is_open:
+            raise ActuatorConnectionException(actuator_name=self.actuator_name)
+
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def check_actuator_stream(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.is_streaming:
+            raise ActuatorStreamException(actuator_name=self.actuator_name)
+
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+class ActuatorStreamException(Exception):
+    """Actuator Stream Exception
+
+    Attributes
+    ----------
+    message (str): Error message
+
+    """
+
+    def __init__(self, actuator_name: str) -> None:
+        super().__init__(
+            f"{actuator_name} is not streaming, please call start() method before sending commands"
+        )
+
+
+class ActuatorConnectionException(Exception):
+    """Actuator Connection Exception
+
+    Attributes
+    ----------
+    message (str): Error message
+
+    """
+
+    def __init__(self, actuator_name: str) -> None:
+        super().__init__(f"{actuator_name} is not connected")
 
 
 class ControlModeException(Exception):
     """Control Mode Exception
 
     Attributes
-    ----------
+    ----------    MOTOR_COUNT_PER_REV: float = 16384
+    NM_PER_AMP: float = 0.1133
+    IMPEDANCE_A: float = 0.00028444
+    IMPEDANCE_C: float = 0.0007812
+    MAX_CASE_TEMPERATURE: float = 80
+    M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
     message (str): Error message
 
     """
@@ -301,7 +371,6 @@ class ControlModeBase(ABC):
         self._actuator = actuator
 
     @abstractmethod
-    @verify_control_mode
     def set_gains(self, gains: ControlGains) -> None:
         """set_gains method for the control mode.
         Please use the super method only if applicable to the child class if not override this method
@@ -319,12 +388,9 @@ class ControlModeBase(ABC):
 
         self._gains = gains
         self._has_gains = True
-
-        if self.actuator is not None:
-            self.actuator.set_gains(**vars(gains))
+        self.actuator.set_gains(**vars(gains))
 
     @abstractmethod
-    @verify_control_mode
     def set_command(self, value: Union[float, int], expected_mode: c_int) -> None:
         """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
         Args:
@@ -444,19 +510,21 @@ class ActuatorBase(ABC):
         self,
         actuator_name: str,
         control_modes: ControlModesBase,
+        default_control_mode: ControlModeBase,
+        gear_ratio: float,
         motor_constants: MotorConstants,
         frequency: int = 1000,
         offline: bool = False,
         *args,
         **kwargs,
     ) -> None:
-        self._control_modes: ControlModesBase = control_modes
-        self._motor_constants: MotorConstants = motor_constants
-
+        self._CONTROL_MODES: ControlModesBase = control_modes
+        self._MOTOR_CONSTANTS: MotorConstants = motor_constants
+        self._gear_ratio: float = gear_ratio
         self._actuator_name: str = actuator_name
         self._frequency: int = frequency
         self._data: Any = None
-        self._mode: ControlModeBase = None
+        self._mode: ControlModeBase = default_control_mode
         self._is_offline: bool = offline
 
     @abstractmethod
@@ -481,7 +549,7 @@ class ActuatorBase(ABC):
         Args:
             mode (ControlModeBase): mode applied to the actuator
         """
-        if mode in self.control_modes:
+        if mode in self.CONTROL_MODES:
             self._mode.transition(to_mode=mode)
             self._mode = mode
         else:
@@ -494,7 +562,7 @@ class ActuatorBase(ABC):
         Args:
             voltage_value (float): voltage value applied
         """
-        self.mode.set_command(value=value)
+        pass
 
     @abstractmethod
     def set_motor_current(
@@ -579,22 +647,22 @@ class ActuatorBase(ABC):
         pass
 
     @property
-    def control_modes(self) -> ControlModesBase:
+    def CONTROL_MODES(self) -> ControlModesBase:
         """Control Modes (Read Only)
 
         Returns:
             List[ControlModeBase]: List of control modes
         """
-        return self._control_modes
+        return self._CONTROL_MODES
 
     @property
-    def motor_constants(self) -> MotorConstants:
+    def MOTOR_CONSTANTS(self) -> MotorConstants:
         """Motor Constants (Read Only)
 
         Returns:
             MotorConstants: Motor Constants
         """
-        return self._motor_constants
+        return self._MOTOR_CONSTANTS
 
     @property
     def mode(self) -> ControlModeBase:
@@ -631,6 +699,15 @@ class ActuatorBase(ABC):
             bool: Offline
         """
         return self._is_offline
+
+    @property
+    def gear_ratio(self) -> float:
+        """Gear Ratio (Read Only)
+
+        Returns:
+            float: Gear Ratio
+        """
+        return self._gear_ratio
 
 
 if __name__ == "__main__":
