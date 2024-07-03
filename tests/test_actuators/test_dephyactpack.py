@@ -111,7 +111,9 @@ from opensourceleg.tools.logger import Logger
 
 #         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-#         self._mode: ActuatorMode = self.control_modes.voltage
+        self._mode: ActpackMode = self.control_modes.voltage
+        self._max_case_temperature = 80
+        self._max_winding_temperature = 110
 
 #     # Overrides the open method to function without a device
 #     def open(self, freq, log_level, log_enabled):
@@ -367,7 +369,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     assert mock_dap1.motor_velocity == 10 * np.pi / 180
     assert mock_dap1.motor_acceleration == 20
     assert mock_dap1.joint_position == 20 * 2 * np.pi / 16384
-    assert mock_dap1.joint_velocity == 10 * 2 * np.pi / 16384
+    assert mock_dap1.joint_velocity == 10 * np.pi / 180
     assert mock_dap1.case_temperature == 20
     assert mock_dap1.winding_temperature == 21
     assert mock_dap1.genvars.shape == (6,)

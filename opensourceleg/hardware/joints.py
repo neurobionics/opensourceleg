@@ -315,11 +315,6 @@ class Joint(DephyActpack):
         return self._gear_ratio
 
     @property
-    def max_temperature(self) -> float:
-        """Max allowed temperature of the actuator case in celsius."""
-        return self._max_temperature
-
-    @property
     def is_homed(self) -> bool:
         """Indicates if the homing routine has been called yet."""
         return self._is_homed

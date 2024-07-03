@@ -6,6 +6,12 @@ from dataclasses import dataclass
 import numpy as np
 
 
+class ThermalLimitException(Exception):
+    def __init__(self, message="Software thermal limit exceeded. Exiting."):
+        self.message = message
+        super().__init__(self.message)
+
+
 def is_changing(
     attribute_name: str,
     max_points: int = 10,
