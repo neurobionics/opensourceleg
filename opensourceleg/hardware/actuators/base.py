@@ -26,7 +26,7 @@ def check_actuator_control_mode(param):
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if self.mode != param:
+            if self.mode.index != param:
                 raise ControlModeException(
                     actuator_name=self.actuator_name,
                     expected_mode=param,
@@ -413,14 +413,14 @@ class ControlModeBase(ABC):
         self._max_gains = gains
 
     @property
-    def index(self) -> int:
+    def index(self) -> c_int:
         """
         Control Mode
 
         Returns:
             c_int: Control mode pass / flag
         """
-        return int(self._control_mode_index)
+        return self._control_mode_index
 
     @property
     def name(self) -> str:
