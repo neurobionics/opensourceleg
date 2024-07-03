@@ -22,15 +22,15 @@ from opensourceleg.tools.logger import LOGGER
 """
 
 
-def check_actuator_control_mode(param):
+def check_actuator_control_mode(mode_map):
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if self.mode != param:
+            if self.mode.name != str(mode_map):
                 raise ControlModeException(
                     actuator_name=self.actuator_name,
-                    expected_mode=param,
-                    current_mode=self.mode,
+                    expected_mode=str(mode_map),
+                    current_mode=self.mode.name,
                 )
 
             return func(self, *args, **kwargs)
@@ -161,6 +161,10 @@ class ControlModesMapping(Enum):
         obj._value_ = c_int_value
         obj.str_value = str_value
         return obj
+
+    @property
+    def index(self):
+        return self._value_
 
     def __int__(self):
         return self.value.value
@@ -307,16 +311,14 @@ class ControlModeBase(ABC):
 
     def __init__(
         self,
-        control_mode_index: c_int,
-        control_mode_name: str,
+        control_mode_map: ControlModesMapping,
         actuator: Union["ActuatorBase", None] = None,
         entry_callbacks: list[Callable[[], None]] = [lambda: None],
         exit_callbacks: list[Callable[[], None]] = [lambda: None],
         max_command: Union[float, int] = None,
         max_gains: ControlGains = None,
     ) -> None:
-        self._control_mode_index: c_int = control_mode_index
-        self._control_mode_name: str = control_mode_name
+        self._control_mode_map: ControlModesMapping = control_mode_map
         self._has_gains: bool = False
         self._gains: Any = None
         self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
@@ -402,7 +404,7 @@ class ControlModeBase(ABC):
         if self.actuator is not None:
             # TODO: Modify this for new flexsea API, send_motor_command is deprecated
             self.actuator.send_motor_command(
-                ctrl_mode=self.index,
+                ctrl_mode=self.flag,
                 value=value,
             )
 
@@ -420,7 +422,7 @@ class ControlModeBase(ABC):
         Returns:
             c_int: Control mode pass / flag
         """
-        return int(self._control_mode_index)
+        return int(self._control_mode_map)
 
     @property
     def name(self) -> str:
@@ -430,7 +432,17 @@ class ControlModeBase(ABC):
         Returns:
             str: Control mode name
         """
-        return self._control_mode_name
+        return str(self._control_mode_map)
+
+    @property
+    def flag(self) -> c_int:
+        """
+        Control Mode Flag
+
+        Returns:
+            c_int: Control mode flag
+        """
+        return self._control_mode_map.value
 
     @property
     def has_gains(self) -> bool:
