@@ -1,8 +1,10 @@
-﻿# [Actuators Base Library](./base.py) Guide
+﻿# Actuators Library Guide
 
 ## Introduction
 
-The actuators library contains a [`base.py`](./base.py), an abstract base for customizing your own actuator library, and examples of applications such as [`dephy.py`](./dephy.py).
+The actuators library supports multiple controllers for the Open-Source Leg Project, and an API as [base.py](./base.py) for quick development.
+
+The documentation mainly focus on how to develop a custom **actuator module**. Structures for the example implementations ([`dephy.py`](./dephy.py), etc) can be found in Section Reference. 
 
 ## Customization Guide of Actuators Module
 
@@ -23,11 +25,13 @@ The actuators library contains a [`base.py`](./base.py), an abstract base for cu
         def __init__(self, device: "DephyActpack") -> None:
 
             super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
         
 
         def set_voltage(self, voltage_value: int) -> None:
-            <!-- Should implement your own steps below -->   # Link the method to actuator operations
+            # Should implement your own steps below
+            pass
     ```
 
     Or customizing from `class ActuatorMode` if new modes are needed:
@@ -36,9 +40,11 @@ The actuators library contains a [`base.py`](./base.py), an abstract base for cu
         def __init__(self, device: "DephyActpack") -> None:
 
             super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
         
-        <!-- Should implement your own steps below -->       # Link the method to actuator operations
+        # Should implement your own steps below
+        pass
     ```
 
 3. Customize the actuator object from `base.Actuator`
@@ -46,7 +52,7 @@ The actuators library contains a [`base.py`](./base.py), an abstract base for cu
     For example, when customizing `class VoltageMode`: 
 
     ```Python
-    class Motor(base.Actuator):                                             # Should also inherit device class provided by your actuator manufacturer
+    class Motor(base.Actuator):
     
         def __init__(
             self,
@@ -66,113 +72,119 @@ The actuators library contains a [`base.py`](./base.py), an abstract base for cu
                 MecheSpecs=base.MecheConsts(),
             )                                                               # Inherit the steps from the template are suggested, as they offer common member definitions
     
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
         def __repr__(self) -> str:
             return f"DephyActpack[{self._name}]"
     
         def start(self) -> None:
             super().start()
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
         def stop(self) -> None:
             super().stop()
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
         def update(self) -> None:
             super().update()
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
         def set_mode(self, mode: base.ActuatorMode) -> None:
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
         def set_voltage(self, voltage_value: float):
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
         def set_current(
             self,
             current_value: float,
         ):
-            <!-- Should implement your own steps below -->
+            # Should implement your own steps below
+            pass
     
-        <!-- Should implement your own methods, properties, etc, below -->
+        # Should implement your own steps below
+        pass
     
     ```
 
-## Reference: Base Class Structure Diagram
+## Reference
+
+### Structure of [base.py](./base.py)
 
 ```mermaid
 classDiagram
-  direction RL
-  class ControlGains {
-    kp: int
-    ki: int
-    kd: int
-    K: int
-    B: int
-    ff: int
-  }
-  class MechanicalConstants{
-    MOTOR_COUNT_PER_REV: float
-    NM_PER_AMP: float
-    IMPEDANCE_A: float
-    IMPEDANCE_C: float
-    MAX_CASE_TEMPERATURE: float
-    M_PER_SEC_SQUARED_ACCLSB: float
-    NM_PER_MILLIAMP()
-    RAD_PER_COUNT()
-    RAD_PER_DEG()
-    RAD_PER_SEC_GYROLSB()
-    NM_PER_RAD_TO_K()
-    NM_S_PER_RAD_TO_B()
-  }
-  class ActuatorMode{
-    _control_mode
-    _has_gains
-    _gains
-    _entry_callback
-    _exit_callback
-    has_gains()
-    mode()
-    __init__()
-  }
-  class VoltageMode{
-    set_voltage()
-  }
-  class CurrentMode{
-    set_current()
-    set_gains()
-  }
-  class PositionMode{
-    set_position()
-    set_gains()
-  }
-  class ImpedanceMode{
-    set_position()
-    set_gains()
-  }
- class Actuator{
-    __init__(Gains, MecheSpecs, *args, **kwargs)
-    _gains: Any = Gains
-    _MecheConsts: MechanicalConstants = MecheSpecs
-    _mode: Any = None
-    start()
-    stop()
-    update()
-    set_mode()
-    set_voltage()
-    set_current()
-    set_motor_position()
- }
-VoltageMode <-- ActuatorMode
-CurrentMode <-- ActuatorMode
-PositionMode <-- ActuatorMode
-ImpedanceMode <-- ActuatorMode
-ControlGains ..> Actuator
-MechanicalConstants ..> Actuator
+  namespace Mode_Switch{
+    class ControlModesMapping{
+        POSITION
+        VOLTAGE
+        CURRENT
+        IMPEDANCE
+    }
+    class ControlModesMeta{
+        
+    }
+    class ControlModeBase{
+        self._control_mode_map: ControlModesMapping = control_mode_map
+        self._has_gains: bool = False
+        self._gains: Any = None
+        self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
+        self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
+        self._actuator: "ActuatorBase" = actuator
+        self._max_command: Union[float, int] = max_command
+        self._max_gains: ControlGains = max_gains
+        enter()
+        exit()
+        transition()
+        add_actuator()
+        set_gains()
+        set_command()
+    }
+    class ControlModesBase{
 
-Actuator <.. VoltageMode
-Actuator <.. CurrentMode
-Actuator <.. PositionMode
-Actuator <.. ImpedanceMode
+    }
+  }
+  class ActuatorBase{
+        self._CONTROL_MODES: ControlModesBase = control_modes
+        self._MOTOR_CONSTANTS: MotorConstants = motor_constants
+        self._gear_ratio: float = gear_ratio
+        self._actuator_name: str = actuator_name
+        self._frequency: int = frequency
+        self._data: Any = None
+        self._mode: ControlModeBase = default_control_mode
+        self._is_offline: bool = offline
+        start()
+        stop()
+        update()
+        set_control_mode()
+
+  }
+  namespace Data{
+    class ControlGains{
+        kp
+        ki
+        kd
+        k
+        b
+        ff
+    }
+    class MotorConstants{
+        MOTOR_COUNT_PER_REV
+        NM_PER_AMP
+        IMPEDANCE_A
+        IMPEDANCE_C
+        MAX_CASE_TEMPERATURE
+        M_PER_SEC_SQUARED_ACCLSB
+    }
+  }
+  
+  ActuatorBase <.. ControlModesBase: self._CONTROL_MODES
+  ActuatorBase <.. ControlGains: self._max_gains
+  ControlModesMeta ..> ControlModeBase: ControlModesBase(metaclass=ControlModesMeta)
+  ActuatorBase <.. MotorConstants: self._MOTOR_CONSTANTS
 ```
