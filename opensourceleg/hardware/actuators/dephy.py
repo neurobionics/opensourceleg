@@ -38,8 +38,7 @@ DEPHY_SLEEP_DURATION = 0.1
 class DephyVoltageMode(ControlModeBase):
     def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
-            control_mode_index=ControlModesMapping.VOLTAGE,
-            control_mode_name=str(ControlModesMapping.VOLTAGE),
+            control_mode_map=ControlModesMapping.VOLTAGE,
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
@@ -68,8 +67,7 @@ class DephyVoltageMode(ControlModeBase):
 class DephyCurrentMode(ControlModeBase):
     def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
-            control_mode_index=ControlModesMapping.CURRENT,
-            control_mode_name=str(ControlModesMapping.CURRENT),
+            control_mode_map=ControlModesMapping.CURRENT,
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
@@ -108,8 +106,7 @@ class DephyCurrentMode(ControlModeBase):
 class DephyPositionMode(ControlModeBase):
     def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
-            control_mode_index=ControlModesMapping.POSITION,
-            control_mode_name=str(ControlModesMapping.POSITION),
+            control_mode_map=ControlModesMapping.POSITION,
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
@@ -146,8 +143,7 @@ class DephyPositionMode(ControlModeBase):
 class DephyImpedanceMode(ControlModeBase):
     def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
         super().__init__(
-            control_mode_index=ControlModesMapping.IMPEDANCE,
-            control_mode_name=str(ControlModesMapping.IMPEDANCE),
+            control_mode_map=ControlModesMapping.IMPEDANCE,
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
