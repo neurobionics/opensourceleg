@@ -561,11 +561,9 @@ class ActuatorBase(ABC):
         Args:
             mode (ControlModeBase): mode applied to the actuator
         """
-        if mode in self.CONTROL_MODES:
-            self._mode.transition(to_mode=mode)
-            self._mode = mode
-        else:
-            LOGGER.warning(msg=f"[{self.__repr__()}] Mode {mode} not found")
+
+        self._mode.transition(to_mode=mode)
+        self._mode = mode
 
     @abstractmethod
     def set_motor_voltage(self, value: Union[float, int]) -> None:

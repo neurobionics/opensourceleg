@@ -486,4 +486,5 @@ class DephyActpack(ActuatorBase, Device):
 
 
 if __name__ == "__main__":
-    pass
+    cm = DephyActpackControlModes(None)
+    print(type(cm.VOLTAGE))
