@@ -54,7 +54,7 @@ def check_actuator_connection(func):
 def check_actuator_open(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self.is_open:
+        if not self.is_open:
             raise ActuatorConnectionException(actuator_name=self.actuator_name)
 
         return func(self, *args, **kwargs)
@@ -65,7 +65,7 @@ def check_actuator_open(func):
 def check_actuator_stream(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self.is_streaming:
+        if not self.is_streaming:
             raise ActuatorStreamException(actuator_name=self.actuator_name)
 
         return func(self, *args, **kwargs)
@@ -150,10 +150,9 @@ class ControlModesMapping(Enum):
     IMPEDANCE (c_int): Impedance control mode
 
     """
-
-    VOLTAGE = c_int(0), "voltage"
-    CURRENT = c_int(1), "current"
-    POSITION = c_int(2), "position"
+    POSITION = c_int(0), "position"
+    VOLTAGE = c_int(1), "voltage"
+    CURRENT = c_int(2), "current"
     IMPEDANCE = c_int(3), "impedance"
 
     def __new__(cls, c_int_value, str_value):
@@ -197,8 +196,8 @@ class ControlGains:
     kp (int): Proportional gain
     ki (int): Integral gain
     kd (int): Derivative gain
-    K (int): Stiffness of the impedance controller
-    B (int): Damping of the impedance controller
+    k (int): Stiffness of the impedance controller
+    b (int): Damping of the impedance controller
     ff (int): Feedforward gain
 
     """
@@ -206,12 +205,12 @@ class ControlGains:
     kp: int = 0
     ki: int = 0
     kd: int = 0
-    K: int = 0
-    B: int = 0
+    k: int = 0
+    b: int = 0
     ff: int = 0
 
     def __repr__(self) -> str:
-        return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, K={self.K}, B={self.B}, ff={self.ff}"
+        return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, k={self.k}, b={self.b}, ff={self.ff}"
 
 
 @dataclass
@@ -384,8 +383,8 @@ class ControlModeBase(ABC):
             assert 0 <= gains.kp <= self._max_gains.kp
             assert 0 <= gains.ki <= self._max_gains.ki
             assert 0 <= gains.kd <= self._max_gains.kd
-            assert 0 <= gains.K <= self._max_gains.K
-            assert 0 <= gains.B <= self._max_gains.B
+            assert 0 <= gains.k <= self._max_gains.k
+            assert 0 <= gains.b <= self._max_gains.b
             assert 0 <= gains.ff <= self._max_gains.ff
 
         self._gains = gains
@@ -393,7 +392,7 @@ class ControlModeBase(ABC):
         self.actuator.set_gains(**vars(gains))
 
     @abstractmethod
-    def set_command(self, value: Union[float, int], expected_mode: c_int) -> None:
+    def set_command(self, value: Union[float, int]) -> None:
         """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
         Args:
             command (Any): command applied
@@ -482,7 +481,7 @@ class ControlModeBase(ABC):
         Returns:
             ActuatorBase: Actuator instance
         """
-        return self.actuator
+        return self._actuator
 
 
 class ActuatorBase(ABC):
@@ -640,8 +639,8 @@ class ActuatorBase(ABC):
         kp: int,
         ki: int,
         kd: int,
-        K: int,
-        B: int,
+        k: int,
+        b: int,
         ff: int,
     ):
         """set_impedance_gains method for the actuator
@@ -650,8 +649,8 @@ class ActuatorBase(ABC):
             kp (int): Proportional gain
             ki (int): Integral gain
             kd (int): Derivative gain
-            K (int): Stiffness of the impedance controller
-            B (int): Damping of the impedance controller
+            k (int): Stiffness of the impedance controller
+            b (int): Damping of the impedance controller
             ff (int): Feedforward gain
         """
         pass

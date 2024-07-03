@@ -26,11 +26,11 @@ from opensourceleg.hardware.actuators.base import (
 from opensourceleg.hardware.thermal import ThermalModel
 from opensourceleg.tools.logger import LOGGER
 
-DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, K=0, B=0, ff=0)
+DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
 
-DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, K=0, B=0, ff=128)
+DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, k=0, b=0, ff=128)
 
-DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, K=200, B=400, ff=128)
+DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, k=200, b=400, ff=128)
 
 DEPHY_SLEEP_DURATION = 0.1
 
@@ -61,7 +61,7 @@ class DephyVoltageMode(ControlModeBase):
         )
 
     def set_command(self, value: Union[float, int]) -> None:
-        return super().set_command(value)
+        super().set_command(value)
 
 
 class DephyCurrentMode(ControlModeBase):
@@ -71,7 +71,7 @@ class DephyCurrentMode(ControlModeBase):
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=80, ki=800, kd=0, K=0, B=0, ff=128),
+            max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
         )
 
     def __repr__(self) -> str:
@@ -97,10 +97,10 @@ class DephyCurrentMode(ControlModeBase):
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
-        return super().set_gains(gains)
+        super().set_gains(gains)
 
     def set_command(self, value: Union[float, int]) -> None:
-        return super().set_command(value)
+        super().set_command(value)
 
 
 class DephyPositionMode(ControlModeBase):
@@ -110,7 +110,7 @@ class DephyPositionMode(ControlModeBase):
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=1000, ki=1000, kd=1000, K=0, B=0, ff=0),
+            max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
         )
 
     def _entry(self) -> None:
@@ -134,10 +134,10 @@ class DephyPositionMode(ControlModeBase):
         self,
         gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
-        return super().set_gains(gains)
+        super().set_gains(gains)
 
     def set_command(self, value: Union[float, int]) -> None:
-        return super().set_command(value)
+        super().set_command(value)
 
 
 class DephyImpedanceMode(ControlModeBase):
@@ -147,7 +147,7 @@ class DephyImpedanceMode(ControlModeBase):
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=80, ki=800, kd=0, K=0, B=0, ff=128),
+            max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
         )
 
     def _entry(self) -> None:
@@ -167,7 +167,7 @@ class DephyImpedanceMode(ControlModeBase):
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
-        return super().set_gains(gains)
+        super().set_gains(gains)
 
     def set_command(
         self,
@@ -257,7 +257,7 @@ class DephyActpack(ActuatorBase, Device):
     @check_actuator_open
     def stop(self) -> None:
         self.set_control_mode(mode=self.CONTROL_MODES.VOLTAGE)
-        self.set_motor_voltage(voltage_value=0)
+        self.set_motor_voltage(value=0)
 
         time.sleep(0.1)
         self.close()
@@ -337,7 +337,7 @@ class DephyActpack(ActuatorBase, Device):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, K=0, B=0, ff=ff))  # type: ignore
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
     @check_actuator_control_mode(ControlModesMapping.CURRENT)
     def set_current_gains(
@@ -354,15 +354,15 @@ class DephyActpack(ActuatorBase, Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, K=0, B=0, ff=ff))  # type: ignore
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
 
     @check_actuator_control_mode(ControlModesMapping.IMPEDANCE)
     def set_impedance_gains(
         self,
         kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
-        K: int = DEFAULT_IMPEDANCE_GAINS.K,
-        B: int = DEFAULT_IMPEDANCE_GAINS.B,
+        k: int = DEFAULT_IMPEDANCE_GAINS.k,
+        b: int = DEFAULT_IMPEDANCE_GAINS.b,
         ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
@@ -372,11 +372,11 @@ class DephyActpack(ActuatorBase, Device):
         Args:
             kp (int): The proportional gain
             ki (int): The integral gain
-            K (int): The spring constant
-            B (int): The damping constant
+            k (int): The spring constant
+            b (int): The damping constant
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, K=K, B=B, ff=ff))  # type: ignore
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=k, b=b, ff=ff))  # type: ignore
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
@@ -486,5 +486,4 @@ class DephyActpack(ActuatorBase, Device):
 
 
 if __name__ == "__main__":
-    cm = DephyActpackControlModes(None)
-    print(type(cm.VOLTAGE))
+    pass

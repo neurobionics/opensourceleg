@@ -178,7 +178,7 @@ class Logger(logging.Logger):
                 else:
                     self._container_names.append(f"")
         else:
-            self._container_names.append(container_name)
+            self._container_names.append(container_name + ":")
 
         self._containers.append(container)
         self._attributes.append(attributes)
