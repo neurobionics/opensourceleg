@@ -220,6 +220,10 @@ class Logger(logging.Logger):
         """
         self._file.close()
 
+    @property
+    def file_name(self) -> str:
+        return self._file_path
+
 
 # Initialize a global logger instance to be used throughout the library
 LOGGER = Logger()
