@@ -393,7 +393,7 @@ class ControlModeBase(ABC):
         self.actuator.set_gains(**vars(gains))
 
     @abstractmethod
-    def set_command(self, value: Union[float, int], expected_mode: c_int) -> None:
+    def set_command(self, value: Union[float, int]) -> None:
         """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
         Args:
             command (Any): command applied
@@ -404,7 +404,7 @@ class ControlModeBase(ABC):
         if self.actuator is not None:
             # TODO: Modify this for new flexsea API, send_motor_command is deprecated
             self.actuator.send_motor_command(
-                ctrl_mode=self.flag,
+                ctrl_mode=c_int(1),
                 value=value,
             )
 
@@ -482,7 +482,7 @@ class ControlModeBase(ABC):
         Returns:
             ActuatorBase: Actuator instance
         """
-        return self.actuator
+        return self._actuator
 
 
 class ActuatorBase(ABC):

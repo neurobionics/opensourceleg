@@ -61,7 +61,7 @@ class DephyVoltageMode(ControlModeBase):
         )
 
     def set_command(self, value: Union[float, int]) -> None:
-        return super().set_command(value)
+        super().set_command(value)
 
 
 class DephyCurrentMode(ControlModeBase):
@@ -97,10 +97,10 @@ class DephyCurrentMode(ControlModeBase):
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
-        return super().set_gains(gains)
+        super().set_gains(gains)
 
     def set_command(self, value: Union[float, int]) -> None:
-        return super().set_command(value)
+        super().set_command(value)
 
 
 class DephyPositionMode(ControlModeBase):
@@ -134,10 +134,10 @@ class DephyPositionMode(ControlModeBase):
         self,
         gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
-        return super().set_gains(gains)
+        super().set_gains(gains)
 
     def set_command(self, value: Union[float, int]) -> None:
-        return super().set_command(value)
+        super().set_command(value)
 
 
 class DephyImpedanceMode(ControlModeBase):
@@ -167,7 +167,7 @@ class DephyImpedanceMode(ControlModeBase):
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
-        return super().set_gains(gains)
+        super().set_gains(gains)
 
     def set_command(
         self,
@@ -486,5 +486,4 @@ class DephyActpack(ActuatorBase, Device):
 
 
 if __name__ == "__main__":
-    cm = DephyActpackControlModes(None)
-    print(type(cm.VOLTAGE))
+    pass
