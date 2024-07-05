@@ -9,7 +9,7 @@ sys.path.append("../")
 from .hardware.joints import Joint, MockJoint
 from .hardware.sensor.lordimu import Loadcell, MockLoadcell
 from .tools import utilities
-from .tools.logger import Logger
+from .tools.logger import LOGGER
 from .tools.safety import ThermalLimitException
 from .tools.utilities import SoftRealtimeLoop
 

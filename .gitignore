@@ -626,3 +626,5 @@ localtest.py
 opensourceleg/hardware/Re_Actuators.md
 opensourceleg/hardware/actuators_base.py
 Moteus_Spec.md
+
+.vscode/
