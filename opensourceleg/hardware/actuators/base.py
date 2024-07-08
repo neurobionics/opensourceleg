@@ -29,8 +29,8 @@ def check_actuator_control_mode(mode_map):
             if self.mode.name != str(mode_map):
                 raise ControlModeException(
                     tag=self.tag,
-                    expected_mode=str(mode_map),
-                    current_mode=self.mode.name,
+                    attribute=str(mode_map),
+                    mode=self.mode.name,
                 )
 
             return func(self, *args, **kwargs)
@@ -101,6 +101,21 @@ class ActuatorConnectionException(Exception):
         super().__init__(f"{tag} is not connected")
 
 
+class ActuatorIsNoneException(Exception):
+    """Actuator Connection Exception
+
+    Attributes
+    ----------
+    message (str): Error message
+
+    """
+
+    def __init__(self, mode: str) -> None:
+        super().__init__(
+            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during initialization or set the actuator instance using set_actuator method."
+        )
+
+
 class ControlModeException(Exception):
     """Control Mode Exception
 
@@ -118,11 +133,11 @@ class ControlModeException(Exception):
     def __init__(
         self,
         tag: str,
-        expected_mode: str,
-        current_mode: str,
+        attribute: str,
+        mode: str,
     ) -> None:
         super().__init__(
-            f"Expected the {tag} to be in {expected_mode} mode but it was in {current_mode} mode"
+            f"[{tag}] Cannot set {attribute} in {mode} mode. Please set the actuator to {attribute} mode first."
         )
 
 

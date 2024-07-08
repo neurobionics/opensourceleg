@@ -13,8 +13,10 @@ from flexsea.device import Device
 
 from opensourceleg.hardware.actuators.base import (
     ActuatorBase,
+    ActuatorIsNoneException,
     ControlGains,
     ControlModeBase,
+    ControlModeException,
     ControlModesBase,
     ControlModesMapping,
     MotorConstants,
@@ -50,9 +52,12 @@ class DephyVoltageMode(ControlModeBase):
     def _entry(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} control mode.")
 
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
+
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
-        self.set_command(value=0)
+        self.set_voltage(0)
         time.sleep(DEPHY_SLEEP_DURATION)
 
     def set_gains(self, gains: ControlGains) -> None:
@@ -60,8 +65,22 @@ class DephyVoltageMode(ControlModeBase):
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
-    def set_command(self, value: Union[float, int]) -> None:
-        super().set_command(value)
+    def set_voltage(self, value: Union[float, int]):
+        self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
+
+    def set_current(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.CURRENT),
+            mode=self.name,
+        )
+
+    def set_position(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.POSITION),
+            mode=self.name,
+        )
 
 
 class DephyCurrentMode(ControlModeBase):
@@ -81,10 +100,13 @@ class DephyCurrentMode(ControlModeBase):
 
         LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
 
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
+
         if not self.has_gains:
             self.set_gains()
 
-        self.set_command(value=0)
+        self.set_current(value=0)
 
     def _exit(self) -> None:
 
@@ -92,15 +114,29 @@ class DephyCurrentMode(ControlModeBase):
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
         self._actuator.send_motor_command(
-            ctrl_mode=ControlModesMapping.VOLTAGE, value=0
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
         )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
         super().set_gains(gains)
 
-    def set_command(self, value: Union[float, int]) -> None:
-        super().set_command(value)
+    def set_current(self, value: Union[float, int]):
+        self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
+
+    def set_voltage(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.VOLTAGE),
+            mode=self.name,
+        )
+
+    def set_position(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.POSITION),
+            mode=self.name,
+        )
 
 
 class DephyPositionMode(ControlModeBase):
@@ -116,17 +152,20 @@ class DephyPositionMode(ControlModeBase):
     def _entry(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
 
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
+
         if not self.has_gains:
             self.set_gains()
 
-        self.set_command(value=0)
+        self.set_position(value=self.actuator.motor_position)
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
         self._actuator.send_motor_command(
-            ctrl_mode=ControlModesMapping.VOLTAGE, value=0
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
         )
         time.sleep(0.1)
 
@@ -136,8 +175,28 @@ class DephyPositionMode(ControlModeBase):
     ) -> None:
         super().set_gains(gains)
 
-    def set_command(self, value: Union[float, int]) -> None:
-        super().set_command(value)
+    def set_position(self, value: Union[float, int]):
+        self.actuator.send_motor_command(
+            ctrl_mode=self.flag,
+            value=int(
+                (value + self.actuator.motor_zero_position + self.actuator.motor_offset)
+                / self.actuator.MOTOR_CONSTANTS.RAD_PER_COUNT
+            ),
+        )
+
+    def set_current(self, value: float | int):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.CURRENT),
+            mode=self.name,
+        )
+
+    def set_voltage(self, value: float | int):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.VOLTAGE),
+            mode=self.name,
+        )
 
 
 class DephyImpedanceMode(ControlModeBase):
@@ -152,28 +211,49 @@ class DephyImpedanceMode(ControlModeBase):
 
     def _entry(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
+
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
+
         if not self.has_gains:
             self.set_gains()
 
-        self.set_command(self._actuator.motor_position)
+        self.set_position(self._actuator.motor_position)
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
         self._actuator.send_motor_command(
-            ctrl_mode=ControlModesMapping.VOLTAGE, value=0
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
         )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
         super().set_gains(gains)
 
-    def set_command(
-        self,
-        value: Union[float, int],
-    ) -> None:
-        super().set_command(value=value)
+    def set_position(self, value: float | int):
+        self.actuator.send_motor_command(
+            ctrl_mode=self.flag,
+            value=int(
+                (value + self.actuator.motor_zero_position + self.actuator.motor_offset)
+                / self.actuator.MOTOR_CONSTANTS.RAD_PER_COUNT
+            ),
+        )
+
+    def set_current(self, value: float | int):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.CURRENT),
+            mode=self.name,
+        )
+
+    def set_voltage(self, value: float | int):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.VOLTAGE),
+            mode=self.name,
+        )
 
 
 @dataclass(init=False)
@@ -185,16 +265,16 @@ class DephyActpackControlModes(ControlModesBase):
 
     def __init__(self, actuator: "DephyActpack") -> None:
 
-        self.VOLTAGE.add_actuator(actuator)
-        self.CURRENT.add_actuator(actuator)
-        self.POSITION.add_actuator(actuator)
-        self.IMPEDANCE.add_actuator(actuator)
+        self.VOLTAGE.set_actuator(actuator)
+        self.CURRENT.set_actuator(actuator)
+        self.POSITION.set_actuator(actuator)
+        self.IMPEDANCE.set_actuator(actuator)
 
 
 class DephyActpack(ActuatorBase, Device):
     def __init__(
         self,
-        name: str = "DephyActpack",
+        tag: str = "DephyActpack",
         port: str = "/dev/ttyACM0",
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
@@ -206,7 +286,7 @@ class DephyActpack(ActuatorBase, Device):
         dephy_control_modes = DephyActpackControlModes(self)
         ActuatorBase.__init__(
             self,
-            actuator_name=name,
+            tag=tag,
             control_modes=dephy_control_modes,
             default_control_mode=dephy_control_modes.VOLTAGE,
             gear_ratio=gear_ratio,
@@ -239,7 +319,7 @@ class DephyActpack(ActuatorBase, Device):
         self._joint_offset = 0.0
 
     def __repr__(self) -> str:
-        return f"{self.actuator_name}[DephyActpack]"
+        return f"{self.tag}[DephyActpack]"
 
     @check_actuator_connection
     def start(self) -> None:
@@ -270,6 +350,12 @@ class DephyActpack(ActuatorBase, Device):
             raise RuntimeError("Actpack Thermal Limit Tripped")
 
     def set_control_mode(self, mode: ControlModeBase) -> None:
+        """
+        Sets the control mode of the actuator.
+
+        Args:
+            mode (ControlModeBase): The control mode to set. This is a ControlModeBase object.
+        """
         super().set_control_mode(mode)
 
     def set_motor_torque(self, value: float) -> None:
@@ -280,19 +366,21 @@ class DephyActpack(ActuatorBase, Device):
             torque (float): The torque to set in Nm.
         """
         self.set_motor_current(
-            int(value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP),
+            value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
         )
 
-    @check_actuator_control_mode(ControlModesMapping.CURRENT)
     def set_motor_current(
         self,
         value: float,
     ):
-        self.mode.set_command(
-            int(value),
-        )
+        """
+        Sets the motor current in mA.
 
-    @check_actuator_control_mode(ControlModesMapping.VOLTAGE)
+        Args:
+            value (float): The current to set in mA.
+        """
+        self.mode.set_current(value=value)
+
     def set_motor_voltage(self, value: float) -> None:
         """
         Sets the motor voltage in mV.
@@ -300,11 +388,10 @@ class DephyActpack(ActuatorBase, Device):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
-        self.mode.set_command(
-            int(value),
+        self.mode.set_voltage(
+            value,
         )
 
-    @check_actuator_control_mode(ControlModesMapping.POSITION)
     def set_motor_position(self, value: float) -> None:
         """
         Sets the motor position in radians.
@@ -313,14 +400,8 @@ class DephyActpack(ActuatorBase, Device):
         Args:
             position (float): The position to set
         """
-        self.mode.set_command(
-            int(
-                (value + self.motor_zero_position + self.motor_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
-        )
+        self.mode.set_position(value)
 
-    @check_actuator_control_mode(ControlModesMapping.POSITION)
     def set_position_gains(
         self,
         kp: int = DEFAULT_POSITION_GAINS.kp,
@@ -339,7 +420,6 @@ class DephyActpack(ActuatorBase, Device):
         """
         self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
-    @check_actuator_control_mode(ControlModesMapping.CURRENT)
     def set_current_gains(
         self,
         kp: int = DEFAULT_CURRENT_GAINS.kp,
@@ -356,7 +436,6 @@ class DephyActpack(ActuatorBase, Device):
         """
         self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
 
-    @check_actuator_control_mode(ControlModesMapping.IMPEDANCE)
     def set_impedance_gains(
         self,
         kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
