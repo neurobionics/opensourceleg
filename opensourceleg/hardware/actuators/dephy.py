@@ -304,6 +304,7 @@ class DephyActpack(ActuatorBase, Device):
                 IMPEDANCE_A=0.00028444,
                 IMPEDANCE_C=0.0007812,
                 MAX_CASE_TEMPERATURE=80,
+                MAX_WINDING_TEMPERATURE=110,
                 M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
             ),
             frequency=frequency,
@@ -357,6 +358,164 @@ class DephyActpack(ActuatorBase, Device):
         if self._data.status_ex & 0b00000010 == 0b00000010:
             raise RuntimeError("Actpack Thermal Limit Tripped")
 
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: int = None,
+        homing_direction: int = -1,
+        joint_direction: int = -1,
+        joint_position_offset: float = 0.0,
+        motor_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
+        """
+
+        This method homes the actuator and the corresponding joint by moving it to the zero position.
+        The zero position is defined as the position where the joint is fully extended. This method will
+        also load the encoder map if it exists. The encoder map is a polynomial that maps the encoder counts
+        to joint position in radians. This is useful for more accurate joint position estimation.
+        Args:
+            homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
+            homing_frequency (int): Frequency in Hz to use for homing. Default is the actuator's frequency.
+            current_threshold (int): Current threshold in mA to stop homing the joint or actuator. This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
+            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+        """
+        is_homing = True
+
+        if homing_frequency is None:
+            homing_frequency = self.frequency
+
+        self.set_control_mode(mode=self.CONTROL_MODES.VOLTAGE)
+
+        self.set_motor_voltage(
+            value=homing_direction * homing_voltage
+        )  # mV, negative for counterclockwise
+
+        _motor_encoder_array = []
+        _joint_encoder_array = []
+
+        time.sleep(0.1)
+
+        try:
+            while is_homing:
+                self.update()
+                time.sleep(1 / homing_frequency)
+
+                _motor_encoder_array.append(self.motor_position)
+                _joint_encoder_array.append(self.joint_position)
+
+                if (
+                    abs(self.output_velocity) <= velocity_threshold
+                    or abs(self.motor_current) >= current_threshold
+                ):
+                    self.set_motor_voltage(value=0)
+                    is_homing = False
+
+        except KeyboardInterrupt:
+            self.set_motor_voltage(value=0)
+            LOGGER.info(msg=f"[{self.__repr__()}] Homing interrupted.")
+            return
+        except Exception as e:
+            self.set_motor_voltage(value=0)
+            LOGGER.error(msg=f"[{self.__repr__()}] Homing failed: {e}")
+            return
+
+        self.set_motor_zero_position(position=self.motor_position)
+        self.set_joint_zero_position(position=self.joint_position)
+
+        time.sleep(0.1)
+        self.set_joint_direction(joint_direction)
+        self.set_motor_position_offset(motor_position_offset)
+        self.set_joint_position_offset(joint_position_offset)
+
+        self._is_homed = True
+        LOGGER.info(f"[{self.__repr__()}] Homing complete.")
+
+        if os.path.isfile(path=f"./{self.tag}_encoder_map.npy"):
+            coefficients = np.load(file=f"./{self.tag}_encoder_map.npy")
+            self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
+        else:
+            LOGGER.debug(
+                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method to create one. The encoder map is used to estimate joint position more accurately."
+            )
+
+    def make_encoder_map(self, overwrite=False) -> None:
+        """
+        This method makes a lookup table to calculate the position measured by the joint encoder.
+        This is necessary because the magnetic output encoders are nonlinear.
+        By making the map while the joint is unloaded, joint position calculated by motor position * gear ratio
+        should be the same as the true joint position.
+
+        Output from this function is a file containing a_i values parameterizing the map
+
+        Eqn: position = sum from i=0^5 (a_i*counts^i)
+
+        Author: Kevin Best
+                U-M Locolab | Neurobionics Lab
+                Gitub: tkevinbest, https://github.com/tkevinbest
+        """
+
+        if not self.is_homed:
+            LOGGER.warning(
+                msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map."
+            )
+            return
+
+        if os.path.exists(f"./{self.tag}_encoder_map.npy") and not overwrite:
+            LOGGER.info(
+                msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation."
+            )
+            return
+
+        self.set_control_mode(mode=self.CONTROL_MODES.CURRENT)
+        self.set_current_gains()
+        time.sleep(0.1)
+        self.set_current_gains()
+
+        self.set_output_torque(value=0.0)
+        time.sleep(0.1)
+        self.set_output_torque(value=0.0)
+
+        _joint_encoder_array = []
+        _output_position_array = []
+
+        LOGGER.info(
+            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
+        )
+
+        _start_time: float = time.time()
+
+        try:
+            while time.time() - _start_time < 10:
+                LOGGER.info(
+                    msg=f"[{self.__repr__()}] Mapping the {self.tag} joint encoder: {10 - time.time() + _start_time} seconds left."
+                )
+                self.update()
+                _joint_encoder_array.append(self.joint_encoder_counts)
+                _output_position_array.append(self.output_position)
+                time.sleep(1 / self.frequency)
+
+        except KeyboardInterrupt:
+            LOGGER.warning(msg="Encoder map interrupted.")
+            return
+
+        LOGGER.info(
+            msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint."
+        )
+
+        _power = np.arange(4.0)
+        _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
+        _beta = np.linalg.lstsq(_a_mat, _output_position_array, rcond=None)
+        _coeffs = _beta[0]
+
+        self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
+
+        np.save(file=f"./{self.tag}_encoder_map.npy", arr=_coeffs)
+        LOGGER.info(
+            msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'."
+        )
+
     def set_control_mode(self, mode: ControlModeBase) -> None:
         """
         Sets the control mode of the actuator.
@@ -371,11 +530,32 @@ class DephyActpack(ActuatorBase, Device):
         Sets the motor torque in Nm.
 
         Args:
-            torque (float): The torque to set in Nm.
+            value (float): The torque to set in Nm.
         """
         self.set_motor_current(
             value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
         )
+
+    def set_joint_torque(self, value: float) -> None:
+        """
+        Set the output torque of the joint.
+        This is the torque that is applied to the joint, not the motor.
+
+        Args:
+            value (float): torque in N_m
+        """
+        self.set_motor_torque(value=value / self.gear_ratio)
+
+    def set_output_position(self, value: float) -> None:
+        """
+        Set the output position of the joint.
+        This is the desired position of the joint, not the motor.
+        This method automatically handles scaling by the gear raito.
+
+        Args:
+            value (float): position in radians
+        """
+        self.set_motor_position(value=value * self.gear_ratio)
 
     def set_motor_current(
         self,
@@ -443,6 +623,63 @@ class DephyActpack(ActuatorBase, Device):
             ff (int): The feedforward gain
         """
         self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
+
+    def set_motor_impedance(
+        self,
+        kp: int = 40,
+        ki: int = 400,
+        K: float = 0.08922,
+        B: float = 0.0038070,
+        ff: int = 128,
+    ) -> None:
+        """
+        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
+
+        Args:
+            kp (int): Proportional gain. Defaults to 40.
+            ki (int): Integral gain. Defaults to 400.
+            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (int): Feedforward gain. Defaults to 128.
+        """
+        self.set_impedance_gains(
+            kp=kp,
+            ki=ki,
+            K=int(K * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
+            B=int(B * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
+            ff=ff,
+        )
+
+    def set_joint_impedance(
+        self,
+        kp: int = 40,
+        ki: int = 400,
+        K: float = 100.0,
+        B: float = 3.0,
+        ff: int = 128,
+    ) -> None:
+        """
+        Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
+        This sets the impedance at the output and automatically scales based on gear raitos.
+
+        Conversion:
+            K_motor = K_joint / (gear_ratio ** 2)
+            B_motor = B_joint / (gear_ratio ** 2)
+
+        Args:
+            kp (int): Proportional gain. Defaults to 40.
+            ki (int): Integral gain. Defaults to 400.
+            K (float): Spring constant. Defaults to 100 Nm/rad.
+            B (float): Damping constant. Defaults to 3.0 Nm/rad/s.
+            ff (int): Feedforward gain. Defaults to 128.
+        """
+        self.set_motor_impedance(
+            kp=kp,
+            ki=ki,
+            K=K / (self.gear_ratio**2),
+            B=B / (self.gear_ratio**2),
+            ff=ff,
+        )
 
     def set_impedance_gains(
         self,
@@ -565,6 +802,28 @@ class DephyActpack(ActuatorBase, Device):
             return 0.0
 
     @property
+    def motor_encoder_counts(self) -> int:
+        """Raw reading from motor encoder in counts."""
+        if self._data is not None:
+            return int(self._data.mot_ang)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
+            )
+            return 0
+
+    @property
+    def joint_encoder_counts(self) -> int:
+        """Raw reading from joint encoder in counts."""
+        if self._data is not None:
+            return int(self._data.ank_ang)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
+            )
+            return 0
+
+    @property
     def motor_velocity(self) -> float:
         if self._data is not None:
             return int(self._data.mot_vel) * self.MOTOR_CONSTANTS.RAD_PER_DEG
@@ -632,6 +891,32 @@ class DephyActpack(ActuatorBase, Device):
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
+
+    @property
+    def output_position(self) -> float:
+        """
+        Position of the output in radians.
+        This is calculated by scaling the motor angle with the gear ratio.
+        Note that this method does not consider compliance from an SEA.
+        """
+        return self.motor_position / self.gear_ratio
+
+    @property
+    def output_velocity(self) -> float:
+        """
+        Velocity of the output in radians.
+        This is calculated by scaling the motor angle with the gear ratio.
+        Note that this method does not consider compliance from an SEA.
+        """
+        return self.motor_velocity / self.gear_ratio
+
+    @property
+    def joint_torque(self) -> float:
+        """
+        Torque at the joint output in Nm.
+        This is calculated using motor current, k_t, and the gear ratio.
+        """
+        return self.motor_torque * self.gear_ratio
 
     @property
     def case_temperature(self) -> float:
@@ -755,4 +1040,13 @@ class DephyActpack(ActuatorBase, Device):
 
 
 if __name__ == "__main__":
-    pass
+    knee = DephyActpack(
+        tag="knee",
+        port="/dev/ttyACM0",
+        gear_ratio=1.0,
+        baud_rate=230400,
+        frequency=500,
+        debug_level=0,
+        dephy_log=False,
+        offline=True,
+    )

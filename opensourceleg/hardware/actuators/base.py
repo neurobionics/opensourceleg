@@ -265,6 +265,7 @@ class MotorConstants:
     IMPEDANCE_A: float = 0.00028444
     IMPEDANCE_C: float = 0.0007812
     MAX_CASE_TEMPERATURE: float = 80
+    MAX_WINDING_TEMPERATURE: float = 110
     M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
 
     # Should be only containing the members above. Others directly implemented in the Actuators class
@@ -291,6 +292,12 @@ class MotorConstants:
     @property
     def NM_S_PER_RAD_TO_B(self) -> float:
         return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
+
+    def set_max_winding_temperature(self, temperature: float) -> None:
+        self.MAX_WINDING_TEMPERATURE = temperature
+
+    def set_max_case_temperature(self, temperature: float) -> None:
+        self.MAX_CASE_TEMPERATURE = temperature
 
 
 class ControlModeBase(ABC):
@@ -545,6 +552,7 @@ class ActuatorBase(ABC):
         self._data: Any = None
         self._mode: ControlModeBase = default_control_mode
         self._is_offline: bool = offline
+        self._is_homed: bool = False
 
     @abstractmethod
     def start(self) -> None:
@@ -663,6 +671,19 @@ class ActuatorBase(ABC):
         """
         pass
 
+    @abstractmethod
+    def home(self) -> None:
+        """Homing method for the joint, should be implemented if the actuator has a homing sequence"""
+        pass
+
+    @property
+    def set_max_case_temperature(self, temperature: float) -> None:
+        self._MOTOR_CONSTANTS.set_max_case_temperature(temperature)
+
+    @property
+    def set_max_winding_temperature(self, temperature: float) -> None:
+        self._MOTOR_CONSTANTS.set_max_winding_temperature(temperature)
+
     @property
     def CONTROL_MODES(self) -> ControlModesBase:
         """Control Modes (Read Only)
@@ -700,6 +721,15 @@ class ActuatorBase(ABC):
         return self._tag
 
     @property
+    def is_homed(self) -> bool:
+        """Homed (Read Only)
+
+        Returns:
+            bool: Homed
+        """
+        return self._is_homed
+
+    @property
     def frequency(self) -> int:
         """Frequency (Read Only)
 
@@ -725,6 +755,24 @@ class ActuatorBase(ABC):
             float: Gear Ratio
         """
         return self._gear_ratio
+
+    @property
+    def max_case_temperature(self) -> float:
+        """Max Case Temperature (Read Only)
+
+        Returns:
+            float: Max Case Temperature
+        """
+        return self._MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
+
+    @property
+    def max_winding_temperature(self) -> float:
+        """Max Winding Temperature (Read Only)
+
+        Returns:
+            float: Max Winding Temperature
+        """
+        return self._MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE
 
 
 if __name__ == "__main__":
