@@ -28,9 +28,9 @@ def check_actuator_control_mode(mode_map):
         def wrapper(self, *args, **kwargs):
             if self.mode.name != str(mode_map):
                 raise ControlModeException(
-                    actuator_name=self.actuator_name,
-                    expected_mode=str(mode_map),
-                    current_mode=self.mode.name,
+                    tag=self.tag,
+                    attribute=str(mode_map),
+                    mode=self.mode.name,
                 )
 
             return func(self, *args, **kwargs)
@@ -44,7 +44,7 @@ def check_actuator_connection(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if self.is_offline:
-            raise ActuatorConnectionException(actuator_name=self.actuator_name)
+            raise ActuatorConnectionException(tag=self.tag)
 
         return func(self, *args, **kwargs)
 
@@ -55,7 +55,7 @@ def check_actuator_open(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.is_open:
-            raise ActuatorConnectionException(actuator_name=self.actuator_name)
+            raise ActuatorConnectionException(tag=self.tag)
 
         return func(self, *args, **kwargs)
 
@@ -66,7 +66,7 @@ def check_actuator_stream(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.is_streaming:
-            raise ActuatorStreamException(actuator_name=self.actuator_name)
+            raise ActuatorStreamException(tag=self.tag)
 
         return func(self, *args, **kwargs)
 
@@ -82,9 +82,9 @@ class ActuatorStreamException(Exception):
 
     """
 
-    def __init__(self, actuator_name: str) -> None:
+    def __init__(self, tag: str) -> None:
         super().__init__(
-            f"{actuator_name} is not streaming, please call start() method before sending commands"
+            f"{tag} is not streaming, please call start() method before sending commands"
         )
 
 
@@ -97,8 +97,23 @@ class ActuatorConnectionException(Exception):
 
     """
 
-    def __init__(self, actuator_name: str) -> None:
-        super().__init__(f"{actuator_name} is not connected")
+    def __init__(self, tag: str) -> None:
+        super().__init__(f"{tag} is not connected")
+
+
+class ActuatorIsNoneException(Exception):
+    """Actuator Connection Exception
+
+    Attributes
+    ----------
+    message (str): Error message
+
+    """
+
+    def __init__(self, mode: str) -> None:
+        super().__init__(
+            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during initialization or set the actuator instance using set_actuator method."
+        )
 
 
 class ControlModeException(Exception):
@@ -117,12 +132,12 @@ class ControlModeException(Exception):
 
     def __init__(
         self,
-        actuator_name: str,
-        expected_mode: str,
-        current_mode: str,
+        tag: str,
+        attribute: str,
+        mode: str,
     ) -> None:
         super().__init__(
-            f"Expected the {actuator_name} to be in {expected_mode} mode but it was in {current_mode} mode"
+            f"[{tag}] Cannot set {attribute} in {mode} mode. Please set the actuator to {attribute} mode first."
         )
 
 
@@ -135,8 +150,8 @@ class VoltageModeMissingException(Exception):
 
     """
 
-    def __init__(self, actuator_name: str) -> None:
-        super().__init__(f"{actuator_name} must have a voltage mode")
+    def __init__(self, tag: str) -> None:
+        super().__init__(f"{tag} must have a voltage mode")
 
 
 class ControlModesMapping(Enum):
@@ -150,6 +165,7 @@ class ControlModesMapping(Enum):
     IMPEDANCE (c_int): Impedance control mode
 
     """
+
     POSITION = c_int(0), "position"
     VOLTAGE = c_int(1), "voltage"
     CURRENT = c_int(2), "current"
@@ -162,7 +178,7 @@ class ControlModesMapping(Enum):
         return obj
 
     @property
-    def index(self):
+    def flag(self) -> c_int:
         return self._value_
 
     def __int__(self):
@@ -249,6 +265,7 @@ class MotorConstants:
     IMPEDANCE_A: float = 0.00028444
     IMPEDANCE_C: float = 0.0007812
     MAX_CASE_TEMPERATURE: float = 80
+    MAX_WINDING_TEMPERATURE: float = 110
     M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
 
     # Should be only containing the members above. Others directly implemented in the Actuators class
@@ -275,6 +292,12 @@ class MotorConstants:
     @property
     def NM_S_PER_RAD_TO_B(self) -> float:
         return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
+
+    def set_max_winding_temperature(self, temperature: float) -> None:
+        self.MAX_WINDING_TEMPERATURE = temperature
+
+    def set_max_case_temperature(self, temperature: float) -> None:
+        self.MAX_CASE_TEMPERATURE = temperature
 
 
 class ControlModeBase(ABC):
@@ -314,7 +337,6 @@ class ControlModeBase(ABC):
         actuator: Union["ActuatorBase", None] = None,
         entry_callbacks: list[Callable[[], None]] = [lambda: None],
         exit_callbacks: list[Callable[[], None]] = [lambda: None],
-        max_command: Union[float, int] = None,
         max_gains: ControlGains = None,
     ) -> None:
         self._control_mode_map: ControlModesMapping = control_mode_map
@@ -323,7 +345,6 @@ class ControlModeBase(ABC):
         self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
         self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
         self._actuator: "ActuatorBase" = actuator
-        self._max_command: Union[float, int] = max_command
         self._max_gains: ControlGains = max_gains
 
     def __eq__(self, __o: object) -> bool:
@@ -362,13 +383,7 @@ class ControlModeBase(ABC):
         self.exit()
         to_mode.enter()
 
-    def add_actuator(self, actuator: "ActuatorBase") -> None:
-        """
-        Assign actuator to the mode
-
-        Args:
-            actuator (ActuatorBase): Actuator instance
-        """
+    def set_actuator(self, actuator: "ActuatorBase") -> None:
         self._actuator = actuator
 
     @abstractmethod
@@ -389,26 +404,36 @@ class ControlModeBase(ABC):
 
         self._gains = gains
         self._has_gains = True
-        self.actuator.set_gains(**vars(gains))
 
     @abstractmethod
-    def set_command(self, value: Union[float, int]) -> None:
-        """set_command method for the control mode. Please use the super method only if applicable to the child class if not override this method
-        Args:
-            command (Any): command applied
+    def set_current(self, value: Union[float, int]):
         """
-        if self.max_command is not None:
-            assert 0 <= value <= self._max_command
+        Set current for the control mode
 
-        if self.actuator is not None:
-            # TODO: Modify this for new flexsea API, send_motor_command is deprecated
-            self.actuator.send_motor_command(
-                ctrl_mode=self.flag,
-                value=value,
-            )
+        Args:
+            value (Union[float, int]): Current value in mA
+        """
+        pass
 
-    def set_max_command(self, value: Union[float, int]) -> None:
-        self._max_command = value
+    @abstractmethod
+    def set_position(self, value: Union[float, int]):
+        """
+        Set position for the control mode
+
+        Args:
+            value (Union[float, int]): Position value in radians
+        """
+        pass
+
+    @abstractmethod
+    def set_voltage(self, value: Union[float, int]):
+        """
+        Set voltage for the control mode
+
+        Args:
+            value (Union[float, int]): Voltage value in mV
+        """
+        pass
 
     def set_max_gains(self, gains: ControlGains) -> None:
         self._max_gains = gains
@@ -441,7 +466,7 @@ class ControlModeBase(ABC):
         Returns:
             c_int: Control mode flag
         """
-        return self._control_mode_map.value
+        return self._control_mode_map.flag
 
     @property
     def has_gains(self) -> bool:
@@ -462,16 +487,6 @@ class ControlModeBase(ABC):
             ControlGains, None: Maximum gains for the mode
         """
         return self._max_gains
-
-    @property
-    def max_command(self) -> Union[float, int]:
-        """
-        Maximum command for the mode (Read Only)
-
-        Returns:
-            float, int: Maximum command for the mode
-        """
-        return self._max_command
 
     @property
     def actuator(self) -> "ActuatorBase":
@@ -519,7 +534,7 @@ class ActuatorBase(ABC):
 
     def __init__(
         self,
-        actuator_name: str,
+        tag: str,
         control_modes: ControlModesBase,
         default_control_mode: ControlModeBase,
         gear_ratio: float,
@@ -532,11 +547,12 @@ class ActuatorBase(ABC):
         self._CONTROL_MODES: ControlModesBase = control_modes
         self._MOTOR_CONSTANTS: MotorConstants = motor_constants
         self._gear_ratio: float = gear_ratio
-        self._actuator_name: str = actuator_name
+        self._tag: str = tag
         self._frequency: int = frequency
         self._data: Any = None
         self._mode: ControlModeBase = default_control_mode
         self._is_offline: bool = offline
+        self._is_homed: bool = False
 
     @abstractmethod
     def start(self) -> None:
@@ -655,6 +671,19 @@ class ActuatorBase(ABC):
         """
         pass
 
+    @abstractmethod
+    def home(self) -> None:
+        """Homing method for the joint, should be implemented if the actuator has a homing sequence"""
+        pass
+
+    @property
+    def set_max_case_temperature(self, temperature: float) -> None:
+        self._MOTOR_CONSTANTS.set_max_case_temperature(temperature)
+
+    @property
+    def set_max_winding_temperature(self, temperature: float) -> None:
+        self._MOTOR_CONSTANTS.set_max_winding_temperature(temperature)
+
     @property
     def CONTROL_MODES(self) -> ControlModesBase:
         """Control Modes (Read Only)
@@ -683,13 +712,22 @@ class ActuatorBase(ABC):
         return self._mode
 
     @property
-    def actuator_name(self) -> str:
+    def tag(self) -> str:
         """Actuator Name (Read Only)
 
         Returns:
             str: Actuator name
         """
-        return self._actuator_name
+        return self._tag
+
+    @property
+    def is_homed(self) -> bool:
+        """Homed (Read Only)
+
+        Returns:
+            bool: Homed
+        """
+        return self._is_homed
 
     @property
     def frequency(self) -> int:
@@ -717,6 +755,24 @@ class ActuatorBase(ABC):
             float: Gear Ratio
         """
         return self._gear_ratio
+
+    @property
+    def max_case_temperature(self) -> float:
+        """Max Case Temperature (Read Only)
+
+        Returns:
+            float: Max Case Temperature
+        """
+        return self._MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
+
+    @property
+    def max_winding_temperature(self) -> float:
+        """Max Winding Temperature (Read Only)
+
+        Returns:
+            float: Max Winding Temperature
+        """
+        return self._MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE
 
 
 if __name__ == "__main__":
