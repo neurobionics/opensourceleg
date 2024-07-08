@@ -179,7 +179,11 @@ class DephyPositionMode(ControlModeBase):
         self.actuator.send_motor_command(
             ctrl_mode=self.flag,
             value=int(
-                (value + self.actuator.motor_zero_position + self.actuator.motor_offset)
+                (
+                    value
+                    + self.actuator.motor_zero_position
+                    + self.actuator.motor_position_offset
+                )
                 / self.actuator.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
@@ -236,7 +240,11 @@ class DephyImpedanceMode(ControlModeBase):
         self.actuator.send_motor_command(
             ctrl_mode=self.flag,
             value=int(
-                (value + self.actuator.motor_zero_position + self.actuator.motor_offset)
+                (
+                    value
+                    + self.actuator.motor_zero_position
+                    + self.actuator.motor_position_offset
+                )
                 / self.actuator.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
@@ -315,8 +323,8 @@ class DephyActpack(ActuatorBase, Device):
         self._encoder_map = None
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
-        self._motor_offset = 0.0
-        self._joint_offset = 0.0
+        self._motor_position_offset = 0.0
+        self._joint_position_offset = 0.0
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActpack]"
@@ -465,21 +473,36 @@ class DephyActpack(ActuatorBase, Device):
         """Sets motor zero position in radians"""
         self._motor_zero_position = position
 
-    def set_motor_offset(self, position: float) -> None:
+    def set_motor_position_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
-        self._motor_offset = position
+        self._motor_position_offset = position
 
     def set_joint_zero_position(self, position: float) -> None:
         """Sets joint zero position in radians"""
         self._joint_zero_position = position
 
-    def set_joint_offset(self, position: float) -> None:
+    def set_joint_position_offset(self, position: float) -> None:
         """Sets joint offset position in radians"""
-        self._joint_offset = position
+        self._joint_position_offset = position
 
     def set_joint_direction(self, direction: float) -> None:
         """Sets joint direction to 1 or -1"""
         self._joint_direction = direction
+
+    @property
+    def joint_zero_position(self) -> float:
+        """Joint encoder zero position in radians."""
+        return self._joint_zero_position
+
+    @property
+    def joint_position_offset(self) -> float:
+        """Joint encoder offset in radians."""
+        return self._joint_position_offset
+
+    @property
+    def joint_direction(self) -> float:
+        """Joint direction: 1 or -1"""
+        return self._joint_direction
 
     @property
     def encoder_map(self):
@@ -492,9 +515,9 @@ class DephyActpack(ActuatorBase, Device):
         return self._motor_zero_position
 
     @property
-    def motor_offset(self) -> float:
+    def motor_position_offset(self) -> float:
         """Motor encoder offset in radians."""
-        return self._motor_offset
+        return self._motor_position_offset
 
     @property
     def motor_voltage(self) -> float:
@@ -502,6 +525,9 @@ class DephyActpack(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_volt)
         else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
             return 0.0
 
     @property
@@ -509,6 +535,9 @@ class DephyActpack(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_cur)
         else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
             return 0.0
 
     @property
@@ -516,6 +545,9 @@ class DephyActpack(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_cur * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
             return 0.0
 
     @property
@@ -523,22 +555,23 @@ class DephyActpack(ActuatorBase, Device):
         if self._data is not None:
             return (
                 float(self._data.mot_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self._motor_zero_position
-                - self.motor_offset
+                - self.motor_zero_position
+                - self.motor_position_offset
             )
         else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
             return 0.0
-
-    @property
-    def motor_encoder_counts(self) -> int:
-        """Raw reading from motor encoder in counts."""
-        return int(self._data.mot_ang)
 
     @property
     def motor_velocity(self) -> float:
         if self._data is not None:
             return int(self._data.mot_vel) * self.MOTOR_CONSTANTS.RAD_PER_DEG
         else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
             return 0.0
 
     @property
@@ -546,22 +579,179 @@ class DephyActpack(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_acc)
         else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
             return 0.0
 
     @property
-    def joint_zero_position(self) -> float:
-        """Joint encoder zero position in radians."""
-        return self._joint_zero_position
+    def battery_voltage(self) -> float:
+        """Battery voltage in mV."""
+        if self._data is not None:
+            return float(self._data.batt_volt)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
 
     @property
-    def joint_offset(self) -> float:
-        """Joint encoder offset in radians."""
-        return self._joint_offset
+    def battery_current(self) -> float:
+        """Battery current in mA."""
+        if self._data is not None:
+            return float(self._data.batt_curr)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
 
     @property
-    def joint_direction(self) -> float:
-        """Joint direction: 1 or -1"""
-        return self._joint_direction
+    def joint_position(self) -> float:
+        if self._data is not None:
+            return (
+                float(self._data.ank_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
+                - self.joint_zero_position
+                - self.joint_position_offset
+            ) * self.joint_direction
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def joint_velocity(self) -> float:
+        if self._data is not None:
+            return (
+                float(self._data.ank_vel * self.MOTOR_CONSTANTS.RAD_PER_DEG)
+                * self.joint_direction
+            )
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def case_temperature(self) -> float:
+        if self._data is not None:
+            return float(self._data.temperture)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def genvars(self):
+        """Dephy's 'genvars' object."""
+        if self._data is not None:
+            return np.array(
+                object=[
+                    self._data.genvar_0,
+                    self._data.genvar_1,
+                    self._data.genvar_2,
+                    self._data.genvar_3,
+                    self._data.genvar_4,
+                    self._data.genvar_5,
+                ]
+            )
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
+            )
+            return np.zeros(shape=6)
+
+    @property
+    def accelx(self) -> float:
+        """
+        Acceleration in x direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(
+                self._data.accelx * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
+            )
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def accely(self) -> float:
+        """
+        Acceleration in y direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(
+                self._data.accely * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
+            )
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def accelz(self) -> float:
+        """
+        Acceleration in z direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(
+                self._data.accelz * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
+            )
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def gyrox(self) -> float:
+        """
+        Angular velocity in x direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyrox * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def gyroy(self) -> float:
+        """
+        Angular velocity in y direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyroy * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def gyroz(self) -> float:
+        """
+        Angular velocity in z direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data.gyroz * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+        else:
+            LOGGER.warning(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
 
 
 if __name__ == "__main__":
