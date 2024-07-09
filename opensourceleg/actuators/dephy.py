@@ -11,22 +11,30 @@ import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.hardware.actuators.base import (
+from opensourceleg.actuators.base import (
     ActuatorBase,
-    ActuatorIsNoneException,
     ControlGains,
     ControlModeBase,
-    ControlModeException,
     ControlModesBase,
     ControlModesMapping,
     MotorConstants,
+)
+from opensourceleg.actuators.decorators import (
     check_actuator_connection,
-    check_actuator_control_mode,
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.hardware.thermal import ThermalModel
-from opensourceleg.tools.logger import LOGGER
+from opensourceleg.actuators.exceptions import (
+    ActuatorIsNoneException,
+    ControlModeException,
+)
+from opensourceleg.logging import LOGGER
+from opensourceleg.logging.decorators import (
+    deprecated,
+    deprecated_with_routing,
+    deprecated_with_suggestion,
+)
+from opensourceleg.math import ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -351,6 +359,13 @@ class DephyActpack(ActuatorBase, Device):
         self._motor_position_offset = 0.0
         self._joint_position_offset = 0.0
 
+        self._thermal_model: ThermalModel = ThermalModel(
+            temp_limit_windings=self.max_winding_temperature,
+            soft_border_C_windings=10,
+            temp_limit_case=self.max_case_temperature,
+            soft_border_C_case=10,
+        )
+
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActpack]"
 
@@ -497,9 +512,9 @@ class DephyActpack(ActuatorBase, Device):
         time.sleep(0.1)
         self.set_current_gains()
 
-        self.set_output_torque(value=0.0)
+        self.set_joint_torque(value=0.0)
         time.sleep(0.1)
-        self.set_output_torque(value=0.0)
+        self.set_joint_torque(value=0.0)
 
         _joint_encoder_array = []
         _output_position_array = []
@@ -561,6 +576,17 @@ class DephyActpack(ActuatorBase, Device):
         )
 
     def set_joint_torque(self, value: float) -> None:
+        """
+        Set the joint torque of the joint.
+        This is the torque that is applied to the joint, not the motor.
+
+        Args:
+            value (float): torque in N_m
+        """
+        self.set_motor_torque(value=value / self.gear_ratio)
+
+    @deprecated_with_routing(alternative_func=set_joint_torque)
+    def set_output_torque(self, value: float) -> None:
         """
         Set the output torque of the joint.
         This is the torque that is applied to the joint, not the motor.

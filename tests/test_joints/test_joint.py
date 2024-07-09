@@ -14,7 +14,7 @@ from opensourceleg.hardware.actuators.dephy import (
     VoltageMode,
 )
 from opensourceleg.hardware.joints import Joint
-from opensourceleg.tools.logger import Logger
+from opensourceleg.logging.logger import Logger
 from tests.test_actuators.test_dephyactpack import (  # MockDephyActpack,
     Data,
     dephyactpack_mock,

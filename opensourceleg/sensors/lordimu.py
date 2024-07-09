@@ -10,7 +10,7 @@ from smbus2 import SMBus
 
 import opensourceleg.hardware.sensor.base as base
 from opensourceleg.hardware.joints import Joint
-from opensourceleg.tools.logger import LOGGER
+from opensourceleg.logging.logger import LOGGER
 
 """
 Module Overview:

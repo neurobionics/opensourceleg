@@ -2,7 +2,7 @@ import csv
 
 import pytest
 
-from opensourceleg.tools.logger import Logger
+from opensourceleg.logging.logger import Logger
 
 
 class Simple_Class:

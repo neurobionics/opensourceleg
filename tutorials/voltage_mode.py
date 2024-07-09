@@ -1,5 +1,5 @@
-import opensourceleg.tools.units as units
-from opensourceleg.osl import OpenSourceLeg
+import opensourceleg.units.units as units
+from opensourceleg.robots.robots import OpenSourceLeg
 
 osl = OpenSourceLeg(frequency=200)  # 200 Hz
 osl.add_joint(gear_ratio=9.0)

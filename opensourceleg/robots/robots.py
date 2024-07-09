@@ -6,12 +6,11 @@ import numpy as np
 
 sys.path.append("../")
 
-from .hardware.joints import Joint, MockJoint
-from .hardware.sensor.lordimu import Loadcell, MockLoadcell
-from .tools import utilities
-from .tools.logger import LOGGER
-from .tools.safety import ThermalLimitException
-from .tools.utilities import SoftRealtimeLoop
+from opensourceleg.sensors.lordimu import Loadcell, MockLoadcell
+
+from ..logging.logger import LOGGER
+from ..time import time
+from ..time.time import SoftRealtimeLoop
 
 
 class OpenSourceLeg:
@@ -150,7 +149,7 @@ class OpenSourceLeg:
 
         else:
             if port is None:
-                ports = utilities.get_active_ports()
+                ports = time.get_active_ports()
 
                 port_1: str = ""
                 port_2: str = ""
@@ -215,6 +214,7 @@ class OpenSourceLeg:
                     LOGGER.warning(msg="[OSL] Joint name is not recognized.")
 
             else:
+
                 if "knee" in name.lower():
                     if self.has_ankle:
                         if self.ankle.port == port:
@@ -317,23 +317,30 @@ class OpenSourceLeg:
         self,
     ) -> None:
         if self.has_knee:
-            try:
-                self._knee.update()
-            except ThermalLimitException as e:
-                self.log.error(msg=f"[{self.__repr__()}] {e}")
+            self._knee.update()
+
+            if self.knee.case_temperature > self.knee.max_temperature:
+                LOGGER.warning(
+                    msg=f"[KNEE] Thermal limit {self.knee.max_temperature} reached. Stopping motor."
+                )
+                self.__exit__()
                 exit()
 
         if self.has_ankle:
-            try:
-                self._ankle.update()
-            except ThermalLimitException as e:
-                self.log.error(msg=f"[{self.__repr__()}] {e}")
+            self._ankle.update()
+
+            if self.ankle.case_temperature > self.ankle.max_temperature:
+                LOGGER.warning(
+                    msg=f"[ANKLE] Thermal limit {self.ankle.max_temperature} reached. Stopping motor."
+                )
+                self.__exit__()
                 exit()
 
         if self.has_loadcell:
             self._loadcell.update()
 
-        self.log.update()
+        LOGGER.update()
+
         self._timestamp = time.time()
 
     def home(self) -> None:

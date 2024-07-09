@@ -1,7 +1,3 @@
-# Thermal Model for the motor devleoped by the M-BLUE team
-# @U-M Locomotion Lab, directed by Dr. Robert Gregg
-# Authors: Jianping Lin and Gray C. Thomas
-
 from typing import Any, Callable, List, Optional
 
 import numpy as np
@@ -162,3 +158,100 @@ class ThermalModel:
             return 1.0
 
         return np.sqrt(scale)  # this is how much the torque should be scaled
+
+
+class EdgeDetector:
+    """
+    Used to calculate rising and falling edges of a digital signal in real time.
+    Call edgeDetector.update(digitalSignal) to update the detector.
+    Then read edgeDetector.rising_edge or falling edge to know if the event occurred.
+
+    Author: Kevin Best
+    https://github.com/tkevinbest
+    """
+
+    def __init__(self, bool_in):
+        self.cur_state = bool_in
+        self.rising_edge = False
+        self.falling_edge = False
+
+    def __repr__(self) -> str:
+        return f"EdgeDetector"
+
+    def update(self, bool_in):
+        self.rising_edge = bool_in and not self.cur_state
+        self.falling_edge = not bool_in and self.cur_state
+        self.cur_state = bool_in
+
+
+class SaturatingRamp:
+    """
+    Creates a signal that ramps between 0 and 1 at the specified rate.
+    Looks like a trapezoid in the time domain
+    Used to slowly enable joint torque for smooth switching at startup.
+    Call saturatingRamp.update() to update the value of the ramp and return the value.
+    Can also access saturatingRamp.value without updating.
+
+    Example usage:
+        ramp = saturatingRamp(100, 1.0)
+
+        # In loop
+            torque = torque * ramp.update(enable_ramp)
+
+    Author: Kevin Best
+    https://github.com/tkevinbest
+    """
+
+    def __init__(self, loop_frequency=100, ramp_time=1.0) -> None:
+        """
+        Args:
+            loop_frequency (int, optional): Rate in Hz (default 100 Hz). Defaults to 100.
+            ramp_time (float, optional): Time to complete the ramp. Defaults to 1.0.
+        """
+        self.delta_per_update = 1.0 / (loop_frequency * ramp_time)
+        self.value = 0.0
+
+    def __repr__(self) -> str:
+        return f"SaturatingRamp"
+
+    def update(self, enable_ramp=False):
+        """
+        Updates the ramp value and returns it as a float.
+        If enable_ramp is true, ramp value increases
+        Otherwise decreases.
+
+        Example usage:
+            torque = torque * ramp.update(enable_ramp)
+
+        Args:
+            enable_ramp (bool, optional): If enable_ramp is true, ramp value increases. Defaults to False.
+
+        Returns:
+            value (float): Scalar between 0 and 1.
+        """
+        if enable_ramp:
+            delta = self.delta_per_update
+        else:
+            delta = -1 * self.delta_per_update
+        self.value += delta
+
+        self.value = min(max(self.value, 0), 1)
+        return self.value
+
+
+def clamp_within_vector_range(input_value, input_vector):
+    """
+    This function ensures that input_value remains within the range spanned by the input_vector.
+    If the input_value falls outside the vector's bounds, it'll return the appropriate max or min value from the vector.
+
+    Example:
+        clamp_within_vector_range(10, [0,1,2,3]) = 3
+        clamp_within_vector_range(-10, [0,1,2,3]) = 0
+
+    Author:
+        Kevin Best, 8/7/2023
+        https://github.com/tkevinbest
+    """
+    min_allowed = min(input_vector)
+    max_allowed = max(input_vector)
+    return max(min(input_value, max_allowed), min_allowed)
