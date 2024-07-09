@@ -98,6 +98,9 @@ class MoteusVoltageMode(ControlModeBase):
 
     def set_voltage(self, value: Union[float, int]):
         self._actuator._command = self.actuator._servo.make_vfoc(theta = 0, voltage = value, query = True)
+        self._actuator.interface._commands.append(
+            self._actuator._command
+            )
 
     def set_current(self, value: Union[float, int]):
         raise ControlModeException(
@@ -155,6 +158,9 @@ class MoteusCurrentMode(ControlModeBase):
         )
     def set_current(self, value: Union[float, int]):
         self._actuator._command = self.actuator._servo.make_current(d_A = value, q_A = 0, query = True)
+        self._actuator.interface._commands.append(
+            self._actuator._command
+            )
 
     def set_position(self, value: Union[float, int]):
         raise ControlModeException(
@@ -210,6 +216,9 @@ class MoteusPositionMode(ControlModeBase):
 
     def set_position(self, value: Union[float, int]):
         self._actuator._command = self.actuator._servo.make_vfoc(position = value, query = True)
+        self._actuator.interface._commands.append(
+            self._actuator._command
+            )
 
 @dataclass(init=False)
 class MoteusControlModes(ControlModesBase):
@@ -270,6 +279,10 @@ class MoteusInterface:
         # self._data = await self.transport.cycle(
         #     self._commands
         # )
+        self.transport.cycle(
+            self._commands
+        )
+        
         self._commands = []
     
     async def stop(self):
@@ -359,9 +372,9 @@ class MoteusController(ActuatorBase):
         # TODO: update command
         super().update()
         # TODO: find a better way to send multiple commands at one time
-        self._interface.transport.cycle(
-            self._command
-        )
+        # self._interface.transport.cycle(
+        #     self._command
+        # )
         self._command = None
     
     def set_control_mode(self, mode: ControlModeBase) -> None:
