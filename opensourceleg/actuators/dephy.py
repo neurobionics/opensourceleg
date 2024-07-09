@@ -34,7 +34,7 @@ from opensourceleg.logging.decorators import (
     deprecated_with_routing,
     deprecated_with_suggestion,
 )
-from opensourceleg.math.math import ThermalModel
+from opensourceleg.math import ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -334,6 +334,13 @@ class DephyActpack(ActuatorBase, Device):
         self._joint_zero_position = 0.0
         self._motor_position_offset = 0.0
         self._joint_position_offset = 0.0
+
+        self._thermal_model: ThermalModel = ThermalModel(
+            temp_limit_windings=self.max_winding_temperature,
+            soft_border_C_windings=10,
+            temp_limit_case=self.max_case_temperature,
+            soft_border_C_case=10,
+        )
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActpack]"

@@ -1,81 +1,149 @@
-﻿"""Sensor Interface generalized
-06/2024
-"""
-
-from abc import ABC, abstractmethod
+﻿from abc import ABC, abstractmethod
 
 import numpy as np
 
 
-class StrainAmp(ABC):
+class Encoder(ABC):
+    def __init__(self) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return f"Encoder"
+
     @abstractmethod
-    def __init__(self, bus, addr) -> None:
+    def start(self) -> None:
+        pass
+
+    @abstractmethod
+    def stop(self) -> None:
+        pass
+
+    @abstractmethod
+    def calibrate(self) -> None:
+        pass
+
+    @abstractmethod
+    def reset(self) -> None:
         pass
 
     @abstractmethod
     def update(self) -> None:
         pass
 
-    def __repr__(self) -> str:
-        return f"StrainAmp"
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
+
+    @abstractmethod
+    @property
+    def position(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def velocity(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def is_streaming(self) -> bool:
+        pass
 
 
 class Loadcell(ABC):
-    @abstractmethod
     def __init__(self) -> None:
         pass
-
-    # @abstractmethod
-    # def reset(self):
-    #     pass
-
-    @abstractmethod
-    def update(self, loadcell_zero=None) -> None:
-        pass
-
-    # @abstractmethod
-    # def initialize(self, number_of_iterations) -> None:
-    #     pass
 
     def __repr__(self) -> str:
         return f"Loadcell"
 
-
-class SensorIMU(ABC):
     @abstractmethod
-    def __init__(
-        self,
-        port,
-        baud_rate,
-        timeout,
-        sample_rate,
-    ):
+    def start(self) -> None:
         pass
 
     @abstractmethod
-    def start_streaming(self):
+    def stop(self) -> None:
         pass
 
     @abstractmethod
-    def stop_streaming(self):
+    def calibrate(self) -> None:
         pass
 
     @abstractmethod
-    def get_data(self):
-        """Should be erased and merged with update method"""
-        pass
-
-    @property
-    @abstractmethod
-    def is_streaming(self):
-        pass
-
-
-class Encoder(ABC):
-    @abstractmethod
-    def __init__(self) -> None:
+    def reset(self) -> None:
         pass
 
     @abstractmethod
     def update(self) -> None:
+        pass
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
+
+
+class IMU(ABC):
+    def __init__(self) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return f"Inertial Measurement Unit"
+
+    @abstractmethod
+    def start(self) -> None:
+        pass
+
+    @abstractmethod
+    def stop(self) -> None:
+        pass
+
+    @abstractmethod
+    def calibrate(self) -> None:
+        pass
+
+    @abstractmethod
+    def update(self) -> None:
+        pass
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
+
+    @abstractmethod
+    @property
+    def acc_x(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def acc_y(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def acc_z(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def gyro_x(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def gyro_y(self) -> float:
+        pass
+
+    @abstractmethod
+    @property
+    def gyro_z(self) -> float:
         pass
