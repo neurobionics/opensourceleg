@@ -128,6 +128,14 @@ class DephyCurrentMode(ControlModeBase):
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
         super().set_gains(gains)
+        self.actuator.set_gains(
+            kp=int(gains.kp),
+            ki=int(gains.ki),
+            kd=0, 
+            k=0, 
+            b=0, 
+            ff=int(gains.ff),
+        )
 
     def set_current(self, value: Union[float, int]):
         self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
@@ -182,6 +190,14 @@ class DephyPositionMode(ControlModeBase):
         gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
         super().set_gains(gains)
+        self.actuator.set_gains(
+            kp = int(gains.kp),
+            ki = int(gains.ki),
+            kd = int(gains.kd),
+            k = 0, 
+            b = 0,
+            ff = int(gains.ff),
+        )
 
     def set_position(self, value: Union[float, int]):
         self.actuator.send_motor_command(
@@ -196,14 +212,14 @@ class DephyPositionMode(ControlModeBase):
             ),
         )
 
-    def set_current(self, value: float | int):
+    def set_current(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_voltage(self, value: float | int):
+    def set_voltage(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
@@ -218,7 +234,7 @@ class DephyImpedanceMode(ControlModeBase):
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
+            max_gains=ControlGains(kp=80, ki=800, kd=0, k=400, b=800, ff=128),
         )
 
     def _entry(self) -> None:
@@ -243,8 +259,16 @@ class DephyImpedanceMode(ControlModeBase):
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
         super().set_gains(gains)
+        self.actuator.set_gains(
+            kp=int(gains.kp),
+            ki=int(gains.ki),
+            kd=0,
+            k=int(gains.k),
+            b=int(gains.b),
+            ff=int(gains.ff),
+        )
 
-    def set_position(self, value: float | int):
+    def set_position(self, value: Union[float, int]):
         self.actuator.send_motor_command(
             ctrl_mode=self.flag,
             value=int(
@@ -257,14 +281,14 @@ class DephyImpedanceMode(ControlModeBase):
             ),
         )
 
-    def set_current(self, value: float | int):
+    def set_current(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_voltage(self, value: float | int):
+    def set_voltage(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
