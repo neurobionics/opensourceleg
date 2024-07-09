@@ -60,6 +60,14 @@ class LoadcellBase(SensorBase, ABC):
     def __repr__(self) -> str:
         return f"LoadcellBase"
 
+    @abstractmethod
+    def calibrate(self) -> None:
+        pass
+
+    @abstractmethod
+    def reset(self) -> None:
+        pass
+
     @property
     @abstractmethod
     def fx(self) -> float:
@@ -88,6 +96,11 @@ class LoadcellBase(SensorBase, ABC):
     @property
     @abstractmethod
     def mz(self) -> float:
+        pass
+
+    @property
+    @abstractmethod
+    def is_calibrated(self) -> bool:
         pass
 
 

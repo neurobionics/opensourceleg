@@ -6,7 +6,7 @@ import numpy as np
 
 sys.path.append("../")
 
-from opensourceleg.sensors.lordimu import Loadcell, MockLoadcell
+from opensourceleg.sensors.imu import Loadcell, MockLoadcell
 
 from ..logging.logger import LOGGER
 from ..time import time
