@@ -6,60 +6,9 @@ import opensourceleg.hardware.actuators.dephy as dephy
 import opensourceleg.hardware.sensor.base as base
 
 # from opensourceleg.hardware.actuators.base import MechanicalConstants
-from opensourceleg.hardware.thermal import ThermalModel
+from opensourceleg.math.math import ThermalModel
 
 # from dataclasses import dataclass
-
-
-class DephyIMU(base.SensorIMU):
-
-    def __init__(self, device: "dephy.DephyActpack"):
-        self._device = device
-        self._MecheConsts = self._device._MecheConsts
-        self.loadcell: DephyLoadcell = DephyLoadcell(self)
-        self.thermal: DephyThermal = DephyThermal(self)
-        self.joint_encoder: JointEncoder = JointEncoder(self)
-        self.battery: DephyBattery = DephyBattery(self)
-        self.data: Any = None
-        self.status_ex: int = 0b00000000
-
-    def start_streaming(self):
-        """Start streaming data from the sensor
-        dummy method for embedded sensor in dephyactpack, since it goes along with the actuator
-        """
-        pass
-
-    def stop_streaming(self):
-        """Stop streaming data from the sensor
-        dummy method for embedded sensor in dephyactpack, since it goes along with the actuator
-        """
-        self.data = None
-        pass
-
-    @property
-    def is_streaming(self):
-        """Check if the sensor is streaming data
-        Syncing the is_streaming property same as the actuator, since it goes along
-        Returns:
-            bool: True if the sensor is streaming data, False otherwise
-        """
-        return self._device.is_streaming
-
-    def update(self, data: Any = None) -> None:
-
-        self.data = data
-
-        self.status_ex = self._device._data.status_ex
-        self.loadcell.update()
-        self.thermal.update()
-        self.joint_encoder.update()
-        self.battery.update()
-
-        pass
-
-    def get_data(self):
-        """Should be erased and merged with update method"""
-        pass
 
 
 class DephyLoadcell(base.Loadcell):

@@ -1,4 +1,4 @@
-from opensourceleg.tools.logger import Logger
+from opensourceleg.logging.logger import Logger
 
 local_logger = Logger(file_path="./test_log")
 

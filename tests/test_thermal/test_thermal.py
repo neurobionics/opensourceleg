@@ -1,10 +1,10 @@
 import pytest
 
-from opensourceleg.hardware import thermal
+from opensourceleg.math import math
 
 # Initializing the ThermalModel objects
-test_model_default = thermal.ThermalModel()
-test_model_specified = thermal.ThermalModel(
+test_model_default = math.ThermalModel()
+test_model_specified = math.ThermalModel(
     ambient=10,
     temp_limit_windings=100,
     soft_border_C_windings=25,

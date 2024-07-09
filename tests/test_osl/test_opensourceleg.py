@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pytest
 
-import opensourceleg.tools.utilities as utilities
+import opensourceleg.time.time as time
 from opensourceleg.hardware.actuators.dephy import (
     CurrentMode,
     ImpedanceMode,
@@ -13,9 +13,9 @@ from opensourceleg.hardware.actuators.dephy import (
 )
 from opensourceleg.hardware.joints import Joint
 from opensourceleg.hardware.sensor.lordimu import Loadcell
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.tools.logger import Logger
-from opensourceleg.tools.utilities import SoftRealtimeLoop
+from opensourceleg.logging.logger import Logger
+from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.time.time import SoftRealtimeLoop
 from tests.test_actuators.test_dephyactpack import Data
 from tests.test_joints.test_joint import (
     MockJoint,

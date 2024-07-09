@@ -13,8 +13,8 @@ from opensourceleg.control.state_machine import (
     StateMachine,
     Transition,
 )
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.tools.logger import Logger
+from opensourceleg.logging.logger import Logger
+from opensourceleg.robots.robots import OpenSourceLeg
 
 
 def test_state_init():

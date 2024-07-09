@@ -11,21 +11,25 @@ import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.hardware.actuators.base import (
+from opensourceleg.actuators.base import (
     ActuatorBase,
-    ActuatorIsNoneException,
     ControlGains,
     ControlModeBase,
-    ControlModeException,
     ControlModesBase,
     ControlModesMapping,
     MotorConstants,
+)
+from opensourceleg.actuators.decorators import (
     check_actuator_connection,
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.hardware.thermal import ThermalModel
-from opensourceleg.tools.logger import LOGGER
+from opensourceleg.actuators.exceptions import (
+    ActuatorIsNoneException,
+    ControlModeException,
+)
+from opensourceleg.logging.logger import LOGGER
+from opensourceleg.math.math import ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
 

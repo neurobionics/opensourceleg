@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from opensourceleg.tools.utilities import LoopKiller, SoftRealtimeLoop
+from opensourceleg.time.time import LoopKiller, SoftRealtimeLoop
 from tests.test_joints.test_joint import patch_time_time
 
 

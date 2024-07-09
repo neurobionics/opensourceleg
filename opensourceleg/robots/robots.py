@@ -6,11 +6,11 @@ import numpy as np
 
 sys.path.append("../")
 
-from .hardware.joints import Joint, MockJoint
-from .hardware.sensor.lordimu import Loadcell, MockLoadcell
-from .tools import utilities
-from .tools.logger import LOGGER
-from .tools.utilities import SoftRealtimeLoop
+from opensourceleg.sensors.lordimu import Loadcell, MockLoadcell
+
+from ..logging.logger import LOGGER
+from ..time import time
+from ..time.time import SoftRealtimeLoop
 
 
 class OpenSourceLeg:
@@ -149,7 +149,7 @@ class OpenSourceLeg:
 
         else:
             if port is None:
-                ports = utilities.get_active_ports()
+                ports = time.get_active_ports()
 
                 port_1: str = ""
                 port_2: str = ""

@@ -11,9 +11,9 @@ November 14, 2023
 
 import numpy as np
 
-import opensourceleg.tools.units as units
+import opensourceleg.units.units as units
 from opensourceleg.control.state_machine import Event, State, StateMachine
-from opensourceleg.osl import OpenSourceLeg
+from opensourceleg.robots.robots import OpenSourceLeg
 
 offline_mode = False  # Set to true for debugging without hardware
 

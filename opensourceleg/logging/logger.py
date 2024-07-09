@@ -1,30 +1,3 @@
-"""
-Module Overview:
-
-This module defines a custom logger class, `Logger`, designed to log attributes
-from class instances to a CSV file. It extends the `logging.Logger` class.
-
-Key Class:
-
-- `Logger`: Logs attributes of class instances to a CSV file. It supports
-setting different logging levels for file and stream handlers.
-
-Usage Guide:
-
-1. Create an instance of the `Logger` class.
-2. Optionally, set the logging levels for file and stream handlers using
-   `set_file_level` and `set_stream_level` methods.
-3. Add class instances and attributes to log using the `add_attributes` method.
-4. Start logging data using the `update` method.
-5. Optionally, close the CSV file using the `close` method.
-
-Note:
-
-This file is referenced by the OSL class and is instantiated manually when an OSL
-is instantiated.
-
-"""
-
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import csv

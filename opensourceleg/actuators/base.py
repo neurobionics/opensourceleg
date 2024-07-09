@@ -1,139 +1,14 @@
-"""
-Actuators Interface Generalized
-05/2024
-"""
-
 from typing import Any, Callable, List, Union
 
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
-from enum import Enum, EnumMeta
-from functools import wraps
+from enum import Enum
 
 import numpy as np
 
-from opensourceleg.tools.logger import LOGGER
-
-"""_summary_
-
-    Returns:
-        _type_: _description_
-"""
-
-
-def check_actuator_connection(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.is_offline:
-            raise ActuatorConnectionException(tag=self.tag)
-
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
-
-def check_actuator_open(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if not self.is_open:
-            raise ActuatorConnectionException(tag=self.tag)
-
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
-
-def check_actuator_stream(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if not self.is_streaming:
-            raise ActuatorStreamException(tag=self.tag)
-
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
-
-class ActuatorStreamException(Exception):
-    """Actuator Stream Exception
-
-    Attributes
-    ----------
-    message (str): Error message
-
-    """
-
-    def __init__(self, tag: str) -> None:
-        super().__init__(
-            f"{tag} is not streaming, please call start() method before sending commands"
-        )
-
-
-class ActuatorConnectionException(Exception):
-    """Actuator Connection Exception
-
-    Attributes
-    ----------
-    message (str): Error message
-
-    """
-
-    def __init__(self, tag: str) -> None:
-        super().__init__(f"{tag} is not connected")
-
-
-class ActuatorIsNoneException(Exception):
-    """Actuator Connection Exception
-
-    Attributes
-    ----------
-    message (str): Error message
-
-    """
-
-    def __init__(self, mode: str) -> None:
-        super().__init__(
-            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during initialization or set the actuator instance using set_actuator method."
-        )
-
-
-class ControlModeException(Exception):
-    """Control Mode Exception
-
-    Attributes
-    ----------    MOTOR_COUNT_PER_REV: float = 16384
-    NM_PER_AMP: float = 0.1133
-    IMPEDANCE_A: float = 0.00028444
-    IMPEDANCE_C: float = 0.0007812
-    MAX_CASE_TEMPERATURE: float = 80
-    M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
-    message (str): Error message
-
-    """
-
-    def __init__(
-        self,
-        tag: str,
-        attribute: str,
-        mode: str,
-    ) -> None:
-        super().__init__(
-            f"[{tag}] Cannot set {attribute} in {mode} mode. Please set the actuator to {attribute} mode first."
-        )
-
-
-class VoltageModeMissingException(Exception):
-    """Voltage Mode Missing Exception
-
-    Attributes
-    ----------
-    message (str): Error message
-
-    """
-
-    def __init__(self, tag: str) -> None:
-        super().__init__(f"{tag} must have a voltage mode")
+from opensourceleg.actuators.exceptions import VoltageModeMissingException
+from opensourceleg.logging.logger import LOGGER
 
 
 class ControlModesMapping(Enum):

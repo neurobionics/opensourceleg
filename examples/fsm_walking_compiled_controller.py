@@ -14,8 +14,8 @@ import os
 import numpy as np
 
 from opensourceleg.control.compiled_controller import CompiledController
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.tools import units
+from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.units import units
 
 osl = OpenSourceLeg(frequency=200)
 use_offline_mode = False

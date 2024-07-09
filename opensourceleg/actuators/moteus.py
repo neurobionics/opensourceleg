@@ -13,7 +13,7 @@ import moteus_pi3hat as pihat
 import numpy as np
 
 import opensourceleg.hardware.actuators.base as base
-from opensourceleg.tools.logger import LOGGER
+from opensourceleg.logging.logger import LOGGER
 
 # from flexsea.device import Device
 
@@ -23,9 +23,10 @@ DEFAULT_CURRENT_GAINS = base.ControlGains(kp=0, ki=0, kd=0, K=0, B=0, ff=0)
 
 DEFAULT_IMPEDANCE_GAINS = base.ControlGains(kp=0, ki=0, kd=0, K=0, B=0, ff=0)
 
+
 class ControlModes(base.ControlModesMapping):
-    """TODO: Check Mapping to the Moteus Modes
-    """
+    """TODO: Check Mapping to the Moteus Modes"""
+
     VOLTAGE = moteus.Register.VOLTAGE, "voltage"
     CURRENT = moteus.Register.D_CURRENT, "current"
     POSITION = moteus.Register.POSITION, "position"
@@ -36,7 +37,7 @@ class VoltageMode(base.ControlModeBase):
         super().__init__(
             control_mode_index=ControlModes.VOLTAGE,
             control_mode_name=str(ControlModes.VOLTAGE),
-            actuator=actuator, 
+            actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
         )
@@ -50,7 +51,7 @@ class VoltageMode(base.ControlModeBase):
         LOGGER.debug(msg=f"[Moteus] Exiting {self.name} mode.")
         # self.set_voltage(voltage_value=0)
         time.sleep(0.1)
-        
+
     def set_gains(self, gains: base.ControlGains) -> None:
         LOGGER.info(
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
@@ -58,11 +59,11 @@ class VoltageMode(base.ControlModeBase):
 
     def set_command(self, value: float | int) -> None:
         super().set_command(
-            value, 
+            value,
         )
         self._actuator._commands.append(
             self._actuator._servo.make_vfoc(
-                voltage = value, 
+                voltage=value,
             )
         )
         # TODO: add instance here
@@ -74,7 +75,7 @@ class CurrentMode(base.ControlModeBase):
         super().__init__(
             control_mode_index=ControlModes.VOLTAGE,
             control_mode_name=str(ControlModes.VOLTAGE),
-            actuator=actuator, 
+            actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
         )
@@ -106,11 +107,11 @@ class CurrentMode(base.ControlModeBase):
             current_value (int): _description_
         """
         super().set_command(
-            value, 
+            value,
         )
         self._actuator._commands.append(
             self._actuator._servo.make_current(
-                q_A = value, 
+                q_A=value,
             )
         )
 
@@ -120,7 +121,7 @@ class CurrentMode(base.ControlModeBase):
     ) -> None:
         # TODO: Check Gain Instances
         super().set_gains(
-            gains, 
+            gains,
         )
         # self._device.set_gains(kp=gains.kp, ki=gains.ki, kd=0, k=0, b=0, ff=gains.ff)
 
@@ -130,7 +131,7 @@ class PositionMode(base.ControlModeBase):
         super().__init__(
             control_mode_index=ControlModes.VOLTAGE,
             control_mode_name=str(ControlModes.VOLTAGE),
-            actuator=actuator, 
+            actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
         )
@@ -154,7 +155,7 @@ class PositionMode(base.ControlModeBase):
         super().set_position(encoder_count=encoder_count)
         self._actuator._commands.append(
             self._actuator._servo.make_vfoc(
-                position = encoder_count, 
+                position=encoder_count,
             )
         )
 
@@ -164,7 +165,7 @@ class PositionMode(base.ControlModeBase):
     ) -> None:
         # TODO: Check Gain Instances
         super().set_gains(
-            gains, 
+            gains,
         )
 
 
@@ -182,27 +183,27 @@ class Moteus(base.ActuatorBase):
         **kwargs,
     ) -> None:
         super().__init__(
-            self, 
-            actuator_name=name, 
-            control_modes = [
-                VoltageMode(actuator=self), 
-                CurrentMode(actuator=self), 
-                PositionMode(actuator=self), 
-            ], 
-            frequency=frequency, 
+            self,
+            actuator_name=name,
+            control_modes=[
+                VoltageMode(actuator=self),
+                CurrentMode(actuator=self),
+                PositionMode(actuator=self),
+            ],
+            frequency=frequency,
         )
         self._addr_map = addr_map
-        
+
         self._hat_bus_item = []
         self._controller_id_item = []
-        
+
         for index, (hat_bus, controller_id) in enumerate(self._addr_map.items()):
             self._hat_bus_item.append(hat_bus)
             self._controller_id_item.append(controller_id)
-        
+
         self._transport = pihat.Pi3HatRouter(
-            servo_bus_map=addr_map, 
-            )
+            servo_bus_map=addr_map,
+        )
         # self._dephy_log: bool = dephy_log
         self._encoder_map = None
 
@@ -214,14 +215,14 @@ class Moteus(base.ActuatorBase):
 
         self._joint_direction = 1.0
 
-
         self._servo = {
             item: moteus.Controller(
-                id = item, 
-                transport=self._transport, 
-                # query_resolution=qr,            
+                id=item,
+                transport=self._transport,
+                # query_resolution=qr,
             )
-            for row in self._controller_id_item for item in row
+            for row in self._controller_id_item
+            for item in row
         }
         self._commands: list[moteus.Command] = []
 
@@ -231,9 +232,7 @@ class Moteus(base.ActuatorBase):
     def start(self) -> None:
         super().start()
         try:
-            self._transport.cycle(
-                [x.make_stop() for x in self._servo.values()]
-                )
+            self._transport.cycle([x.make_stop() for x in self._servo.values()])
         except OSError as e:
             print("\n")
             LOGGER.error(
@@ -247,9 +246,7 @@ class Moteus(base.ActuatorBase):
 
     def stop(self) -> None:
         super().stop()
-        self._transport.cycle(
-            [x.make_stop() for x in self._servo.values()]
-            )
+        self._transport.cycle([x.make_stop() for x in self._servo.values()])
         self.set_voltage(voltage_value=0)
         self._commands = []
         # time.sleep(0.1)
@@ -258,7 +255,7 @@ class Moteus(base.ActuatorBase):
     def update(self) -> None:
         super().update()
         self._transport.cycle(
-            self._commands, 
+            self._commands,
         )
         self._commands = []
 
@@ -381,7 +378,6 @@ class Moteus(base.ActuatorBase):
             return
 
         self._mode.set_gains(base.ControlGains(kp=kp, ki=ki, kd=0, K=0, B=0, ff=ff))  # type: ignore
-
 
 
 if __name__ == "__main__":

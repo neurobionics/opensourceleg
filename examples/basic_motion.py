@@ -11,8 +11,8 @@ October 26, 2023
 
 import numpy as np
 
-from opensourceleg.osl import OpenSourceLeg
-from opensourceleg.tools import units
+from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.units import units
 
 osl = OpenSourceLeg(frequency=200)
 osl.add_joint("knee", gear_ratio=9 * 83 / 18)
