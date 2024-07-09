@@ -28,7 +28,12 @@ from opensourceleg.actuators.exceptions import (
     ActuatorIsNoneException,
     ControlModeException,
 )
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.logging import LOGGER
+from opensourceleg.logging.decorators import (
+    deprecated,
+    deprecated_with_routing,
+    deprecated_with_suggestion,
+)
 from opensourceleg.math.math import ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
@@ -476,9 +481,9 @@ class DephyActpack(ActuatorBase, Device):
         time.sleep(0.1)
         self.set_current_gains()
 
-        self.set_output_torque(value=0.0)
+        self.set_joint_torque(value=0.0)
         time.sleep(0.1)
-        self.set_output_torque(value=0.0)
+        self.set_joint_torque(value=0.0)
 
         _joint_encoder_array = []
         _output_position_array = []
@@ -540,6 +545,17 @@ class DephyActpack(ActuatorBase, Device):
         )
 
     def set_joint_torque(self, value: float) -> None:
+        """
+        Set the joint torque of the joint.
+        This is the torque that is applied to the joint, not the motor.
+
+        Args:
+            value (float): torque in N_m
+        """
+        self.set_motor_torque(value=value / self.gear_ratio)
+
+    @deprecated_with_routing(alternative_func=set_joint_torque)
+    def set_output_torque(self, value: float) -> None:
         """
         Set the output torque of the joint.
         This is the torque that is applied to the joint, not the motor.
