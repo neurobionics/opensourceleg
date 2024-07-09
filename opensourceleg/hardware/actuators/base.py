@@ -22,24 +22,6 @@ from opensourceleg.tools.logger import LOGGER
 """
 
 
-def check_actuator_control_mode(mode_map):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if self.mode.name != str(mode_map):
-                raise ControlModeException(
-                    tag=self.tag,
-                    attribute=str(mode_map),
-                    mode=self.mode.name,
-                )
-
-            return func(self, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 def check_actuator_connection(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):

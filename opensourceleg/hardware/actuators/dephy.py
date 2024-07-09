@@ -21,7 +21,6 @@ from opensourceleg.hardware.actuators.base import (
     ControlModesMapping,
     MotorConstants,
     check_actuator_connection,
-    check_actuator_control_mode,
     check_actuator_open,
     check_actuator_stream,
 )
