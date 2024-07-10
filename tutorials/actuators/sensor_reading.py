@@ -6,20 +6,17 @@ actpack = Dephy.DephyActpack(
     port="/dev/ttyACM0", 
     gear_ratio=9.0, 
 )
-
-try:
-    actpack.start()
-    actpack.set_control_mode(mode = actpack.CONTROL_MODES.VOLTAGE)
-    while True: 
-        actpack.set_motor_voltage(value = 0)
-        actpack.update()
-        LOGGER.info("".join(
-              f"Motor Position: {actpack.motor_position}\t"
-            + f"Motor Voltage: {actpack.motor_voltage}\t"
-            + f"Motor Current: {actpack.motor_current}\t"
+with actpack: 
+    try:
+        while True: 
+            actpack.update()
+            LOGGER.info("".join(
+                f"Motor Position: {actpack.motor_position}\t"
+                + f"Motor Voltage: {actpack.motor_voltage}\t"
+                + f"Motor Current: {actpack.motor_current}\t"
+                )
             )
-        )
-        time.sleep(0.1)
+            time.sleep(0.1)
 
-except KeyboardInterrupt:
-    actpack.stop()
+    except KeyboardInterrupt:
+        exit()

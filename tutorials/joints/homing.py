@@ -10,6 +10,5 @@ with actpack:
     try:
         actpack.home()
         actpack.make_encoder_map(overwrite=True)
-
     except KeyboardInterrupt:
         exit()

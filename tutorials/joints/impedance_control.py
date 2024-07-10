@@ -1,5 +1,4 @@
 ﻿import opensourceleg.actuators.dephy as Dephy
-from opensourceleg.actuators.base import ControlGains
 from opensourceleg.logging.logger import LOGGER
 import time
 import numpy as np
