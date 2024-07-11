@@ -411,6 +411,13 @@ class ActuatorBase(ABC):
         self._is_offline: bool = offline
         self._is_homed: bool = False
 
+    def __enter__(self):
+        self.start()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.stop()
+        
     @abstractmethod
     def start(self) -> None:
         """Start method for the actuator"""

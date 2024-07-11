@@ -234,7 +234,7 @@ class DephyImpedanceMode(ControlModeBase):
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=80, ki=800, kd=0, k=400, b=800, ff=128),
+            max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
         )
 
     def _entry(self) -> None:
@@ -358,6 +358,7 @@ class DephyActpack(ActuatorBase, Device):
         self._joint_zero_position = 0.0
         self._motor_position_offset = 0.0
         self._joint_position_offset = 0.0
+        self._joint_direction = 1
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
