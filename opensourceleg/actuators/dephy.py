@@ -35,6 +35,7 @@ from opensourceleg.logging.decorators import (
     deprecated_with_suggestion,
 )
 from opensourceleg.math import ThermalModel
+from opensourceleg.safety import ThermalLimitException
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -359,6 +360,8 @@ class DephyActpack(ActuatorBase, Device):
         self._motor_position_offset = 0.0
         self._joint_position_offset = 0.0
         self._joint_direction = 1
+        
+        self._is_homed: bool = False
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
@@ -366,6 +369,7 @@ class DephyActpack(ActuatorBase, Device):
             temp_limit_case=self.max_case_temperature,
             soft_border_C_case=10,
         )
+        self._thermal_scale: float = 1.0
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActpack]"
@@ -392,12 +396,33 @@ class DephyActpack(ActuatorBase, Device):
         self.close()
 
     def update(self) -> None:
-        self._data = self.read()
+        if self.is_streaming: 
+            
+            self._data = self.read()
+            
+            self._thermal_model.T_c = self.case_temperature
+            self._thermal_scale = self._thermal_model.update_and_get_scale(
+                dt = 1/self.frequency,
+                motor_current = self.motor_current,
+            )
+            if self.case_temperature >= self.max_case_temperature:
+                    self._log.error(
+                        msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                    )
+                    raise ThermalLimitException()
 
-        # Check for thermal fault, bit 2 of the execute status byte
-        if self._data.status_ex & 0b00000010 == 0b00000010:
-            raise RuntimeError("Actpack Thermal Limit Tripped")
-
+            if self.winding_temperature >= self.max_winding_temperature:
+                self._log.error(
+                    msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                )
+                raise ThermalLimitException()
+            # Check for thermal fault, bit 2 of the execute status byte
+            if self._data.status_ex & 0b00000010 == 0b00000010:
+                raise RuntimeError("Actpack Thermal Limit Tripped")
+        else: 
+            LOGGER.warning(
+                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
+            )
     def home(
         self,
         homing_voltage: int = 2000,
@@ -620,6 +645,11 @@ class DephyActpack(ActuatorBase, Device):
         """
         self.mode.set_current(value=value)
 
+    @deprecated_with_routing(alternative_func=set_motor_current)
+    def set_current(self, value: float) -> None:
+        
+        self.mode.set_current(value=value)
+
     def set_motor_voltage(self, value: float) -> None:
         """
         Sets the motor voltage in mV.
@@ -627,6 +657,13 @@ class DephyActpack(ActuatorBase, Device):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
+        self.mode.set_voltage(
+            value,
+        )
+        
+    @deprecated_with_routing(alternative_func=set_motor_voltage)
+    def set_voltage(self, value: float) -> None: 
+        
         self.mode.set_voltage(
             value,
         )
@@ -1088,7 +1125,15 @@ class DephyActpack(ActuatorBase, Device):
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
-
+    
+    @property
+    def thermal_scaling_factor(self) -> float:
+        """
+        Scale factor to use in torque control, in [0,1].
+        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        For a proof, see paper referenced in thermal model.
+        """
+        return self._thermal_scale
 
 if __name__ == "__main__":
     knee = DephyActpack(

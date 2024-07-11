@@ -414,7 +414,7 @@ class ActuatorBase(ABC):
     def __enter__(self):
         self.start()
         return self
-    
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop()
         
@@ -540,11 +540,11 @@ class ActuatorBase(ABC):
         """Homing method for the joint, should be implemented if the actuator has a homing sequence"""
         pass
 
-    @property
+    
     def set_max_case_temperature(self, temperature: float) -> None:
         self._MOTOR_CONSTANTS.set_max_case_temperature(temperature)
 
-    @property
+    
     def set_max_winding_temperature(self, temperature: float) -> None:
         self._MOTOR_CONSTANTS.set_max_winding_temperature(temperature)
 
