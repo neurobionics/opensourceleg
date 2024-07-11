@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import IMUBase, check_streaming
+from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 try:
     import mscl
@@ -81,12 +81,12 @@ class LordMicrostrainIMU(IMUBase):
         self._node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
 
-    @check_streaming
+    @check_sensor_stream
     def stop(self):
         self._node.setToIdle()
         self._is_streaming = False
 
-    @check_streaming
+    @check_sensor_stream
     def ping(self):
         response = self._node.ping()
 

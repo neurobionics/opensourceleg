@@ -11,7 +11,7 @@ class SensorNotStreamingException(Exception):
         )
 
 
-def check_streaming(func):
+def check_sensor_stream(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.is_streaming:
