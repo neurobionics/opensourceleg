@@ -3,13 +3,11 @@
 import os
 import time
 from dataclasses import dataclass
-import sys
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 try:
-    sys.path.append(r"/usr/share/python3-mscl/")
     import mscl
 except ImportError:
     LOGGER.error(

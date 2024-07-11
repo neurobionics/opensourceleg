@@ -396,33 +396,28 @@ class DephyActpack(ActuatorBase, Device):
         self.close()
 
     def update(self) -> None:
-        if self.is_streaming: 
-            
-            self._data = self.read()
-            
-            self._thermal_model.T_c = self.case_temperature
-            self._thermal_scale = self._thermal_model.update_and_get_scale(
-                dt = 1/self.frequency,
-                motor_current = self.motor_current,
-            )
-            if self.case_temperature >= self.max_case_temperature:
-                    self._log.error(
-                        msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
-                    )
-                    raise ThermalLimitException()
-
-            if self.winding_temperature >= self.max_winding_temperature:
+        
+        self._data = self.read()
+        
+        self._thermal_model.T_c = self.case_temperature
+        self._thermal_scale = self._thermal_model.update_and_get_scale(
+            dt = 1/self.frequency,
+            motor_current = self.motor_current,
+        )
+        if self.case_temperature >= self.max_case_temperature:
                 self._log.error(
-                    msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                    msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
                 )
                 raise ThermalLimitException()
-            # Check for thermal fault, bit 2 of the execute status byte
-            if self._data.status_ex & 0b00000010 == 0b00000010:
-                raise RuntimeError("Actpack Thermal Limit Tripped")
-        else: 
-            LOGGER.warning(
-                msg=f"[{self.__repr__()}] Please open() the device before streaming data."
+
+        if self.winding_temperature >= self.max_winding_temperature:
+            self._log.error(
+                msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
+            raise ThermalLimitException()
+        # Check for thermal fault, bit 2 of the execute status byte
+        if self._data.status_ex & 0b00000010 == 0b00000010:
+            raise RuntimeError("Actpack Thermal Limit Tripped")
     def home(
         self,
         homing_voltage: int = 2000,
