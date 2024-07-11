@@ -4,57 +4,24 @@ import os
 import time
 from dataclasses import dataclass
 
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.logging import LOGGER
+from opensourceleg.sensors.base import IMUBase, check_streaming
+
+try:
+    import mscl
+except ImportError:
+    LOGGER.error(
+        "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+    )
 
 
-@dataclass
-class IMUDataClass:
-    """
-    Dataclass for IMU data.
-    Data is returned in the IMU frame.
-    Angles are in rad.
-    Velocities are in rad/s.
-    Acceleration is in g.
-
-    Author: Kevin Best
-    https://github.com/tkevinbest
-    """
-
-    angle_x: float = 0
-    """x direction Euler angle in rad"""
-    angle_y: float = 0
-    """y direction Euler angle in rad"""
-    angle_z: float = 0
-    """z direction Euler angle in rad"""
-    velocity_x: float = 0
-    """x direction rotational velocity in rad/s"""
-    velocity_y: float = 0
-    """y direction rotational velocity in rad/s"""
-    velocity_z: float = 0
-    """z direction rotational velocity in rad/s"""
-    accel_x: float = 0
-    """x direction acceleration in g"""
-    accel_y: float = 0
-    """y direction acceleration in g"""
-    accel_z: float = 0
-    """z direction acceleration in g"""
-    imu_time_sta: float = 0
-    imu_filter_gps_time_week_num: float = 0
-
-
-class IMULordMicrostrain:
+class LordMicrostrainIMU(IMUBase):
     """
     Sensor class for the Lord Microstrain IMU.
     Requires the MSCL library from Lord Microstrain (see below for install instructions).
 
     As configured, this class returns euler angles (rad), angular rates (rad/s), and accelerations (g).
 
-    Example:
-        imu = IMULordMicrostrain()
-        imu.start_streaming()
-        while in loop:
-            imu.get_data()
-        imu.stop_streaming()
 
     Resources:
         * To install, download the pre-built package for raspian at https://github.com/LORD-MicroStrain/MSCL/tree/master
@@ -62,93 +29,155 @@ class IMULordMicrostrain:
     """
 
     def __init__(
-        self, port=r"/dev/ttyUSB0", baud_rate=921600, timeout=500, sample_rate=100
+        self,
+        port: str = "/dev/ttyUSB0",
+        baud_rate: int = 921600,
+        frequency: int = 200,
     ):
-        import sys
 
-        sys.path.append(r"/usr/share/python3-mscl/")
-        import mscl as ms
+        self._port = port
+        self._baud_rate = baud_rate
+        self._frequency = frequency
+        self._is_streaming = False
+        self._connection = None
+        self._data = None
 
-        self.port = port
-        self.baud_rate = baud_rate
-        self.connection = ms.Connection.Serial(
-            os.path.realpath(self.port), self.baud_rate
-        )
-        self.imu = ms.InertialNode(self.connection)
-        self.timeout = timeout  # Timeout in (ms) to read the IMU
-        time.sleep(0.5)
-
-        # Configure data channels
-        channels = ms.MipChannels()
+    def _configure_mip_channels(self):
+        channels = mscl.MipChannels()
         channels.append(
-            ms.MipChannel(
-                ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER,
-                ms.SampleRate.Hertz(sample_rate),
+            mscl.MipChannel(
+                mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER,
+                mscl.SampleRate.Hertz(self.frequency),
             )
         )
         channels.append(
-            ms.MipChannel(
-                ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE,
-                ms.SampleRate.Hertz(sample_rate),
+            mscl.MipChannel(
+                mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE,
+                mscl.SampleRate.Hertz(self.frequency),
             )
         )
         channels.append(
-            ms.MipChannel(
-                ms.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL,
-                ms.SampleRate.Hertz(sample_rate),
+            mscl.MipChannel(
+                mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL,
+                mscl.SampleRate.Hertz(self.frequency),
             )
         )
         channels.append(
-            ms.MipChannel(
-                ms.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP,
-                ms.SampleRate.Hertz(sample_rate),
+            mscl.MipChannel(
+                mscl.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP,
+                mscl.SampleRate.Hertz(self.frequency),
             )
         )
 
-        self.imu.setActiveChannelFields(ms.MipTypes.CLASS_ESTFILTER, channels)
-        self.imu.enableDataStream(ms.MipTypes.CLASS_ESTFILTER)
-        self.imu.setToIdle()
+        return channels
 
-        packets = self.imu.getDataPackets(
-            self.timeout
-        )  # Clean the internal circular buffer.
-        self.imu_data = IMUDataClass()
+    def start(self):
 
-    def start_streaming(self):
-        self.imu.resume()
+        self._connection = mscl.Connection.Serial(self.port, self.baud_rate)
+        self._node = mscl.InertialNode(self._connection)
+        self._node.setActiveChannelFields(
+            mscl.MipTypes.CLASS_ESTFILTER, self._configure_channels()
+        )
+        self._node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
+        self._is_streaming = True
 
-    def stop_streaming(self):
-        self.imu.setToIdle()
+    @check_streaming
+    def stop(self):
+        self._node.setToIdle()
+        self._is_streaming = False
 
-    def get_data(self):
+    @check_streaming
+    def ping(self):
+        response = self._node.ping()
+
+        if response.success():
+            LOGGER.info(f"Successfully pinged the IMU at {self.port}")
+        else:
+            LOGGER.error(f"Failed to ping the IMU at {self.port}")
+
+    def update(
+        self, timeout: int = 500, max_packets: int = 1, return_packets: bool = False
+    ):
         """
         Get IMU data from the Lord Microstrain IMU
         """
-        imu_packets = self.imu.getDataPackets(self.timeout)
-        if len(imu_packets):
-            # Read all the information from the first packet as float.
-            raw_imu_data = {
-                data_point.channelName(): data_point.as_float()
-                for data_point in imu_packets[-1].data()
-            }
-            self.imu_data.angle_x = raw_imu_data["estRoll"]
-            self.imu_data.angle_y = raw_imu_data["estPitch"]
-            self.imu_data.angle_z = raw_imu_data["estYaw"]
-            self.imu_data.velocity_x = raw_imu_data["estAngularRateX"]
-            self.imu_data.velocity_y = raw_imu_data["estAngularRateY"]
-            self.imu_data.velocity_z = raw_imu_data["estAngularRateZ"]
-            self.imu_data.accel_x = raw_imu_data["estLinearAccelX"]
-            self.imu_data.accel_y = raw_imu_data["estLinearAccelY"]
-            self.imu_data.accel_z = raw_imu_data["estLinearAccelZ"]
-            self.imu_data.imu_time_sta = raw_imu_data["estFilterGpsTimeTow"]
-            self.imu_data.imu_filter_gps_time_week_num = raw_imu_data[
-                "estFilterGpsTimeWeekNum"
-            ]
+        data_packets = self._node.getDataPackets(
+            timeout=timeout, maxPackets=max_packets
+        )
+        data_points = data_packets[-1].data()
+        self._data = {data.channelName(): data.as_float() for data in data_points}
 
-        return self.imu_data
+        if return_packets:
+            return data_packets
 
     def __repr__(self) -> str:
         return f"IMULordMicrostrain"
+
+    @property
+    def port(self) -> str:
+        return self._port
+
+    @property
+    def baud_rate(self) -> int:
+        return self._baud_rate
+
+    @property
+    def frequency(self) -> int:
+        return self._frequency
+
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming
+
+    @property
+    def roll(self) -> float:
+        """Returns estimated roll (rad)."""
+        return self._data["estRoll"]
+
+    @property
+    def pitch(self) -> float:
+        """Returns estimated pitch (rad)."""
+        return self._data["estPitch"]
+
+    @property
+    def yaw(self) -> float:
+        """Returns estimated yaw (rad)."""
+        return self._data["estYaw"]
+
+    @property
+    def vel_x(self) -> float:
+        """Returns estimated angular velocity about the x-axis (rad/s)."""
+        return self._data["estAngularRateX"]
+
+    @property
+    def vel_y(self) -> float:
+        """Returns estimated angular velocity about the y-axis (rad/s)."""
+        return self._data["estAngularRateY"]
+
+    @property
+    def vel_z(self) -> float:
+        """Returns estimated angular velocity about the z-axis (rad/s)."""
+        return self._data["estAngularRateZ"]
+
+    @property
+    def acc_x(self) -> float:
+        """Returns estimated linear acceleration along the x-axis (m/s^2)."""
+        return self._data["estLinearAccelX"]
+
+    @property
+    def acc_y(self) -> float:
+        """Returns estimated linear acceleration along the y-axis (m/s^2)."""
+        return self._data["estLinearAccelY"]
+
+    @property
+    def acc_z(self) -> float:
+        """Returns estimated linear acceleration along the z-axis (m/s^2)."""
+        return self._data["estLinearAccelZ"]
+
+    @property
+    def timestamp(self) -> float:
+        """Returns timestamp (s) of the data."""
+        return self._data["estFilterGpsTimeTow"]
 
 
 if __name__ == "__main__":

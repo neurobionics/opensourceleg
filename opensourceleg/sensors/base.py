@@ -1,6 +1,24 @@
 ﻿from abc import ABC, abstractmethod
+from functools import wraps
 
 import numpy as np
+
+
+class SensorNotStreamingException(Exception):
+    def __init__(self, sensor_name: str = "Sensor") -> None:
+        super().__init__(
+            f"{sensor_name} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+        )
+
+
+def check_streaming(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_streaming:
+            raise SensorNotStreamingException(sensor_name=self.__repr__())
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class SensorBase(ABC):
@@ -104,7 +122,7 @@ class LoadcellBase(SensorBase, ABC):
         pass
 
 
-class IMU(SensorBase, ABC):
+class IMUBase(SensorBase, ABC):
     def __init__(self) -> None:
         pass
 

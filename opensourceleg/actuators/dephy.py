@@ -131,9 +131,9 @@ class DephyCurrentMode(ControlModeBase):
         self.actuator.set_gains(
             kp=int(gains.kp),
             ki=int(gains.ki),
-            kd=0, 
-            k=0, 
-            b=0, 
+            kd=0,
+            k=0,
+            b=0,
             ff=int(gains.ff),
         )
 
@@ -191,12 +191,12 @@ class DephyPositionMode(ControlModeBase):
     ) -> None:
         super().set_gains(gains)
         self.actuator.set_gains(
-            kp = int(gains.kp),
-            ki = int(gains.ki),
-            kd = int(gains.kd),
-            k = 0, 
-            b = 0,
-            ff = int(gains.ff),
+            kp=int(gains.kp),
+            ki=int(gains.ki),
+            kd=int(gains.kd),
+            k=0,
+            b=0,
+            ff=int(gains.ff),
         )
 
     def set_position(self, value: Union[float, int]):
