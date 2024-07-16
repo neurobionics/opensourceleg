@@ -72,7 +72,6 @@ class ControlGains:
     k (int): Stiffness of the impedance controller
     b (int): Damping of the impedance controller
     ff (int): Feedforward gain
-
     """
 
     kp: int = 0
