@@ -10,25 +10,35 @@ from dataclasses import dataclass
 import asyncio
 import time
 
-import moteus
+from moteus import Controller, Command
 import moteus_pi3hat as pihat
 import numpy as np
 
-from opensourceleg.hardware.actuators.base import (
+from opensourceleg.actuators.base import (
     ActuatorBase,
     ControlGains,
     ControlModeBase,
     ControlModesBase,
     ControlModesMapping,
     MotorConstants,
-    ControlModeException, 
+)
+from opensourceleg.actuators.decorators import (
     check_actuator_connection,
-    check_actuator_control_mode,
     check_actuator_open,
     check_actuator_stream,
 )
+from opensourceleg.actuators.exceptions import (
+    ActuatorIsNoneException,
+    ControlModeException,
+)
+from opensourceleg.logging import LOGGER
+from opensourceleg.logging.decorators import (
+    deprecated,
+    deprecated_with_routing,
+    deprecated_with_suggestion,
+)
 
-from opensourceleg.tools.logger import LOGGER
+from opensourceleg.logging.logger import LOGGER
 
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
@@ -38,69 +48,40 @@ DEFAULT_CURRENT_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 
 
-class MoteusStop(ControlModeBase):
-    
-    # TODO: check instance
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None: 
-        super().__init__(
-            control_mode_map=ControlModesMapping.VOLTAGE,
-            actuator=actuator,
-            entry_callbacks=[self._entry],
-            exit_callbacks=[self._exit],
-        )
-    def __repr__(self) -> str:
-        return f"MoteusControlMode[{self.name}]"
-
-    def _entry(self) -> None:
-        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} control mode.")
-
-    def _exit(self) -> None:
-        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} control mode.")
-        self._actuator._command = None
-        time.sleep(0.1)
-
-    def set_gains(self, gains: ControlGains) -> None:
-        LOGGER.info(
-            msg=f"[{self.actuator.__repr__()}] {self.name} mode does not have gains."
-        )
-
-    def set_stop(self, value: Union[float, int]) -> None:
-        if self.max_command is not None:
-            assert 0 <= value <= self._max_command
-
-        if self.actuator is not None:
-            self._actuator._command = self._actuator._servo.make_stop()
-
-
 class MoteusVoltageMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None: 
+    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.VOLTAGE,
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
         )
+
     def __repr__(self) -> str:
-        return f"MoteusControlMode[{self.name}]"
+        return f"DephyControlMode[{self.name}]"
 
     def _entry(self) -> None:
-        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} control mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} control mode.")
+
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
 
     def _exit(self) -> None:
-        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} control mode.")
-        self._actuator._command = None
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
+        self.set_voltage(0)
         time.sleep(0.1)
 
     def set_gains(self, gains: ControlGains) -> None:
         LOGGER.info(
-            msg=f"[{self.actuator.__repr__()}] {self.name} mode does not have gains."
+            msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
     def set_voltage(self, value: Union[float, int]):
-        self._actuator._command = self.actuator._servo.make_vfoc(theta = 0, voltage = value, query = True)
-        self._actuator.interface._commands.append(
-            self._actuator._command
-            )
+        self._actuator._command = self._actuator.make_vfoc(
+            theta = 0, 
+            voltage = value, 
+            query = True,
+        )
 
     def set_current(self, value: Union[float, int]):
         raise ControlModeException(
@@ -115,6 +96,7 @@ class MoteusVoltageMode(ControlModeBase):
             attribute=str(ControlModesMapping.POSITION),
             mode=self.name,
         )
+
 
 class MoteusCurrentMode(ControlModeBase):
     def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
@@ -127,40 +109,52 @@ class MoteusCurrentMode(ControlModeBase):
         )
 
     def __repr__(self) -> str:
-        return f"MoteusControlMode[{self.name}]"
+        return f"DephyControlMode[{self.name}]"
 
     def _entry(self) -> None:
 
-        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
+
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
 
         if not self.has_gains:
             self.set_gains()
 
-        self.set_command(value=0)
+        self.set_current(value=0)
 
     def _exit(self) -> None:
 
-        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator._command = None
-        time.sleep(1 / self.actuator.frequency)
+        
+        time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
         super().set_gains(gains)
+        # self.actuator.set_gains(
+        #     kp=int(gains.kp),
+        #     ki=int(gains.ki),
+        #     kd=0,
+        #     k=0,
+        #     b=0,
+        #     ff=int(gains.ff),
+        # )
+
+    def set_current(self, value: Union[float, int]):
+        self._actuator._command = self._actuator.make_current( 
+            d_A = value, 
+            q_A = 0, 
+            query = True,
+        )
 
     def set_voltage(self, value: Union[float, int]):
-        
         raise ControlModeException(
             tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.CURRENT),
+            attribute=str(ControlModesMapping.VOLTAGE),
             mode=self.name,
         )
-    def set_current(self, value: Union[float, int]):
-        self._actuator._command = self.actuator._servo.make_current(d_A = value, q_A = 0, query = True)
-        self._actuator.interface._commands.append(
-            self._actuator._command
-            )
 
     def set_position(self, value: Union[float, int]):
         raise ControlModeException(
@@ -168,6 +162,7 @@ class MoteusCurrentMode(ControlModeBase):
             attribute=str(ControlModesMapping.POSITION),
             mode=self.name,
         )
+
 
 class MoteusPositionMode(ControlModeBase):
     def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
@@ -180,18 +175,21 @@ class MoteusPositionMode(ControlModeBase):
         )
 
     def _entry(self) -> None:
-        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
+
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
 
         if not self.has_gains:
             self.set_gains()
 
-        self.set_command(value=0)
+        self.set_position(value=self.actuator.motor_position)
 
     def _exit(self) -> None:
-        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator._command = None
+        
         time.sleep(0.1)
 
     def set_gains(
@@ -199,13 +197,19 @@ class MoteusPositionMode(ControlModeBase):
         gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
         super().set_gains(gains)
+        # self.actuator.set_gains(
+        #     kp=int(gains.kp),
+        #     ki=int(gains.ki),
+        #     kd=int(gains.kd),
+        #     k=0,
+        #     b=0,
+        #     ff=int(gains.ff),
+        # )
 
-    def set_voltage(self, value: Union[float, int]):
-        
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.CURRENT),
-            mode=self.name,
+    def set_position(self, value: Union[float, int]):
+        self._actuator._command = self._actuator.make_position(
+            position = value, 
+            query = True,
         )
     def set_current(self, value: Union[float, int]):
         raise ControlModeException(
@@ -214,11 +218,13 @@ class MoteusPositionMode(ControlModeBase):
             mode=self.name,
         )
 
-    def set_position(self, value: Union[float, int]):
-        self._actuator._command = self.actuator._servo.make_vfoc(position = value, query = True)
-        self._actuator.interface._commands.append(
-            self._actuator._command
-            )
+    def set_voltage(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.VOLTAGE),
+            mode=self.name,
+        )
+
 
 @dataclass(init=False)
 class MoteusControlModes(ControlModesBase):
@@ -228,9 +234,9 @@ class MoteusControlModes(ControlModesBase):
 
     def __init__(self, actuator: "MoteusController") -> None:
 
-        self.VOLTAGE.add_actuator(actuator)
-        self.CURRENT.add_actuator(actuator)
-        self.POSITION.add_actuator(actuator)
+        self.VOLTAGE.set_actuator(actuator)
+        self.CURRENT.set_actuator(actuator)
+        self.POSITION.set_actuator(actuator)
 
 class MoteusInterface:
     """
@@ -242,15 +248,15 @@ class MoteusInterface:
     def __new__(cls, *args, **kwargs): 
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            cls.bus_map: dict[int: list[int]] = {}
+            cls._commands: list[Command] = []
+            cls.transport = None
         return cls._instance
     
     def __init__(self):
-        self.transport = None
-        self.bus_map: dict[int: list[int]] = {}
-        self._servos_id: list[int] = []
-        self._commands: list[moteus.Command] = []
+        pass
         # self._servos: dict[int: moteus.Controller] = {}
-        
+    
     def __repr__(self):
         return f"MoteusInterface"
         
@@ -263,7 +269,7 @@ class MoteusInterface:
             
         # self._servos_id.append(servo_id)
     
-    async def start(self):
+    def start(self):
         """
         Initialization of Pi3HatRouter
         """
@@ -272,39 +278,33 @@ class MoteusInterface:
                 servo_bus_map = self.bus_map
             )
         
-    async def update(self):
-        """
-        update method for 
-        """
+    def update(self):
+        
         # self._data = await self.transport.cycle(
         #     self._commands
         # )
-        self.transport.cycle(
-            self._commands
-        )
+        pass
         
         self._commands = []
     
-    async def stop(self):
+    def stop(self):
         pass
 
-class MoteusController(ActuatorBase):
+class MoteusController(ActuatorBase, Controller):
     def __init__(
         self,
-        name: str = "MoteusController",
-        # TODO: create instance for joint names
+        tag: str = "Moteus",
         servo_id: int = 1,
         bus_id: int = 11,
-        # transport: pihat.Pi3HatRouter = None,
         gear_ratio: float = 1.0,
         frequency: int = 500,
         offline: bool = False,
     ) -> None:
         self._servo_id = servo_id
         self._bus_id = bus_id
-        moteus_control_modes = MoteusControlModes(actuator=self)
+        moteus_control_modes = MoteusControlModes(self)
         super().__init__(
-            actuator_name=name,
+            tag=tag,
             control_modes=moteus_control_modes,
             default_control_mode=moteus_control_modes.VOLTAGE,
             gear_ratio=gear_ratio,
@@ -321,7 +321,9 @@ class MoteusController(ActuatorBase):
             self.is_open: bool = False
         else:
             
-            #TODO: add communication to MoteusInterface
+            self.is_streaming: bool = True
+            self.is_open: bool = True
+            
             pass
         
         self._encoder_map = None
@@ -333,8 +335,8 @@ class MoteusController(ActuatorBase):
         self._motor_offset = 0.0
         self._joint_direction = 1.0
         
-        self._servo: moteus.Controller = None
-        self._command: moteus.Command = None
+        self._command: Command = None
+        self._results = None
 
     def __repr__(self) -> str:
         return f"Moteus[{self._actuator_name}]"
@@ -344,10 +346,10 @@ class MoteusController(ActuatorBase):
         super().start()
         try:
             self._interface.start()
-            self._servo = moteus.Controller(
+            Controller.__init__(
+                self, 
                 id = self._servo_id, 
-                transport = self._interface.transport, 
-                query_resolution=moteus.QueryResolution()
+                transport=self._interface.transport, 
             )
         except OSError as e:
             print("\n")
@@ -356,41 +358,46 @@ class MoteusController(ActuatorBase):
             )
             os._exit(status=1)
 
-        time.sleep(0.1)
-        self._command = None
+        # self._command = None
         self._mode.enter()
 
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
         super().stop()
-        self.set_motor_voltage(value=0)
+        # self.set_motor_voltage(value=0)
         self._command = None
         time.sleep(0.1)
 
-    def update(self) -> None:
+    async def update(self):
         # TODO: update command
         super().update()
-        # TODO: find a better way to send multiple commands at one time
-        # self._interface.transport.cycle(
-        #     self._command
-        # )
-        self._command = None
+        self._results = await self._interface.transport.cycle(
+            [self._command]
+        )
+        time.sleep(0.1)
+        
+    def home(self): 
+        pass
+    
     
     def set_control_mode(self, mode: ControlModeBase) -> None:
         super().set_control_mode(mode)
 
 
-    @check_actuator_control_mode(ControlModesMapping.CURRENT)
     def set_motor_current(
         self,
         value: float,
     ):
-        self.mode.set_command(
-            int(value),
+        # self._command = self.make_current(
+        #     d_A = value, 
+        #     q_A=0, 
+        #     query = True, 
+        # )
+        self.mode.set_current(
+            value=value
         )
 
-    @check_actuator_control_mode(ControlModesMapping.VOLTAGE)
     def set_motor_voltage(self, value: float) -> None:
         """
         Sets the motor voltage in mV.
@@ -398,11 +405,15 @@ class MoteusController(ActuatorBase):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
-        self.mode.set_command(
-            int(value),
+        self.mode.set_voltage(
+            value,
         )
+        # self._command = self.make_vfoc(
+        #     theta = 0, 
+        #     voltage = value, 
+        #     query = True, 
+        # )
 
-    @check_actuator_control_mode(ControlModesMapping.POSITION)
     def set_motor_position(self, value: float) -> None:
         """
         Sets the motor position in radians.
@@ -411,14 +422,17 @@ class MoteusController(ActuatorBase):
         Args:
             position (float): The position to set
         """
-        self.mode.set_command(
+        self.mode.set_position(
             int(
                 (value + self.motor_zero_position + self.motor_offset)
                 / self.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
+        # self._command = self.make_position(
+        #     position = value, 
+        #     query = True, 
+        # )
 
-    @check_actuator_control_mode(ControlModesMapping.POSITION)
     def set_position_gains(
         self,
         kp: int = DEFAULT_POSITION_GAINS.kp,
@@ -437,7 +451,6 @@ class MoteusController(ActuatorBase):
         """
         self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
-    @check_actuator_control_mode(ControlModesMapping.CURRENT)
     def set_current_gains(
         self,
         kp: int = DEFAULT_CURRENT_GAINS.kp,
@@ -455,26 +468,14 @@ class MoteusController(ActuatorBase):
         self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
 
     def set_impedance_gains(
-        self,
-        kp: int,
-        ki: int,
-        kd: int,
-        k: int,
-        b: int,
-        ff: int,
-    ):
-        """set_impedance_gains method for the actuator
-
-        Args:
-            kp (int): Proportional gain
-            ki (int): Integral gain
-            kd (int): Derivative gain
-            k (int): Stiffness of the impedance controller
-            b (int): Damping of the impedance controller
-            ff (int): Feedforward gain
-        """
+        self, 
+        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: int = DEFAULT_IMPEDANCE_GAINS.kd,
+        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+    ) -> None: 
         pass
-
+    
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map

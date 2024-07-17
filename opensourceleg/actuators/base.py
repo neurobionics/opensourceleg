@@ -47,12 +47,12 @@ class ControlModesMapping(Enum):
 
 class ControlModesMeta(type):
     def __init__(cls, name, bases, attrs):
-        if bases and "VOLTAGE" not in attrs:
-            print(f"Class: {cls}")
-            print(f"Name: {name}")
-            print(f"Bases: {bases}")
-            print(f"Attrs: {attrs}")
-            raise VoltageModeMissingException(cls.__name__)
+        # if bases and "VOLTAGE" not in attrs:
+        #     print(f"Class: {cls}")
+        #     print(f"Name: {name}")
+        #     print(f"Bases: {bases}")
+        #     print(f"Attrs: {attrs}")
+        #     raise VoltageModeMissingException(cls.__name__)
         super().__init__(name, bases, attrs)
 
 
@@ -72,7 +72,6 @@ class ControlGains:
     k (int): Stiffness of the impedance controller
     b (int): Damping of the impedance controller
     ff (int): Feedforward gain
-
     """
 
     kp: int = 0

@@ -299,17 +299,15 @@ class DephyImpedanceMode(ControlModeBase):
 
 @dataclass(init=False)
 class DephyActpackControlModes(ControlModesBase):
-    VOLTAGE = DephyVoltageMode()
-    CURRENT = DephyCurrentMode()
-    POSITION = DephyPositionMode()
-    IMPEDANCE = DephyImpedanceMode()
+
 
     def __init__(self, actuator: "DephyActpack") -> None:
 
-        self.VOLTAGE.set_actuator(actuator)
-        self.CURRENT.set_actuator(actuator)
-        self.POSITION.set_actuator(actuator)
-        self.IMPEDANCE.set_actuator(actuator)
+        self.VOLTAGE = DephyVoltageMode(actuator=actuator)
+        self.CURRENT = DephyCurrentMode(actuator=actuator)
+        self.POSITION = DephyPositionMode(actuator=actuator)
+        self.IMPEDANCE = DephyImpedanceMode(actuator=actuator)
+
 
 
 class DephyActpack(ActuatorBase, Device):
@@ -1004,11 +1002,23 @@ class DephyActpack(ActuatorBase, Device):
     @property
     def case_temperature(self) -> float:
         if self._data is not None:
-            return float(self._data.temperture)
+            return float(self._data.temperature)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
+            return 0.0
+
+    
+    @property
+    def winding_temperature(self) -> float:
+        """
+        ESTIMATED temperature of the windings in celsius.
+        This is calculated based on the thermal model using motor current.
+        """
+        if self._data is not None:
+            return float(self._thermal_model.T_w)
+        else:
             return 0.0
 
     @property
