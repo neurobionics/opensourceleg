@@ -7,10 +7,16 @@ from typing import Any, Union
 import os
 import time
 from dataclasses import dataclass
-import asyncio
 import time
 
-from moteus import Controller, Command
+from moteus import (
+    Controller, 
+    Command, 
+    moteus_tool, 
+    QueryResolution, 
+    Register as MoteusRegister,
+    multiplex as mp, 
+) 
 import moteus_pi3hat as pihat
 import numpy as np
 
@@ -47,6 +53,31 @@ DEFAULT_CURRENT_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 
 DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 
+class MoteusQueryResolution:
+
+    mode = mp.INT8
+    position = mp.F32
+    velocity = mp.F32
+    torque = mp.F32
+    q_current = mp.IGNORE
+    d_current = mp.IGNORE
+    abs_position = mp.IGNORE
+    power = mp.IGNORE
+    motor_temperature = mp.IGNORE
+    trajectory_complete = mp.IGNORE
+    rezero_state = mp.IGNORE
+    home_state = mp.IGNORE
+    voltage = mp.INT8
+    temperature = mp.INT8
+    fault = mp.INT8
+
+    aux1_gpio = mp.IGNORE
+    aux2_gpio = mp.IGNORE
+
+    _extra = {
+        # add custom registers here
+    }
+
 
 class MoteusVoltageMode(ControlModeBase):
     def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
@@ -58,16 +89,16 @@ class MoteusVoltageMode(ControlModeBase):
         )
 
     def __repr__(self) -> str:
-        return f"DephyControlMode[{self.name}]"
+        return f"MoteusControlMode[{self.name}]"
 
     def _entry(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} control mode.")
+        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} control mode.")
 
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
 
     def _exit(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
+        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} control mode.")
         self.set_voltage(0)
         time.sleep(0.1)
 
@@ -109,11 +140,11 @@ class MoteusCurrentMode(ControlModeBase):
         )
 
     def __repr__(self) -> str:
-        return f"DephyControlMode[{self.name}]"
+        return f"MoteusControlMode[{self.name}]"
 
     def _entry(self) -> None:
 
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} mode.")
 
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
@@ -125,7 +156,7 @@ class MoteusCurrentMode(ControlModeBase):
 
     def _exit(self) -> None:
 
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
         
@@ -133,21 +164,10 @@ class MoteusCurrentMode(ControlModeBase):
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
         super().set_gains(gains)
-        # self.actuator.set_gains(
-        #     kp=int(gains.kp),
-        #     ki=int(gains.ki),
-        #     kd=0,
-        #     k=0,
-        #     b=0,
-        #     ff=int(gains.ff),
-        # )
+
 
     def set_current(self, value: Union[float, int]):
-        self._actuator._command = self._actuator.make_current( 
-            d_A = value, 
-            q_A = 0, 
-            query = True,
-        )
+        LOGGER.info(msg=f"[MoteusControlMode] {self.name} mode not applicable.")
 
     def set_voltage(self, value: Union[float, int]):
         raise ControlModeException(
@@ -175,7 +195,7 @@ class MoteusPositionMode(ControlModeBase):
         )
 
     def _entry(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
+        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} mode.")
 
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
@@ -186,7 +206,7 @@ class MoteusPositionMode(ControlModeBase):
         self.set_position(value=self.actuator.motor_position)
 
     def _exit(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
+        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
         
@@ -228,16 +248,13 @@ class MoteusPositionMode(ControlModeBase):
 
 @dataclass(init=False)
 class MoteusControlModes(ControlModesBase):
-    VOLTAGE = MoteusVoltageMode()
-    CURRENT = MoteusCurrentMode()
-    POSITION = MoteusPositionMode()
 
     def __init__(self, actuator: "MoteusController") -> None:
 
-        self.VOLTAGE.set_actuator(actuator)
-        self.CURRENT.set_actuator(actuator)
-        self.POSITION.set_actuator(actuator)
-
+        self.VOLTAGE = MoteusVoltageMode(actuator=actuator)
+        self.CURRENT = MoteusCurrentMode(actuator=actuator)
+        self.POSITION = MoteusPositionMode(actuator=actuator)
+        
 class MoteusInterface:
     """
     Singleton Class as Communication Portal between Moteus Controller and Moteus PiHat
@@ -261,14 +278,12 @@ class MoteusInterface:
         return f"MoteusInterface"
         
     def add2map(self, servo_id, bus_id) -> None:
-        #TODO: Implement bus map here
+        
         if bus_id in self.bus_map.keys():
             self.bus_map[bus_id].append(servo_id)
         else:
             self.bus_map[bus_id] = [servo_id]
             
-        # self._servos_id.append(servo_id)
-    
     def start(self):
         """
         Initialization of Pi3HatRouter
@@ -336,7 +351,8 @@ class MoteusController(ActuatorBase, Controller):
         self._joint_direction = 1.0
         
         self._command: Command = None
-        self._results = None
+        self._data = None
+
 
     def __repr__(self) -> str:
         return f"Moteus[{self._actuator_name}]"
@@ -350,6 +366,7 @@ class MoteusController(ActuatorBase, Controller):
                 self, 
                 id = self._servo_id, 
                 transport=self._interface.transport, 
+                query_resolution=MoteusQueryResolution(),
             )
         except OSError as e:
             print("\n")
@@ -367,15 +384,15 @@ class MoteusController(ActuatorBase, Controller):
         super().stop()
         # self.set_motor_voltage(value=0)
         self._command = None
+        
         time.sleep(0.1)
 
     async def update(self):
         # TODO: update command
         super().update()
-        self._results = await self._interface.transport.cycle(
+        self._data = await self._interface.transport.cycle(
             [self._command]
         )
-        time.sleep(0.1)
         
     def home(self): 
         pass
@@ -441,7 +458,7 @@ class MoteusController(ActuatorBase, Controller):
         ff: int = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
         """
-        Sets the position gains in arbitrary Dephy units.
+        Sets the position gains in arbitrary Moteus units.
 
         Args:
             kp (int): The proportional gain
@@ -458,7 +475,7 @@ class MoteusController(ActuatorBase, Controller):
         ff: int = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
         """
-        Sets the current gains in arbitrary Dephy units.
+        Sets the current gains in arbitrary Moteus units.
 
         Args:
             kp (int): The proportional gain
@@ -534,7 +551,7 @@ class MoteusController(ActuatorBase, Controller):
         Returns:
             str: Actuator name
         """
-        return self._actuator_name
+        return self._tag
 
     @property
     def frequency(self) -> int:
