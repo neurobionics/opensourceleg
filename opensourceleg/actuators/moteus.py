@@ -385,7 +385,6 @@ class MoteusController(ActuatorBase, Controller):
         # self.set_motor_voltage(value=0)
         self._command = None
         
-        time.sleep(0.1)
 
     async def update(self):
         # TODO: update command
