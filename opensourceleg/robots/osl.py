@@ -62,15 +62,7 @@ class OpenSourceLeg(RobotBase):
         return f"OSL"
 
     def home(self) -> None:
-        if self.has_knee:
-            LOGGER.info(msg="[OSL] Homing knee joint.")
-            self.knee.home()
-
-        if self.has_ankle:
-            LOGGER.info(msg="[OSL] Homing ankle joint.")
-            self.ankle.home()
-
-        self._is_homed = True
+        pass
 
     def reset(self) -> None:
         pass
