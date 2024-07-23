@@ -66,7 +66,7 @@ class DephyVoltageMode(ControlModeBase):
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
-        self.set_voltage(0)
+        self.set_velocity(0)
         time.sleep(DEPHY_SLEEP_DURATION)
 
     def set_gains(self, gains: ControlGains) -> None:
@@ -74,7 +74,7 @@ class DephyVoltageMode(ControlModeBase):
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_velocity(self, value: Union[float, int]):
         self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
 
     def set_current(self, value: Union[float, int]):
@@ -141,7 +141,7 @@ class DephyCurrentMode(ControlModeBase):
     def set_current(self, value: Union[float, int]):
         self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_velocity(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
@@ -220,7 +220,7 @@ class DephyPositionMode(ControlModeBase):
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_velocity(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
@@ -289,7 +289,7 @@ class DephyImpedanceMode(ControlModeBase):
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_velocity(self, value: Union[float, int]):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
@@ -650,14 +650,14 @@ class DephyActpack(ActuatorBase, Device):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
-        self.mode.set_voltage(
+        self.mode.set_velocity(
             value,
         )
         
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None: 
         
-        self.mode.set_voltage(
+        self.mode.set_velocity(
             value,
         )
 

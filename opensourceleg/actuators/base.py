@@ -27,6 +27,9 @@ class ControlModesMapping(Enum):
     VOLTAGE = c_int(1), "voltage"
     CURRENT = c_int(2), "current"
     IMPEDANCE = c_int(3), "impedance"
+    STOP = c_int(11), "stop"
+    VELOCITY = c_int(12), "velocity"
+    
 
     def __new__(cls, c_int_value, str_value):
         obj = object.__new__(cls)
