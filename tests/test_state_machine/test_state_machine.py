@@ -14,7 +14,7 @@ from opensourceleg.control.state_machine import (
     Transition,
 )
 from opensourceleg.logging.logger import Logger
-from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.robots.osl import OpenSourceLeg
 
 
 def test_state_init():

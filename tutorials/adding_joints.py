@@ -1,4 +1,4 @@
-from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.robots import OpenSourceLeg
 
 if __name__ == "__main__":
     osl = OpenSourceLeg(frequency=200, file_name="getting_started.log")
