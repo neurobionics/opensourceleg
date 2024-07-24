@@ -7,7 +7,7 @@ from opensourceleg.logging.logger import LOGGER
 async def main():
     mc1 = MoteusController(
         servo_id=2,
-        bus_id=4, 
+        bus_id=2, 
     )
     try:
 
@@ -16,13 +16,14 @@ async def main():
         mc1.set_control_mode(mode = mc1.CONTROL_MODES.POSITION) 
         mc1.set_position_gains(
             kp = 1.0, 
-            kd = 10.0, 
-            ki = 0.1,
+            kd = 1.0, 
+            ki = 1.0,
         )
         pos = mc1.motor_position
         while True: 
+            pos = pos + np.pi / 2
             mc1.set_motor_position(
-                value = pos + np.pi / 2, 
+                value = pos, 
             )
             await mc1.update()
             print(f"######")
@@ -31,7 +32,7 @@ async def main():
                 )
             )
             print(f"------")
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1.0)
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt...")

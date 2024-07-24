@@ -29,6 +29,7 @@ class ControlModesMapping(Enum):
     IMPEDANCE = c_int(3), "impedance"
     STOP = c_int(11), "stop"
     VELOCITY = c_int(12), "velocity"
+    TORQUE = c_int(13), "torque"
     
 
     def __new__(cls, c_int_value, str_value):

@@ -145,6 +145,13 @@ class MoteusStopMode(ControlModeBase):
         )
     def set_stop(self):
         self.actuator._command = self.actuator.make_stop(query = True)
+    
+    def set_torque(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.TORQUE),
+            mode=self.name,
+        )
 
 class MoteusVelocityMode(ControlModeBase):
     def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
@@ -208,6 +215,12 @@ class MoteusVelocityMode(ControlModeBase):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.STOP),
+            mode=self.name,
+        )
+    def set_torque(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.TORQUE),
             mode=self.name,
         )
 
@@ -282,6 +295,95 @@ class MoteusPositionMode(ControlModeBase):
             attribute=str(ControlModesMapping.STOP),
             mode=self.name,
         )
+    def set_torque(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.TORQUE),
+            mode=self.name,
+        )
+
+
+class MoteusTorqueMode(ControlModeBase):
+    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+        super().__init__(
+            control_mode_map=ControlModesMapping.TORQUE,
+            actuator=actuator,
+            entry_callbacks=[self._entry],
+            exit_callbacks=[self._exit],
+            max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
+        )
+
+    def _entry(self) -> None:
+        LOGGER.debug(msg=f"[MoteusControlMode] Entering {self.name} mode.")
+
+        if self.actuator is None:
+            raise ActuatorIsNoneException(mode=self.name)
+
+        if not self.has_gains:
+            self.set_gains()
+
+
+    def _exit(self) -> None:
+        LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
+
+        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
+        
+        time.sleep(0.1)
+
+    def set_gains(
+        self,
+        gains: ControlGains = DEFAULT_POSITION_GAINS,
+    ) -> None:
+        LOGGER.info(
+            msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
+        )
+
+    def set_position(self, value: Union[float, int]):
+        print(value)
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.POSITION),
+            mode=self.name,
+        )
+    def set_current(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.CURRENT),
+            mode=self.name,
+        )
+
+    def set_velocity(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.VELOCITY),
+            mode=self.name,
+        )
+    
+    def set_voltage(self, value: Union[float, int]):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.VOLTAGE),
+            mode=self.name,
+        )
+    
+    def set_stop(self):
+        raise ControlModeException(
+            tag=self.actuator.tag,
+            attribute=str(ControlModesMapping.STOP),
+            mode=self.name,
+        )
+    
+    def set_torque(self, value: Union[float, int]):
+        self.actuator._command = self.actuator.make_position(
+            position = math.nan, 
+                velocity = 0,
+                feedforward_torque = value, 
+                kp_scale=0, 
+                kd_scale=0,
+                ilimit_scale=0, 
+                watchdog_timeout = math.nan,
+                query = True, 
+        )
 
 
 @dataclass(init=False)
@@ -292,7 +394,8 @@ class MoteusControlModes(ControlModesBase):
         self.VELOCITY = MoteusVelocityMode(actuator=actuator)
         self.POSITION = MoteusPositionMode(actuator=actuator)
         self.STOP = MoteusStopMode(actuator=actuator)
-        
+        self.TORQUE = MoteusTorqueMode(actuator=actuator)
+
 class MoteusInterface:
     """
     Singleton Class as Communication Portal between Moteus Controller and Moteus PiHat
@@ -400,7 +503,7 @@ class MoteusController(ActuatorBase, Controller):
         
 
     def __repr__(self) -> str:
-        return f"Moteus[{self._actuator_name}]"
+        return f"Moteus[{self._tag}]"
 
     @check_actuator_connection
     def start(self) -> None:
@@ -421,8 +524,8 @@ class MoteusController(ActuatorBase, Controller):
             os._exit(status=1)
 
         self.mode.enter()
-
         self.mode.set_stop()
+        self._command = self.make_query()
 
     @check_actuator_stream
     @check_actuator_open
@@ -433,7 +536,7 @@ class MoteusController(ActuatorBase, Controller):
         await self._interface.transport.cycle(
             [self._command]
         )
-        self._command = None
+        self._command = self.make_query()
         
 
     async def update(self):
@@ -458,7 +561,7 @@ class MoteusController(ActuatorBase, Controller):
                 msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
-        self._command = None
+        self._command = self.make_query()
 
     def set_motor_stop(self): 
         self.mode.set_stop()
@@ -478,8 +581,8 @@ class MoteusController(ActuatorBase, Controller):
         Args:
             value (float): The torque to set in Nm.
         """
-        self.set_motor_current(
-            value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
+        self.mode.set_torque(
+            value, 
         )
 
     def set_joint_torque(self, value: float) -> None:
@@ -755,7 +858,7 @@ class MoteusController(ActuatorBase, Controller):
     @property
     def case_temperature(self) -> float:
         if self._data is not None:
-            return float(self._data[0].values[MoteusRegister.TEMPERATURE])
+            return self._data[0].values[MoteusRegister.TEMPERATURE]
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
