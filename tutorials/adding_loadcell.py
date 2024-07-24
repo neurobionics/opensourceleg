@@ -1,7 +1,6 @@
 import numpy as np
 
-import opensourceleg.constants as constants
-from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.robots import OpenSourceLeg
 
 LOADCELL_MATRIX = np.array(
     [

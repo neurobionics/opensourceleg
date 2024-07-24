@@ -11,7 +11,7 @@ October 26, 2023
 
 import numpy as np
 
-from opensourceleg.robots.robots import OpenSourceLeg
+from opensourceleg.robots import OpenSourceLeg
 from opensourceleg.units import units
 
 osl = OpenSourceLeg(frequency=200)

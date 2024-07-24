@@ -1,4 +1,5 @@
-from opensourceleg.robots.robots import *
+from opensourceleg.robots.base import RobotBase
+from opensourceleg.robots.osl import OpenSourceLeg
 
 """
 Robots module for opensourceleg library.
