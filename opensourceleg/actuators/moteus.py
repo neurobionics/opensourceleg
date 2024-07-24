@@ -50,9 +50,10 @@ from opensourceleg.safety import ThermalLimitException
 from opensourceleg.logging.logger import LOGGER
 
 
-
 # Default gains to be tuned
 DEFAULT_POSITION_GAINS = ControlGains(kp=1, ki=1, kd=1, k=0, b=0, ff=0)
+
+DEFAULT_VELOCITY_GAINS = ControlGains(kp=1, ki=0.5, kd=1, k=0, b=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -88,6 +89,7 @@ class MoteusQueryResolution:
         MoteusRegister.COMMAND_ILIMIT_SCALE: mp.F32,
         MoteusRegister.COMMAND_KD_SCALE: mp.F32,
         MoteusRegister.COMMAND_POSITION: mp.F32,
+        MoteusRegister.COMMAND_VELOCITY: mp.F32,
     }
 
 class MoteusStopMode(ControlModeBase):
@@ -168,15 +170,17 @@ class MoteusVelocityMode(ControlModeBase):
         time.sleep(0.1)
 
     def set_gains(self, gains: ControlGains) -> None:
-        LOGGER.info(
-            msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
-        )
+        super().set_gains(gains)
 
     def set_velocity(self, value: Union[float, int]):
         self.actuator._command = self.actuator.make_position(
             position = math.nan, 
+            kp_scale = self._gains.kp, 
+            kd_scale = self._gains.kd,
+            ilimit_scale = self._gains.ki,
             velocity = value / (np.pi * 2),
             query = True, 
+            # feedforward_torque = 0.1,
             watchdog_timeout = math.nan,
         )
     
@@ -548,6 +552,24 @@ class MoteusController(ActuatorBase, Controller):
         """
         self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
+    def set_velocity_gains(
+        self,
+        kp: int = DEFAULT_VELOCITY_GAINS.kp,
+        ki: int = DEFAULT_VELOCITY_GAINS.ki,
+        kd: int = DEFAULT_VELOCITY_GAINS.kd,
+        ff: int = DEFAULT_VELOCITY_GAINS.ff,
+    ) -> None:
+        """
+        Sets the position gains in arbitrary Moteus units.
+
+        Args:
+            kp (int): The proportional gain
+            ki (int): The integral gain
+            kd (int): The derivative gain
+            ff (int): The feedforward gain
+        """
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
+
     def set_current_gains(
         self,
         kp: int = DEFAULT_CURRENT_GAINS.kp,
@@ -675,7 +697,7 @@ class MoteusController(ActuatorBase, Controller):
     @property
     def motor_velocity(self) -> float:
         if self._data is not None:
-            return int(self._data[0].values[MoteusRegister.VELOCITY]) * 2 * np.pi
+            return self._data[0].values[MoteusRegister.VELOCITY] * 2 * np.pi
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
