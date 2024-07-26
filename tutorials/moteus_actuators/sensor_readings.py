@@ -10,6 +10,7 @@ async def main():
     )
     try: 
         mc1.start()
+        LOGGER.track_variable(lambda: mc1.motor_position, "Position")
         while True: 
             await mc1.update()
             print(f"######")
@@ -20,11 +21,8 @@ async def main():
                 )
             )
             print(f"------")
-            
+            LOGGER.update()
             await asyncio.sleep(0.02)
-
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt...")
 
     finally:
         await mc1.stop()

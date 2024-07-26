@@ -31,9 +31,6 @@ async def main():
             print(f"------")
             await asyncio.sleep(0.02)
 
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt...")
-
     finally:
         await mc1.stop()
     

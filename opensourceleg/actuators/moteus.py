@@ -375,7 +375,7 @@ class MoteusTorqueMode(ControlModeBase):
     
     def set_torque(self, value: Union[float, int]):
         self.actuator._command = self.actuator.make_position(
-            position = math.nan, 
+                position = math.nan, 
                 velocity = 0,
                 feedforward_torque = value, 
                 kp_scale=0, 
