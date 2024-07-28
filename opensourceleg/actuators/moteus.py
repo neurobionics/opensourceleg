@@ -85,11 +85,10 @@ class MoteusQueryResolution:
     aux2_gpio = mp.IGNORE
 
     _extra = {
-        MoteusRegister.COMMAND_KP_SCALE: mp.F32,
-        MoteusRegister.COMMAND_ILIMIT_SCALE: mp.F32,
-        MoteusRegister.COMMAND_KD_SCALE: mp.F32,
         MoteusRegister.COMMAND_POSITION: mp.F32,
         MoteusRegister.COMMAND_VELOCITY: mp.F32,
+        MoteusRegister.COMMAND_FEEDFORWARD_TORQUE: mp.F32, 
+        MoteusRegister.COMMAND_Q_CURRENT: mp.F32, 
     }
 
 class MoteusStopMode(ControlModeBase):
