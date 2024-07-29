@@ -70,9 +70,8 @@ class MoteusQueryResolution:
     temperature = mp.INT32
     fault = mp.INT8
 
-
     # Kept for Controller init reference
-    q_current = mp.F32
+    q_current = mp.INT32
     d_current = mp.IGNORE
     abs_position = mp.IGNORE
     power = mp.IGNORE

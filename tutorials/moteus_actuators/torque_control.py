@@ -19,8 +19,6 @@ async def main():
             "Output_Current": [],
             "Command_Current": [], 
         })
-        # LOGGER.set_format("csv")
-        # LOGGER.track_variable(lambda: mc1.motor_position, "Motor Position")
         iter = 0
         time_period = 0.0001
         while True: 
@@ -47,8 +45,6 @@ async def main():
 
     finally:
         await mc1.stop()
-
-    
 
 if __name__ == '__main__':
     asyncio.run(main())
