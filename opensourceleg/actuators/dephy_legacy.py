@@ -1,4 +1,4 @@
-from typing import Any, Callable, Union, overload
+﻿from typing import Any, Callable, Union, overload
 
 import ctypes
 import os
@@ -66,7 +66,7 @@ class DephyVoltageMode(ControlModeBase):
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
-        self.actuator.stop_motor(0)
+        self.set_voltage(0)
         time.sleep(DEPHY_SLEEP_DURATION)
 
     def set_gains(self, gains: ControlGains) -> None:
@@ -75,7 +75,7 @@ class DephyVoltageMode(ControlModeBase):
         )
 
     def set_voltage(self, value: Union[float, int]):
-        self.actuator.command_motor_voltage(value=int(value))
+        self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
 
     def set_current(self, value: Union[float, int]):
         raise ControlModeException(
@@ -122,7 +122,9 @@ class DephyCurrentMode(ControlModeBase):
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self.actuator.stop_motor()
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
+        )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
@@ -137,7 +139,7 @@ class DephyCurrentMode(ControlModeBase):
         )
 
     def set_current(self, value: Union[float, int]):
-        self.actuator.command_motor_current(value=int(value))
+        self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
 
     def set_voltage(self, value: Union[float, int]):
         raise ControlModeException(
@@ -179,7 +181,9 @@ class DephyPositionMode(ControlModeBase):
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.stop_motor()
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
+        )
         time.sleep(0.1)
 
     def set_gains(
@@ -197,7 +201,8 @@ class DephyPositionMode(ControlModeBase):
         )
 
     def set_position(self, value: Union[float, int]):
-        self.actuator.command_motor_position(
+        self.actuator.send_motor_command(
+            ctrl_mode=self.flag,
             value=int(
                 (
                     value
@@ -248,7 +253,9 @@ class DephyImpedanceMode(ControlModeBase):
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.stop_motor()
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
+        )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
@@ -263,7 +270,8 @@ class DephyImpedanceMode(ControlModeBase):
         )
 
     def set_position(self, value: Union[float, int]):
-        self.actuator.command_motor_position(
+        self.actuator.send_motor_command(
+            ctrl_mode=self.flag,
             value=int(
                 (
                     value
@@ -350,7 +358,7 @@ class DephyActpack(ActuatorBase, Device):
         self._motor_position_offset = 0.0
         self._joint_position_offset = 0.0
         self._joint_direction = 1
-
+        
         self._is_homed: bool = False
 
         self._thermal_model: ThermalModel = ThermalModel(
@@ -386,9 +394,9 @@ class DephyActpack(ActuatorBase, Device):
         self.close()
 
     def update(self) -> None:
-
+        
         self._data = self.read()
-
+        
         self._thermal_model.T_c = self.case_temperature
         self._thermal_scale = self._thermal_model.update_and_get_scale(
             dt = 1/self.frequency,
@@ -632,7 +640,7 @@ class DephyActpack(ActuatorBase, Device):
 
     @deprecated_with_routing(alternative_func=set_motor_current)
     def set_current(self, value: float) -> None:
-
+        
         self.mode.set_current(value=value)
 
     def set_motor_voltage(self, value: float) -> None:
@@ -645,10 +653,10 @@ class DephyActpack(ActuatorBase, Device):
         self.mode.set_voltage(
             value,
         )
-
+        
     @deprecated_with_routing(alternative_func=set_motor_voltage)
-    def set_voltage(self, value: float) -> None:
-
+    def set_voltage(self, value: float) -> None: 
+        
         self.mode.set_voltage(
             value,
         )
@@ -1001,7 +1009,7 @@ class DephyActpack(ActuatorBase, Device):
             )
             return 0.0
 
-
+    
     @property
     def winding_temperature(self) -> float:
         """
@@ -1122,7 +1130,7 @@ class DephyActpack(ActuatorBase, Device):
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
-
+    
     @property
     def thermal_scaling_factor(self) -> float:
         """

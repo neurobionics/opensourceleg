@@ -1,15 +1,15 @@
-﻿import opensourceleg.actuators.dephy as Dephy
+﻿import opensourceleg.actuators.dephy_legacy as Dephy
 from opensourceleg.logging.logger import LOGGER
 import time
 
 actpack = Dephy.DephyActpack(
-    port="/dev/ttyACM0", 
-    gear_ratio=9.0, 
+    port="/dev/ttyACM0",
+    gear_ratio=9.0,
 )
 with actpack:
     try:
         actpack.set_control_mode(mode = actpack.CONTROL_MODES.CURRENT)
-        
+
         actpack.set_current_gains(
             # if no input, then default gains are applied
         )
@@ -22,8 +22,8 @@ with actpack:
             )
         )
         input("Press Enter to continue...")
-        time.sleep(0.1)    
-        while True: 
+        time.sleep(0.1)
+        while True:
             actpack.set_motor_current(value = 600)                  # in mA
             actpack.update()
             LOGGER.info("".join(

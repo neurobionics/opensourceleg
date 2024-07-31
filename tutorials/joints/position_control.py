@@ -1,17 +1,17 @@
-﻿import opensourceleg.actuators.dephy as Dephy
+﻿import opensourceleg.actuators.dephy_legacy as Dephy
 from opensourceleg.logging.logger import LOGGER
 import time
 import numpy as np
 
 actpack = Dephy.DephyActpack(
-    port="/dev/ttyACM0", 
-    gear_ratio= 9 * (83 / 18), 
+    port="/dev/ttyACM0",
+    gear_ratio= 9 * (83 / 18),
 )
 with actpack:
     try:
         actpack.home()
         actpack.set_control_mode(mode = actpack.CONTROL_MODES.POSITION)
-        while True: 
+        while True:
             actpack.update()
             current_position = actpack.output_position
             actpack.set_position_gains(

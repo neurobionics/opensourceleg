@@ -1,29 +1,29 @@
-﻿import opensourceleg.actuators.dephy as Dephy
+﻿import opensourceleg.actuators.dephy_legacy as Dephy
 from opensourceleg.logging.logger import LOGGER
 import time
 import numpy as np
 
 actpack = Dephy.DephyActpack(
-    port="/dev/ttyACM0", 
-    gear_ratio=9.0, 
+    port="/dev/ttyACM0",
+    gear_ratio=9.0,
 )
 
-with actpack: 
+with actpack:
     try:
         actpack.set_control_mode(mode = actpack.CONTROL_MODES.IMPEDANCE)
         actpack.update()
         k = 150
         b = 600
         current_position = actpack.output_position
-        while True: 
+        while True:
             actpack.update()
             current_position = actpack.output_position
             k+=100
             actpack.set_impedance_gains(
-                kp=40, 
-                ki=400, 
-                k=k, 
-                b=b, 
+                kp=40,
+                ki=400,
+                k=k,
+                b=b,
                 ff=128,
             )
             actpack.set_output_position(
