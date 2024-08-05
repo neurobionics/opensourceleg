@@ -17,7 +17,8 @@ from moteus import (
     Command, 
     Register as MoteusRegister,
     multiplex as mp, 
-) 
+    Stream, 
+)
 import moteus_pi3hat as pihat
 
 from opensourceleg.actuators.base import (
@@ -51,9 +52,9 @@ from opensourceleg.logging.logger import LOGGER
 
 
 # Default gains to be tuned
-DEFAULT_POSITION_GAINS = ControlGains(kp=1, ki=1, kd=1, k=0, b=0, ff=0)
+DEFAULT_POSITION_GAINS = ControlGains(kp=4.00, ki=1.00, kd=0.05, k=0, b=0, ff=0)
 
-DEFAULT_VELOCITY_GAINS = ControlGains(kp=1, ki=0.5, kd=1, k=0, b=0, ff=0)
+DEFAULT_VELOCITY_GAINS = ControlGains(kp=4.00, ki=1.00, kd=0.05, k=0, b=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -84,6 +85,9 @@ class MoteusQueryResolution:
     aux2_gpio = mp.IGNORE
 
     _extra = {
+        # MoteusRegister.POSITION_KP: mp.F32, 
+        # MoteusRegister.POSITION_KI: mp.F32, 
+        # MoteusRegister.POSITION_KD: mp.F32, 
         MoteusRegister.COMMAND_POSITION: mp.F32,
         MoteusRegister.COMMAND_VELOCITY: mp.F32,
         MoteusRegister.COMMAND_FEEDFORWARD_TORQUE: mp.F32, 
@@ -158,8 +162,8 @@ class MoteusVelocityMode(ControlModeBase):
             actuator=actuator,
             entry_callbacks=[self._entry],
             exit_callbacks=[self._exit],
+            max_gains=ControlGains(kp=1000, ki = 1000, kd = 1000, k = 0, b = 0, ff = 0),
         )
-
     def __repr__(self) -> str:
         return f"MoteusControlMode[{self.name}]"
 
@@ -174,18 +178,26 @@ class MoteusVelocityMode(ControlModeBase):
         self.set_velocity(0)
         time.sleep(0.1)
 
-    def set_gains(self, gains: ControlGains) -> None:
+    async def set_gains(self, gains: ControlGains) -> None:
         super().set_gains(gains)
+        await self._actuator._stream.command(
+            f'conf set servo.pid_position.kp {self._gains.kp}'.encode('utf8')
+        )
+        await self._actuator._stream.command(
+            f'conf set servo.pid_position.ki {self._gains.ki}'.encode('utf8')
+        )
+        await self._actuator._stream.command(
+            f'conf set servo.pid_position.ki {self._gains.kd}'.encode('utf8')
+        )
 
     def set_velocity(self, value: Union[float, int]):
         self.actuator._command = self.actuator.make_position(
             position = math.nan, 
-            kp_scale = self._gains.kp, 
-            kd_scale = self._gains.kd,
-            ilimit_scale = self._gains.ki,
+            # kp_scale = self._gains.kp, 
+            # kd_scale = self._gains.kd,
+            # ilimit_scale = self._gains.ki,
             velocity = value / (np.pi * 2),
             query = True, 
-            # feedforward_torque = 0.1,
             watchdog_timeout = math.nan,
         )
     
@@ -250,18 +262,27 @@ class MoteusPositionMode(ControlModeBase):
         
         time.sleep(0.1)
 
-    def set_gains(
+    async def set_gains(
         self,
         gains: ControlGains = DEFAULT_POSITION_GAINS,
     ) -> None:
         super().set_gains(gains)
+        await self._actuator._stream.command(
+            f'conf set servo.pid_position.kp {self._gains.kp}'.encode('utf8')
+        )
+        await self._actuator._stream.command(
+            f'conf set servo.pid_position.ki {self._gains.ki}'.encode('utf8')
+        )
+        await self._actuator._stream.command(
+            f'conf set servo.pid_position.ki {self._gains.kd}'.encode('utf8')
+        )
 
     def set_position(self, value: Union[float, int]):
         print(value)
         self.actuator._command = self.actuator.make_position(
-            kp_scale = self._gains.kp, 
-            kd_scale = self._gains.kd,
-            ilimit_scale = self._gains.ki,
+            # kp_scale = self._gains.kp, 
+            # kd_scale = self._gains.kd,
+            # ilimit_scale = self._gains.ki,
             position = float((value) / (2 * np.pi)), # in revolutions
             query = True,
             watchdog_timeout = math.nan,
@@ -514,6 +535,8 @@ class MoteusController(ActuatorBase, Controller):
                 transport=self._interface.transport, 
                 query_resolution=self._query,
             )
+            self._stream = Stream(controller=self)
+
         except OSError as e:
             print("\n")
             LOGGER.error(
@@ -580,7 +603,7 @@ class MoteusController(ActuatorBase, Controller):
             value (float): The torque to set in Nm.
         """
         self.mode.set_torque(
-            value, 
+            value / self.gear_ratio, 
         )
 
     def set_joint_torque(self, value: float) -> None:
@@ -602,7 +625,7 @@ class MoteusController(ActuatorBase, Controller):
 
     def set_motor_velocity(self, value: float) -> None:
         self.mode.set_velocity(
-            value = value,
+            value = value * self.gear_ratio,
         )
     
     def set_motor_voltage(self, value: float) -> None:
@@ -628,14 +651,14 @@ class MoteusController(ActuatorBase, Controller):
             position (float): The position to set
         """
         self.mode.set_position(
-            value = value, 
+            value = value * self.gear_ratio, 
         )
         # self._command = self.make_position(
         #     position = value, 
         #     query = True, 
         # )
 
-    def set_position_gains(
+    async def set_position_gains(
         self,
         kp: int = DEFAULT_POSITION_GAINS.kp,
         ki: int = DEFAULT_POSITION_GAINS.ki,
@@ -651,9 +674,9 @@ class MoteusController(ActuatorBase, Controller):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
+        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
-    def set_velocity_gains(
+    async def set_velocity_gains(
         self,
         kp: int = DEFAULT_VELOCITY_GAINS.kp,
         ki: int = DEFAULT_VELOCITY_GAINS.ki,
@@ -669,7 +692,7 @@ class MoteusController(ActuatorBase, Controller):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
+        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
     def set_current_gains(
         self,
@@ -685,7 +708,7 @@ class MoteusController(ActuatorBase, Controller):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
+        LOGGER.info(msg=f"[MoteusControlMode] Current mode not applicable.")
 
     def set_impedance_gains(
         self, 
@@ -774,7 +797,7 @@ class MoteusController(ActuatorBase, Controller):
     @property
     def motor_torque(self) -> float:
         if self._data is not None:
-            return float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
+            return float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP) / self.gear_ratio
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -788,7 +811,7 @@ class MoteusController(ActuatorBase, Controller):
                 float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi)
                 - self.motor_zero_position
                 - self.motor_position_offset
-            )
+            ) / self.gear_ratio
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -798,7 +821,7 @@ class MoteusController(ActuatorBase, Controller):
     @property
     def motor_velocity(self) -> float:
         if self._data is not None:
-            return self._data[0].values[MoteusRegister.VELOCITY] * 2 * np.pi
+            return self._data[0].values[MoteusRegister.VELOCITY] * 2 * np.pi / self.gear_ratio
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."

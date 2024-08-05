@@ -8,8 +8,9 @@ import pandas as pd
 
 async def main():
     mc1 = MoteusController(
-        servo_id=2,
-        bus_id=2, 
+        servo_id=42,
+        bus_id=3, 
+        gear_ratio=1.0
     )
 
     position_data = pd.DataFrame({
@@ -21,15 +22,16 @@ async def main():
         mc1.start()
         await mc1.update()
         mc1.set_control_mode(mode = mc1.CONTROL_MODES.POSITION) 
-        mc1.set_position_gains(
-            kp = 1.0, 
-            kd = 1.0, 
-            ki = 1.0,
+        await mc1.set_position_gains(
+            kp = 4.0, # 2
+            ki = 1.0, # 5
+            kd = 0.05, # 10
         )
         pos = mc1.motor_position
         iter = 0
-        time_period = 0.0001
+        time_period = 0.01
         while True: 
+            
             iter += 1
             mc1.set_motor_position(
                 value = pos + np.pi / 2, 
@@ -38,6 +40,7 @@ async def main():
             print(f"######")
             LOGGER.info("".join(
                 f"Motor Position: {mc1.motor_position}\t"
+                + f"Command_Position: {mc1._data[0].values[Register.COMMAND_POSITION] * 2* np.pi / mc1.gear_ratio}\t"
                 )
             )
             position_data = pd.concat(
@@ -50,7 +53,6 @@ async def main():
             )
             position_data.to_csv("position_data.csv", index = False)
             print(f"------")
-
             await asyncio.sleep(time_period)
 
     finally:

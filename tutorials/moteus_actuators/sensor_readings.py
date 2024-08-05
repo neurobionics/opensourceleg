@@ -7,8 +7,8 @@ from moteus import Register
 import pandas as pd
 async def main():
     mc1 = MoteusController(
-        servo_id=11,
-        bus_id=2, 
+        servo_id=42,
+        bus_id=1, 
     )
     
     try: 
@@ -25,7 +25,6 @@ async def main():
     finally:
         await mc1.stop()
 
-    
 
 if __name__ == '__main__':
     asyncio.run(main())
