@@ -10,7 +10,7 @@ async def main():
     mc1 = MoteusController(
         servo_id=42,
         bus_id=3, 
-        gear_ratio=1.0, 
+        gear_ratio=9.0, 
     )
     velocity_data = pd.DataFrame({
         "Time": [], 
@@ -22,17 +22,17 @@ async def main():
         mc1.start()
         mc1.set_control_mode(mode = mc1.CONTROL_MODES.VELOCITY)
         iter = 0
-        time_period = 0.001
+        time_period = 0.005
         await mc1.set_velocity_gains(
-                kp = 4.0, # 2
-                ki = 1.0, # 5
-                kd = 0.05, # 10
+                kp = 5.0, # 2
+                ki = 0.2, # 5
+                kd = 0.1, # 10
             )
         while True: 
             iter += 1
             
             mc1.set_motor_velocity(
-                value = np.pi, 
+                value = np.pi * 2, 
             )
             await mc1.update()
             print(f"######")

@@ -10,7 +10,7 @@ async def main():
     mc1 = MoteusController(
         servo_id=42,
         bus_id=3, 
-        gear_ratio=1.0
+        gear_ratio=9.0
     )
 
     position_data = pd.DataFrame({
@@ -23,18 +23,18 @@ async def main():
         await mc1.update()
         mc1.set_control_mode(mode = mc1.CONTROL_MODES.POSITION) 
         await mc1.set_position_gains(
-            kp = 4.0, # 2
-            ki = 1.0, # 5
-            kd = 0.05, # 10
+            kp = 0.07, # 2
+            ki = 0.08, # 5
+            kd = 0.01, # 10
         )
         pos = mc1.motor_position
         iter = 0
-        time_period = 0.01
+        time_period = 0.005
         while True: 
             
             iter += 1
             mc1.set_motor_position(
-                value = pos + np.pi / 2, 
+                value = pos + np.pi, 
             )
             await mc1.update()
             print(f"######")
@@ -47,7 +47,7 @@ async def main():
                 [position_data, pd.DataFrame({
                     "Time": [iter * time_period], 
                     "Output_Position": [mc1.motor_position],
-                    "Command_Position": [mc1._data[0].values[Register.COMMAND_POSITION] * 2 * np.pi],
+                    "Command_Position": [mc1._data[0].values[Register.COMMAND_POSITION] * 2 * np.pi / mc1.gear_ratio],
                 })],
                 ignore_index=True,
             )

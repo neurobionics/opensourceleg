@@ -187,7 +187,7 @@ class MoteusVelocityMode(ControlModeBase):
             f'conf set servo.pid_position.ki {self._gains.ki}'.encode('utf8')
         )
         await self._actuator._stream.command(
-            f'conf set servo.pid_position.ki {self._gains.kd}'.encode('utf8')
+            f'conf set servo.pid_position.kd {self._gains.kd}'.encode('utf8')
         )
 
     def set_velocity(self, value: Union[float, int]):
@@ -274,7 +274,7 @@ class MoteusPositionMode(ControlModeBase):
             f'conf set servo.pid_position.ki {self._gains.ki}'.encode('utf8')
         )
         await self._actuator._stream.command(
-            f'conf set servo.pid_position.ki {self._gains.kd}'.encode('utf8')
+            f'conf set servo.pid_position.kd {self._gains.kd}'.encode('utf8')
         )
 
     def set_position(self, value: Union[float, int]):

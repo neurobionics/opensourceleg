@@ -9,7 +9,7 @@ async def main():
     mc1 = MoteusController(
         servo_id=42,
         bus_id=3, 
-        gear_ratio = 9.0, 
+        gear_ratio = 1.0, 
     )
     try: 
         mc1.start()
@@ -17,30 +17,35 @@ async def main():
         mc1.set_control_mode(mode = mc1.CONTROL_MODES.TORQUE)
         current_data = pd.DataFrame({
             "Time": [], 
-            "Output_Torque": [],
-            "Command_Torque": [], 
+            "Output_Current": [],
+            "Command_Current": [], 
         })
         iter = 0
-        time_period = 0.001
+        time_period = 0.005
         while True: 
+
             iter += 1
-            mc1.set_motor_torque(value = 0.0027)
+            # mc1._stream.command(
+            #     b'd pos nan 0 nan p0 d0 f0.0'
+            # )
+            mc1.set_motor_torque(value = 0.0)
             await mc1.update()
             print(f"######")
             LOGGER.info("".join(
-                f"Output Torque: {mc1._data[0].values[Register.TORQUE]}\t"
+                f"Output Current: {mc1._data[0].values[Register.Q_CURRENT]}\t"
                 )
             )
+
             print(f"------")
             current_data = pd.concat(
                 [current_data, pd.DataFrame({
                     "Time": [iter * time_period],
-                    "Output_Torque": [mc1._data[0].values[Register.TORQUE]],
-                    "Command_Torque": [mc1._data[0].values[Register.COMMAND_FEEDFORWARD_TORQUE]],
+                    "Output_Current": [mc1._data[0].values[Register.Q_CURRENT]],
+                    "Command_Current": [mc1._data[0].values[Register.COMMAND_Q_CURRENT]],
                 })],
                 ignore_index=True,
             )
-            current_data.to_csv("torque_data.csv", index = False)
+            current_data.to_csv("current_data.csv", index = False)
             
             await asyncio.sleep(time_period)
 
