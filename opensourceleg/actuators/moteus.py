@@ -193,9 +193,6 @@ class MoteusVelocityMode(ControlModeBase):
     def set_velocity(self, value: Union[float, int]):
         self.actuator._command = self.actuator.make_position(
             position = math.nan, 
-            # kp_scale = self._gains.kp, 
-            # kd_scale = self._gains.kd,
-            # ilimit_scale = self._gains.ki,
             velocity = value / (np.pi * 2),
             query = True, 
             watchdog_timeout = math.nan,
@@ -582,6 +579,7 @@ class MoteusController(ActuatorBase, Controller):
                 msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
+
         self._command = self.make_query()
 
     def set_motor_stop(self): 
@@ -885,7 +883,6 @@ class MoteusController(ActuatorBase, Controller):
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
-
     
     @property
     def winding_temperature(self) -> float:
