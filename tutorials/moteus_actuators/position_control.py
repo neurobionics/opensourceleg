@@ -25,7 +25,7 @@ async def main():
         await mc1.set_position_gains(
             kp = 0.07, # 2
             ki = 0.08, # 5
-            kd = 0.01, # 10
+            kd = 0.012, # 10
         )
         pos = mc1.motor_position
         iter = 0

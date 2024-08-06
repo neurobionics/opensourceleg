@@ -28,7 +28,7 @@ async def main():
             # mc1._stream.command(
             #     b'd pos nan 0 nan p0 d0 f0.0'
             # )
-            mc1.set_motor_torque(value = 0.0)
+            mc1.set_motor_torque(value = 0.00)
             await mc1.update()
             print(f"######")
             LOGGER.info("".join(
