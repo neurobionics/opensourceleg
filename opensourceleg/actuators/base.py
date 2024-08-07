@@ -21,16 +21,20 @@ class ControlModesMapping(Enum):
     POSITION (c_int): Position control mode
     IMPEDANCE (c_int): Impedance control mode
 
+    Extending
+    ---------
+    Adding new modes to the control mode dictionary:
+        Access opensourceleg.actuators.base.ControlModesMapping and add the new mode
+
     """
 
     POSITION = c_int(0), "position"
     VOLTAGE = c_int(1), "voltage"
     CURRENT = c_int(2), "current"
     IMPEDANCE = c_int(3), "impedance"
-    STOP = c_int(11), "stop"
-    VELOCITY = c_int(12), "velocity"
-    TORQUE = c_int(13), "torque"
-    
+    VELOCITY = c_int(4), "velocity"
+    TORQUE = c_int(5), "torque"
+    IDLE = c_int(6), "IDLE"
 
     def __new__(cls, c_int_value, str_value):
         obj = object.__new__(cls)
@@ -420,7 +424,7 @@ class ActuatorBase(ABC):
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop()
-        
+
     @abstractmethod
     def start(self) -> None:
         """Start method for the actuator"""
@@ -543,11 +547,9 @@ class ActuatorBase(ABC):
         """Homing method for the joint, should be implemented if the actuator has a homing sequence"""
         pass
 
-    
     def set_max_case_temperature(self, temperature: float) -> None:
         self._MOTOR_CONSTANTS.set_max_case_temperature(temperature)
 
-    
     def set_max_winding_temperature(self, temperature: float) -> None:
         self._MOTOR_CONSTANTS.set_max_winding_temperature(temperature)
 
