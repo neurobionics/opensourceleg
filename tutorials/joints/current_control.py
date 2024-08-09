@@ -1,6 +1,7 @@
-﻿import opensourceleg.actuators.dephy_legacy as Dephy
+﻿import time
+
+import opensourceleg.actuators.dephy_legacy as Dephy
 from opensourceleg.logging.logger import LOGGER
-import time
 
 actpack = Dephy.DephyActpack(
     port="/dev/ttyACM0",
@@ -8,28 +9,30 @@ actpack = Dephy.DephyActpack(
 )
 with actpack:
     try:
-        actpack.set_control_mode(mode = actpack.CONTROL_MODES.CURRENT)
+        actpack.set_control_mode(mode=actpack.CONTROL_MODES.CURRENT)
 
         actpack.set_current_gains(
             # if no input, then default gains are applied
         )
-        actpack.set_motor_current(value = 0)                  # in mA
+        actpack.set_motor_current(value=0)  # in mA
         actpack.update()
-        LOGGER.info("".join(
-            f"Motor Position: {actpack.motor_position}\t"
-            + f"Motor Voltage: {actpack.motor_voltage}\t"
-            + f"Motor Current: {actpack.motor_current}\t"
+        LOGGER.info(
+            "".join(
+                f"Motor Position: {actpack.motor_position}\t"
+                + f"Motor Voltage: {actpack.motor_voltage}\t"
+                + f"Motor Current: {actpack.motor_current}\t"
             )
         )
         input("Press Enter to continue...")
         time.sleep(0.1)
         while True:
-            actpack.set_motor_current(value = 600)                  # in mA
+            actpack.set_motor_current(value=600)  # in mA
             actpack.update()
-            LOGGER.info("".join(
-                f"Motor Position: {actpack.motor_position}\t"
-                + f"Motor Voltage: {actpack.motor_voltage}\t"
-                + f"Motor Current: {actpack.motor_current}\t"
+            LOGGER.info(
+                "".join(
+                    f"Motor Position: {actpack.motor_position}\t"
+                    + f"Motor Voltage: {actpack.motor_voltage}\t"
+                    + f"Motor Current: {actpack.motor_current}\t"
                 )
             )
             time.sleep(0.1)

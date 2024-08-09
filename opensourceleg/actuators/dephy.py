@@ -291,15 +291,12 @@ class DephyImpedanceMode(ControlModeBase):
 
 @dataclass(init=False)
 class DephyActpackControlModes(ControlModesBase):
-
-
     def __init__(self, actuator: "DephyActpack") -> None:
 
         self.VOLTAGE = DephyVoltageMode(actuator=actuator)
         self.CURRENT = DephyCurrentMode(actuator=actuator)
         self.POSITION = DephyPositionMode(actuator=actuator)
         self.IMPEDANCE = DephyImpedanceMode(actuator=actuator)
-
 
 
 class DephyActpack(ActuatorBase, Device):
@@ -341,7 +338,13 @@ class DephyActpack(ActuatorBase, Device):
             self.is_streaming: bool = False
             self.is_open: bool = False
         else:
-            Device.__init__(self, firmwareVersion=firmware_version, port=port, baudRate=baud_rate, stopMotorOnDisconnect=stop_motor_on_disconnect)
+            Device.__init__(
+                self,
+                firmwareVersion=firmware_version,
+                port=port,
+                baudRate=baud_rate,
+                stopMotorOnDisconnect=stop_motor_on_disconnect,
+            )
 
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
@@ -398,14 +401,14 @@ class DephyActpack(ActuatorBase, Device):
 
         self._thermal_model.T_c = self.case_temperature
         self._thermal_scale = self._thermal_model.update_and_get_scale(
-            dt = 1/self.frequency,
-            motor_current = self.motor_current,
+            dt=1 / self.frequency,
+            motor_current=self.motor_current,
         )
         if self.case_temperature >= self.max_case_temperature:
-                self._log.error(
-                    msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
-                )
-                raise ThermalLimitException()
+            self._log.error(
+                msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+            )
+            raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             self._log.error(
@@ -415,6 +418,7 @@ class DephyActpack(ActuatorBase, Device):
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
             raise RuntimeError("Actpack Thermal Limit Tripped")
+
     def home(
         self,
         homing_voltage: int = 2000,
@@ -1008,7 +1012,6 @@ class DephyActpack(ActuatorBase, Device):
             )
             return 0.0
 
-
     @property
     def winding_temperature(self) -> float:
         """
@@ -1148,6 +1151,7 @@ class DephyActpack(ActuatorBase, Device):
     def is_open(self) -> bool:
 
         return self.connected
+
 
 if __name__ == "__main__":
     knee = DephyActpack(

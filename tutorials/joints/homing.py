@@ -1,6 +1,7 @@
-﻿import opensourceleg.actuators.dephy_legacy as Dephy
+﻿import time
+
+import opensourceleg.actuators.dephy_legacy as Dephy
 from opensourceleg.logging.logger import LOGGER
-import time
 
 actpack = Dephy.DephyActpack(
     port="/dev/ttyACM0",

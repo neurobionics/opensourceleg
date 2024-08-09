@@ -1,6 +1,7 @@
-﻿import opensourceleg.actuators.dephy_legacy as Dephy
+﻿import time
+
+import opensourceleg.actuators.dephy_legacy as Dephy
 from opensourceleg.logging.logger import LOGGER
-import time
 
 actpack = Dephy.DephyActpack(
     port="/dev/ttyACM0",
@@ -10,10 +11,11 @@ with actpack:
     try:
         while True:
             actpack.update()
-            LOGGER.info("".join(
-                f"Motor Position: {actpack.motor_position}\t"
-                + f"Motor Voltage: {actpack.motor_voltage}\t"
-                + f"Motor Current: {actpack.motor_current}\t"
+            LOGGER.info(
+                "".join(
+                    f"Motor Position: {actpack.motor_position}\t"
+                    + f"Motor Voltage: {actpack.motor_voltage}\t"
+                    + f"Motor Current: {actpack.motor_current}\t"
                 )
             )
             time.sleep(0.1)
