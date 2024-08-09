@@ -1,10 +1,11 @@
-﻿import opensourceleg.actuators.dephy as Dephy
+﻿import time
+
+import opensourceleg.actuators.dephy as Dephy
 from opensourceleg.logging.logger import LOGGER
-import time
 
 actpack = Dephy.DephyActpack(
-    port="/dev/ttyACM0", 
-    gear_ratio=9.0, 
+    port="/dev/ttyACM0",
+    gear_ratio=9.0,
 )
 with actpack:
     try:

@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 from abc import ABC, abstractmethod
 
 from opensourceleg.actuators.base import ActuatorBase

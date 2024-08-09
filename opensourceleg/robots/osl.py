@@ -1,10 +1,14 @@
 #!/usr/bin/python3
+from types import SimpleNamespace
+from typing import NamedTuple, TypedDict
+
 import sys
 import time
+from collections import namedtuple
 
 import numpy as np
 
-from opensourceleg.actuators.base import ActuatorBase
+from opensourceleg.actuators.dephy import ActuatorBase, DephyActpack
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase
 from opensourceleg.sensors.base import SensorBase
@@ -30,8 +34,7 @@ class OpenSourceLeg(RobotBase):
     def __init__(
         self,
         frequency: int = 200,
-        actuators: dict[str, ActuatorBase] = {},
-        sensors: dict[str, SensorBase] = {},
+        actuators={},
     ) -> None:
         """
         Initialize the OSL class.
@@ -43,8 +46,14 @@ class OpenSourceLeg(RobotBase):
         """
 
         self._frequency: int = frequency
-        self._actuators: dict[str, ActuatorBase] = actuators
-        self._sensors: dict[str, SensorBase] = sensors
+
+        # create a named tuple that is type defined for the actuators
+        fields = [
+            (key, float) for key in actuators.keys()
+        ]  # Assuming all actuators are of type float
+        # Dynamically create the NamedTuple class
+        _actuators = NamedTuple("Actuators", fields)
+        self._actuators = _actuators(**actuators)
 
     def start(self) -> None:
         """
@@ -58,6 +67,9 @@ class OpenSourceLeg(RobotBase):
         """
         super().stop()
 
+    def update(self):
+        return super().update()
+
     def __repr__(self) -> str:
         return f"OSL"
 
@@ -68,30 +80,27 @@ class OpenSourceLeg(RobotBase):
         pass
 
     @property
-    def knee(self):
-        pass
-
-    @property
-    def ankle(self):
-        pass
-
-    @property
-    def loadcell(self):
-        pass
-
-    @property
-    def imu(self):
-        pass
-
-    @property
     def is_homed(self) -> bool:
         return self._is_homed
 
 
 if __name__ == "__main__":
-    osl = OpenSourceLeg(frequency=200)
-    osl.add_knee()
-    osl.add_ankle()
 
-    osl.add_loadcell()
-    osl.add_imu()
+    # # Type defined dictionary for the actuators
+    # old_actuators: dict[str, ActuatorBase] = {
+    #     "knee": DephyActpack(offline=True),
+    #     "ankle": DephyActpack(offline=True),
+    # }
+    # print(old_actuators["knee"])
+
+    # # Define the Actuators namedtuple with type hints
+    # class Actuators(NamedTuple):
+    #     knee: DephyActpack
+    #     ankle: DephyActpack
+
+    # actuators = Actuators(
+    #     knee=DephyActpack(offline=True), ankle=DephyActpack(offline=True)
+    # )
+
+    # print(actuators.knee.tag, old_actuators["knee"].gear_ratio)
+    pass

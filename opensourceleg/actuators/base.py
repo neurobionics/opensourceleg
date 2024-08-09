@@ -416,7 +416,7 @@ class ActuatorBase(ABC):
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop()
-        
+
     @abstractmethod
     def start(self) -> None:
         """Start method for the actuator"""
@@ -539,11 +539,9 @@ class ActuatorBase(ABC):
         """Homing method for the joint, should be implemented if the actuator has a homing sequence"""
         pass
 
-    
     def set_max_case_temperature(self, temperature: float) -> None:
         self._MOTOR_CONSTANTS.set_max_case_temperature(temperature)
 
-    
     def set_max_winding_temperature(self, temperature: float) -> None:
         self._MOTOR_CONSTANTS.set_max_winding_temperature(temperature)
 
