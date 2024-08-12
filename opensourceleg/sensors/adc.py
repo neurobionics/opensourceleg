@@ -6,16 +6,17 @@ from base import ADCBase
 
 
 class ADS131M0x(ADCBase):
-
     _BYTES_PER_WORD = 3
+    # SPI Commands
     _WAKEUP_WORD = [0x00, 0x33, 0x00]
     _RESET_WORD = [0x00, 0x11, 0x00]
     _STANDBY_WORD = [0x00, 0x22, 0x00]
+    # SPI words for writing to different registers
     _WRITE_CLOCK_WORD = [0x61, 0x80, 0x00]
     _WRITE_GAIN1_WORD = [0x62, 0x00, 0x00]
     _WRITE_GAIN2_WORD = [0x62, 0x80, 0x00]
     _WRITE_MODE_WORD = [0x61, 0x00, 0x00]
-    _READ_STATUS_WORD = [0xA0, 0x80, 0x00]
+    # Specific values to be written to registers
     _DISABLE_CHANNEL_WORD = [0x00, 0x0E, 0x00]
     _ENABLE_CHANNEL_WORD = [0xFF, 0x0E, 0x00]
     _MODE_SETUP_WORD = [0x01, 0x10, 0x00]
@@ -64,6 +65,7 @@ class ADS131M0x(ADCBase):
         [0x75, 0x80, 0x00],
         [0x78, 0x00, 0x00],
     ]
+    # SPI words for writing to the configuration registers of each channel
     _WRITE_CFG_WORDS = [
         [0x64, 0x80, 0x00],
         [0x67, 0x00, 0x00],
@@ -74,7 +76,7 @@ class ADS131M0x(ADCBase):
         [0x73, 0x80, 0x00],
         [0x76, 0x00, 0x00],
     ]
-
+    # Translate desired gain to register code for that gain
     _GAINS = {1: 0, 2: 1, 4: 2, 8: 3, 16: 4, 32: 5, 64: 6, 128: 7}
 
     def __init__(self, num_channels=6, max_speed_hz=8192000, gain=[32, 128] * 3):
@@ -94,10 +96,14 @@ class ADS131M0x(ADCBase):
     def is_streaming(self) -> bool:
         return self._streaming
 
+    """Checks if all ADC channels are ready to be read"""
+
     def _ready_to_read(self):
-        self._spi.xfer2(self._READ_STATUS_WORD)
+        self._spi.xfer2([0x00, 0x00, 0x00])
         reply = self._spi.readbytes(24)
         return ((reply[0] << 8) | reply[1]) == self._ready_status[self._num_channels]
+
+    """Opens SPI port and begins streaming ADC data"""
 
     def start(self) -> None:
         # opens /dev/spidev0.0
@@ -117,18 +123,26 @@ class ADS131M0x(ADCBase):
         # self._set_voltage_source(self._source)
         self._clear_stale_data()
 
+    """Resets all register values"""
+
     def reset(self) -> None:
         self.send_spi(self._RESET_WORD)
+
+    """Reads newest ADC data"""
 
     def update(self) -> None:
         while not self._ready_to_read():
             sleep(0.0001)
         self._data = [(dat) / (2**23) * 1.2 for dat in self._read_data()]
 
+    """Stop streaming ADC data and close SPI port"""
+
     def stop(self):
         self.send_spi(self._STANDBY_WORD)
         self._spi.close()
         self._streaming = False
+
+    """Centers the ADC data around the measured zero value"""
 
     def _offset_calibration(self):
         # set voltage source to ground
@@ -151,44 +165,52 @@ class ADS131M0x(ADCBase):
             )
         self._set_voltage_source(0)
 
+    """Clears stale ADC values so the next read will be accurate"""
+
     def _clear_stale_data(self):
-        for _ in range(3):
+        for _ in range(2):
             self.update()
+
+    """Set default gain calibration and automatically calibrates the offset"""
 
     def calibrate(self):
         self.default_calibration()
         self._offset_calibration()
-        # self._gain_calibration()
 
-    def default_calibration(
-        self, offsets=[0] * 6, gains=[0x800000] * 6
-    ) -> (
-        None
-    ):  # CALIBRATE OFFSET BY GROUNDING, CALIBRATE GAIN USING TEST VOLTAGE, TEST THIS
+    """Writes gain calibration value of 1 and offset calibration value of 0"""
+
+    def default_calibration(self) -> None:
+        offset = 0x000000
+        gain = 0x800000
         self._set_voltage_source(0)
         sleep(0.01)
         for i in range(0, self._num_channels):
             # offset calibration
             self.send_spi(
                 self._WRITE_MSB_OCAL_WORDS[i]
-                + [(offsets[i] >> 16) & 0xFF, (offsets[i] >> 8) & 0xFF, 0x00]
+                + [(offset >> 16) & 0xFF, (offset >> 8) & 0xFF, 0x00]
             )
-            self.send_spi(
-                self._WRITE_LSB_OCAL_WORDS[i] + [(offsets[i]) & 0xFF, 0x00, 0x00]
-            )
-
+            self.send_spi(self._WRITE_LSB_OCAL_WORDS[i] + [(offset) & 0xFF, 0x00, 0x00])
             # gain calibration
             self.send_spi(
                 self._WRITE_MSB_GCAL_WORDS[i]
-                + [(gains[i] >> 16) & 0xFF, (gains[i] >> 8) & 0xFF, 0x00]
+                + [(gain >> 16) & 0xFF, (gain >> 8) & 0xFF, 0x00]
             )
-            self.send_spi(
-                self._WRITE_LSB_GCAL_WORDS[i] + [(gains[i]) & 0xFF, 0x00, 0x00]
-            )
+            self.send_spi(self._WRITE_LSB_GCAL_WORDS[i] + [(gain) & 0xFF, 0x00, 0x00])
+
+    """Changes voltage source for ADC input.
+    
+    0 -- external input
+    1 -- shorts differential pairs for value of 0
+    2 -- positive internal test signal (~153.6mV)
+    3 -- negative internal test signal (~-153.6mV)
+    """
 
     def _set_voltage_source(self, source):
         for i in range(0, self._num_channels):
             self.send_spi(self._WRITE_CFG_WORDS[i] + [0x00, source, 0x00])
+
+    """Set PGA gain for each channel of ADC"""
 
     def set_gain(self, gain_array):  # Add parameters to set gains
         # disable all channels
@@ -219,6 +241,11 @@ class ADS131M0x(ADCBase):
         # enable all channels
         self.send_spi(self._WRITE_CLOCK_WORD + self._ENABLE_CHANNEL_WORD)
 
+    """Returns signed ADC value
+    
+    Ranges from -2^23 --> 2^23
+    """
+
     def _read_data(self):
         reply = self._spi.readbytes(self._BYTES_PER_WORD * self._WORDS_PER_FRAME)
         val = [0] * self._num_channels
@@ -228,19 +255,26 @@ class ADS131M0x(ADCBase):
             )
         return val
 
+    """Send SPI message to ADS131M0x"""
+
     def send_spi(self, bytes):
         words_sent = np.int8(len(bytes) / 3)
         self._spi.xfer2(bytes)
         self._spi.readbytes(self._BYTES_PER_WORD * (self._WORDS_PER_FRAME - words_sent))
 
-    def print_register(self, address):
+    """Returns hex values at register located at specified address
+    
+    Mainly used for debugging purposes
+    """
+
+    def read_register(self, address):
         msg = (address << 7) | (0b101 << 13)
         byte = [0] * 2
         byte[0] = (msg >> 8) & 0xFF
         byte[1] = msg & 0xFF
         self._spi.xfer2(byte + [0x00])
         rsp = self._spi.readbytes(24)
-        print(hex(rsp[0] << 8 | rsp[1]))
+        return hex(rsp[0] << 8 | rsp[1])
 
     @property
     def ch0(self):

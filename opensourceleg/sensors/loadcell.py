@@ -21,11 +21,17 @@ class SRILoadcell(LoadcellBase):
     def is_streaming(self) -> bool:
         return self.adc._streaming
 
+    """Start streaming ADC data"""
+
     def start(self):
         self.adc.start()
 
+    """Stop streaming ADC data"""
+
     def stop(self):
         self.adc.stop()
+
+    """Read most recent ADC data"""
 
     def update(self):
         self.adc.update()
