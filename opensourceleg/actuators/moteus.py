@@ -236,10 +236,10 @@ class MoteusPositionMode(ControlModeBase):
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
 
-        if not self.has_gains:
-            self.set_gains()
+        # if not self.has_gains:
+        #     self.set_gains()
 
-        self.set_position(value=0)
+        # self.set_position(value=0)
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
@@ -264,7 +264,7 @@ class MoteusPositionMode(ControlModeBase):
         )
 
     def set_position(self, value: Union[float, int]):
-        print(value)
+        
         self.actuator._command = self.actuator.make_position(
             position=float((value) / (2 * np.pi)),  # in revolutions
             query=True,
@@ -316,8 +316,8 @@ class MoteusTorqueMode(ControlModeBase):
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
 
-        if not self.has_gains:
-            self.set_gains()
+        # if not self.has_gains:
+        #     self.set_gains()
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
@@ -330,6 +330,7 @@ class MoteusTorqueMode(ControlModeBase):
         self,
         gains: ControlGains = DEFAULT_TORQUE_GAINS,
     ) -> None:
+        
         super().set_gains()
         await self._actuator._stream.command(
             f"conf set servo.pid_dq.kp {self._gains.kp}".encode("utf8")
@@ -370,7 +371,7 @@ class MoteusTorqueMode(ControlModeBase):
     def set_torque(self, value: Union[float, int]):
         self.actuator._command = self.actuator.make_position(
             position=math.nan,
-            velocity=0,
+            velocity=math.nan,
             feedforward_torque=value,
             kp_scale=0,
             kd_scale=0,
@@ -800,7 +801,7 @@ class MoteusController(ActuatorBase, Controller):
                 float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi)
                 - self.motor_zero_position
                 - self.motor_position_offset
-            ) / self.gear_ratio
+            )
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."

@@ -20,7 +20,7 @@ with actpack:
                     + f"Motor Current: {actpack.motor_current}\t"
                 )
             )
-            time.sleep(0.1)
+            time.sleep(0.005)
 
     except KeyboardInterrupt:
         exit()
