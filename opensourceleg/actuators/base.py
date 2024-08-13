@@ -21,12 +21,20 @@ class ControlModesMapping(Enum):
     POSITION (c_int): Position control mode
     IMPEDANCE (c_int): Impedance control mode
 
+    Extending
+    ---------
+    Adding new modes to the control mode dictionary:
+        Access opensourceleg.actuators.base.ControlModesMapping and add the new mode
+
     """
 
     POSITION = c_int(0), "position"
     VOLTAGE = c_int(1), "voltage"
     CURRENT = c_int(2), "current"
     IMPEDANCE = c_int(3), "impedance"
+    VELOCITY = c_int(4), "velocity"
+    TORQUE = c_int(5), "torque"
+    IDLE = c_int(6), "IDLE"
 
     def __new__(cls, c_int_value, str_value):
         obj = object.__new__(cls)
