@@ -188,15 +188,3 @@ classDiagram
   ControlModesMeta ..> ControlModeBase: ControlModesBase(metaclass=ControlModesMeta)
   ActuatorBase <.. MotorConstants: self._MOTOR_CONSTANTS
 ```
-
-### [DephyActpack](./dephy.py)
-
-
-
-### [Moteus Drivers](./moteus.py)
-
-#### Known Issues
-
-* Missing Joint Properties (e.g. `homing`)
-
-* Multiple actuators sharing same cycle not supported, manual access to `MoteusInterface` Required
