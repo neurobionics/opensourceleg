@@ -1,8 +1,6 @@
 ﻿from abc import ABC, abstractmethod
 from functools import wraps
 
-import numpy as np
-
 
 class SensorNotStreamingException(Exception):
     def __init__(self, sensor_name: str = "Sensor") -> None:
