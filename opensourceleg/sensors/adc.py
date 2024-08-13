@@ -87,21 +87,10 @@ class ADS131M0x(ADCBase):
         self._data = [0] * num_channels
         self._ready_status = {6: 0x013F, 7: 0x017F, 8: 0x01FF}
         self._streaming = False
-        self.gain = gain
+        self._gain = gain
 
     def __repr__(self) -> str:
         return f"ADS131M0x"
-
-    @property
-    def is_streaming(self) -> bool:
-        return self._streaming
-
-    """Checks if all ADC channels are ready to be read"""
-
-    def _ready_to_read(self):
-        self._spi.xfer2([0x00, 0x00, 0x00])
-        reply = self._spi.readbytes(24)
-        return ((reply[0] << 8) | reply[1]) == self._ready_status[self._num_channels]
 
     """Opens SPI port and begins streaming ADC data"""
 
@@ -113,7 +102,7 @@ class ADS131M0x(ADCBase):
         # SPI mode 1: CPOL = 0, CPHA = 1
         self._spi.mode = 0b01
         # Set programmable gain amplifier (PGA) gains for each channel
-        self.set_gain(self.gain)
+        self.set_gain(self._gain)
         # wakeup
         self.send_spi(self._WAKEUP_WORD)
         self._set_voltage_source(0)
@@ -123,10 +112,12 @@ class ADS131M0x(ADCBase):
         # self._set_voltage_source(self._source)
         self._clear_stale_data()
 
-    """Resets all register values"""
+    """Stop streaming ADC data and close SPI port"""
 
-    def reset(self) -> None:
-        self.send_spi(self._RESET_WORD)
+    def stop(self):
+        self.send_spi(self._STANDBY_WORD)
+        self._spi.close()
+        self._streaming = False
 
     """Reads newest ADC data"""
 
@@ -135,41 +126,10 @@ class ADS131M0x(ADCBase):
             sleep(0.0001)
         self._data = [(dat) / (2**23) * 1.2 for dat in self._read_data()]
 
-    """Stop streaming ADC data and close SPI port"""
+    """Resets all register values"""
 
-    def stop(self):
-        self.send_spi(self._STANDBY_WORD)
-        self._spi.close()
-        self._streaming = False
-
-    """Centers the ADC data around the measured zero value"""
-
-    def _offset_calibration(self):
-        # set voltage source to ground
-        self._set_voltage_source(1)
-        sleep(0.01)
-        self._clear_stale_data()
-        offsets = [0] * 1000
-        for i in range(1000):
-            offsets[i] = self._read_data()
-        offset_avg = [int(sum(values) / len(values)) for values in zip(*offsets)]
-        print("zeros")
-        print(offset_avg)
-        for i in range(0, self._num_channels):
-            self.send_spi(
-                self._WRITE_MSB_OCAL_WORDS[i]
-                + [(offset_avg[i] >> 16) & 0xFF, (offset_avg[i] >> 8) & 0xFF, 0x00]
-            )
-            self.send_spi(
-                self._WRITE_LSB_OCAL_WORDS[i] + [(offset_avg[i]) & 0xFF, 0x00, 0x00]
-            )
-        self._set_voltage_source(0)
-
-    """Clears stale ADC values so the next read will be accurate"""
-
-    def _clear_stale_data(self):
-        for _ in range(2):
-            self.update()
+    def reset(self) -> None:
+        self.send_spi(self._RESET_WORD)
 
     """Set default gain calibration and automatically calibrates the offset"""
 
@@ -197,18 +157,6 @@ class ADS131M0x(ADCBase):
                 + [(gain >> 16) & 0xFF, (gain >> 8) & 0xFF, 0x00]
             )
             self.send_spi(self._WRITE_LSB_GCAL_WORDS[i] + [(gain) & 0xFF, 0x00, 0x00])
-
-    """Changes voltage source for ADC input.
-    
-    0 -- external input
-    1 -- shorts differential pairs for value of 0
-    2 -- positive internal test signal (~153.6mV)
-    3 -- negative internal test signal (~-153.6mV)
-    """
-
-    def _set_voltage_source(self, source):
-        for i in range(0, self._num_channels):
-            self.send_spi(self._WRITE_CFG_WORDS[i] + [0x00, source, 0x00])
 
     """Set PGA gain for each channel of ADC"""
 
@@ -241,20 +189,6 @@ class ADS131M0x(ADCBase):
         # enable all channels
         self.send_spi(self._WRITE_CLOCK_WORD + self._ENABLE_CHANNEL_WORD)
 
-    """Returns signed ADC value
-    
-    Ranges from -2^23 --> 2^23
-    """
-
-    def _read_data(self):
-        reply = self._spi.readbytes(self._BYTES_PER_WORD * self._WORDS_PER_FRAME)
-        val = [0] * self._num_channels
-        for byte in range(3, self._num_channels * 3 + 1, 3):
-            val[int(((byte) / 3) - 1)] = twos_complement(
-                ((reply[byte] << 16) | (reply[byte + 1] << 8) | reply[byte + 2]), 24
-            )
-        return val
-
     """Send SPI message to ADS131M0x"""
 
     def send_spi(self, bytes):
@@ -275,6 +209,10 @@ class ADS131M0x(ADCBase):
         self._spi.xfer2(byte + [0x00])
         rsp = self._spi.readbytes(24)
         return hex(rsp[0] << 8 | rsp[1])
+
+    @property
+    def is_streaming(self) -> bool:
+        return self._streaming
 
     @property
     def ch0(self):
@@ -308,13 +246,71 @@ class ADS131M0x(ADCBase):
     def ch7(self):
         return self._data[7]
 
-    @property
-    def data(self):
-        return self._data
+    """Checks if all ADC channels are ready to be read"""
+
+    def _ready_to_read(self):
+        self._spi.xfer2([0x00, 0x00, 0x00])
+        reply = self._spi.readbytes(24)
+        return ((reply[0] << 8) | reply[1]) == self._ready_status[self._num_channels]
+
+    """Centers the ADC data around the measured zero value"""
+
+    def _offset_calibration(self):
+        # set voltage source to ground
+        self._set_voltage_source(1)
+        sleep(0.01)
+        self._clear_stale_data()
+        offsets = [0] * 1000
+        for i in range(1000):
+            offsets[i] = self._read_data()
+        offset_avg = [int(sum(values) / len(values)) for values in zip(*offsets)]
+        print("zeros")
+        print(offset_avg)
+        for i in range(0, self._num_channels):
+            self.send_spi(
+                self._WRITE_MSB_OCAL_WORDS[i]
+                + [(offset_avg[i] >> 16) & 0xFF, (offset_avg[i] >> 8) & 0xFF, 0x00]
+            )
+            self.send_spi(
+                self._WRITE_LSB_OCAL_WORDS[i] + [(offset_avg[i]) & 0xFF, 0x00, 0x00]
+            )
+        self._set_voltage_source(0)
+
+    """Clears stale ADC values so the next read will be accurate"""
+
+    def _clear_stale_data(self):
+        for _ in range(2):
+            self.update()
+
+    """Changes voltage source for ADC input.
+    
+    0 -- external input
+    1 -- shorts differential pairs for value of 0
+    2 -- positive internal test signal (~153.6mV)
+    3 -- negative internal test signal (~-153.6mV)
+    """
+
+    def _set_voltage_source(self, source):
+        for i in range(0, self._num_channels):
+            self.send_spi(self._WRITE_CFG_WORDS[i] + [0x00, source, 0x00])
+
+    """Returns signed ADC value
+    
+    Ranges from -2^23 --> 2^23
+    """
+
+    def _read_data(self):
+        reply = self._spi.readbytes(self._BYTES_PER_WORD * self._WORDS_PER_FRAME)
+        val = [0] * self._num_channels
+        for byte in range(3, self._num_channels * 3 + 1, 3):
+            val[int(((byte) / 3) - 1)] = twos_complement(
+                ((reply[byte] << 16) | (reply[byte + 1] << 8) | reply[byte + 2]), 24
+            )
+        return val
 
 
 def twos_complement(num, bits):
     val = num
-    if (num >> (bits - 1)) != 0:  # if sign bit is set e.g., 8bit: 128-255
+    if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
         val = num - (1 << bits)  # compute negative value
     return val

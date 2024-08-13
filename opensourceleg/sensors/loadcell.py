@@ -10,21 +10,19 @@ class SRILoadcell(LoadcellBase):
         self.matrix = matrix
         self.zero_offset = [0] * self.adc._num_channels
 
-    @property
-    def adc(self):
-        return self._adc
-
     def __repr__(self) -> str:
         return f"Loadcell"
 
-    @property
-    def is_streaming(self) -> bool:
-        return self.adc._streaming
+    """Reset ADC register values to defaults"""
+
+    def reset(self):
+        self.adc.reset()
 
     """Start streaming ADC data"""
 
     def start(self):
         self.adc.start()
+        self.adc.calibrate()
 
     """Stop streaming ADC data"""
 
@@ -41,8 +39,13 @@ class SRILoadcell(LoadcellBase):
             coupled[i] = self.adc.data[i] * 1000 / (1.2 * self.adc.gain[i])
         self.data = np.transpose(a=self.matrix.dot(b=np.transpose(a=coupled)))
 
-    def reset(self):
-        self.adc.reset()
+    @property
+    def adc(self):
+        return self._adc
+
+    @property
+    def is_streaming(self) -> bool:
+        return self.adc._streaming
 
     @property
     def fx(self):
