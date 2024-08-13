@@ -705,7 +705,6 @@ class MoteusController(ActuatorBase, Controller):
 
     def set_impedance_gains(
         self,
-        self,
         kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
         kd: int = DEFAULT_IMPEDANCE_GAINS.kd,
