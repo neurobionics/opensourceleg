@@ -111,9 +111,9 @@ from opensourceleg.math.math import ThermalModel
 
 #         self.control_modes: ActpackControlModes = ActpackControlModes(device=self)
 
-        self._mode: ActpackMode = self.control_modes.voltage
-        self._max_case_temperature = 80
-        self._max_winding_temperature = 110
+# self._mode: ActpackMode = self.control_modes.voltage
+# self._max_case_temperature = 80
+# self._max_winding_temperature = 110
 
 #     # Overrides the open method to function without a device
 #     def open(self, freq, log_level, log_enabled):
