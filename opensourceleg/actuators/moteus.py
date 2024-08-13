@@ -403,6 +403,7 @@ class MoteusInterface:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls.bus_map: dict[int : list[int]] = {}
+            cls.bus_map: dict[int : list[int]] = {}
             cls._commands: list[Command] = []
             cls.transport = None
         return cls._instance
@@ -610,6 +611,9 @@ class MoteusController(ActuatorBase, Controller):
         #     theta = 0,
         #     voltage = value,
         #     query = True,
+        #     theta = 0,
+        #     voltage = value,
+        #     query = True,
         # )
         LOGGER.info(f"Voltage Mode Not Implemented")
 
@@ -625,6 +629,8 @@ class MoteusController(ActuatorBase, Controller):
             value=value * self.gear_ratio,
         )
         # self._command = self.make_position(
+        #     position = value,
+        #     query = True,
         #     position = value,
         #     query = True,
         # )
@@ -698,6 +704,7 @@ class MoteusController(ActuatorBase, Controller):
         LOGGER.info(msg=f"[MoteusControlMode] Current mode not implemented.")
 
     def set_impedance_gains(
+        self,
         self,
         kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
