@@ -37,7 +37,7 @@ from opensourceleg.logging.decorators import (
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
 
-DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
+DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, k=0, b=0, ff=128)
 
