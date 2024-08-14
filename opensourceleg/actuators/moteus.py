@@ -236,16 +236,10 @@ class MoteusPositionMode(ControlModeBase):
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
 
-        # if not self.has_gains:
-        #     self.set_gains()
-
-        # self.set_position(value=0)
-
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-
         time.sleep(0.1)
 
     async def set_gains(
@@ -548,21 +542,21 @@ class MoteusController(ActuatorBase, Controller):
             motor_current=self.motor_current,
         )
         if self.case_temperature >= self.max_case_temperature:
-            self._log.error(
-                msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
-            self._log.error(
-                msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
 
         self._command = self.make_query()
 
     def home(self):
-        # To be continued ...
+        # TODO: implement homing
         pass
 
     def set_control_mode(self, mode: ControlModeBase) -> None:
@@ -607,14 +601,6 @@ class MoteusController(ActuatorBase, Controller):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
-        # self._command = self.make_vfoc(
-        #     theta = 0,
-        #     voltage = value,
-        #     query = True,
-        #     theta = 0,
-        #     voltage = value,
-        #     query = True,
-        # )
         LOGGER.info(f"Voltage Mode Not Implemented")
 
     def set_motor_position(self, value: float) -> None:
@@ -628,12 +614,6 @@ class MoteusController(ActuatorBase, Controller):
         self.mode.set_position(
             value=value * self.gear_ratio,
         )
-        # self._command = self.make_position(
-        #     position = value,
-        #     query = True,
-        #     position = value,
-        #     query = True,
-        # )
 
     async def set_torque_gains(
         self,

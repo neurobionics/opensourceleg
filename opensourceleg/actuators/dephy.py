@@ -376,7 +376,7 @@ class DephyActpack(ActuatorBase, Device):
             self.open()
         except OSError as e:
             print("\n")
-            self._log.error(
+            LOGGER.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
@@ -406,14 +406,14 @@ class DephyActpack(ActuatorBase, Device):
             motor_current=self.motor_current,
         )
         if self.case_temperature >= self.max_case_temperature:
-            self._log.error(
-                msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
-            self._log.error(
-                msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
