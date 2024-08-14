@@ -1,18 +1,19 @@
 ﻿import time
 
 import numpy as np
+import pandas as pd
 
 import opensourceleg.actuators.dephy as Dephy
 from opensourceleg.logging.logger import LOGGER
-import pandas as pd
 from opensourceleg.time import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 200
 DT = 1 / FREQUENCY
 
+
 def main():
-    actpack = Dephy.DephyActpack(
+    actpack = Dephy.DephyActuator(
         port="/dev/ttyACM0",
         gear_ratio=9.0,
     )
@@ -29,22 +30,22 @@ def main():
         try:
             # actpack.start()
             actpack.set_control_mode(mode=actpack.CONTROL_MODES.POSITION)
-            
+
             actpack.set_position_gains(
-                    # if no input, then default gains are applied
+                # if no input, then default gains are applied
             )
 
             actpack.update()
 
             current_position = actpack.output_position
             for t in clock:
-                
+
                 if t > TIME_TO_STEP:
-                    command_position = current_position +  + np.pi / 2
-                    actpack.set_output_position(value = command_position)
+                    command_position = current_position + +np.pi / 2
+                    actpack.set_output_position(value=command_position)
                 else:
                     command_position = current_position
-                
+
                 actpack.update()
 
                 LOGGER.info(

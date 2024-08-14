@@ -88,7 +88,7 @@ class MoteusQueryResolution:
 
 
 class MoteusIdleMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.IDLE,
             actuator=actuator,
@@ -148,7 +148,7 @@ class MoteusIdleMode(ControlModeBase):
 
 
 class MoteusVelocityMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.VELOCITY,
             actuator=actuator,
@@ -221,7 +221,7 @@ class MoteusVelocityMode(ControlModeBase):
 
 
 class MoteusPositionMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.POSITION,
             actuator=actuator,
@@ -295,7 +295,7 @@ class MoteusPositionMode(ControlModeBase):
 
 
 class MoteusTorqueMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.TORQUE,
             actuator=actuator,
@@ -378,7 +378,7 @@ class MoteusTorqueMode(ControlModeBase):
 @dataclass(init=False)
 class MoteusControlModes(ControlModesBase):
 
-    def __init__(self, actuator: "MoteusController") -> None:
+    def __init__(self, actuator: "MoteusActuator") -> None:
 
         self.VELOCITY = MoteusVelocityMode(actuator=actuator)
         self.POSITION = MoteusPositionMode(actuator=actuator)
@@ -431,7 +431,7 @@ class MoteusInterface:
         self._commands = []
 
 
-class MoteusController(ActuatorBase, Controller):
+class MoteusActuator(ActuatorBase, Controller):
     def __init__(
         self,
         tag: str = "Moteus",

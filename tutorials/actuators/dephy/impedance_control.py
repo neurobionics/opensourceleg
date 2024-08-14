@@ -5,7 +5,7 @@ import numpy as np
 import opensourceleg.actuators.dephy as Dephy
 from opensourceleg.logging.logger import LOGGER
 
-actpack = Dephy.DephyActpack(
+actpack = Dephy.DephyActuator(
     port="/dev/ttyACM0",
     gear_ratio=9.0,
 )

@@ -16,7 +16,7 @@ from opensourceleg.hardware.sensor.lordimu import Loadcell
 from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.time.time import SoftRealtimeLoop
-from tests.test_actuators.test_dephyactpack import Data
+from tests.test_actuators.test_DephyActuator import Data
 from tests.test_joints.test_joint import (
     MockJoint,
     joint_mock,

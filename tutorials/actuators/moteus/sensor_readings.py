@@ -5,12 +5,12 @@ import numpy as np
 import pandas as pd
 from moteus import Register
 
-from opensourceleg.actuators.moteus import MoteusController
+from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.logging.logger import LOGGER
 
 
 async def main():
-    mc1 = MoteusController(
+    mc1 = MoteusActuator(
         servo_id=42,
         bus_id=3,
     )

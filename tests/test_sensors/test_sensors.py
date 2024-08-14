@@ -5,7 +5,7 @@ from pytest_mock import mocker
 from opensourceleg.hardware.joints import Joint
 from opensourceleg.hardware.sensor.lordimu import Loadcell, StrainAmp
 from opensourceleg.logging.logger import Logger
-from tests.test_actuators.test_dephyactpack import Data
+from tests.test_actuators.test_DephyActuator import Data
 from tests.test_joints.test_joint import MockJoint, patch_sleep
 
 LOADCELL_MATRIX = np.array(

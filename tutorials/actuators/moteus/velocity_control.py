@@ -4,8 +4,9 @@ import numpy as np
 import pandas as pd
 from moteus import Register
 
-from opensourceleg.actuators.moteus import MoteusController
+from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.logging.logger import LOGGER
+
 # import time
 from opensourceleg.time import SoftRealtimeLoop
 
@@ -13,10 +14,11 @@ TIME_TO_STEP = 1.0
 FREQUENCY = 200
 DT = 1 / FREQUENCY
 
+
 async def main():
-    mc1 = MoteusController(
-        tag = "MC1",
-        frequency = FREQUENCY,
+    mc1 = MoteusActuator(
+        tag="MC1",
+        frequency=FREQUENCY,
         servo_id=42,
         bus_id=3,
         gear_ratio=9.0,
@@ -34,11 +36,11 @@ async def main():
         await mc1.start()
 
         mc1.set_control_mode(mode=mc1.CONTROL_MODES.VELOCITY)
-        
+
         await mc1.set_velocity_gains()
-        
+
         # start_time = time.monotonic()
-        
+
         await mc1.update()
 
         for t in clock:
@@ -51,7 +53,7 @@ async def main():
                     value=np.pi * 2,
                 )
                 await mc1.update()
-            
+
             print(f"######")
             LOGGER.info(
                 "".join(
@@ -77,7 +79,7 @@ async def main():
                 ],
                 ignore_index=True,
             )
-            
+
             print(f"------")
             await asyncio.sleep(DT)
 

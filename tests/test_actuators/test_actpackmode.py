@@ -3,9 +3,9 @@ import pytest
 from opensourceleg.hardware.actuators import dephy as act
 
 
-class MockDephyActpack:
+class MockDephyActuator:
     """
-    Mocked DephyActpack class for testing the ActpackMode class.
+    Mocked DephyActuator class for testing the ActpackMode class.
     """
 
     def __init__(self):
@@ -13,29 +13,29 @@ class MockDephyActpack:
 
 
 @pytest.fixture
-def mock_dephyactpack() -> MockDephyActpack:
-    return MockDephyActpack()
+def mock_DephyActuator() -> MockDephyActuator:
+    return MockDephyActuator()
 
 
-def test_ActpackMode(mock_dephyactpack):
+def test_ActpackMode(mock_DephyActuator):
     """
-    Test function which initializes a MockDephyActpack object and tests the
+    Test function which initializes a MockDephyActuator object and tests the
     ActpackMode constructor, equality, string representation, and properties.
     It also overwrites the entry and exit callbacks and tests the enter, exit,
     and transition methods.
     """
-    mock_dephyactpack = MockDephyActpack()
+    mock_DephyActuator = MockDephyActuator()
     control_mode1 = 1
     control_mode2 = 2
 
-    test_mode1 = act.ActpackMode(control_mode1, mock_dephyactpack)
-    test_mode2 = act.ActpackMode(control_mode2, mock_dephyactpack)
+    test_mode1 = act.ActpackMode(control_mode1, mock_DephyActuator)
+    test_mode2 = act.ActpackMode(control_mode2, mock_DephyActuator)
     test_mode2._has_gains = True
     new_instance_test_mode1 = act.ActpackMode(control_mode1, None)
 
     # Testing the ActpackMode constructor
     assert test_mode1._control_mode == control_mode1
-    assert test_mode1._device == mock_dephyactpack
+    assert test_mode1._device == mock_DephyActuator
     assert test_mode1._has_gains == False
     assert test_mode2.has_gains == True
 

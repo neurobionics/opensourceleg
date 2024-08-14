@@ -47,7 +47,7 @@ DEPHY_SLEEP_DURATION = 0.1
 
 
 class DephyVoltageMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
+    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.VOLTAGE,
             actuator=actuator,
@@ -93,7 +93,7 @@ class DephyVoltageMode(ControlModeBase):
 
 
 class DephyCurrentMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
+    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.CURRENT,
             actuator=actuator,
@@ -155,7 +155,7 @@ class DephyCurrentMode(ControlModeBase):
 
 
 class DephyPositionMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
+    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.POSITION,
             actuator=actuator,
@@ -224,7 +224,7 @@ class DephyPositionMode(ControlModeBase):
 
 
 class DephyImpedanceMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActpack", None] = None) -> None:
+    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.IMPEDANCE,
             actuator=actuator,
@@ -290,9 +290,9 @@ class DephyImpedanceMode(ControlModeBase):
 
 
 @dataclass(init=False)
-class DephyActpackControlModes(ControlModesBase):
+class DephyActuatorControlModes(ControlModesBase):
 
-    def __init__(self, actuator: "DephyActpack") -> None:
+    def __init__(self, actuator: "DephyActuator") -> None:
 
         self.VOLTAGE = DephyVoltageMode(actuator=actuator)
         self.CURRENT = DephyCurrentMode(actuator=actuator)
@@ -300,10 +300,10 @@ class DephyActpackControlModes(ControlModesBase):
         self.IMPEDANCE = DephyImpedanceMode(actuator=actuator)
 
 
-class DephyActpack(ActuatorBase, Device):
+class DephyActuator(ActuatorBase, Device):
     def __init__(
         self,
-        tag: str = "DephyActpack",
+        tag: str = "DephyActuator",
         firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         gear_ratio: float = 1.0,
@@ -314,7 +314,7 @@ class DephyActpack(ActuatorBase, Device):
         offline: bool = False,
         stop_motor_on_disconnect: bool = False,
     ) -> None:
-        dephy_control_modes = DephyActpackControlModes(self)
+        dephy_control_modes = DephyActuatorControlModes(self)
         ActuatorBase.__init__(
             self,
             tag=tag,
@@ -368,7 +368,7 @@ class DephyActpack(ActuatorBase, Device):
         self._thermal_scale: float = 1.0
 
     def __repr__(self) -> str:
-        return f"{self.tag}[DephyActpack]"
+        return f"{self.tag}[DephyActuator]"
 
     @check_actuator_connection
     def start(self) -> None:
@@ -1145,7 +1145,7 @@ class DephyActpack(ActuatorBase, Device):
 
 
 if __name__ == "__main__":
-    knee = DephyActpack(
+    knee = DephyActuator(
         tag="knee",
         firmware_version="7.2.0",
         port="/dev/ttyACM0",

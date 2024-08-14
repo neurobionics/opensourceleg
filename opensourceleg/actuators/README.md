@@ -4,114 +4,115 @@
 
 The actuators library supports multiple controllers for the Open-Source Leg Project, and an API as [base.py](./base.py) for quick development.
 
-The documentation mainly focus on how to develop a custom **actuator module**. Structures for the example implementations ([`dephy.py`](./dephy.py), etc) can be found in Section Reference. 
+The documentation mainly focus on how to develop a custom **actuator module**. Structures for the example implementations ([`dephy.py`](./dephy.py), etc) can be found in Section Reference.
 
 ## Customization Guide of Actuators Module
 
 1. Import base module
 
-    ```Python
-    import opensourceleg.hardware.actuators.base as base
-    ```
+   ```Python
+   import opensourceleg.hardware.actuators.base as base
+   ```
 
 2. Customize the Modes of Actuators from `base.ActuatorMode`
-    
-    `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode` are predefined for common use. 
 
-    For example, when customizing `class VoltageMode`: 
+   `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode` are predefined for common use.
 
-    ```Python
-    class VoltageMode(base.VoltageMode):
-        def __init__(self, device: "DephyActpack") -> None:
+   For example, when customizing `class VoltageMode`:
 
-            super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
-            # Should implement your own steps below
-            pass
-        
+   ```Python
+   class VoltageMode(base.VoltageMode):
+       def __init__(self, device: "DephyActuator") -> None:
 
-        def set_voltage(self, voltage_value: int) -> None:
-            # Should implement your own steps below
-            pass
-    ```
+           super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
+           # Should implement your own steps below
+           pass
 
-    Or customizing from `class ActuatorMode` if new modes are needed:
-    ```Python
-    class TorqueMode(base.ActuatorMode)
-        def __init__(self, device: "DephyActpack") -> None:
 
-            super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
-            # Should implement your own steps below
-            pass
-        
-        # Should implement your own steps below
-        pass
-    ```
+       def set_voltage(self, voltage_value: int) -> None:
+           # Should implement your own steps below
+           pass
+   ```
+
+   Or customizing from `class ActuatorMode` if new modes are needed:
+
+   ```Python
+   class TorqueMode(base.ActuatorMode)
+       def __init__(self, device: "DephyActuator") -> None:
+
+           super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
+           # Should implement your own steps below
+           pass
+
+       # Should implement your own steps below
+       pass
+   ```
 
 3. Customize the actuator object from `base.Actuator`
 
-    For example, when customizing `class VoltageMode`: 
+   For example, when customizing `class VoltageMode`:
 
-    ```Python
-    class Motor(base.Actuator):
-    
-        def __init__(
-            self,
-            name: str = "DephyActpack",
-            port: str = "/dev/ttyACM0",
-            baud_rate: int = 230400,
-            frequency: int = 500,
-            logger: Logger = Logger(),
-            debug_level: int = 0,
-            dephy_log: bool = False,
-            *args,
-            **kwargs,
-        ) -> None:
-            base.Actuator.__init__(
-                self,
-                Gains=base.ControlGains(),
-                MecheSpecs=base.MecheConsts(),
-            )                                                               # Inherit the steps from the template are suggested, as they offer common member definitions
-    
-            # Should implement your own steps below
-            pass
-    
-        def __repr__(self) -> str:
-            return f"DephyActpack[{self._name}]"
-    
-        def start(self) -> None:
-            super().start()
-            # Should implement your own steps below
-            pass
-    
-        def stop(self) -> None:
-            super().stop()
-            # Should implement your own steps below
-            pass
-    
-        def update(self) -> None:
-            super().update()
-            # Should implement your own steps below
-            pass
-    
-        def set_mode(self, mode: base.ActuatorMode) -> None:
-            # Should implement your own steps below
-            pass
-    
-        def set_voltage(self, voltage_value: float):
-            # Should implement your own steps below
-            pass
-    
-        def set_current(
-            self,
-            current_value: float,
-        ):
-            # Should implement your own steps below
-            pass
-    
-        # Should implement your own steps below
-        pass
-    
-    ```
+   ```Python
+   class Motor(base.Actuator):
+
+       def __init__(
+           self,
+           name: str = "DephyActuator",
+           port: str = "/dev/ttyACM0",
+           baud_rate: int = 230400,
+           frequency: int = 500,
+           logger: Logger = Logger(),
+           debug_level: int = 0,
+           dephy_log: bool = False,
+           *args,
+           **kwargs,
+       ) -> None:
+           base.Actuator.__init__(
+               self,
+               Gains=base.ControlGains(),
+               MecheSpecs=base.MecheConsts(),
+           )                                                               # Inherit the steps from the template are suggested, as they offer common member definitions
+
+           # Should implement your own steps below
+           pass
+
+       def __repr__(self) -> str:
+           return f"DephyActuator[{self._name}]"
+
+       def start(self) -> None:
+           super().start()
+           # Should implement your own steps below
+           pass
+
+       def stop(self) -> None:
+           super().stop()
+           # Should implement your own steps below
+           pass
+
+       def update(self) -> None:
+           super().update()
+           # Should implement your own steps below
+           pass
+
+       def set_mode(self, mode: base.ActuatorMode) -> None:
+           # Should implement your own steps below
+           pass
+
+       def set_voltage(self, voltage_value: float):
+           # Should implement your own steps below
+           pass
+
+       def set_current(
+           self,
+           current_value: float,
+       ):
+           # Should implement your own steps below
+           pass
+
+       # Should implement your own steps below
+       pass
+
+   ```
 
 ## Reference
 
@@ -127,7 +128,7 @@ classDiagram
         IMPEDANCE
     }
     class ControlModesMeta{
-        
+
     }
     class ControlModeBase{
         self._control_mode_map: ControlModesMapping = control_mode_map
@@ -182,21 +183,19 @@ classDiagram
         M_PER_SEC_SQUARED_ACCLSB
     }
   }
-  
+
   ActuatorBase <.. ControlModesBase: self._CONTROL_MODES
   ActuatorBase <.. ControlGains: self._max_gains
   ControlModesMeta ..> ControlModeBase: ControlModesBase(metaclass=ControlModesMeta)
   ActuatorBase <.. MotorConstants: self._MOTOR_CONSTANTS
 ```
 
-### [DephyActpack](./dephy.py)
-
-
+### [DephyActuator](./dephy.py)
 
 ### [Moteus Drivers](./moteus.py)
 
 #### Known Issues
 
-* Missing Joint Properties (e.g. `homing`)
+- Missing Joint Properties (e.g. `homing`)
 
-* Multiple actuators sharing same cycle not supported, manual access to `MoteusInterface` Required
+- Multiple actuators sharing same cycle not supported, manual access to `MoteusInterface` Required
