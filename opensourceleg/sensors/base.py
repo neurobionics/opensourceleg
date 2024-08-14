@@ -70,35 +70,35 @@ class ADCBase(SensorBase, ABC):
 
     @property
     def ch0(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch1(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch2(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch3(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch4(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch5(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch6(self):
-        pass
+        raise NotImplementedError
 
     @property
     def ch7(self):
-        pass
+        raise NotImplementedError
 
 
 class EncoderBase(SensorBase, ABC):
@@ -131,8 +131,9 @@ class LoadcellBase(SensorBase, ABC):
         pass
 
     @property
+    @abstractmethod
     def adc(self) -> ADCBase:
-        return self._adc
+        pass
 
     @property
     @abstractmethod
