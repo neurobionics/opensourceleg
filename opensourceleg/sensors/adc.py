@@ -73,10 +73,9 @@ class ADS131M0x(ADCBase):
         self._num_channels = num_channels
         self._max_speed_hz = max_speed_hz
         self._channel_gains = [0] * 8
-        self._channel_gains = [math.log2(gain) for gain in channel_gains]
         for i in range(0, num_channels):
-            self._channel_gains[i] = math.log2(channel_gains[i])
-            if channel_gains[i] != int(channel_gains[i]):
+            self._channel_gains[i] = int(math.log2(channel_gains[i]))
+            if self._channel_gains[i] != math.log2(channel_gains[i]):
                 raise Exception("Gain must be a power of 2 between 1 and 128")
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
@@ -105,10 +104,10 @@ class ADS131M0x(ADCBase):
         self.set_gain(self._channel_gains)
         # wakeup
         self.awake(True)
-        # self._set_voltage_source(0)
+        self._set_voltage_source(0)
         # set mode register for word length and set RESET to 0
         self.write_register(self._MODE_REG, self._MODE_CFG)
-        self.calibrate()
+        self._calibrate()
         self._clear_stale_data()
 
     def stop(self):
@@ -122,7 +121,7 @@ class ADS131M0x(ADCBase):
         while not self._ready_to_read():
             sleep(0.001)
 
-        self._data = self._read_data_millivolts
+        self._data = self._read_data_millivolts()
 
     def reset(self) -> None:
         """Resets all register values."""
@@ -230,22 +229,12 @@ class ADS131M0x(ADCBase):
         if self._gain_error is not None:
             self._gain_calibration()
 
-    def _set_gain(self):
+    def set_gain(self, gains):
         """Set PGA gain for each channel of ADC."""
         self.channel_enable(False)
-        gains_msg = (
-            self._channel_gains[3] << 12
-            | self._channel_gains[2] << 8
-            | self._channel_gains[1] << 4
-            | self._channel_gains[0]
-        )
+        gains_msg = gains[3] << 12 | gains[2] << 8 | gains[1] << 4 | gains[0]
         self.write_register(self._GAIN1_REG, gains_msg)
-        gains_msg = (
-            self._channel_gains[7] << 12
-            | self._channel_gains[6] << 8
-            | self._channel_gains[5] << 4
-            | self._channel_gains[4]
-        )
+        gains_msg = gains[7] << 12 | gains[6] << 8 | gains[5] << 4 | gains[4]
         self.write_register(self._GAIN2_REG, gains_msg)
         self.channel_enable(True)
 
@@ -289,7 +278,7 @@ class ADS131M0x(ADCBase):
                 3 -- negative internal test signal ((-160mV / gain) * (Vref / 1.25))
         """
         for i in range(0, self._num_channels):
-            self.spi_comm(self._WRITE_CFG_WORDS[i] + [0x00, source, 0x00])
+            self.write_register(self._CHANNEL_CFG_ADDRS[i], source)
 
     def _read_data_counts(self):
         """Returns signed ADC value.
@@ -307,10 +296,73 @@ class ADS131M0x(ADCBase):
 
     def _read_data_millivolts(self):
         mV = [
-            1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._reference_voltage)
+            1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference)
             for dat in self._read_data_counts()
         ]
         return mV
+
+
+class Loadcell:
+
+    def __init__(self, matrix=None, **kwargs):
+        self._adc = ADS131M0x(**kwargs)
+        self.matrix = matrix
+
+    @property
+    def adc(self):
+        return self._adc
+
+    def __repr__(self) -> str:
+        return f"Loadcell"
+
+    @property
+    def is_streaming(self) -> bool:
+        return self.adc._streaming
+
+    def start(self):
+        self.adc.start()
+
+    def stop(self):
+        self.adc.stop()
+
+    def update(self):
+        self.adc.update()
+        self.data = np.transpose(a=self.matrix.dot(b=np.transpose(a=self._adc._data)))
+
+    def reset(self):
+        self.adc.reset()
+
+    @property
+    def fx(self):
+        return self.data[0]
+
+    @property
+    def fy(self):
+        return self.data[1]
+
+    @property
+    def fz(self):
+        return self.data[2]
+
+    @property
+    def mx(self):
+        return self.data[3]
+
+    @property
+    def my(self):
+        return self.data[4]
+
+    @property
+    def mz(self):
+        return self.data[5]
+
+    @property
+    def ext1(self):
+        return self.data[6]
+
+    @property
+    def ext2(self):
+        return self.data[7]
 
 
 def twos_complement(num, bits):
