@@ -36,7 +36,7 @@ class SRILoadcell(LoadcellBase):
         # to mV/V
         coupled = [0] * self.adc._num_channels
         for i in range(0, self.adc._num_channels):
-            coupled[i] = self.adc.data[i] * 1000 / (1.2 * self.adc.gain[i])
+            coupled[i] = self.adc.data[i] / (1.2 * self.adc.gain[i])
         self.data = np.transpose(a=self.matrix.dot(b=np.transpose(a=coupled)))
 
     @property
