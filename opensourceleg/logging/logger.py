@@ -71,6 +71,8 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self.set_buffer_size(buffer_size)
 
+            self._log_path = log_path
+
     def _setup_logging(self) -> None:
         self.setLevel(level=self._file_level.value)
         self._std_formatter = logging.Formatter(self._log_format)

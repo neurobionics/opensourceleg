@@ -691,7 +691,7 @@ class DephyActuator(ActuatorBase, Device):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
 
     def set_current_gains(
         self,
@@ -707,7 +707,7 @@ class DephyActuator(ActuatorBase, Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))
 
     def set_motor_impedance(
         self,
@@ -785,7 +785,7 @@ class DephyActuator(ActuatorBase, Device):
             b (int): The damping constant
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=k, b=b, ff=ff))  # type: ignore
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=k, b=b, ff=ff))
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""

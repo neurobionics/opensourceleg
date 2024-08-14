@@ -39,6 +39,8 @@ ankle = DephyActuator(
     frequency=FREQUENCY,
 )
 
+actuators = [knee, ankle]
+
 
 LOADCELL_MATRIX = np.array(
     [
@@ -56,6 +58,8 @@ loadcell = SRILoadcell(
     bus=1,
     i2c_address="/dev/i2c-1",
 )
+
+sensors = [loadcell]
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))  # type: ignore
 controller = CompiledController(

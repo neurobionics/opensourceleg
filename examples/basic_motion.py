@@ -33,21 +33,23 @@ ankle = DephyActuator(
     frequency=FREQUENCY,
 )
 
+acutators = [knee, ankle]
+
 clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
 
 
-def make_periodic_traj_func(period, minimum, maximum):
+def make_periodic_trajectory(period, minimum, maximum):
     amplitude = (maximum - minimum) / 2
     mean = amplitude + minimum
     return lambda t: amplitude * np.cos(t * 2 * np.pi / period) + mean
 
 
-ankle_traj = make_periodic_traj_func(10, -20, 20)
-knee_traj = make_periodic_traj_func(10, 10, 90)
+ankle_traj = make_periodic_trajectory(10, -20, 20)
+knee_traj = make_periodic_trajectory(10, 10, 90)
 
 with knee, ankle:
-    knee.home()
-    ankle.home()
+    for actuator in acutators:
+        actuator.home()
 
     input("Homing complete: Press enter to continue")
 
