@@ -63,6 +63,6 @@ def get_ctype(token):
     elif "boolean_T" in token or "bool" in token:
         out = ctypes.c_bool
     else:
-        raise Exception("You messed up kid!")
+        raise Exception("Unknown type: " + token)
 
     return out

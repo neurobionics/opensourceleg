@@ -88,7 +88,7 @@ class MoteusQueryResolution:
 
 
 class MoteusIdleMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.IDLE,
             actuator=actuator,
@@ -148,7 +148,7 @@ class MoteusIdleMode(ControlModeBase):
 
 
 class MoteusVelocityMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.VELOCITY,
             actuator=actuator,
@@ -174,13 +174,13 @@ class MoteusVelocityMode(ControlModeBase):
     async def set_gains(self, gains: ControlGains) -> None:
         super().set_gains(gains)
         await self._actuator._stream.command(
-            f"conf set servo.pid_position.kp {self._gains.kp}".encode("utf8")
+            f"conf set servo.pid_position.kp {self._gains.kp}".encode()
         )
         await self._actuator._stream.command(
-            f"conf set servo.pid_position.ki {self._gains.ki}".encode("utf8")
+            f"conf set servo.pid_position.ki {self._gains.ki}".encode()
         )
         await self._actuator._stream.command(
-            f"conf set servo.pid_position.kd {self._gains.kd}".encode("utf8")
+            f"conf set servo.pid_position.kd {self._gains.kd}".encode()
         )
 
     def set_velocity(self, value: Union[float, int]):
@@ -221,7 +221,7 @@ class MoteusVelocityMode(ControlModeBase):
 
 
 class MoteusPositionMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.POSITION,
             actuator=actuator,
@@ -236,16 +236,10 @@ class MoteusPositionMode(ControlModeBase):
         if self.actuator is None:
             raise ActuatorIsNoneException(mode=self.name)
 
-        # if not self.has_gains:
-        #     self.set_gains()
-
-        # self.set_position(value=0)
-
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[MoteusControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-
         time.sleep(0.1)
 
     async def set_gains(
@@ -254,17 +248,17 @@ class MoteusPositionMode(ControlModeBase):
     ) -> None:
         super().set_gains(gains)
         await self._actuator._stream.command(
-            f"conf set servo.pid_position.kp {self._gains.kp}".encode("utf8")
+            f"conf set servo.pid_position.kp {self._gains.kp}".encode()
         )
         await self._actuator._stream.command(
-            f"conf set servo.pid_position.ki {self._gains.ki}".encode("utf8")
+            f"conf set servo.pid_position.ki {self._gains.ki}".encode()
         )
         await self._actuator._stream.command(
-            f"conf set servo.pid_position.kd {self._gains.kd}".encode("utf8")
+            f"conf set servo.pid_position.kd {self._gains.kd}".encode()
         )
 
     def set_position(self, value: Union[float, int]):
-        
+
         self.actuator._command = self.actuator.make_position(
             position=float((value) / (2 * np.pi)),  # in revolutions
             query=True,
@@ -301,7 +295,7 @@ class MoteusPositionMode(ControlModeBase):
 
 
 class MoteusTorqueMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusController", None] = None) -> None:
+    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.TORQUE,
             actuator=actuator,
@@ -330,13 +324,13 @@ class MoteusTorqueMode(ControlModeBase):
         self,
         gains: ControlGains = DEFAULT_TORQUE_GAINS,
     ) -> None:
-        
+
         super().set_gains()
         await self._actuator._stream.command(
-            f"conf set servo.pid_dq.kp {self._gains.kp}".encode("utf8")
+            f"conf set servo.pid_dq.kp {self._gains.kp}".encode()
         )
         await self._actuator._stream.command(
-            f"conf set servo.pid_dq.ki {self._gains.ki}".encode("utf8")
+            f"conf set servo.pid_dq.ki {self._gains.ki}".encode()
         )
 
     def set_position(self, value: Union[float, int]):
@@ -384,7 +378,7 @@ class MoteusTorqueMode(ControlModeBase):
 @dataclass(init=False)
 class MoteusControlModes(ControlModesBase):
 
-    def __init__(self, actuator: "MoteusController") -> None:
+    def __init__(self, actuator: "MoteusActuator") -> None:
 
         self.VELOCITY = MoteusVelocityMode(actuator=actuator)
         self.POSITION = MoteusPositionMode(actuator=actuator)
@@ -402,6 +396,7 @@ class MoteusInterface:
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            cls.bus_map: dict[int : list[int]] = {}
             cls.bus_map: dict[int : list[int]] = {}
             cls._commands: list[Command] = []
             cls.transport = None
@@ -436,7 +431,7 @@ class MoteusInterface:
         self._commands = []
 
 
-class MoteusController(ActuatorBase, Controller):
+class MoteusActuator(ActuatorBase, Controller):
     def __init__(
         self,
         tag: str = "Moteus",
@@ -547,21 +542,21 @@ class MoteusController(ActuatorBase, Controller):
             motor_current=self.motor_current,
         )
         if self.case_temperature >= self.max_case_temperature:
-            self._log.error(
-                msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
-            self._log.error(
-                msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
 
         self._command = self.make_query()
 
     def home(self):
-        # To be continued ...
+        # TODO: implement homing
         pass
 
     def set_control_mode(self, mode: ControlModeBase) -> None:
@@ -606,11 +601,6 @@ class MoteusController(ActuatorBase, Controller):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
-        # self._command = self.make_vfoc(
-        #     theta = 0,
-        #     voltage = value,
-        #     query = True,
-        # )
         LOGGER.info(f"Voltage Mode Not Implemented")
 
     def set_motor_position(self, value: float) -> None:
@@ -624,10 +614,6 @@ class MoteusController(ActuatorBase, Controller):
         self.mode.set_position(
             value=value * self.gear_ratio,
         )
-        # self._command = self.make_position(
-        #     position = value,
-        #     query = True,
-        # )
 
     async def set_torque_gains(
         self,

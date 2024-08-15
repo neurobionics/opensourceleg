@@ -55,6 +55,7 @@ class ControlModesMapping(Enum):
 
 class ControlModesMeta(type):
     def __init__(cls, name, bases, attrs):
+        # TODO: Enforce a default mode for all actuators, this could be voltage mode or a separate idle mode
         # if bases and "VOLTAGE" not in attrs:
         #     print(f"Class: {cls}")
         #     print(f"Name: {name}")

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Union, overload
+﻿from typing import Any, Callable, Union, overload
 
 import ctypes
 import os
@@ -7,7 +7,7 @@ from ctypes import c_int
 from dataclasses import dataclass
 from unittest.mock import Mock
 
-# import flexsea.fx_enums as fxe
+import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
@@ -37,7 +37,7 @@ from opensourceleg.logging.decorators import (
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
 
-DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
+DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, k=0, b=0, ff=128)
 
@@ -66,7 +66,7 @@ class DephyVoltageMode(ControlModeBase):
 
     def _exit(self) -> None:
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
-        self.actuator.stop_motor()
+        self.set_voltage(0)
         time.sleep(DEPHY_SLEEP_DURATION)
 
     def set_gains(self, gains: ControlGains) -> None:
@@ -75,7 +75,7 @@ class DephyVoltageMode(ControlModeBase):
         )
 
     def set_voltage(self, value: Union[float, int]):
-        self.actuator.command_motor_voltage(value=int(value))
+        self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
 
     def set_current(self, value: Union[float, int]):
         raise ControlModeException(
@@ -122,7 +122,9 @@ class DephyCurrentMode(ControlModeBase):
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self.actuator.stop_motor()
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
+        )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
@@ -137,7 +139,7 @@ class DephyCurrentMode(ControlModeBase):
         )
 
     def set_current(self, value: Union[float, int]):
-        self.actuator.command_motor_current(value=int(value))
+        self.actuator.send_motor_command(ctrl_mode=self.flag, value=int(value))
 
     def set_voltage(self, value: Union[float, int]):
         raise ControlModeException(
@@ -179,7 +181,9 @@ class DephyPositionMode(ControlModeBase):
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.stop_motor()
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
+        )
         time.sleep(0.1)
 
     def set_gains(
@@ -197,7 +201,8 @@ class DephyPositionMode(ControlModeBase):
         )
 
     def set_position(self, value: Union[float, int]):
-        self.actuator.command_motor_position(
+        self.actuator.send_motor_command(
+            ctrl_mode=self.flag,
             value=int(
                 (
                     value
@@ -248,7 +253,9 @@ class DephyImpedanceMode(ControlModeBase):
         LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
 
         # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.stop_motor()
+        self._actuator.send_motor_command(
+            ctrl_mode=ControlModesMapping.VOLTAGE.flag, value=0
+        )
         time.sleep(1 / self._actuator.frequency)
 
     def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
@@ -263,7 +270,8 @@ class DephyImpedanceMode(ControlModeBase):
         )
 
     def set_position(self, value: Union[float, int]):
-        self.actuator.command_motor_position(
+        self.actuator.send_motor_command(
+            ctrl_mode=self.flag,
             value=int(
                 (
                     value
@@ -291,7 +299,6 @@ class DephyImpedanceMode(ControlModeBase):
 
 @dataclass(init=False)
 class DephyActuatorControlModes(ControlModesBase):
-
     def __init__(self, actuator: "DephyActuator") -> None:
 
         self.VOLTAGE = DephyVoltageMode(actuator=actuator)
@@ -304,7 +311,6 @@ class DephyActuator(ActuatorBase, Device):
     def __init__(
         self,
         tag: str = "DephyActuator",
-        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
@@ -312,7 +318,6 @@ class DephyActuator(ActuatorBase, Device):
         debug_level: int = 0,
         dephy_log: bool = False,
         offline: bool = False,
-        stop_motor_on_disconnect: bool = False,
     ) -> None:
         dephy_control_modes = DephyActuatorControlModes(self)
         ActuatorBase.__init__(
@@ -339,13 +344,7 @@ class DephyActuator(ActuatorBase, Device):
             self.is_streaming: bool = False
             self.is_open: bool = False
         else:
-            Device.__init__(
-                self,
-                firmwareVersion=firmware_version,
-                port=port,
-                baudRate=baud_rate,
-                stopMotorOnDisconnect=stop_motor_on_disconnect,
-            )
+            Device.__init__(self, port=port, baud_rate=baud_rate)
 
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
@@ -372,16 +371,11 @@ class DephyActuator(ActuatorBase, Device):
 
     @check_actuator_connection
     def start(self) -> None:
-        try:
-            self.open()
-        except OSError as e:
-            print("\n")
-            LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
-            )
-            os._exit(status=1)
-
-        self.start_streaming(self._frequency)
+        self.open(
+            freq=self._frequency,
+            log_level=self._debug_level,
+            log_enabled=self._dephy_log,
+        )
         self._data = self.read()
 
         time.sleep(0.1)
@@ -391,7 +385,7 @@ class DephyActuator(ActuatorBase, Device):
     @check_actuator_open
     def stop(self) -> None:
         self.set_control_mode(mode=self.CONTROL_MODES.VOLTAGE)
-        self.stop_motor()
+        self.set_motor_voltage(value=0)
 
         time.sleep(0.1)
         self.close()
@@ -406,18 +400,18 @@ class DephyActuator(ActuatorBase, Device):
             motor_current=self.motor_current,
         )
         if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+            self._log.error(
+                msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+            self._log.error(
+                msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
-        if self._data["status_ex"] & 0b00000010 == 0b00000010:
+        if self._data.status_ex & 0b00000010 == 0b00000010:
             raise RuntimeError("Actpack Thermal Limit Tripped")
 
     def home(
@@ -691,7 +685,7 @@ class DephyActuator(ActuatorBase, Device):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
 
     def set_current_gains(
         self,
@@ -707,7 +701,7 @@ class DephyActuator(ActuatorBase, Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))  # type: ignore
 
     def set_motor_impedance(
         self,
@@ -785,7 +779,7 @@ class DephyActuator(ActuatorBase, Device):
             b (int): The damping constant
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=k, b=b, ff=ff))
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=k, b=b, ff=ff))  # type: ignore
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
@@ -845,7 +839,7 @@ class DephyActuator(ActuatorBase, Device):
     def motor_voltage(self) -> float:
         """Q-axis motor voltage in mV."""
         if self._data is not None:
-            return float(self._data["mot_volt"])
+            return float(self._data.mot_volt)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -855,7 +849,7 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def motor_current(self) -> float:
         if self._data is not None:
-            return float(self._data["mot_cur"])
+            return float(self._data.mot_cur)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -865,7 +859,7 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def motor_torque(self) -> float:
         if self._data is not None:
-            return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
+            return float(self._data.mot_cur * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -876,7 +870,7 @@ class DephyActuator(ActuatorBase, Device):
     def motor_position(self) -> float:
         if self._data is not None:
             return (
-                float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
+                float(self._data.mot_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
                 - self.motor_zero_position
                 - self.motor_position_offset
             )
@@ -890,7 +884,7 @@ class DephyActuator(ActuatorBase, Device):
     def motor_encoder_counts(self) -> int:
         """Raw reading from motor encoder in counts."""
         if self._data is not None:
-            return int(self._data["mot_ang"])
+            return int(self._data.mot_ang)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
@@ -901,7 +895,7 @@ class DephyActuator(ActuatorBase, Device):
     def joint_encoder_counts(self) -> int:
         """Raw reading from joint encoder in counts."""
         if self._data is not None:
-            return int(self._data["ank_ang"])
+            return int(self._data.ank_ang)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
@@ -911,7 +905,7 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def motor_velocity(self) -> float:
         if self._data is not None:
-            return int(self._data["mot_vel"]) * self.MOTOR_CONSTANTS.RAD_PER_DEG
+            return int(self._data.mot_vel) * self.MOTOR_CONSTANTS.RAD_PER_DEG
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -921,7 +915,7 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def motor_acceleration(self) -> float:
         if self._data is not None:
-            return float(self._data["mot_acc"])
+            return float(self._data.mot_acc)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -932,7 +926,7 @@ class DephyActuator(ActuatorBase, Device):
     def battery_voltage(self) -> float:
         """Battery voltage in mV."""
         if self._data is not None:
-            return float(self._data["batt_volt"])
+            return float(self._data.batt_volt)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -943,7 +937,7 @@ class DephyActuator(ActuatorBase, Device):
     def battery_current(self) -> float:
         """Battery current in mA."""
         if self._data is not None:
-            return float(self._data["batt_curr"])
+            return float(self._data.batt_curr)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -954,7 +948,7 @@ class DephyActuator(ActuatorBase, Device):
     def joint_position(self) -> float:
         if self._data is not None:
             return (
-                float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
+                float(self._data.ank_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
                 - self.joint_zero_position
                 - self.joint_position_offset
             ) * self.joint_direction
@@ -968,7 +962,7 @@ class DephyActuator(ActuatorBase, Device):
     def joint_velocity(self) -> float:
         if self._data is not None:
             return (
-                float(self._data["ank_vel"] * self.MOTOR_CONSTANTS.RAD_PER_DEG)
+                float(self._data.ank_vel * self.MOTOR_CONSTANTS.RAD_PER_DEG)
                 * self.joint_direction
             )
         else:
@@ -1006,7 +1000,7 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def case_temperature(self) -> float:
         if self._data is not None:
-            return float(self._data["temperature"])
+            return float(self._data.temperature)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -1030,12 +1024,12 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return np.array(
                 object=[
-                    self._data["genvar_0"],
-                    self._data["genvar_1"],
-                    self._data["genvar_2"],
-                    self._data["genvar_3"],
-                    self._data["genvar_4"],
-                    self._data["genvar_5"],
+                    self._data.genvar_0,
+                    self._data.genvar_1,
+                    self._data.genvar_2,
+                    self._data.genvar_3,
+                    self._data.genvar_4,
+                    self._data.genvar_5,
                 ]
             )
         else:
@@ -1052,7 +1046,7 @@ class DephyActuator(ActuatorBase, Device):
         """
         if self._data is not None:
             return float(
-                self._data["accelx"] * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
+                self._data.accelx * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
             )
         else:
             LOGGER.warning(
@@ -1068,7 +1062,7 @@ class DephyActuator(ActuatorBase, Device):
         """
         if self._data is not None:
             return float(
-                self._data["accely"] * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
+                self._data.accely * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
             )
         else:
             LOGGER.warning(
@@ -1084,7 +1078,7 @@ class DephyActuator(ActuatorBase, Device):
         """
         if self._data is not None:
             return float(
-                self._data["accelz"] * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
+                self._data.accelz * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
             )
         else:
             LOGGER.warning(
@@ -1099,7 +1093,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data["gyrox"] * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyrox * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -1113,7 +1107,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data["gyroy"] * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyroy * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -1127,7 +1121,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data["gyroz"] * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+            return float(self._data.gyroz * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -1147,7 +1141,6 @@ class DephyActuator(ActuatorBase, Device):
 if __name__ == "__main__":
     knee = DephyActuator(
         tag="knee",
-        firmware_version="7.2.0",
         port="/dev/ttyACM0",
         gear_ratio=1.0,
         baud_rate=230400,
@@ -1155,5 +1148,4 @@ if __name__ == "__main__":
         debug_level=0,
         dephy_log=False,
         offline=True,
-        stop_motor_on_disconnect=False,
     )

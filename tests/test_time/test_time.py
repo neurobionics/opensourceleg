@@ -3,7 +3,6 @@ import time
 import pytest
 
 from opensourceleg.time.time import LoopKiller, SoftRealtimeLoop
-from tests.test_joints.test_joint import patch_time_time
 
 
 def test_loopkiller_init():
