@@ -145,7 +145,7 @@ if __name__ == "__main__":
     manager.start()
 
     try:
-        t = 0
+        t = 0.0
         # Simulate updates
         while True:
             x = t

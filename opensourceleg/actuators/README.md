@@ -137,7 +137,7 @@ classDiagram
         self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
         self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
         self._actuator: "ActuatorBase" = actuator
-        self._max_command: Union[float, int] = max_command
+        self._max_command: float = max_command
         self._max_gains: ControlGains = max_gains
         enter()
         exit()

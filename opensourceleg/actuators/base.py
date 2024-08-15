@@ -43,7 +43,7 @@ class ControlModesMapping(Enum):
         return obj
 
     @property
-    def flag(self) -> c_int:
+    def flag(self):
         return self._value_
 
     def __int__(self):
@@ -83,12 +83,12 @@ class ControlGains:
     ff (int): Feedforward gain
     """
 
-    kp: int = 0
-    ki: int = 0
-    kd: int = 0
-    k: int = 0
-    b: int = 0
-    ff: int = 0
+    kp: Union[int, float] = 0
+    ki: Union[int, float] = 0
+    kd: Union[int, float] = 0
+    k: Union[int, float] = 0
+    b: Union[int, float] = 0
+    ff: Union[int, float] = 0
 
     def __repr__(self) -> str:
         return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, k={self.k}, b={self.b}, ff={self.ff}"
@@ -199,10 +199,17 @@ class ControlModeBase(ABC):
     def __init__(
         self,
         control_mode_map: ControlModesMapping,
-        actuator: Union["ActuatorBase", None] = None,
+        actuator: "ActuatorBase",
+        max_gains: ControlGains = ControlGains(
+            kp=1000,
+            ki=1000,
+            kd=1000,
+            k=1000,
+            b=1000,
+            ff=1000,
+        ),
         entry_callbacks: list[Callable[[], None]] = [lambda: None],
         exit_callbacks: list[Callable[[], None]] = [lambda: None],
-        max_gains: ControlGains = None,
     ) -> None:
         self._control_mode_map: ControlModesMapping = control_mode_map
         self._has_gains: bool = False
@@ -252,51 +259,51 @@ class ControlModeBase(ABC):
         self._actuator = actuator
 
     @abstractmethod
-    def set_gains(self, gains: ControlGains) -> None:
+    def set_gains(self, gains: ControlGains) -> Any:
         """set_gains method for the control mode.
         Please use the super method only if applicable to the child class if not override this method
 
         Args:
             Gains (ControlGains): control gains applied
         """
-        if self.max_gains is not None:
-            assert 0 <= gains.kp <= self._max_gains.kp
-            assert 0 <= gains.ki <= self._max_gains.ki
-            assert 0 <= gains.kd <= self._max_gains.kd
-            assert 0 <= gains.k <= self._max_gains.k
-            assert 0 <= gains.b <= self._max_gains.b
-            assert 0 <= gains.ff <= self._max_gains.ff
+
+        assert 0 <= gains.kp <= self._max_gains.kp
+        assert 0 <= gains.ki <= self._max_gains.ki
+        assert 0 <= gains.kd <= self._max_gains.kd
+        assert 0 <= gains.k <= self._max_gains.k
+        assert 0 <= gains.b <= self._max_gains.b
+        assert 0 <= gains.ff <= self._max_gains.ff
 
         self._gains = gains
         self._has_gains = True
 
     @abstractmethod
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         """
         Set current for the control mode
 
         Args:
-            value (Union[float, int]): Current value in mA
+            value (float): Current value in mA
         """
         pass
 
     @abstractmethod
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         """
         Set position for the control mode
 
         Args:
-            value (Union[float, int]): Position value in radians
+            value (float): Position value in radians
         """
         pass
 
     @abstractmethod
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         """
         Set voltage for the control mode
 
         Args:
-            value (Union[float, int]): Voltage value in mV
+            value (float): Voltage value in mV
         """
         pass
 
@@ -331,7 +338,7 @@ class ControlModeBase(ABC):
         Returns:
             c_int: Control mode flag
         """
-        return self._control_mode_map.flag
+        return c_int(self._control_mode_map.flag)
 
     @property
     def has_gains(self) -> bool:
@@ -419,6 +426,13 @@ class ActuatorBase(ABC):
         self._is_offline: bool = offline
         self._is_homed: bool = False
 
+        self._motor_zero_position: float = 0.0
+        self._motor_position_offset: float = 0.0
+
+        self._joint_zero_position: float = 0.0
+        self._joint_position_offset: float = 0.0
+        self._joint_direction: int = 1
+
     def __enter__(self):
         self.start()
         return self
@@ -453,7 +467,7 @@ class ActuatorBase(ABC):
         self._mode = mode
 
     @abstractmethod
-    def set_motor_voltage(self, value: Union[float, int]) -> None:
+    def set_motor_voltage(self, value: float) -> None:
         """set_voltage method for the actuator
 
         Args:
@@ -464,7 +478,7 @@ class ActuatorBase(ABC):
     @abstractmethod
     def set_motor_current(
         self,
-        value=Union[float, int],
+        value=float,
     ):
         """set_current method for the actuator
 
@@ -476,7 +490,7 @@ class ActuatorBase(ABC):
     @abstractmethod
     def set_motor_position(
         self,
-        value=Union[float, int],
+        value=float,
     ):
         """set_motor_position method for the actuator
 
@@ -488,10 +502,10 @@ class ActuatorBase(ABC):
     @abstractmethod
     def set_current_gains(
         self,
-        kp: int,
-        ki: int,
-        kd: int,
-        ff: int,
+        kp: float,
+        ki: float,
+        kd: float,
+        ff: float,
     ):
         """set_current_gains method for the actuator
 
@@ -506,10 +520,10 @@ class ActuatorBase(ABC):
     @abstractmethod
     def set_position_gains(
         self,
-        kp: int,
-        ki: int,
-        kd: int,
-        ff: int,
+        kp: float,
+        ki: float,
+        kd: float,
+        ff: float,
     ):
         """set_position_gains method for the actuator
 
@@ -524,12 +538,12 @@ class ActuatorBase(ABC):
     @abstractmethod
     def set_impedance_gains(
         self,
-        kp: int,
-        ki: int,
-        kd: int,
-        k: int,
-        b: int,
-        ff: int,
+        kp: float,
+        ki: float,
+        kd: float,
+        k: float,
+        b: float,
+        ff: float,
     ):
         """set_impedance_gains method for the actuator
 
@@ -643,6 +657,31 @@ class ActuatorBase(ABC):
             float: Max Winding Temperature
         """
         return self._MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE
+
+    @property
+    def motor_zero_position(self) -> float:
+        """Motor encoder zero position in radians."""
+        return self._motor_zero_position
+
+    @property
+    def motor_position_offset(self) -> float:
+        """Motor encoder offset in radians."""
+        return self._motor_position_offset
+
+    @property
+    def joint_zero_position(self) -> float:
+        """Joint encoder zero position in radians."""
+        return self._joint_zero_position
+
+    @property
+    def joint_position_offset(self) -> float:
+        """Joint encoder offset in radians."""
+        return self._joint_position_offset
+
+    @property
+    def joint_direction(self) -> int:
+        """Joint direction: 1 or -1"""
+        return self._joint_direction
 
 
 if __name__ == "__main__":
