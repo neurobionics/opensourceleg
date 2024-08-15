@@ -15,8 +15,6 @@ from opensourceleg.actuators.base import (
     ActuatorBase,
     ControlGains,
     ControlModeBase,
-    ControlModesBase,
-    ControlModesMapping,
     MotorConstants,
 )
 from opensourceleg.actuators.decorators import (

@@ -551,7 +551,7 @@ class MoteusActuator(ActuatorBase, Controller):
     def set_control_mode(self, mode: ControlModeBase) -> None:
         super().set_control_mode(mode)
 
-    def set_motor_torque(self, value: Union[int, float]) -> None:
+    def set_motor_torque(self, value: float) -> None:
         """
         Sets the motor torque in Nm.
 
@@ -562,7 +562,7 @@ class MoteusActuator(ActuatorBase, Controller):
             value / self.gear_ratio,
         )
 
-    def set_joint_torque(self, value: Union[int, float]) -> None:
+    def set_joint_torque(self, value: float) -> None:
         """
         Set the joint torque of the joint.
         This is the torque that is applied to the joint, not the motor.
@@ -606,8 +606,8 @@ class MoteusActuator(ActuatorBase, Controller):
 
     async def set_torque_gains(
         self,
-        kp: Union[int, float] = DEFAULT_TORQUE_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_TORQUE_GAINS.ki,
+        kp: float = DEFAULT_TORQUE_GAINS.kp,
+        ki: float = DEFAULT_TORQUE_GAINS.ki,
     ) -> None:
         """
         Sets the position gains in arbitrary Moteus units.
@@ -622,10 +622,10 @@ class MoteusActuator(ActuatorBase, Controller):
 
     async def set_position_gains(
         self,
-        kp: Union[int, float] = DEFAULT_POSITION_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_POSITION_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_POSITION_GAINS.kd,
-        ff: Union[int, float] = DEFAULT_POSITION_GAINS.ff,
+        kp: float = DEFAULT_POSITION_GAINS.kp,
+        ki: float = DEFAULT_POSITION_GAINS.ki,
+        kd: float = DEFAULT_POSITION_GAINS.kd,
+        ff: float = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Moteus units.
@@ -640,10 +640,10 @@ class MoteusActuator(ActuatorBase, Controller):
 
     async def set_velocity_gains(
         self,
-        kp: Union[int, float] = DEFAULT_VELOCITY_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_VELOCITY_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_VELOCITY_GAINS.kd,
-        ff: Union[int, float] = DEFAULT_VELOCITY_GAINS.ff,
+        kp: float = DEFAULT_VELOCITY_GAINS.kp,
+        ki: float = DEFAULT_VELOCITY_GAINS.ki,
+        kd: float = DEFAULT_VELOCITY_GAINS.kd,
+        ff: float = DEFAULT_VELOCITY_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Moteus units.
@@ -658,10 +658,10 @@ class MoteusActuator(ActuatorBase, Controller):
 
     def set_current_gains(
         self,
-        kp: Union[int, float] = DEFAULT_CURRENT_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_CURRENT_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_CURRENT_GAINS.kd,
-        ff: Union[int, float] = DEFAULT_CURRENT_GAINS.ff,
+        kp: float = DEFAULT_CURRENT_GAINS.kp,
+        ki: float = DEFAULT_CURRENT_GAINS.ki,
+        kd: float = DEFAULT_CURRENT_GAINS.kd,
+        ff: float = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
         """
         Sets the current gains in arbitrary Moteus units.
@@ -675,12 +675,12 @@ class MoteusActuator(ActuatorBase, Controller):
 
     def set_impedance_gains(
         self,
-        kp: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.kd,
-        k: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.k,
-        b: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.b,
-        ff: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.ff,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        k: float = DEFAULT_IMPEDANCE_GAINS.k,
+        b: float = DEFAULT_IMPEDANCE_GAINS.b,
+        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         LOGGER.info(msg=f"[MoteusControlMode] Impedance mode not implemented.")
 

@@ -1,72 +1,15 @@
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, NamedTuple, Optional, Union
 
 from abc import ABC, abstractmethod
 from ctypes import c_int
 from dataclasses import dataclass
 from enum import Enum
+from functools import wraps
 
 import numpy as np
 
 from opensourceleg.actuators.exceptions import VoltageModeMissingException
 from opensourceleg.logging.logger import LOGGER
-
-
-class ControlModesMapping(Enum):
-    """Control Modes Dictionary
-
-    Attributes
-    ----------
-    VOLTAGE (c_int): Voltage control mode
-    CURRENT (c_int): Current control mode
-    POSITION (c_int): Position control mode
-    IMPEDANCE (c_int): Impedance control mode
-
-    Extending
-    ---------
-    Adding new modes to the control mode dictionary:
-        Access opensourceleg.actuators.base.ControlModesMapping and add the new mode
-
-    """
-
-    POSITION = c_int(0), "position"
-    VOLTAGE = c_int(1), "voltage"
-    CURRENT = c_int(2), "current"
-    IMPEDANCE = c_int(3), "impedance"
-    VELOCITY = c_int(4), "velocity"
-    TORQUE = c_int(5), "torque"
-    IDLE = c_int(6), "IDLE"
-
-    def __new__(cls, c_int_value, str_value):
-        obj = object.__new__(cls)
-        obj._value_ = c_int_value
-        obj.str_value = str_value
-        return obj
-
-    @property
-    def flag(self):
-        return self._value_
-
-    def __int__(self):
-        return self.value.value
-
-    def __str__(self):
-        return str.upper(self.str_value)
-
-
-class ControlModesMeta(type):
-    def __init__(cls, name, bases, attrs):
-        # TODO: Enforce a default mode for all actuators, this could be voltage mode or a separate idle mode
-        # if bases and "VOLTAGE" not in attrs:
-        #     print(f"Class: {cls}")
-        #     print(f"Name: {name}")
-        #     print(f"Bases: {bases}")
-        #     print(f"Attrs: {attrs}")
-        #     raise VoltageModeMissingException(cls.__name__)
-        super().__init__(name, bases, attrs)
-
-
-class ControlModesBase(metaclass=ControlModesMeta):
-    pass
 
 
 @dataclass
@@ -83,18 +26,120 @@ class ControlGains:
     ff (int): Feedforward gain
     """
 
-    kp: Union[int, float] = 0
-    ki: Union[int, float] = 0
-    kd: Union[int, float] = 0
-    k: Union[int, float] = 0
-    b: Union[int, float] = 0
-    ff: Union[int, float] = 0
-
-    def __repr__(self) -> str:
-        return f"kp={self.kp}, ki={self.ki}, kd={self.kd}, k={self.k}, b={self.b}, ff={self.ff}"
+    kp: float = 0
+    ki: float = 0
+    kd: float = 0
+    k: float = 0
+    b: float = 0
+    ff: float = 0
 
 
 @dataclass
+class ControlModeConfig:
+    """Dataclass for control mode configuration
+
+    Attributes
+    ----------
+    max_gains (ControlGains): maximum gains that can be set by the user
+    entry_callback (Callable): callback function to be called when entering the mode
+    exit_callback (Callable): callback function to be called when exiting the mode
+    """
+
+    flag: c_int
+    max_gains: ControlGains
+    entry_callback: Callable[[Any], None]
+    exit_callback: Callable[[Any], None]
+
+
+DEFAULT_POSITION_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=0,
+    max_gains=ControlGains(kp=1000, ki=100, kd=100, ff=100),
+    entry_callback=lambda _: LOGGER.info("Entering position control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting position control mode"),
+)
+
+DEFAULT_CURRENT_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=1,
+    max_gains=ControlGains(kp=1000, ki=100, kd=100, ff=100),
+    entry_callback=lambda _: LOGGER.info("Entering current control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting current control mode"),
+)
+
+DEFAULT_VOLTAGE_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=2,
+    max_gains=ControlGains(kp=1000, ki=100, kd=100, ff=100),
+    entry_callback=lambda _: LOGGER.info("Entering voltage control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting voltage control mode"),
+)
+
+DEFAULT_IMPEDANCE_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=3,
+    max_gains=ControlGains(kp=1000, ki=100, kd=100, k=100, b=100, ff=100),
+    entry_callback=lambda _: LOGGER.info("Entering impedance control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting impedance control mode"),
+)
+
+DEFAULT_VELOCITY_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=4,
+    max_gains=ControlGains(kp=1000, ki=100, kd=100, ff=100),
+    entry_callback=lambda _: LOGGER.info("Entering velocity control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting velocity control mode"),
+)
+
+DEFAULT_TORQUE_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=5,
+    max_gains=ControlGains(kp=1000, ki=100, kd=100, ff=100),
+    entry_callback=lambda _: LOGGER.info("Entering torque control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting torque control mode"),
+)
+
+DEFAULT_IDLE_CONTROL_MODE_CONFIG = ControlModeConfig(
+    flag=6,
+    max_gains=ControlGains(kp=0, ki=0, kd=0, ff=0),
+    entry_callback=lambda _: LOGGER.info("Entering idle control mode"),
+    exit_callback=lambda _: LOGGER.info("Exiting idle control mode"),
+)
+
+
+class CONTROL_MODES(NamedTuple):
+    POSITION: Optional[ControlModeConfig] = None
+    CURRENT: Optional[ControlModeConfig] = None
+    VOLTAGE: Optional[ControlModeConfig] = None
+    IMPEDANCE: Optional[ControlModeConfig] = None
+    VELOCITY: Optional[ControlModeConfig] = None
+    TORQUE: Optional[ControlModeConfig] = None
+    IDLE: Optional[ControlModeConfig] = None
+
+
+def require_control_mode(required_mode: CONTROL_MODES):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self: ActuatorBase, *args, **kwargs):
+            if self.mode != required_mode:
+                raise ValueError(
+                    f"Function {func.__name__} requires control mode {required_mode.name}"
+                )
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def require_control_gains():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self: ActuatorBase, *args, **kwargs):
+            if not self.mode.has_gains:
+                raise ValueError(f"Function {func.__name__} requires control gains")
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+@dataclass(frozen=True)
 class MotorConstants:
     """Dataclass for mechanical constants
 
@@ -110,15 +155,10 @@ class MotorConstants:
     Properties
     ----------
     NM_PER_MILLIAMP(self): float = NM_PER_AMP / 1000
-
     RAD_PER_COUNT(self): float = return 2 * pi / MOTOR_COUNT_PER_REV
-
     RAD_PER_DEG(self): float  = pi / 180
-
     RAD_PER_SEC_GYROLSB(self): float = pi / 180 / 32.8
-
     NM_PER_RAD_TO_K(self): float = RAD_PER_COUNT / IMPEDANCE_C * 1e3 / NM_PER_AMP
-
     NM_S_PER_RAD_TO_B(self): float = RAD_PER_DEG / IMPEDANCE_A * 1e3 / NM_PER_AMP
     """
 
@@ -133,7 +173,6 @@ class MotorConstants:
     MAX_WINDING_TEMPERATURE: float = 110
     M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
 
-    # Should be only containing the members above. Others directly implemented in the Actuators class
     @property
     def NM_PER_MILLIAMP(self) -> float:
         return self.NM_PER_AMP / 1000
@@ -157,218 +196,6 @@ class MotorConstants:
     @property
     def NM_S_PER_RAD_TO_B(self) -> float:
         return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
-
-    def set_max_winding_temperature(self, temperature: float) -> None:
-        self.MAX_WINDING_TEMPERATURE = temperature
-
-    def set_max_case_temperature(self, temperature: float) -> None:
-        self.MAX_CASE_TEMPERATURE = temperature
-
-
-class ControlModeBase(ABC):
-    """Base Class for new actuator mode definition
-
-    Args
-    ----
-    control_mode_index (c_int): Mode pass / flag for the actuator
-    device (Actuator): Actuator instance
-
-    Properties
-    ----------
-    mode (c_int): Control Mode
-    has_gains (bool): Whether the mode has gains
-
-    Methods
-    -------
-    enter() -> None:
-
-    Calls the entry callback
-
-    exit() → None:
-
-    Calls the exit callback
-
-    transition(
-        to_mode: opensourceleg.hardware.actuators.base.ControlModeBase
-    ) → None:
-
-    Transition to another mode. Calls the exit callback of the current mode and the entry callback of the new mode
-
-    """
-
-    def __init__(
-        self,
-        control_mode_map: ControlModesMapping,
-        actuator: "ActuatorBase",
-        max_gains: ControlGains = ControlGains(
-            kp=1000,
-            ki=1000,
-            kd=1000,
-            k=1000,
-            b=1000,
-            ff=1000,
-        ),
-        entry_callbacks: list[Callable[[], None]] = [lambda: None],
-        exit_callbacks: list[Callable[[], None]] = [lambda: None],
-    ) -> None:
-        self._control_mode_map: ControlModesMapping = control_mode_map
-        self._has_gains: bool = False
-        self._gains: Any = None
-        self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
-        self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
-        self._actuator: "ActuatorBase" = actuator
-        self._max_gains: ControlGains = max_gains
-
-    def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, ControlModeBase):
-            return self.index == __o.index
-        return False
-
-    def __str__(self) -> str:
-        return str(object=self.index)
-
-    def __repr__(self) -> str:
-        return f"ControlModeBase[{self.name}]"
-
-    def enter(self) -> None:
-        """
-        Calls the entry callback
-        """
-        for _callback in self._entry_callbacks:
-            _callback()
-
-    def exit(self) -> None:
-        """
-        Calls the exit callback
-        """
-        for _callback in self._exit_callbacks:
-            _callback()
-
-    def transition(self, to_mode: "ControlModeBase") -> None:
-        """
-        Transition to another mode. Calls the exit callback of the current mode
-        and the entry callback of the new mode.
-
-        Args:
-            to_mode (ControlModeBase): Mode to transition to
-        """
-        self.exit()
-        to_mode.enter()
-
-    def set_actuator(self, actuator: "ActuatorBase") -> None:
-        self._actuator = actuator
-
-    @abstractmethod
-    def set_gains(self, gains: ControlGains) -> Any:
-        """set_gains method for the control mode.
-        Please use the super method only if applicable to the child class if not override this method
-
-        Args:
-            Gains (ControlGains): control gains applied
-        """
-
-        assert 0 <= gains.kp <= self._max_gains.kp
-        assert 0 <= gains.ki <= self._max_gains.ki
-        assert 0 <= gains.kd <= self._max_gains.kd
-        assert 0 <= gains.k <= self._max_gains.k
-        assert 0 <= gains.b <= self._max_gains.b
-        assert 0 <= gains.ff <= self._max_gains.ff
-
-        self._gains = gains
-        self._has_gains = True
-
-    @abstractmethod
-    def set_current(self, value: float):
-        """
-        Set current for the control mode
-
-        Args:
-            value (float): Current value in mA
-        """
-        pass
-
-    @abstractmethod
-    def set_position(self, value: float):
-        """
-        Set position for the control mode
-
-        Args:
-            value (float): Position value in radians
-        """
-        pass
-
-    @abstractmethod
-    def set_voltage(self, value: float):
-        """
-        Set voltage for the control mode
-
-        Args:
-            value (float): Voltage value in mV
-        """
-        pass
-
-    def set_max_gains(self, gains: ControlGains) -> None:
-        self._max_gains = gains
-
-    @property
-    def index(self) -> int:
-        """
-        Control Mode
-
-        Returns:
-            c_int: Control mode pass / flag
-        """
-        return int(self._control_mode_map)
-
-    @property
-    def name(self) -> str:
-        """
-        Control Mode Name
-
-        Returns:
-            str: Control mode name
-        """
-        return str(self._control_mode_map)
-
-    @property
-    def flag(self) -> c_int:
-        """
-        Control Mode Flag
-
-        Returns:
-            c_int: Control mode flag
-        """
-        return c_int(self._control_mode_map.flag)
-
-    @property
-    def has_gains(self) -> bool:
-        """
-        Whether the mode has gains (Read Only)
-
-        Returns:
-            bool: True if the mode has gains, False otherwise
-        """
-        return self._has_gains
-
-    @property
-    def max_gains(self) -> ControlGains:
-        """
-        Maximum gains for the mode (Read Only)
-
-        Returns:
-            ControlGains, None: Maximum gains for the mode
-        """
-        return self._max_gains
-
-    @property
-    def actuator(self) -> "ActuatorBase":
-        """
-        Actuator (Read Only)
-
-        Returns:
-            ActuatorBase: Actuator instance
-        """
-        return self._actuator
 
 
 class ActuatorBase(ABC):
@@ -407,8 +234,6 @@ class ActuatorBase(ABC):
     def __init__(
         self,
         tag: str,
-        control_modes: ControlModesBase,
-        default_control_mode: ControlModeBase,
         gear_ratio: float,
         motor_constants: MotorConstants,
         frequency: int = 1000,
@@ -416,13 +241,11 @@ class ActuatorBase(ABC):
         *args,
         **kwargs,
     ) -> None:
-        self._CONTROL_MODES: ControlModesBase = control_modes
         self._MOTOR_CONSTANTS: MotorConstants = motor_constants
         self._gear_ratio: float = gear_ratio
         self._tag: str = tag
         self._frequency: int = frequency
         self._data: Any = None
-        self._mode: ControlModeBase = default_control_mode
         self._is_offline: bool = offline
         self._is_homed: bool = False
 
@@ -440,6 +263,15 @@ class ActuatorBase(ABC):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop()
 
+    @property
+    @abstractmethod
+    def CONTROL_MODES(self) -> CONTROL_MODES:
+        """
+        Supported control modes for your actuator
+        Please create a _CONTROL_MODES class variable in your actuator class and return it here
+        """
+        pass
+
     @abstractmethod
     def start(self) -> None:
         """Start method for the actuator"""
@@ -456,15 +288,12 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    def set_control_mode(self, mode: ControlModeBase) -> None:
+    def set_control_mode(self, mode: CONTROL_MODES) -> None:
         """set_control_mode method for the actuator
 
         Args:
             mode (ControlModeBase): mode applied to the actuator
         """
-
-        self._mode.transition(to_mode=mode)
-        self._mode = mode
 
     @abstractmethod
     def set_motor_voltage(self, value: float) -> None:
@@ -569,13 +398,13 @@ class ActuatorBase(ABC):
         self._MOTOR_CONSTANTS.set_max_winding_temperature(temperature)
 
     @property
-    def CONTROL_MODES(self) -> ControlModesBase:
+    def CONTROL_MODES(self) -> CONTROL_MODES:
         """Control Modes (Read Only)
 
         Returns:
             List[ControlModeBase]: List of control modes
         """
-        return self._CONTROL_MODES
+        return CONTROL_MODES
 
     @property
     def MOTOR_CONSTANTS(self) -> MotorConstants:
@@ -587,7 +416,7 @@ class ActuatorBase(ABC):
         return self._MOTOR_CONSTANTS
 
     @property
-    def mode(self) -> ControlModeBase:
+    def mode(self) -> CONTROL_MODES:
         """Current Control Mode (Read Only)
 
         Returns:

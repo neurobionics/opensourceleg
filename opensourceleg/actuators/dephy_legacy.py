@@ -671,10 +671,10 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_position_gains(
         self,
-        kp: Union[int, float] = DEFAULT_POSITION_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_POSITION_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_POSITION_GAINS.kd,
-        ff: Union[int, float] = DEFAULT_POSITION_GAINS.ff,
+        kp: float = DEFAULT_POSITION_GAINS.kp,
+        ki: float = DEFAULT_POSITION_GAINS.ki,
+        kd: float = DEFAULT_POSITION_GAINS.kd,
+        ff: float = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Dephy units.
@@ -689,10 +689,10 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_current_gains(
         self,
-        kp: Union[int, float] = DEFAULT_CURRENT_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_CURRENT_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_CURRENT_GAINS.kd,
-        ff: Union[int, float] = DEFAULT_CURRENT_GAINS.ff,
+        kp: float = DEFAULT_CURRENT_GAINS.kp,
+        ki: float = DEFAULT_CURRENT_GAINS.ki,
+        kd: float = DEFAULT_CURRENT_GAINS.kd,
+        ff: float = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
         """
         Sets the current gains in arbitrary Dephy units.
@@ -706,11 +706,11 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_motor_impedance(
         self,
-        kp: Union[int, float] = 40,
-        ki: Union[int, float] = 400,
-        k: Union[int, float] = 0.08922,
-        b: Union[int, float] = 0.0038070,
-        ff: Union[int, float] = 128,
+        kp: float = 40,
+        ki: float = 400,
+        k: float = 0.08922,
+        b: float = 0.0038070,
+        ff: float = 128,
     ) -> None:
         """
         Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
@@ -732,11 +732,11 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_joint_impedance(
         self,
-        kp: Union[int, float] = 40,
-        ki: Union[int, float] = 400,
-        k: Union[int, float] = 100.0,
-        b: Union[int, float] = 3.0,
-        ff: Union[int, float] = 128,
+        kp: float = 40,
+        ki: float = 400,
+        k: float = 100.0,
+        b: float = 3.0,
+        ff: float = 128,
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
@@ -763,12 +763,12 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_impedance_gains(
         self,
-        kp: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.kd,
-        k: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.k,
-        b: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.b,
-        ff: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.ff,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        k: float = DEFAULT_IMPEDANCE_GAINS.k,
+        b: float = DEFAULT_IMPEDANCE_GAINS.b,
+        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
         Sets the impedance gains in arbitrary actpack units.

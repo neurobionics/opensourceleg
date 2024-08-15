@@ -28,14 +28,6 @@ class State:
 
     Args:
         name (str): Name of the state
-        is_knee_active (bool): Whether the knee is active. Default: False
-        knee_stiffness (float): Knee stiffness in Nm/rad
-        knee_damping (float): Knee damping in Nm/rad/sec
-        knee_equilibrium_angle (float): Knee equilibrium angle
-        is_ankle_active (bool): Whether the ankle is active. Default: False
-        ankle_stiffness (float): Ankle stiffness in Nm/rad
-        ankle_damping (float): Ankle damping in Nm/rad/sec
-        ankle_equilibrium_angle (float): Ankle equilibrium angle
         minimum_time_in_state (float): Minimum time spent in the state in seconds. Default: 2.0
 
     Note:
@@ -47,20 +39,19 @@ class State:
     def __init__(
         self,
         name: str = "state",
-        minimum_time_in_state: float = 2.0,
-        custom_data: dict[str, Any] = {},
+        minimum_duration: float = 2.0,
+        entry_callbacks: list[Callable[[Any], None]] = [],
+        exit_callbacks: list[Callable[[Any], None]] = [],
     ) -> None:
 
         self._name: str = name
-        self._custom_data: dict[str, Any] = custom_data
-
         self._time_entered: float = 0.0
         self._time_exited: float = 0.0
-        self._min_time_in_state: float = minimum_time_in_state
+        self._minimum_duration: float = minimum_duration
 
         # Callbacks
-        self._entry_callbacks: list[Callable[[Any], None]] = []
-        self._exit_callbacks: list[Callable[[Any], None]] = []
+        self._entry_callbacks: entry_callbacks
+        self._exit_callbacks: exit_callbacks
 
     def __eq__(self, __o) -> bool:
         if __o.name == self._name:
@@ -77,45 +68,19 @@ class State:
     def __repr__(self) -> str:
         return f"State[{self._name}]"
 
-    def set_minimum_time_spent_in_state(self, time: float) -> None:
+    def set_minimum_duration(self, value: float) -> None:
         """
         Set the minimum time spent in the state
 
         Args:
             time (float): Minimum time spent in the state in seconds
         """
-        self._min_time_in_state = time
+        self._minimum_duration = value
 
-    def set_custom_data(self, key: str, value: Any) -> None:
-        """
-        Set custom data for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
-
-        Args:
-            key (str): Key of the data
-            value (Any): Value of the data
-        """
-        self._custom_data[key] = value
-
-    def get_custom_data(self, key: str) -> Any:
-        """
-        Get custom data for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
-
-        Args:
-            key (str): Key of the data
-
-        Returns:
-            Any: Value of the data
-        """
-        return self._custom_data[key]
-
-    def on_entry(self, callback: Callable[[Any], None]) -> None:
+    def add_entry_callback(self, callback: Callable[[Any], None]) -> None:
         self._entry_callbacks.append(callback)
 
-    def on_exit(self, callback: Callable[[Any], None]) -> None:
+    def add_exit_callback(self, callback: Callable[[Any], None]) -> None:
         self._exit_callbacks.append(callback)
 
     def start(self, data: Any) -> None:
@@ -134,7 +99,7 @@ class State:
 
     @property
     def minimum_time_spent_in_state(self) -> float:
-        return self._min_time_in_state
+        return self._minimum_duration
 
     @property
     def current_time_in_state(self) -> float:
@@ -143,16 +108,6 @@ class State:
     @property
     def time_spent_in_state(self) -> float:
         return self._time_exited - self._time_entered
-
-
-class Idle(State):
-    def __init__(self) -> None:
-        self._name = "idle"
-        super().__init__(name=self._name)
-
-    @property
-    def status(self) -> str:
-        return self._name
 
 
 class Event:
@@ -196,14 +151,15 @@ class Transition:
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        criteria: Callable[[Any], bool],
+        action: Callable[[Any], None],
     ) -> None:
         self._event: Event = event
         self._source_state: State = source
         self._destination_state: State = destination
 
-        self._criteria: Optional[Callable[[Any], bool]] = callback
-        self._action: Optional[Callable[[Any], None]] = None
+        self._criteria: Callable[[Any], bool] = criteria
+        self._action: Callable[[Any], None] = action
 
     def __call__(self, data: Any) -> Any:
         raise NotImplementedError
@@ -212,12 +168,6 @@ class Transition:
         return (
             f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
         )
-
-    def add_criteria(self, callback: Callable[[Any], bool]) -> None:
-        self._criteria = callback
-
-    def add_action(self, callback: Callable[[Any], Any]) -> None:
-        self._action = callback
 
     @property
     def event(self) -> Event:
