@@ -88,7 +88,7 @@ class MoteusQueryResolution:
 
 
 class MoteusIdleMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
+    def __init__(self, actuator: "MoteusActuator") -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.IDLE,
             actuator=actuator,
@@ -111,35 +111,35 @@ class MoteusIdleMode(ControlModeBase):
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
-    def set_velocity(self, value: Union[float, int]):
+    def set_velocity(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VELOCITY),
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
             mode=self.name,
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.POSITION),
             mode=self.name,
         )
 
-    def set_torque(self, value: Union[float, int]):
+    def set_torque(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.TORQUE),
@@ -148,7 +148,7 @@ class MoteusIdleMode(ControlModeBase):
 
 
 class MoteusVelocityMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
+    def __init__(self, actuator: "MoteusActuator") -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.VELOCITY,
             actuator=actuator,
@@ -171,7 +171,7 @@ class MoteusVelocityMode(ControlModeBase):
         self.set_velocity(0)
         time.sleep(0.1)
 
-    async def set_gains(self, gains: ControlGains) -> None:
+    async def set_gains(self, gains: ControlGains):
         super().set_gains(gains)
         await self._actuator._stream.command(
             f"conf set servo.pid_position.kp {self._gains.kp}".encode()
@@ -183,7 +183,7 @@ class MoteusVelocityMode(ControlModeBase):
             f"conf set servo.pid_position.kd {self._gains.kd}".encode()
         )
 
-    def set_velocity(self, value: Union[float, int]):
+    def set_velocity(self, value: float):
         self.actuator._command = self.actuator.make_position(
             position=math.nan,
             velocity=value / (np.pi * 2),
@@ -191,28 +191,28 @@ class MoteusVelocityMode(ControlModeBase):
             watchdog_timeout=math.nan,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
             mode=self.name,
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.POSITION),
             mode=self.name,
         )
 
-    def set_torque(self, value: Union[float, int]):
+    def set_torque(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.TORQUE),
@@ -221,7 +221,7 @@ class MoteusVelocityMode(ControlModeBase):
 
 
 class MoteusPositionMode(ControlModeBase):
-    def __init__(self, actuator: Union["MoteusActuator", None] = None) -> None:
+    def __init__(self, actuator: "MoteusActuator") -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.POSITION,
             actuator=actuator,
@@ -245,7 +245,7 @@ class MoteusPositionMode(ControlModeBase):
     async def set_gains(
         self,
         gains: ControlGains = DEFAULT_POSITION_GAINS,
-    ) -> None:
+    ):
         super().set_gains(gains)
         await self._actuator._stream.command(
             f"conf set servo.pid_position.kp {self._gains.kp}".encode()
@@ -257,7 +257,7 @@ class MoteusPositionMode(ControlModeBase):
             f"conf set servo.pid_position.kd {self._gains.kd}".encode()
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
 
         self.actuator._command = self.actuator.make_position(
             position=float((value) / (2 * np.pi)),  # in revolutions
@@ -265,28 +265,28 @@ class MoteusPositionMode(ControlModeBase):
             watchdog_timeout=math.nan,
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_velocity(self, value: Union[float, int]):
+    def set_velocity(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VELOCITY),
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
             mode=self.name,
         )
 
-    def set_torque(self, value: Union[float, int]):
+    def set_torque(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.TORQUE),
@@ -325,7 +325,7 @@ class MoteusTorqueMode(ControlModeBase):
         gains: ControlGains = DEFAULT_TORQUE_GAINS,
     ) -> None:
 
-        super().set_gains()
+        super().set_gains(gains)
         await self._actuator._stream.command(
             f"conf set servo.pid_dq.kp {self._gains.kp}".encode()
         )
@@ -333,7 +333,7 @@ class MoteusTorqueMode(ControlModeBase):
             f"conf set servo.pid_dq.ki {self._gains.ki}".encode()
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         print(value)
         raise ControlModeException(
             tag=self.actuator.tag,
@@ -341,28 +341,28 @@ class MoteusTorqueMode(ControlModeBase):
             mode=self.name,
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_velocity(self, value: Union[float, int]):
+    def set_velocity(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VELOCITY),
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
             mode=self.name,
         )
 
-    def set_torque(self, value: Union[float, int]):
+    def set_torque(self, value: float):
         self.actuator._command = self.actuator.make_position(
             position=math.nan,
             velocity=math.nan,
@@ -458,29 +458,15 @@ class MoteusActuator(ActuatorBase, Controller):
         self._interface = MoteusInterface()
         self._interface._add2map(servo_id=servo_id, bus_id=bus_id)
 
-        if self.is_offline:
-            self.is_streaming: bool = False
-            self.is_open: bool = False
-        else:
-            # for streaming check
-            self.is_streaming: bool = True
-            self.is_open: bool = True
+        self._is_streaming: bool = False
+        self._is_open: bool = False
 
         self._command: Command = None
         self._data = None
         self._query = query
 
         self._encoder_map = None
-
-        self._motor_zero_position = 0.0
-        self._joint_zero_position = 0.0
-        self._motor_position_offset = 0.0
-
         self._is_homed: bool = False
-
-        self._joint_offset = 0.0
-        self._motor_position_offset = 0.0
-        self._joint_direction = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
@@ -506,6 +492,9 @@ class MoteusActuator(ActuatorBase, Controller):
             )
             self._stream = Stream(controller=self)
 
+            self._is_open = True
+            self._is_streaming = True
+
         except OSError as e:
             print("\n")
             LOGGER.error(
@@ -518,8 +507,8 @@ class MoteusActuator(ActuatorBase, Controller):
             LOGGER.error(
                 msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection."
             )
-            self.is_streaming: bool = False
-            self.is_open: bool = False
+            self._is_streaming = False
+            self._is_open = False
         # Keep the default command as query -- reading sensor data
         self._command = self.make_query()
 
@@ -562,7 +551,7 @@ class MoteusActuator(ActuatorBase, Controller):
     def set_control_mode(self, mode: ControlModeBase) -> None:
         super().set_control_mode(mode)
 
-    def set_motor_torque(self, value: float) -> None:
+    def set_motor_torque(self, value: Union[int, float]) -> None:
         """
         Sets the motor torque in Nm.
 
@@ -573,7 +562,7 @@ class MoteusActuator(ActuatorBase, Controller):
             value / self.gear_ratio,
         )
 
-    def set_joint_torque(self, value: float) -> None:
+    def set_joint_torque(self, value: Union[int, float]) -> None:
         """
         Set the joint torque of the joint.
         This is the torque that is applied to the joint, not the motor.
@@ -617,8 +606,8 @@ class MoteusActuator(ActuatorBase, Controller):
 
     async def set_torque_gains(
         self,
-        kp: int = DEFAULT_TORQUE_GAINS.kp,
-        ki: int = DEFAULT_TORQUE_GAINS.ki,
+        kp: Union[int, float] = DEFAULT_TORQUE_GAINS.kp,
+        ki: Union[int, float] = DEFAULT_TORQUE_GAINS.ki,
     ) -> None:
         """
         Sets the position gains in arbitrary Moteus units.
@@ -629,14 +618,14 @@ class MoteusActuator(ActuatorBase, Controller):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=0))  # type: ignore
+        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=0))
 
     async def set_position_gains(
         self,
-        kp: int = DEFAULT_POSITION_GAINS.kp,
-        ki: int = DEFAULT_POSITION_GAINS.ki,
-        kd: int = DEFAULT_POSITION_GAINS.kd,
-        ff: int = DEFAULT_POSITION_GAINS.ff,
+        kp: Union[int, float] = DEFAULT_POSITION_GAINS.kp,
+        ki: Union[int, float] = DEFAULT_POSITION_GAINS.ki,
+        kd: Union[int, float] = DEFAULT_POSITION_GAINS.kd,
+        ff: Union[int, float] = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Moteus units.
@@ -647,14 +636,14 @@ class MoteusActuator(ActuatorBase, Controller):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
+        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
 
     async def set_velocity_gains(
         self,
-        kp: int = DEFAULT_VELOCITY_GAINS.kp,
-        ki: int = DEFAULT_VELOCITY_GAINS.ki,
-        kd: int = DEFAULT_VELOCITY_GAINS.kd,
-        ff: int = DEFAULT_VELOCITY_GAINS.ff,
+        kp: Union[int, float] = DEFAULT_VELOCITY_GAINS.kp,
+        ki: Union[int, float] = DEFAULT_VELOCITY_GAINS.ki,
+        kd: Union[int, float] = DEFAULT_VELOCITY_GAINS.kd,
+        ff: Union[int, float] = DEFAULT_VELOCITY_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Moteus units.
@@ -665,13 +654,14 @@ class MoteusActuator(ActuatorBase, Controller):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))  # type: ignore
+        await self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
 
     def set_current_gains(
         self,
-        kp: int = DEFAULT_CURRENT_GAINS.kp,
-        ki: int = DEFAULT_CURRENT_GAINS.ki,
-        ff: int = DEFAULT_CURRENT_GAINS.ff,
+        kp: Union[int, float] = DEFAULT_CURRENT_GAINS.kp,
+        ki: Union[int, float] = DEFAULT_CURRENT_GAINS.ki,
+        kd: Union[int, float] = DEFAULT_CURRENT_GAINS.kd,
+        ff: Union[int, float] = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
         """
         Sets the current gains in arbitrary Moteus units.
@@ -685,10 +675,12 @@ class MoteusActuator(ActuatorBase, Controller):
 
     def set_impedance_gains(
         self,
-        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: int = DEFAULT_IMPEDANCE_GAINS.kd,
-        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+        kp: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.kd,
+        k: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.k,
+        b: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.b,
+        ff: Union[int, float] = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         LOGGER.info(msg=f"[MoteusControlMode] Impedance mode not implemented.")
 
@@ -712,39 +704,22 @@ class MoteusActuator(ActuatorBase, Controller):
         """Sets joint offset position in radians"""
         self._joint_offset = position
 
-    def set_joint_direction(self, direction: float) -> None:
+    def set_joint_direction(self, direction: int) -> None:
         """Sets joint direction to 1 or -1"""
         self._joint_direction = direction
 
     @property
-    def joint_zero_position(self) -> float:
-        """Joint encoder zero position in radians."""
-        return self._joint_zero_position
+    def is_streaming(self) -> bool:
+        return self._is_streaming
 
     @property
-    def joint_position_offset(self) -> float:
-        """Joint encoder offset in radians."""
-        return self._joint_position_offset
-
-    @property
-    def joint_direction(self) -> float:
-        """Joint direction: 1 or -1"""
-        return self._joint_direction
+    def is_open(self) -> bool:
+        return self._is_open
 
     @property
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
         return self._encoder_map
-
-    @property
-    def motor_zero_position(self) -> float:
-        """Motor encoder zero position in radians."""
-        return self._motor_zero_position
-
-    @property
-    def motor_position_offset(self) -> float:
-        """Motor encoder offset in radians."""
-        return self._motor_position_offset
 
     @property
     def motor_voltage(self) -> float:

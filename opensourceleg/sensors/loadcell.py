@@ -41,8 +41,8 @@ class SRILoadcell(LoadcellBase):
         amp_gain: float = 125.0,
         exc: float = 5.0,
         calibration_matrix=None,
-        bus: int = None,
-        i2c_address: int = None,
+        bus: int = 1,
+        i2c_address: int = 0x66,
     ) -> None:
         self._amp_gain: float = amp_gain
         self._exc: float = exc
@@ -54,8 +54,6 @@ class SRILoadcell(LoadcellBase):
 
         self._data: npt.NDArray[np.double] = np.zeros(shape=(1, 6), dtype=np.double)
         self._prev_data: npt.NDArray[np.double] = self._data
-
-        self._smbus = None
         self._failed_reads = 0
 
         self._calibration_offset: npt.NDArray[np.double] = np.zeros(
@@ -103,7 +101,7 @@ class SRILoadcell(LoadcellBase):
         self,
         number_of_iterations: int = 2000,
         reset: bool = False,
-        data_callback: Callable = None,
+        data_callback: Callable[[], npt.NDArray[np.uint8]] = None,
     ) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero.
@@ -142,7 +140,7 @@ class SRILoadcell(LoadcellBase):
 
     def stop(self) -> None:
         self._is_streaming = False
-        if self._smbus:
+        if hasattr(self, "_smbus"):
             self._smbus.close()
 
     def _read_compressed_strain(self):
@@ -191,7 +189,7 @@ class SRILoadcell(LoadcellBase):
         return self._is_calibrated
 
     @property
-    def _is_streaming(self) -> bool:
+    def is_streaming(self) -> bool:
         return self._is_streaming
 
     @property

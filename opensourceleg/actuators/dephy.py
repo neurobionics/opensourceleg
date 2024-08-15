@@ -47,7 +47,7 @@ DEPHY_SLEEP_DURATION = 0.1
 
 
 class DephyVoltageMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
+    def __init__(self, actuator: "DephyActuator") -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.VOLTAGE,
             actuator=actuator,
@@ -74,17 +74,17 @@ class DephyVoltageMode(ControlModeBase):
             msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         self.actuator.command_motor_voltage(value=int(value))
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.POSITION),
@@ -93,7 +93,7 @@ class DephyVoltageMode(ControlModeBase):
 
 
 class DephyCurrentMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
+    def __init__(self, actuator: "DephyActuator") -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.CURRENT,
             actuator=actuator,
@@ -136,17 +136,17 @@ class DephyCurrentMode(ControlModeBase):
             ff=int(gains.ff),
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         self.actuator.command_motor_current(value=int(value))
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
             mode=self.name,
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.POSITION),
@@ -196,7 +196,7 @@ class DephyPositionMode(ControlModeBase):
             ff=int(gains.ff),
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         self.actuator.command_motor_position(
             value=int(
                 (
@@ -208,14 +208,14 @@ class DephyPositionMode(ControlModeBase):
             ),
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
@@ -224,7 +224,7 @@ class DephyPositionMode(ControlModeBase):
 
 
 class DephyImpedanceMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
+    def __init__(self, actuator: "DephyActuator") -> None:
         super().__init__(
             control_mode_map=ControlModesMapping.IMPEDANCE,
             actuator=actuator,
@@ -262,7 +262,7 @@ class DephyImpedanceMode(ControlModeBase):
             ff=int(gains.ff),
         )
 
-    def set_position(self, value: Union[float, int]):
+    def set_position(self, value: float):
         self.actuator.command_motor_position(
             value=int(
                 (
@@ -274,14 +274,14 @@ class DephyImpedanceMode(ControlModeBase):
             ),
         )
 
-    def set_current(self, value: Union[float, int]):
+    def set_current(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.CURRENT),
             mode=self.name,
         )
 
-    def set_voltage(self, value: Union[float, int]):
+    def set_voltage(self, value: float):
         raise ControlModeException(
             tag=self.actuator.tag,
             attribute=str(ControlModesMapping.VOLTAGE),
@@ -632,7 +632,7 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_motor_current(
         self,
-        value: float,
+        value=float,
     ):
         """
         Sets the motor current in mA.
@@ -665,7 +665,7 @@ class DephyActuator(ActuatorBase, Device):
             value,
         )
 
-    def set_motor_position(self, value: float) -> None:
+    def set_motor_position(self, value=float) -> None:
         """
         Sets the motor position in radians.
         If in impedance mode, this sets the equilibrium angle in radians.
@@ -677,10 +677,10 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_position_gains(
         self,
-        kp: int = DEFAULT_POSITION_GAINS.kp,
-        ki: int = DEFAULT_POSITION_GAINS.ki,
-        kd: int = DEFAULT_POSITION_GAINS.kd,
-        ff: int = DEFAULT_POSITION_GAINS.ff,
+        kp: float = DEFAULT_POSITION_GAINS.kp,
+        ki: float = DEFAULT_POSITION_GAINS.ki,
+        kd: float = DEFAULT_POSITION_GAINS.kd,
+        ff: float = DEFAULT_POSITION_GAINS.ff,
     ) -> None:
         """
         Sets the position gains in arbitrary Dephy units.
@@ -695,9 +695,10 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_current_gains(
         self,
-        kp: int = DEFAULT_CURRENT_GAINS.kp,
-        ki: int = DEFAULT_CURRENT_GAINS.ki,
-        ff: int = DEFAULT_CURRENT_GAINS.ff,
+        kp: float = DEFAULT_CURRENT_GAINS.kp,
+        ki: float = DEFAULT_CURRENT_GAINS.ki,
+        kd: float = DEFAULT_CURRENT_GAINS.kd,
+        ff: float = DEFAULT_CURRENT_GAINS.ff,
     ) -> None:
         """
         Sets the current gains in arbitrary Dephy units.
@@ -707,15 +708,15 @@ class DephyActuator(ActuatorBase, Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=0, b=0, ff=ff))
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
 
     def set_motor_impedance(
         self,
-        kp: int = 40,
-        ki: int = 400,
-        K: float = 0.08922,
-        B: float = 0.0038070,
-        ff: int = 128,
+        kp: float = 40,
+        ki: float = 400,
+        k: float = 0.08922,
+        b: float = 0.0038070,
+        ff: float = 128,
     ) -> None:
         """
         Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
@@ -730,18 +731,18 @@ class DephyActuator(ActuatorBase, Device):
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
-            K=int(K * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
-            B=int(B * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
+            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
+            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
             ff=ff,
         )
 
     def set_joint_impedance(
         self,
-        kp: int = 40,
-        ki: int = 400,
-        K: float = 100.0,
-        B: float = 3.0,
-        ff: int = 128,
+        kp: float = 40,
+        ki: float = 400,
+        k: float = 100.0,
+        b: float = 3.0,
+        ff: float = 128,
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
@@ -761,18 +762,19 @@ class DephyActuator(ActuatorBase, Device):
         self.set_motor_impedance(
             kp=kp,
             ki=ki,
-            K=K / (self.gear_ratio**2),
-            B=B / (self.gear_ratio**2),
+            k=k / (self.gear_ratio**2),
+            b=b / (self.gear_ratio**2),
             ff=ff,
         )
 
     def set_impedance_gains(
         self,
-        kp: int = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: int = DEFAULT_IMPEDANCE_GAINS.ki,
-        k: int = DEFAULT_IMPEDANCE_GAINS.k,
-        b: int = DEFAULT_IMPEDANCE_GAINS.b,
-        ff: int = DEFAULT_IMPEDANCE_GAINS.ff,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        k: float = DEFAULT_IMPEDANCE_GAINS.k,
+        b: float = DEFAULT_IMPEDANCE_GAINS.b,
+        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
         Sets the impedance gains in arbitrary actpack units.
@@ -785,7 +787,7 @@ class DephyActuator(ActuatorBase, Device):
             b (int): The damping constant
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=0, k=k, b=b, ff=ff))
+        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=k, b=b, ff=ff))
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
@@ -807,39 +809,14 @@ class DephyActuator(ActuatorBase, Device):
         """Sets joint offset position in radians"""
         self._joint_position_offset = position
 
-    def set_joint_direction(self, direction: float) -> None:
+    def set_joint_direction(self, direction: int) -> None:
         """Sets joint direction to 1 or -1"""
         self._joint_direction = direction
-
-    @property
-    def joint_zero_position(self) -> float:
-        """Joint encoder zero position in radians."""
-        return self._joint_zero_position
-
-    @property
-    def joint_position_offset(self) -> float:
-        """Joint encoder offset in radians."""
-        return self._joint_position_offset
-
-    @property
-    def joint_direction(self) -> float:
-        """Joint direction: 1 or -1"""
-        return self._joint_direction
 
     @property
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
         return self._encoder_map
-
-    @property
-    def motor_zero_position(self) -> float:
-        """Motor encoder zero position in radians."""
-        return self._motor_zero_position
-
-    @property
-    def motor_position_offset(self) -> float:
-        """Motor encoder offset in radians."""
-        return self._motor_position_offset
 
     @property
     def motor_voltage(self) -> float:

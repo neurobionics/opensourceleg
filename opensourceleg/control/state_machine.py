@@ -48,7 +48,7 @@ class State:
         self,
         name: str = "state",
         minimum_time_in_state: float = 2.0,
-        custom_data: dict[str, Any] = None,
+        custom_data: dict[str, Any] = {},
     ) -> None:
 
         self._name: str = name

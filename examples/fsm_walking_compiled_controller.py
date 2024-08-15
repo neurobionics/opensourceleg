@@ -56,7 +56,6 @@ LOADCELL_MATRIX = np.array(
 loadcell = SRILoadcell(
     calibration_matrix=LOADCELL_MATRIX,
     bus=1,
-    i2c_address="/dev/i2c-1",
 )
 
 sensors = [loadcell]
@@ -206,28 +205,28 @@ with knee, ankle, loadcell:
 
         # Write to the hardware
         knee.set_joint_impedance(
-            K=units.convert_to_default(
+            k=units.convert_to_default(
                 outputs.knee_impedance.stiffness, units.stiffness.N_m_per_rad
             ),
-            B=units.convert_to_default(
+            b=units.convert_to_default(
                 outputs.knee_impedance.damping, units.damping.N_m_per_rad_per_s
             ),
         )
         knee.set_output_position(
-            position=units.convert_to_default(
+            value=units.convert_to_default(
                 outputs.knee_impedance.eq_angle, units.position.deg
             )
         )
         ankle.set_joint_impedance(
-            K=units.convert_to_default(
+            k=units.convert_to_default(
                 outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_rad
             ),
-            B=units.convert_to_default(
+            b=units.convert_to_default(
                 outputs.ankle_impedance.damping, units.damping.N_m_per_rad_per_s
             ),
         )
         ankle.set_output_position(
-            position=units.convert_to_default(
+            value=units.convert_to_default(
                 outputs.ankle_impedance.eq_angle, units.position.deg
             )
         )
