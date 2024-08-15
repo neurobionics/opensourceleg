@@ -26,6 +26,7 @@ class ADS131M0x(ADCBase):
     # TODO: List raised exceptions in docstrings at the appropriate location
     # TODO: Add type defs and return types
     # TODO: Check where it is okay to use magic numbers
+    # TODO: Check if other sensors are calling calibrate outside the start method
 
     _MAX_CHANNELS = 8
     _BYTES_PER_WORD = 3
@@ -86,12 +87,12 @@ class ADS131M0x(ADCBase):
         self._spi_chip = spi_chip
         self._num_channels = num_channels
         self._max_speed_hz = max_speed_hz
-        self._channel_gains = [0] * num_channels
+        self._gains = [0] * num_channels
         for i in range(0, num_channels):
             gain = int(math.log2(channel_gains[i]))
             if gain != math.log2(channel_gains[i]):
                 raise Exception("Gain must be a power of 2 between 1 and 128")
-            self._channel_gains[i] = gain
+            self._gains[i] = gain
 
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
@@ -117,7 +118,7 @@ class ADS131M0x(ADCBase):
         self._spi.mode = self._SPI_MODE
 
         self.reset()
-        self._set_gain(self._channel_gains)
+        self._set_gain()
         self._set_device_state(1)
         self.calibrate()
         self._clear_stale_data()
@@ -182,6 +183,10 @@ class ADS131M0x(ADCBase):
     @property
     def is_streaming(self) -> bool:
         return self._streaming
+
+    @property
+    def gains(self) -> list:
+        return self._gains
 
     @property
     def ch0(self):
@@ -257,10 +262,10 @@ class ADS131M0x(ADCBase):
         for _ in range(2):
             self._read_data_millivolts()
 
-    def _set_gain(self, gains):
+    def _set_gain(self):
         """Set PGA gain for each channel of ADC."""
 
-        gains += [0] * (self._MAX_CHANNELS - len(gains))
+        gains = self._gains + [0] * (self._MAX_CHANNELS - len(self._gains))
         self._channel_enable(False)
         gains_msg = gains[3] << 12 | gains[2] << 8 | gains[1] << 4 | gains[0]
         self.write_register(self._GAIN1_REG, gains_msg)

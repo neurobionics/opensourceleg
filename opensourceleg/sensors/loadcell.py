@@ -1,14 +1,27 @@
 import numpy as np
 from adc import ADS131M0x
-from base import LoadcellBase
+from base import LoadcellBase, ADCBase
 
 
 class SRILoadcell(LoadcellBase):
 
-    def __init__(self, matrix=None, **kwargs):
-        self._adc = ADS131M0x(**kwargs)
+    def __init__(
+        self,
+        matrix=None,
+        excitation_voltage=5,
+        adc: ADCBase = None,
+        adc_board="neurobionics",
+        **kwargs,
+    ):
         self.matrix = matrix
-        self.zero_offset = [0] * self.adc._num_channels
+        self._excitation_voltage = excitation_voltage
+
+        if adc is not None:
+            self._adc = adc
+        elif adc_board == "neurobionics":
+            self._adc = ADS131M0x(**kwargs)
+        elif adc_board == "dephy":
+            raise NotImplementedError("Dephy board class is not supported currently")
 
     def __repr__(self) -> str:
         return f"Loadcell"
@@ -22,7 +35,7 @@ class SRILoadcell(LoadcellBase):
 
     def start(self):
         self.adc.start()
-        self.adc.calibrate()
+        # self.adc.calibrate()
 
     """Stop streaming ADC data"""
 
@@ -33,11 +46,10 @@ class SRILoadcell(LoadcellBase):
 
     def update(self):
         self.adc.update()
-        # to mV/V
-        coupled = [0] * self.adc._num_channels
-        for i in range(0, self.adc._num_channels):
-            coupled[i] = self.adc.data[i] / (1.2 * self.adc.gain[i])
-        self.data = np.transpose(a=self.matrix.dot(b=np.transpose(a=coupled)))
+        coupled = np.asarray(self.adc.data) / (
+            self._excitation_voltage * np.asarray(self.adc.gains)
+        )
+        self.data = np.asarray(self.matrix) @ coupled
 
     @property
     def adc(self):
@@ -70,11 +82,3 @@ class SRILoadcell(LoadcellBase):
     @property
     def mz(self):
         return self.data[5]
-
-    @property
-    def ext1(self):
-        return self.data[6]
-
-    @property
-    def ext2(self):
-        return self.data[7]
