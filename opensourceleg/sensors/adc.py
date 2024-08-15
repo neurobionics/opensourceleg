@@ -1,7 +1,6 @@
 # AFTER DONE, TEST WITH NEWLY IMAGED PI
 import spidev
 import math
-import numpy as np
 from time import sleep
 from base import ADCBase
 
@@ -20,8 +19,15 @@ class ADS131M0x(ADCBase):
         channel_gains: A list of integers setting the gain of the programmable gain amplifier for all channels.
         voltage_reference: A float indicating the reference voltage used by the ADC.
         gain_error: A list of user-calculated integers used for correcting the gain of each channel for additional precision.
+
+    Raises:
     """
 
+    # TODO: List raised exceptions in docstrings at the appropriate location
+    # TODO: Add type defs and return types
+    # TODO: Check where it is okay to use magic numbers
+
+    _MAX_CHANNELS = 8
     _BYTES_PER_WORD = 3
     _RESOLUTION = 24
     _SPI_MODE = 1
@@ -53,80 +59,113 @@ class ADS131M0x(ADCBase):
     _GCAL_LSB_ADDRS = [0x0D, 0x12, 0x17, 0x1C, 0x21, 0x26, 0x2B, 0x30]
     _CHANNEL_CFG_ADDRS = [0x09, 0x0E, 0x13, 0x18, 0x1D, 0x22, 0x27, 0x2C]
 
+    _GCAL_STEP_SIZE = 1.19e-7
+
     def __init__(
         self,
-        spi_bus=0,
-        spi_chip=0,
-        num_channels=6,
-        max_speed_hz=8192000,
-        channel_gains=[32, 128] * 3,
-        voltage_reference=1.2,
-        gain_error=None,
+        spi_bus: int = 0,
+        spi_chip: int = 0,
+        num_channels: int = 6,
+        max_speed_hz: int = 8192000,
+        channel_gains: list = [32, 128] * 3,
+        voltage_reference: float = 1.2,
+        gain_error: list = None,
     ):
         """Initializes ADS131M0x class."""
+
         if len(channel_gains) != num_channels:
-            raise Exception(
-                "Length of channel_gains does not equal number of channels specified by num_channels"
+            raise ValueError(
+                "Length of channel_gains does not equal number of channels"
             )
+        if gain_error is not None and len(gain_error) != num_channels:
+            raise ValueError(
+                "Length of channel_gains does not equal number of channels"
+            )
+
         self._spi_bus = spi_bus
         self._spi_chip = spi_chip
         self._num_channels = num_channels
         self._max_speed_hz = max_speed_hz
-        self._channel_gains = [0] * 8
+        self._channel_gains = [0] * num_channels
         for i in range(0, num_channels):
-            self._channel_gains[i] = int(math.log2(channel_gains[i]))
-            if self._channel_gains[i] != math.log2(channel_gains[i]):
+            gain = int(math.log2(channel_gains[i]))
+            if gain != math.log2(channel_gains[i]):
                 raise Exception("Gain must be a power of 2 between 1 and 128")
+            self._channel_gains[i] = gain
+
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
-        self._words_per_frame = 2 + num_channels
+
         self._spi = spidev.SpiDev()
-        self._data = [0] * num_channels
         self._streaming = False
+        self._words_per_frame = 2 + num_channels
 
         self._ready_status = 0x01 << 8
         for i in range(self._num_channels):
             self._ready_status |= 1 << i
+
+        self._data = [0] * num_channels
 
     def __repr__(self) -> str:
         return f"ADS131M0x"
 
     def start(self) -> None:
         """Opens SPI port, calibrates ADC, and begins streaming ADC data."""
-        # opens SPI port
-        self._spi.open(self._spi_bus, self._spi_chip)
-        self._streaming = True
-        self._spi.max_speed_hz = self._max_speed_hz
-        # SPI mode 1: CPOL = 0, CPHA = 1
 
+        self._spi.open(self._spi_bus, self._spi_chip)
+        self._spi.max_speed_hz = self._max_speed_hz
         self._spi.mode = self._SPI_MODE
+
         self.reset()
-        self.set_gain(self._channel_gains)
-        # wakeup
-        self.awake(True)
-        self._set_voltage_source(0)
-        # set mode register for word length and set RESET to 0
-        self.write_register(self._MODE_REG, self._MODE_CFG)
-        self._calibrate()
+        self._set_gain(self._channel_gains)
+        self._set_device_state(1)
+        self.calibrate()
         self._clear_stale_data()
 
     def stop(self):
         """Stop streaming ADC data and close SPI port."""
-        self.awake(False)
+        self._set_device_state(0)
         self._spi.close()
-        self._streaming = False
+
+    def reset(self) -> None:
+        """Resets all register values."""
+
+        self._spi.xfer2(
+            self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
+        )
 
     def update(self) -> None:
-        """Reads newest ADC data."""
+        """Reads ADC data."""
         while not self._ready_to_read():
             sleep(0.001)
 
         self._data = self._read_data_millivolts()
 
-    def reset(self) -> None:
-        """Resets all register values."""
+    def read_register(self, address):
+        """Read value at register located at specified address.
 
-        self._spi.xfer2(self._RESET_WORD + self._BLANK_WORD * 7)
+        Arg:
+            address: Address of the register to be read.
+
+        Returns:
+            Value stored at register located at address.
+        """
+        msg = (address << 7) | (0b101 << 13)
+        word = self._message_to_word(msg)
+        rsp = self.spi_comm(word)
+        return rsp[0] << 8 | rsp[1]
+
+    def write_register(self, address, reg_val):
+        """Writes specific value to register located at designated address.
+
+        Args:
+            address: Address of the register to be written.
+            reg_val: Value to be written to register at address.
+        """
+        addr_msg = (address << 7) | (0b011 << 13)
+        addr_bytes = self._message_to_word(addr_msg)
+        reg_bytes = self._message_to_word(reg_val)
+        self.spi_comm(addr_bytes + reg_bytes)
 
     def spi_comm(self, bytes):
         """Send SPI message to ADS131M0x.
@@ -139,53 +178,6 @@ class ADS131M0x(ADCBase):
         """
         self._spi.xfer2(bytes)
         return self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
-
-    def read_register(self, address):
-        """Read value at register located at specified address.
-
-        Arg:
-            address: Address of the register to be read.
-
-        Returns:
-            Value stored at register located at address.
-        """
-        msg = (address << 7) | (0b101 << 13)
-        word = self.message_to_word(msg)
-        rsp = self.spi_comm(word)
-        return rsp[0] << 8 | rsp[1]
-
-    def write_register(self, address, reg_val):
-        """Writes specific value to register located at designated address.
-
-        Args:
-            address: Address of the register to be written.
-            reg_val: Value to be written to register at address.
-        """
-        addr_msg = (address << 7) | (0b011 << 13)
-        addr_bytes = self.message_to_word(addr_msg)
-        reg_bytes = self.message_to_word(reg_val)
-        self.spi_comm(addr_bytes + reg_bytes)
-
-    def message_to_word(self, msg):
-        """Separates message into bytes to be sent to ADC."""
-        word = [0] * 3
-        word[0] = (msg >> 8) & 0xFF
-        word[1] = msg & 0xFF
-        return word
-
-    def channel_enable(self, state):
-        if state == True:
-            self.write_register(self._CLOCK_REG, self._ENABLE_CHANNELS_CLOCK)
-        elif state == False:
-            self.write_register(self._CLOCK_REG, self._DISABLE_CHANNELS_CLOCK)
-
-    def awake(self, state):
-        if state == True:
-            self._spi.xfer2(self._WAKEUP_WORD + self._BLANK_WORD * 7)
-            self._streaming = True
-        elif state == False:
-            self._spi.xfer2(self._STANDBY_WORD + self._BLANK_WORD * 7)
-            self._streaming = False
 
     @property
     def is_streaming(self) -> bool:
@@ -223,50 +215,30 @@ class ADS131M0x(ADCBase):
     def ch7(self):
         return self._data[7]
 
-    def _calibrate(self):
-        """Set default gain calibration and automatically calibrates the offset."""
-        self._offset_calibration()
-        if self._gain_error is not None:
-            self._gain_calibration()
+    def _channel_enable(self, state):
+        if state == True:
+            self.write_register(self._CLOCK_REG, self._ENABLE_CHANNELS_CLOCK)
+        elif state == False:
+            self.write_register(self._CLOCK_REG, self._DISABLE_CHANNELS_CLOCK)
 
-    def set_gain(self, gains):
-        """Set PGA gain for each channel of ADC."""
-        self.channel_enable(False)
-        gains_msg = gains[3] << 12 | gains[2] << 8 | gains[1] << 4 | gains[0]
-        self.write_register(self._GAIN1_REG, gains_msg)
-        gains_msg = gains[7] << 12 | gains[6] << 8 | gains[5] << 4 | gains[4]
-        self.write_register(self._GAIN2_REG, gains_msg)
-        self.channel_enable(True)
+    def _set_device_state(self, state: int) -> None:
+        """Sets state of internal state machine
 
-    def _ready_to_read(self):
-        """Returns true if all ADC channels are ready to be read."""
-        reply = self.read_register(0x01)
-        return reply == self._ready_status
-
-    def _offset_calibration(self):
-        """Centers the ADC data around the measured zero value."""
-        # set voltage source to ground
-        self._set_voltage_source(1)
-        self._clear_stale_data()
-        offsets = [0] * 1000
-        for i in range(1000):
-            offsets[i] = self._read_data_counts()
-        offset_avg = [int(sum(values) / len(values)) for values in zip(*offsets)]
-        for i in range(0, self._num_channels):
-            self.write_register(self._OCAL_MSB_ADDRS[i], offset_avg[i] >> 8)
-            self.write_register(self._OCAL_LSB_ADDRS[i], (offset_avg[i] << 8) & 0xFF00)
-        self._set_voltage_source(0)
-
-    def _gain_calibration(self):
-        """Corrects actual gain to desired gain using user-calculated gain error for each channel."""
-        for i in range(self._num_channels):
-            gain_correction = (1 + self._gain_error[i]) / 1.19e-7
-            self.write_register(self._GCAL_MSB_ADDRS[i], gain_correction >> 8)
-
-    def _clear_stale_data(self):
-        """Clears stale ADC values so the next read will be accurate."""
-        for _ in range(2):
-            self.update()
+        Args:
+            state: Device state
+                0 -- Standby
+                1 -- Continuous Conversion Mode
+        """
+        if state == 0:
+            self._spi.xfer2(
+                self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
+            )
+            self._streaming = False
+        elif state == 1:
+            self._spi.xfer2(
+                self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
+            )
+            self._streaming = True
 
     def _set_voltage_source(self, source):
         """Changes voltage source for ADC input.
@@ -280,19 +252,59 @@ class ADS131M0x(ADCBase):
         for i in range(0, self._num_channels):
             self.write_register(self._CHANNEL_CFG_ADDRS[i], source)
 
-    def _read_data_counts(self):
-        """Returns signed ADC value.
+    def _clear_stale_data(self):
+        """Clears stale ADC values so the next read will be accurate."""
+        for _ in range(2):
+            self._read_data_millivolts()
 
-        Ranges from -2^23 --> 2^23
-        """
-        reply = self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
-        val = [0] * self._num_channels
-        for byte in range(3, self._num_channels * 3 + 1, 3):
-            val[int(((byte) / 3) - 1)] = twos_complement(
-                ((reply[byte] << 16) | (reply[byte + 1] << 8) | reply[byte + 2]),
-                self._RESOLUTION,
-            )
-        return val
+    def _set_gain(self, gains):
+        """Set PGA gain for each channel of ADC."""
+
+        gains += [0] * (self._MAX_CHANNELS - len(gains))
+        self._channel_enable(False)
+        gains_msg = gains[3] << 12 | gains[2] << 8 | gains[1] << 4 | gains[0]
+        self.write_register(self._GAIN1_REG, gains_msg)
+        gains_msg = gains[7] << 12 | gains[6] << 8 | gains[5] << 4 | gains[4]
+        self.write_register(self._GAIN2_REG, gains_msg)
+        self._channel_enable(True)
+
+    def calibrate(self):
+        """Performs offset and gain calibration."""
+        self._offset_calibration()
+        if self._gain_error is not None:
+            self._gain_calibration()
+
+    def _offset_calibration(self):
+        """Centers the ADC data around the measured zero value."""
+        self._set_voltage_source(1)
+        self._clear_stale_data()
+        num_data_points = 1000
+        offsets = [0] * num_data_points
+        for i in range(num_data_points):
+            offsets[i] = self._read_data_counts()
+        offset_avg = [int(sum(values) / len(values)) for values in zip(*offsets)]
+        for i in range(0, self._num_channels):
+            self.write_register(self._OCAL_MSB_ADDRS[i], offset_avg[i] >> 8)
+            self.write_register(self._OCAL_LSB_ADDRS[i], (offset_avg[i] << 8) & 0xFF00)
+        self._set_voltage_source(0)
+
+    def _gain_calibration(self):
+        """Corrects actual gain to desired gain using user-calculated gain error for each channel."""
+        for i in range(self._num_channels):
+            gain_correction = (1 + self._gain_error[i]) / self._GCAL_STEP_SIZE
+            self.write_register(self._GCAL_MSB_ADDRS[i], gain_correction >> 8)
+
+    def _message_to_word(self, msg):
+        """Separates message into bytes to be sent to ADC."""
+        word = [0] * 3
+        word[0] = (msg >> 8) & 0xFF
+        word[1] = msg & 0xFF
+        return word
+
+    def _ready_to_read(self):
+        """Returns true if all ADC channels are ready to be read."""
+        reply = self.read_register(self._STATUS_REG)
+        return reply == self._ready_status
 
     def _read_data_millivolts(self):
         mV = [
@@ -301,72 +313,22 @@ class ADS131M0x(ADCBase):
         ]
         return mV
 
+    def _read_data_counts(self):
+        """Returns signed ADC value.
 
-class Loadcell:
+        Ranges from -2^23 --> 2^23
+        """
+        reply = self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
+        val = [0] * self._num_channels
+        for byte in range(3, self._num_channels * 3 + 1, 3):
+            val[int(((byte) / 3) - 1)] = self._twos_complement(
+                ((reply[byte] << 16) | (reply[byte + 1] << 8) | reply[byte + 2]),
+                self._RESOLUTION,
+            )
+        return val
 
-    def __init__(self, matrix=None, **kwargs):
-        self._adc = ADS131M0x(**kwargs)
-        self.matrix = matrix
-
-    @property
-    def adc(self):
-        return self._adc
-
-    def __repr__(self) -> str:
-        return f"Loadcell"
-
-    @property
-    def is_streaming(self) -> bool:
-        return self.adc._streaming
-
-    def start(self):
-        self.adc.start()
-
-    def stop(self):
-        self.adc.stop()
-
-    def update(self):
-        self.adc.update()
-        self.data = np.transpose(a=self.matrix.dot(b=np.transpose(a=self._adc._data)))
-
-    def reset(self):
-        self.adc.reset()
-
-    @property
-    def fx(self):
-        return self.data[0]
-
-    @property
-    def fy(self):
-        return self.data[1]
-
-    @property
-    def fz(self):
-        return self.data[2]
-
-    @property
-    def mx(self):
-        return self.data[3]
-
-    @property
-    def my(self):
-        return self.data[4]
-
-    @property
-    def mz(self):
-        return self.data[5]
-
-    @property
-    def ext1(self):
-        return self.data[6]
-
-    @property
-    def ext2(self):
-        return self.data[7]
-
-
-def twos_complement(num, bits):
-    val = num
-    if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
-        val = num - (1 << bits)  # compute negative value
-    return val
+    def _twos_complement(num, bits):
+        val = num
+        if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
+            val = num - (1 << bits)  # compute negative value
+        return val
