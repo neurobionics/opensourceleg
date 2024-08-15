@@ -13,6 +13,7 @@ class SRILoadcell(LoadcellBase):
         adc_board="neurobionics",
         **kwargs,
     ):
+        """Initializes Sunrise Instruments Loadcell"""
         self.matrix = matrix
         self._excitation_voltage = excitation_voltage
 
@@ -26,25 +27,21 @@ class SRILoadcell(LoadcellBase):
     def __repr__(self) -> str:
         return f"Loadcell"
 
-    """Reset ADC register values to defaults"""
-
-    def reset(self):
+    def reset(self) -> None:
+        """Reset ADC register values to defaults"""
         self.adc.reset()
 
-    """Start streaming ADC data"""
-
-    def start(self):
+    def start(self) -> None:
+        """Start streaming ADC data"""
         self.adc.start()
-        # self.adc.calibrate()
+        self.adc.calibrate()
 
-    """Stop streaming ADC data"""
-
-    def stop(self):
+    def stop(self) -> None:
+        """Stop streaming ADC data"""
         self.adc.stop()
 
-    """Read most recent ADC data"""
-
-    def update(self):
+    def update(self) -> None:
+        """Read most recent ADC data"""
         self.adc.update()
         coupled = np.asarray(self.adc.data) / (
             self._excitation_voltage * np.asarray(self.adc.gains)
@@ -52,7 +49,7 @@ class SRILoadcell(LoadcellBase):
         self.data = np.asarray(self.matrix) @ coupled
 
     @property
-    def adc(self):
+    def adc(self) -> ADCBase:
         return self._adc
 
     @property
@@ -60,25 +57,25 @@ class SRILoadcell(LoadcellBase):
         return self.adc._streaming
 
     @property
-    def fx(self):
+    def fx(self) -> float:
         return self.data[0]
 
     @property
-    def fy(self):
+    def fy(self) -> float:
         return self.data[1]
 
     @property
-    def fz(self):
+    def fz(self) -> float:
         return self.data[2]
 
     @property
-    def mx(self):
+    def mx(self) -> float:
         return self.data[3]
 
     @property
-    def my(self):
+    def my(self) -> float:
         return self.data[4]
 
     @property
-    def mz(self):
+    def mz(self) -> float:
         return self.data[5]
