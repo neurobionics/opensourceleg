@@ -1,9 +1,4 @@
-﻿"""
-Moteus Controller for Open-Source Leg Project
-07/2024
-"""
-
-from typing import Any, Union
+﻿from typing import Any, Union
 
 import math
 import os
@@ -30,20 +25,10 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.actuators.exceptions import (
-    ActuatorIsNoneException,
-    ControlModeException,
-)
-from opensourceleg.logging.decorators import (
-    deprecated,
-    deprecated_with_routing,
-    deprecated_with_suggestion,
-)
 from opensourceleg.logging.logger import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
 
-# Default gains to be tuned
 DEFAULT_POSITION_GAINS = ControlGains(kp=0.07, ki=0.08, kd=0.012, k=0, b=0, ff=0)
 
 DEFAULT_VELOCITY_GAINS = ControlGains(kp=5.0, ki=0.2, kd=0.1, k=0, b=0, ff=0)

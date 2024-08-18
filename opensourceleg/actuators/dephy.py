@@ -1,13 +1,11 @@
 from typing import Any, Callable, Union, overload
 
-import ctypes
 import os
 import time
 from ctypes import c_int
 from dataclasses import dataclass
 from unittest.mock import Mock
 
-# import flexsea.fx_enums as fxe
 import numpy as np
 from flexsea.device import Device
 
@@ -23,10 +21,6 @@ from opensourceleg.actuators.decorators import (
     check_actuator_connection,
     check_actuator_open,
     check_actuator_stream,
-)
-from opensourceleg.actuators.exceptions import (
-    ActuatorIsNoneException,
-    ControlModeException,
 )
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
