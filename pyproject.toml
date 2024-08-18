@@ -32,10 +32,23 @@ in-project = true
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0.0"
-pyserial = "^3.5"
-flexsea = "^8.0.1"
-smbus2 = "^0.4.2"
 numpy = "^1.24.3"
+flexsea = [
+    {version = "^12.0.3", python = ">=3.11", optional = true},
+    {version = ">=8.0.1", python = "<3.10", optional = true}
+]
+smbus2 = {version = ">=0.4.2", optional = true}
+grpcio = {version = "^1.65.5", optional = true}
+grpcio-tools = {version = "^1.65.5", optional = true}
+moteus = {version = "^0.3.72", optional = true}
+moteus-pi3hat = {version = "^0.3.29", optional = true, markers = "sys_platform == 'linux'"}
+
+[tool.poetry.extras]
+dephy = ["flexsea"]
+moteus = ["moteus", "moteus-pi3hat"]
+communication = ["smbus2"]
+messaging = ["grpcio", "grpcio-tools"]
+all = ["flexsea", "smbus2", "grpcio"]
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"
