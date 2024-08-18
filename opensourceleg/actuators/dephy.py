@@ -11,12 +11,7 @@ from unittest.mock import Mock
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.actuators.base import (
-    ActuatorBase,
-    ControlGains,
-    ControlModeBase,
-    MotorConstants,
-)
+from opensourceleg.actuators.base import ActuatorBase, ControlGains, MotorConstants
 from opensourceleg.actuators.decorators import (
     check_actuator_connection,
     check_actuator_open,
