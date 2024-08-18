@@ -78,34 +78,22 @@ class ControlGains:
     ff: float = 0
 
 
-class ControlModeConfigBase(ABC):
-    @abstractmethod
-    def entry_callback(self, actuator: "ActuatorBase") -> None:
-        pass
-
-    @abstractmethod
-    def exit_callback(self, actuator: "ActuatorBase") -> None:
-        pass
-
-    @property
-    @abstractmethod
-    def has_gains(self) -> bool:
-        pass
-
-    @property
-    @abstractmethod
-    def max_gains(self) -> ControlGains:
-        pass
+@dataclass
+class ControlModeConfig:
+    entry_callback: Callable[["ActuatorBase"], None]
+    exit_callback: Callable[["ActuatorBase"], None]
+    has_gains: bool = False
+    max_gains: ControlGains = ControlGains()
 
 
 class CONTROL_MODE_CONFIGS(NamedTuple):
-    POSITION: Optional[ControlModeConfigBase] = None
-    CURRENT: Optional[ControlModeConfigBase] = None
-    VOLTAGE: Optional[ControlModeConfigBase] = None
-    IMPEDANCE: Optional[ControlModeConfigBase] = None
-    VELOCITY: Optional[ControlModeConfigBase] = None
-    TORQUE: Optional[ControlModeConfigBase] = None
-    IDLE: Optional[ControlModeConfigBase] = None
+    POSITION: Optional[ControlModeConfig] = None
+    CURRENT: Optional[ControlModeConfig] = None
+    VOLTAGE: Optional[ControlModeConfig] = None
+    IMPEDANCE: Optional[ControlModeConfig] = None
+    VELOCITY: Optional[ControlModeConfig] = None
+    TORQUE: Optional[ControlModeConfig] = None
+    IDLE: Optional[ControlModeConfig] = None
 
 
 T = TypeVar("T", bound=Callable)
@@ -205,14 +193,14 @@ class ActuatorBase(ABC):
             return
 
         current_config = cast(
-            Optional[ControlModeConfigBase],
+            Optional[ControlModeConfig],
             getattr(self._CONTROL_MODE_CONFIGS, self._mode.name),
         )
         if current_config:
             current_config.exit_callback(self)
 
         new_config = cast(
-            Optional[ControlModeConfigBase],
+            Optional[ControlModeConfig],
             getattr(self._CONTROL_MODE_CONFIGS, mode.name),
         )
         if new_config:

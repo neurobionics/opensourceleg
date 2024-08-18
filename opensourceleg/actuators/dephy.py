@@ -11,7 +11,14 @@ from unittest.mock import Mock
 import numpy as np
 from flexsea.device import Device
 
-from opensourceleg.actuators.base import ActuatorBase, ControlGains, MotorConstants
+from opensourceleg.actuators.base import (
+    CONTROL_MODE_CONFIGS,
+    CONTROL_MODES,
+    MOTOR_CONSTANTS,
+    ActuatorBase,
+    ControlGains,
+    ControlModeConfig,
+)
 from opensourceleg.actuators.decorators import (
     check_actuator_connection,
     check_actuator_open,
@@ -39,258 +46,72 @@ DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, k=200, b=400, ff=128
 DEPHY_SLEEP_DURATION = 0.1
 
 
-class DephyVoltageMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActuator") -> None:
-        super().__init__(
-            control_mode_map=ControlModesMapping.VOLTAGE,
-            actuator=actuator,
-            entry_callbacks=[self._entry],
-            exit_callbacks=[self._exit],
-        )
-
-    def __repr__(self) -> str:
-        return f"DephyControlMode[{self.name}]"
-
-    def _entry(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} control mode.")
-
-        if self.actuator is None:
-            raise ActuatorIsNoneException(mode=self.name)
-
-    def _exit(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} control mode.")
-        self.actuator.stop_motor()
-        time.sleep(DEPHY_SLEEP_DURATION)
-
-    def set_gains(self, gains: ControlGains) -> None:
-        LOGGER.info(
-            msg=f"[{self._actuator.__repr__()}] {self.name} mode does not have gains."
-        )
-
-    def set_voltage(self, value: float):
-        self.actuator.command_motor_voltage(value=int(value))
-
-    def set_current(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.CURRENT),
-            mode=self.name,
-        )
-
-    def set_position(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.POSITION),
-            mode=self.name,
-        )
+def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Entering Voltage control mode.")
 
 
-class DephyCurrentMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActuator") -> None:
-        super().__init__(
-            control_mode_map=ControlModesMapping.CURRENT,
-            actuator=actuator,
-            entry_callbacks=[self._entry],
-            exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
-        )
-
-    def __repr__(self) -> str:
-        return f"DephyControlMode[{self.name}]"
-
-    def _entry(self) -> None:
-
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
-
-        if self.actuator is None:
-            raise ActuatorIsNoneException(mode=self.name)
-
-        if not self.has_gains:
-            self.set_gains()
-
-        self.set_current(value=0)
-
-    def _exit(self) -> None:
-
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
-
-        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self.actuator.stop_motor()
-        time.sleep(1 / self._actuator.frequency)
-
-    def set_gains(self, gains: ControlGains = DEFAULT_CURRENT_GAINS) -> None:
-        super().set_gains(gains)
-        self.actuator.set_gains(
-            kp=int(gains.kp),
-            ki=int(gains.ki),
-            kd=0,
-            k=0,
-            b=0,
-            ff=int(gains.ff),
-        )
-
-    def set_current(self, value: float):
-        self.actuator.command_motor_current(value=int(value))
-
-    def set_voltage(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.VOLTAGE),
-            mode=self.name,
-        )
-
-    def set_position(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.POSITION),
-            mode=self.name,
-        )
+def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Exiting Voltage control mode.")
+    dephy_actuator.stop_motor()
+    time.sleep(DEPHY_SLEEP_DURATION)
 
 
-class DephyPositionMode(ControlModeBase):
-    def __init__(self, actuator: Union["DephyActuator", None] = None) -> None:
-        super().__init__(
-            control_mode_map=ControlModesMapping.POSITION,
-            actuator=actuator,
-            entry_callbacks=[self._entry],
-            exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
-        )
-
-    def _entry(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
-
-        if self.actuator is None:
-            raise ActuatorIsNoneException(mode=self.name)
-
-        if not self.has_gains:
-            self.set_gains()
-
-        self.set_position(value=self.actuator.motor_position)
-
-    def _exit(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
-
-        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.stop_motor()
-        time.sleep(0.1)
-
-    def set_gains(
-        self,
-        gains: ControlGains = DEFAULT_POSITION_GAINS,
-    ) -> None:
-        super().set_gains(gains)
-        self.actuator.set_gains(
-            kp=int(gains.kp),
-            ki=int(gains.ki),
-            kd=int(gains.kd),
-            k=0,
-            b=0,
-            ff=int(gains.ff),
-        )
-
-    def set_position(self, value: float):
-        self.actuator.command_motor_position(
-            value=int(
-                (
-                    value
-                    + self.actuator.motor_zero_position
-                    + self.actuator.motor_position_offset
-                )
-                / self.actuator.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
-        )
-
-    def set_current(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.CURRENT),
-            mode=self.name,
-        )
-
-    def set_voltage(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.VOLTAGE),
-            mode=self.name,
-        )
+def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Entering Current control mode.")
 
 
-class DephyImpedanceMode(ControlModeBase):
-    def __init__(self, actuator: "DephyActuator") -> None:
-        super().__init__(
-            control_mode_map=ControlModesMapping.IMPEDANCE,
-            actuator=actuator,
-            entry_callbacks=[self._entry],
-            exit_callbacks=[self._exit],
-            max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
-        )
-
-    def _entry(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Entering {self.name} mode.")
-
-        if self.actuator is None:
-            raise ActuatorIsNoneException(mode=self.name)
-
-        if not self.has_gains:
-            self.set_gains()
-
-        self.set_position(self._actuator.motor_position)
-
-    def _exit(self) -> None:
-        LOGGER.debug(msg=f"[DephyControlMode] Exiting {self.name} mode.")
-
-        # Is this necessary? This was a required step for older flexsea but not sure if it is needed anymore
-        self._actuator.stop_motor()
-        time.sleep(1 / self._actuator.frequency)
-
-    def set_gains(self, gains: ControlGains = DEFAULT_IMPEDANCE_GAINS):
-        super().set_gains(gains)
-        self.actuator.set_gains(
-            kp=int(gains.kp),
-            ki=int(gains.ki),
-            kd=0,
-            k=int(gains.k),
-            b=int(gains.b),
-            ff=int(gains.ff),
-        )
-
-    def set_position(self, value: float):
-        self.actuator.command_motor_position(
-            value=int(
-                (
-                    value
-                    + self.actuator.motor_zero_position
-                    + self.actuator.motor_position_offset
-                )
-                / self.actuator.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
-        )
-
-    def set_current(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.CURRENT),
-            mode=self.name,
-        )
-
-    def set_voltage(self, value: float):
-        raise ControlModeException(
-            tag=self.actuator.tag,
-            attribute=str(ControlModesMapping.VOLTAGE),
-            mode=self.name,
-        )
+def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Exiting Current control mode.")
+    dephy_actuator.stop_motor()
+    time.sleep(DEPHY_SLEEP_DURATION)
 
 
-@dataclass(init=False)
-class DephyActuatorControlModes(ControlModesBase):
+def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Entering Position control mode.")
 
-    def __init__(self, actuator: "DephyActuator") -> None:
 
-        self.VOLTAGE = DephyVoltageMode(actuator=actuator)
-        self.CURRENT = DephyCurrentMode(actuator=actuator)
-        self.POSITION = DephyPositionMode(actuator=actuator)
-        self.IMPEDANCE = DephyImpedanceMode(actuator=actuator)
+def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Exiting Position control mode.")
+    dephy_actuator.stop_motor()
+    time.sleep(DEPHY_SLEEP_DURATION)
+
+
+def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Entering Impedance control mode.")
+
+
+def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[DephyControlMode] Exiting Impedance control mode.")
+    dephy_actuator.stop_motor()
+    time.sleep(DEPHY_SLEEP_DURATION)
+
+
+DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+    POSITION=ControlModeConfig(
+        entry_callback=_dephy_position_mode_entry,
+        exit_callback=_dephy_position_mode_exit,
+        has_gains=False,
+        max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
+    ),
+    CURRENT=ControlModeConfig(
+        entry_callback=_dephy_current_mode_entry,
+        exit_callback=_dephy_current_mode_exit,
+        has_gains=False,
+        max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
+    ),
+    VOLTAGE=ControlModeConfig(
+        entry_callback=_dephy_voltage_mode_entry,
+        exit_callback=_dephy_voltage_mode_exit,
+        has_gains=False,
+        max_gains=None,
+    ),
+    IMPEDANCE=ControlModeConfig(
+        entry_callback=_dephy_impedance_mode_entry,
+        exit_callback=_dephy_impedance_mode_exit,
+        has_gains=False,
+        max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
+    ),
+)
 
 
 class DephyActuator(ActuatorBase, Device):
@@ -307,14 +128,11 @@ class DephyActuator(ActuatorBase, Device):
         offline: bool = False,
         stop_motor_on_disconnect: bool = False,
     ) -> None:
-        dephy_control_modes = DephyActuatorControlModes(self)
         ActuatorBase.__init__(
             self,
             tag=tag,
-            control_modes=dephy_control_modes,
-            default_control_mode=dephy_control_modes.VOLTAGE,
             gear_ratio=gear_ratio,
-            motor_constants=MotorConstants(
+            motor_constants=MOTOR_CONSTANTS(
                 MOTOR_COUNT_PER_REV=16384,
                 NM_PER_AMP=0.1133,
                 IMPEDANCE_A=0.00028444,
@@ -342,15 +160,6 @@ class DephyActuator(ActuatorBase, Device):
 
         self._debug_level: int = debug_level
         self._dephy_log: bool = dephy_log
-
-        self._encoder_map = None
-        self._motor_zero_position = 0.0
-        self._joint_zero_position = 0.0
-        self._motor_position_offset = 0.0
-        self._joint_position_offset = 0.0
-        self._joint_direction = 1
-
-        self._is_homed: bool = False
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
@@ -383,7 +192,7 @@ class DephyActuator(ActuatorBase, Device):
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
-        self.set_control_mode(mode=self.CONTROL_MODES.VOLTAGE)
+        self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
         self.stop_motor()
 
         time.sleep(0.1)
@@ -415,8 +224,8 @@ class DephyActuator(ActuatorBase, Device):
 
     def home(
         self,
+        homing_frequency: int,
         homing_voltage: int = 2000,
-        homing_frequency: int = None,
         homing_direction: int = -1,
         joint_direction: int = -1,
         joint_position_offset: float = 0.0,
@@ -438,10 +247,10 @@ class DephyActuator(ActuatorBase, Device):
         """
         is_homing = True
 
-        if homing_frequency is None:
+        if not homing_frequency:
             homing_frequency = self.frequency
 
-        self.set_control_mode(mode=self.CONTROL_MODES.VOLTAGE)
+        self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
         self.set_motor_voltage(
             value=homing_direction * homing_voltage
@@ -523,7 +332,7 @@ class DephyActuator(ActuatorBase, Device):
             )
             return
 
-        self.set_control_mode(mode=self.CONTROL_MODES.CURRENT)
+        self.set_control_mode(mode=CONTROL_MODES.CURRENT)
         self.set_current_gains()
         time.sleep(0.1)
         self.set_current_gains()
@@ -570,15 +379,6 @@ class DephyActuator(ActuatorBase, Device):
         LOGGER.info(
             msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'."
         )
-
-    def set_control_mode(self, mode: ControlModeBase) -> None:
-        """
-        Sets the control mode of the actuator.
-
-        Args:
-            mode (ControlModeBase): The control mode to set. This is a ControlModeBase object.
-        """
-        super().set_control_mode(mode)
 
     def set_motor_torque(self, value: float) -> None:
         """
