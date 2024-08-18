@@ -45,6 +45,22 @@ DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=40, ki=400, kd=0, k=200, b=400, ff=128
 
 DEPHY_SLEEP_DURATION = 0.1
 
+RAD_PER_DEG = np.pi / 180
+RAD_PER_SEC_GYROLSB = np.pi / 180 / 32.8
+M_PER_SEC_SQUARED_ACCLSB = 9.80665 / 8192
+IMPEDANCE_A = 0.00028444
+IMPEDANCE_C = 0.0007812
+
+
+DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
+    MOTOR_COUNT_PER_REV=16384,
+    NM_PER_AMP=0.1133,
+    NM_PER_RAD_TO_K=((2 * np.pi / 16384) / IMPEDANCE_C * 1e3 / 0.1133),
+    NM_S_PER_RAD_TO_B=((np.pi / 180) / IMPEDANCE_A * 1e3 / 0.1133),
+    MAX_CASE_TEMPERATURE=80,
+    MAX_WINDING_TEMPERATURE=110,
+)
+
 
 def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[DephyControlMode] Entering Voltage control mode.")
@@ -132,15 +148,7 @@ class DephyActuator(ActuatorBase, Device):
             self,
             tag=tag,
             gear_ratio=gear_ratio,
-            motor_constants=MOTOR_CONSTANTS(
-                MOTOR_COUNT_PER_REV=16384,
-                NM_PER_AMP=0.1133,
-                IMPEDANCE_A=0.00028444,
-                IMPEDANCE_C=0.0007812,
-                MAX_CASE_TEMPERATURE=80,
-                MAX_WINDING_TEMPERATURE=110,
-                M_PER_SEC_SQUARED_ACCLSB=9.80665 / 8192,
-            ),
+            motor_constants=DEPHY_ACTUATOR_CONSTANTS,
             frequency=frequency,
             offline=offline,
         )
@@ -169,8 +177,14 @@ class DephyActuator(ActuatorBase, Device):
         )
         self._thermal_scale: float = 1.0
 
+        self._mode = CONTROL_MODES.VOLTAGE
+
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActuator]"
+
+    @property
+    def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
+        return DEPHY_CONTROL_MODE_CONFIGS
 
     @check_actuator_connection
     def start(self) -> None:
@@ -187,7 +201,11 @@ class DephyActuator(ActuatorBase, Device):
         self._data = self.read()
 
         time.sleep(0.1)
-        self.mode.enter()
+        # self._get_control_mode_config(self._mode).entry_callback(self)
+
+        default_mode_config = self._get_control_mode_config(self._mode)
+        if default_mode_config:
+            default_mode_config.entry_callback(self)
 
     @check_actuator_stream
     @check_actuator_open
@@ -224,7 +242,7 @@ class DephyActuator(ActuatorBase, Device):
 
     def home(
         self,
-        homing_frequency: int,
+        homing_frequency: int = None,
         homing_voltage: int = 2000,
         homing_direction: int = -1,
         joint_direction: int = -1,
@@ -246,9 +264,9 @@ class DephyActuator(ActuatorBase, Device):
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
         """
         is_homing = True
-
-        if not homing_frequency:
-            homing_frequency = self.frequency
+        homing_frequency = (
+            homing_frequency if homing_frequency is not None else self.frequency
+        )
 
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
@@ -285,8 +303,8 @@ class DephyActuator(ActuatorBase, Device):
             LOGGER.error(msg=f"[{self.__repr__()}] Homing failed: {e}")
             return
 
-        self.set_motor_zero_position(position=self.motor_position)
-        self.set_joint_zero_position(position=self.joint_position)
+        self.set_motor_zero_position(value=self.motor_position)
+        self.set_joint_zero_position(value=self.joint_position)
 
         time.sleep(0.1)
         self.set_joint_direction(joint_direction)
@@ -412,17 +430,6 @@ class DephyActuator(ActuatorBase, Device):
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
-    def set_output_position(self, value: float) -> None:
-        """
-        Set the output position of the joint.
-        This is the desired position of the joint, not the motor.
-        This method automatically handles scaling by the gear raito.
-
-        Args:
-            value (float): position in radians
-        """
-        self.set_motor_position(value=value * self.gear_ratio)
-
     def set_motor_current(
         self,
         value=float,
@@ -433,12 +440,11 @@ class DephyActuator(ActuatorBase, Device):
         Args:
             value (float): The current to set in mA.
         """
-        self.mode.set_current(value=value)
+        self.command_motor_current(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_current)
     def set_current(self, value: float) -> None:
-
-        self.mode.set_current(value=value)
+        self.command_motor_current(value=int(value))
 
     def set_motor_voltage(self, value: float) -> None:
         """
@@ -447,16 +453,12 @@ class DephyActuator(ActuatorBase, Device):
         Args:
             voltage_value (float): The voltage to set in mV.
         """
-        self.mode.set_voltage(
-            value,
-        )
+        self.command_motor_voltage(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
 
-        self.mode.set_voltage(
-            value,
-        )
+        self.command_motor_voltage(value=int(value))
 
     def set_motor_position(self, value=float) -> None:
         """
@@ -466,7 +468,12 @@ class DephyActuator(ActuatorBase, Device):
         Args:
             position (float): The position to set
         """
-        self.mode.set_position(value)
+        self.command_motor_position(
+            value=int(
+                (value + self.motor_zero_position + self.motor_position_offset)
+                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+            ),
+        )
 
     def set_position_gains(
         self,
@@ -484,7 +491,14 @@ class DephyActuator(ActuatorBase, Device):
             kd (int): The derivative gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
+        self.set_gains(
+            kp=int(kp),
+            ki=int(ki),
+            kd=int(kd),
+            k=0,
+            b=0,
+            ff=int(ff),
+        )
 
     def set_current_gains(
         self,
@@ -501,7 +515,14 @@ class DephyActuator(ActuatorBase, Device):
             ki (int): The integral gain
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=0, b=0, ff=ff))
+        self.set_gains(
+            kp=int(kp),
+            ki=int(ki),
+            kd=int(kd),
+            k=0,
+            b=0,
+            ff=int(ff),
+        )
 
     def set_motor_impedance(
         self,
@@ -580,31 +601,18 @@ class DephyActuator(ActuatorBase, Device):
             b (int): The damping constant
             ff (int): The feedforward gain
         """
-        self.mode.set_gains(ControlGains(kp=kp, ki=ki, kd=kd, k=k, b=b, ff=ff))
+        self.set_gains(
+            kp=int(kp),
+            ki=int(ki),
+            kd=int(kd),
+            k=int(k),
+            b=int(b),
+            ff=int(ff),
+        )
 
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map
-
-    def set_motor_zero_position(self, position: float) -> None:
-        """Sets motor zero position in radians"""
-        self._motor_zero_position = position
-
-    def set_motor_position_offset(self, position: float) -> None:
-        """Sets joint offset position in radians"""
-        self._motor_position_offset = position
-
-    def set_joint_zero_position(self, position: float) -> None:
-        """Sets joint zero position in radians"""
-        self._joint_zero_position = position
-
-    def set_joint_position_offset(self, position: float) -> None:
-        """Sets joint offset position in radians"""
-        self._joint_position_offset = position
-
-    def set_joint_direction(self, direction: int) -> None:
-        """Sets joint direction to 1 or -1"""
-        self._joint_direction = direction
 
     @property
     def encoder_map(self):
@@ -681,7 +689,7 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def motor_velocity(self) -> float:
         if self._data is not None:
-            return int(self._data["mot_vel"]) * self.MOTOR_CONSTANTS.RAD_PER_DEG
+            return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -737,33 +745,12 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def joint_velocity(self) -> float:
         if self._data is not None:
-            return (
-                float(self._data["ank_vel"] * self.MOTOR_CONSTANTS.RAD_PER_DEG)
-                * self.joint_direction
-            )
+            return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
-
-    @property
-    def output_position(self) -> float:
-        """
-        Position of the output in radians.
-        This is calculated by scaling the motor angle with the gear ratio.
-        Note that this method does not consider compliance from an SEA.
-        """
-        return self.motor_position / self.gear_ratio
-
-    @property
-    def output_velocity(self) -> float:
-        """
-        Velocity of the output in radians.
-        This is calculated by scaling the motor angle with the gear ratio.
-        Note that this method does not consider compliance from an SEA.
-        """
-        return self.motor_velocity / self.gear_ratio
 
     @property
     def joint_torque(self) -> float:
@@ -821,9 +808,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(
-                self._data["accelx"] * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
-            )
+            return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -837,9 +822,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(
-                self._data["accely"] * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
-            )
+            return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -853,9 +836,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(
-                self._data["accelz"] * self.MOTOR_CONSTANTS.M_PER_SEC_SQUARED_ACCLSB
-            )
+            return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -869,7 +850,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data["gyrox"] * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+            return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -883,7 +864,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data["gyroy"] * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+            return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -897,7 +878,7 @@ class DephyActuator(ActuatorBase, Device):
         Measured using actpack's onboard IMU.
         """
         if self._data is not None:
-            return float(self._data["gyroz"] * self.MOTOR_CONSTANTS.RAD_PER_SEC_GYROLSB)
+            return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."

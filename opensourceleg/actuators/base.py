@@ -7,6 +7,7 @@ from typing import (
     Protocol,
     Set,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -20,42 +21,23 @@ import numpy as np
 from opensourceleg.logging.logger import LOGGER
 
 
-@dataclass(frozen=True)
-class MOTOR_CONSTANTS:
-    MOTOR_COUNT_PER_REV: float = 16384
-    NM_PER_AMP: float = 0.1133
-    IMPEDANCE_A: float = 0.00028444
-    IMPEDANCE_C: float = 0.0007812
-    MAX_CASE_TEMPERATURE: float = 80
-    MAX_WINDING_TEMPERATURE: float = 110
-    M_PER_SEC_SQUARED_ACCLSB: float = 9.80665 / 8192
+class MOTOR_CONSTANTS(NamedTuple):
+    # TODO: Add thermal constants
+    MOTOR_COUNT_PER_REV: float
+    NM_PER_AMP: float
+    NM_PER_RAD_TO_K: float
+    NM_S_PER_RAD_TO_B: float
 
-    @property
-    def NM_PER_MILLIAMP(self) -> float:
-        return self.NM_PER_AMP / 1000
+    MAX_CASE_TEMPERATURE: float
+    MAX_WINDING_TEMPERATURE: float
 
     @property
     def RAD_PER_COUNT(self) -> float:
         return 2 * np.pi / self.MOTOR_COUNT_PER_REV
 
     @property
-    def RAD_PER_DEG(self) -> float:
-        return np.pi / 180
-
-    @property
-    def RAD_PER_SEC_GYROLSB(self) -> float:
-        return np.pi / 180 / 32.8
-
-    @property
-    def NM_PER_RAD_TO_K(self) -> float:
-        return self.RAD_PER_COUNT / self.IMPEDANCE_C * 1e3 / self.NM_PER_AMP
-
-    @property
-    def NM_S_PER_RAD_TO_B(self) -> float:
-        return self.RAD_PER_DEG / self.IMPEDANCE_A * 1e3 / self.NM_PER_AMP
-
-    def __repr__(self) -> str:
-        return "MOTOR_CONSTANTS"
+    def NM_PER_MILLIAMP(self) -> float:
+        return self.NM_PER_AMP / 1000
 
 
 class CONTROL_MODES(Enum):
@@ -80,10 +62,10 @@ class ControlGains:
 
 @dataclass
 class ControlModeConfig:
-    entry_callback: Callable[["ActuatorBase"], None]
-    exit_callback: Callable[["ActuatorBase"], None]
+    entry_callback: Callable[[Any], None]
+    exit_callback: Callable[[Any], None]
     has_gains: bool = False
-    max_gains: ControlGains = ControlGains()
+    max_gains: Union[ControlGains, None] = None
 
 
 class CONTROL_MODE_CONFIGS(NamedTuple):
@@ -188,21 +170,23 @@ class ActuatorBase(ABC):
     def update(self) -> None:
         pass
 
+    def _get_control_mode_config(
+        self, mode: CONTROL_MODES
+    ) -> Optional[ControlModeConfig]:
+        return cast(
+            Optional[ControlModeConfig],
+            getattr(self._CONTROL_MODE_CONFIGS, mode.name),
+        )
+
     def set_control_mode(self, mode: CONTROL_MODES) -> None:
         if self._mode == mode:
             return
 
-        current_config = cast(
-            Optional[ControlModeConfig],
-            getattr(self._CONTROL_MODE_CONFIGS, self._mode.name),
-        )
+        current_config = self._get_control_mode_config(self._mode)
         if current_config:
             current_config.exit_callback(self)
 
-        new_config = cast(
-            Optional[ControlModeConfig],
-            getattr(self._CONTROL_MODE_CONFIGS, mode.name),
-        )
+        new_config = self._get_control_mode_config(mode)
         if new_config:
             new_config.entry_callback(self)
 
@@ -222,6 +206,22 @@ class ActuatorBase(ABC):
     @abstractmethod
     @requires(CONTROL_MODES.POSITION)
     def set_motor_position(self, value: float) -> None:
+        pass
+
+    @requires(
+        CONTROL_MODES.POSITION
+    )  # This needs to be tested as set_motor_position is already decorated with requires
+    def set_output_position(self, value: float) -> None:
+        self.set_motor_position(value=value * self.gear_ratio)
+
+    @abstractmethod
+    @requires(CONTROL_MODES.TORQUE)
+    def set_motor_torque(self, value: float) -> None:
+        pass
+
+    @abstractmethod
+    @requires(CONTROL_MODES.TORQUE)
+    def set_joint_torque(self, value: float) -> None:
         pass
 
     @abstractmethod
@@ -245,15 +245,53 @@ class ActuatorBase(ABC):
     def home(self) -> None:
         pass
 
+    def set_motor_zero_position(self, value: float) -> None:
+        """Sets motor zero position in radians"""
+        self._motor_zero_position = value
+
+    def set_motor_position_offset(self, value: float) -> None:
+        """Sets joint offset position in radians"""
+        self._motor_position_offset = value
+
+    def set_joint_zero_position(self, value: float) -> None:
+        """Sets joint zero position in radians"""
+        self._joint_zero_position = value
+
+    def set_joint_position_offset(self, value: float) -> None:
+        """Sets joint offset position in radians"""
+        self._joint_position_offset = value
+
+    def set_joint_direction(self, value: int) -> None:
+        """Sets joint direction to 1 or -1"""
+        self._joint_direction = value
+
     @property
     @abstractmethod
     def motor_position(self) -> float:
         pass
 
     @property
+    def output_position(self) -> float:
+        """
+        Position of the output in radians.
+        This is calculated by scaling the motor angle with the gear ratio.
+        Note that this method does not consider compliance from an SEA.
+        """
+        return self.motor_position / self.gear_ratio
+
+    @property
     @abstractmethod
     def motor_velocity(self) -> float:
         pass
+
+    @property
+    def output_velocity(self) -> float:
+        """
+        Velocity of the output in radians.
+        This is calculated by scaling the motor angle with the gear ratio.
+        Note that this method does not consider compliance from an SEA.
+        """
+        return self.motor_velocity / self.gear_ratio
 
     @property
     @abstractmethod
