@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 import time
 from dataclasses import dataclass
@@ -78,7 +78,7 @@ class SRILoadcell(LoadcellBase):
     def update(
         self,
         calibration_offset: npt.NDArray[np.double] = None,
-        data_callback: Callable = None,
+        data_callback: Callable[..., npt.NDArray[np.uint8]] = None,
     ) -> None:
         """
         Queries the loadcell for the latest data.
