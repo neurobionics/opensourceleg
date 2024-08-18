@@ -180,14 +180,17 @@ class ActuatorBase(ABC):
 
     def set_control_mode(self, mode: CONTROL_MODES) -> None:
         if self._mode == mode:
+            LOGGER.debug(msg=f"[{self.tag}] Already in {mode.name} control mode.")
             return
 
         current_config = self._get_control_mode_config(self._mode)
         if current_config:
+            LOGGER.debug(msg=f"[{self.tag}] Exiting {mode.name} control mode.")
             current_config.exit_callback(self)
 
         new_config = self._get_control_mode_config(mode)
         if new_config:
+            LOGGER.debug(msg=f"[{self.tag}] Entering {mode.name} control mode.")
             new_config.entry_callback(self)
 
         self._mode = mode

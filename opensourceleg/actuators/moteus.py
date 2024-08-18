@@ -98,63 +98,32 @@ class MoteusQueryResolution:
     }
 
 
-def _moteus_position_mode_entry(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Position control mode.")
-
-
-def _moteus_position_mode_exit(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Position control mode.")
-    moteus_actuator.stop_motor()
-
-
-def _moteus_torque_mode_entry(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Current control mode.")
-
-
-def _moteus_torque_mode_exit(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Current control mode.")
-    moteus_actuator.stop_motor()
-
-
-def _moteus_velocity_mode_entry(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Voltage control mode.")
-
-
 def _moteus_velocity_mode_exit(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Voltage control mode.")
     moteus_actuator.set_motor_velocity(0)
-
-
-def _moteus_idle_mode_entry(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Impedance control mode.")
-
-
-def _moteus_idle_mode_exit(moteus_actuator: "MoteusActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Impedance control mode.")
 
 
 DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     POSITION=ControlModeConfig(
-        entry_callback=_moteus_position_mode_entry,
-        exit_callback=_moteus_position_mode_exit,
+        entry_callback=lambda _: None,
+        exit_callback=lambda _: None,
         has_gains=False,
         max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
     ),
     TORQUE=ControlModeConfig(
-        entry_callback=_moteus_torque_mode_entry,
-        exit_callback=_moteus_torque_mode_exit,
+        entry_callback=lambda _: None,
+        exit_callback=lambda _: None,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
     ),
     VELOCITY=ControlModeConfig(
-        entry_callback=_moteus_velocity_mode_entry,
+        entry_callback=lambda _: None,
         exit_callback=_moteus_velocity_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
     ),
     IDLE=ControlModeConfig(
-        entry_callback=_moteus_idle_mode_entry,
-        exit_callback=_moteus_idle_mode_exit,
+        entry_callback=lambda _: None,
+        exit_callback=lambda _: None,
         has_gains=False,
         max_gains=None,
     ),

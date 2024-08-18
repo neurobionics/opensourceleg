@@ -62,67 +62,47 @@ DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
 )
 
 
-def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Voltage control mode.")
-
-
 def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Voltage control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
-
-
-def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Current control mode.")
 
 
 def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Current control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
-
-
-def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Position control mode.")
 
 
 def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Position control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Impedance control mode.")
-
-
 def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Impedance control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     POSITION=ControlModeConfig(
-        entry_callback=_dephy_position_mode_entry,
+        entry_callback=lambda _: None,
         exit_callback=_dephy_position_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
     ),
     CURRENT=ControlModeConfig(
-        entry_callback=_dephy_current_mode_entry,
+        entry_callback=lambda _: None,
         exit_callback=_dephy_current_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
     ),
     VOLTAGE=ControlModeConfig(
-        entry_callback=_dephy_voltage_mode_entry,
+        entry_callback=lambda _: None,
         exit_callback=_dephy_voltage_mode_exit,
         has_gains=False,
         max_gains=None,
     ),
     IMPEDANCE=ControlModeConfig(
-        entry_callback=_dephy_impedance_mode_entry,
+        entry_callback=lambda _: None,
         exit_callback=_dephy_impedance_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
