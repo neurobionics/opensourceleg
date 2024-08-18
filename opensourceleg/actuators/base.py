@@ -78,7 +78,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
     IDLE: Optional[ControlModeConfig] = None
 
 
-T = TypeVar("T", bound=Callable)
+T = TypeVar("T", bound=Callable[..., Any])
 
 
 class MethodWithRequiredModes(Protocol):
@@ -376,14 +376,6 @@ class ActuatorBase(ABC):
     @property
     def joint_direction(self) -> int:
         return self._joint_direction
-
-    @property
-    def output_position(self) -> float:
-        return self.motor_position / self.gear_ratio
-
-    @property
-    def output_velocity(self) -> float:
-        return self.motor_velocity / self.gear_ratio
 
 
 if __name__ == "__main__":
