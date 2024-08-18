@@ -13,6 +13,7 @@ license = "GNU LGPL v2.1"
 repository = "https://github.com/neurobionics/opensourceleg"
 homepage = "https://github.com/neurobionics/opensourceleg"
 
+
 # Keywords description https://python-poetry.org/docs/pyproject/#keywords
 keywords = []  #! Update me
 
@@ -34,21 +35,21 @@ in-project = true
 python = ">=3.9,<4.0.0"
 numpy = "^1.24.3"
 flexsea = [
-    {version = "^12.0.3", python = ">=3.11", optional = true},
-    {version = ">=8.0.1", python = "<3.10", optional = true}
+    {version = "^12.0.3", python = ">=3.11"},
+    {version = ">=8.0.1", python = "<3.10"}
 ]
-smbus2 = {version = ">=0.4.2", optional = true}
-grpcio = {version = "^1.65.5", optional = true}
-grpcio-tools = {version = "^1.65.5", optional = true}
-moteus = {version = "^0.3.72", optional = true}
-moteus-pi3hat = {version = "^0.3.29", optional = true, markers = "sys_platform == 'linux'"}
+smbus2 = ">=0.4.2"
+grpcio = "^1.65.5"
+grpcio-tools = "^1.65.5"
+types-protobuf = "^4.21.0"
+moteus = "^0.3.72"
+moteus-pi3hat = {version = "^0.3.29", markers = "sys_platform == 'linux'"}
 
 [tool.poetry.extras]
 dephy = ["flexsea"]
 moteus = ["moteus", "moteus-pi3hat"]
 communication = ["smbus2"]
-messaging = ["grpcio", "grpcio-tools"]
-all = ["flexsea", "smbus2", "grpcio"]
+messaging = ["grpcio", "grpcio-tools", "types-protobuf"]
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"

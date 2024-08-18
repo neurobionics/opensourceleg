@@ -148,7 +148,7 @@ uvloop = ["uvloop (>=0.15.2)"]
 name = "boto3"
 version = "1.35.0"
 description = "The AWS SDK for Python"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "boto3-1.35.0-py3-none-any.whl", hash = "sha256:ada32dab854c46a877cf967b8a55ab1a7d356c3c87f1c8bd556d446ff03dfd95"},
@@ -167,7 +167,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 name = "botocore"
 version = "1.35.0"
 description = "Low-level, data-driven core of boto 3."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "botocore-1.35.0-py3-none-any.whl", hash = "sha256:a3c96fe0b6afe7d00bad6ffbe73f2610953065fcdf0ed697eba4e1e5287cc84f"},
@@ -332,7 +332,7 @@ files = [
 name = "contourpy"
 version = "1.1.1"
 description = "Python library for calculating contours of 2D quadrilateral grids"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "contourpy-1.1.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:46e24f5412c948d81736509377e255f6040e94216bf1a9b5ea1eaa9d29f6ec1b"},
@@ -482,7 +482,7 @@ coverage = "*"
 name = "cycler"
 version = "0.12.1"
 description = "Composable style cycles"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30"},
@@ -593,7 +593,7 @@ typing = ["typing-extensions (>=4.8)"]
 name = "flexsea"
 version = "8.0.1"
 description = "Dephy's Actuator Package API library"
-optional = true
+optional = false
 python-versions = ">= 3.7.*"
 files = [
     {file = "flexsea-8.0.1-py3-none-any.whl", hash = "sha256:6b728a7cd8c74b1184cea4dad13138f8e843a2f58d4f2291ff24f14ca0d0e7aa"},
@@ -609,7 +609,7 @@ tornado = "==6.*"
 name = "flexsea"
 version = "12.0.4"
 description = ""
-optional = true
+optional = false
 python-versions = "<4.0,>=3.11"
 files = [
     {file = "flexsea-12.0.4-py3-none-any.whl", hash = "sha256:b8dad7a8bd8e930b82aef1e266add3d17bc2871617c70b93693cc887abb60fa4"},
@@ -630,7 +630,7 @@ semantic-version = ">=2.10.0,<3.0.0"
 name = "fonttools"
 version = "4.43.1"
 description = "Tools to manipulate font files"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "fonttools-4.43.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:bf11e2cca121df35e295bd34b309046c29476ee739753bc6bc9d5050de319273"},
@@ -695,7 +695,7 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 name = "grpcio"
 version = "1.65.5"
 description = "HTTP/2-based RPC framework"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "grpcio-1.65.5-cp310-cp310-linux_armv7l.whl", hash = "sha256:b67d450f1e008fedcd81e097a3a400a711d8be1a8b20f852a7b8a73fead50fe3"},
@@ -753,7 +753,7 @@ protobuf = ["grpcio-tools (>=1.65.5)"]
 name = "grpcio-tools"
 version = "1.65.5"
 description = "Protobuf code generator for gRPC"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "grpcio_tools-1.65.5-cp310-cp310-linux_armv7l.whl", hash = "sha256:f141f247a93e4c7faf33ac683a9cab93bb6570946a219260d33e2e62079db6e8"},
@@ -868,7 +868,7 @@ testing = ["flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs
 name = "importlib-resources"
 version = "6.1.0"
 description = "Read resources from Python packages"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "importlib_resources-6.1.0-py3-none-any.whl", hash = "sha256:aa50258bbfa56d4e33fbd8aa3ef48ded10d1735f11532b8df95388cc6bdb7e83"},
@@ -934,7 +934,7 @@ i18n = ["Babel (>=2.7)"]
 name = "jmespath"
 version = "1.0.1"
 description = "JSON Matching Expressions"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
@@ -945,7 +945,7 @@ files = [
 name = "kiwisolver"
 version = "1.4.5"
 description = "A fast implementation of the Cassowary constraint solver"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "kiwisolver-1.4.5-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:05703cf211d585109fcd72207a31bb170a0f22144d68298dc5e61b3c946518af"},
@@ -1151,7 +1151,7 @@ files = [
 name = "matplotlib"
 version = "3.8.0"
 description = "Python plotting package"
-optional = true
+optional = false
 python-versions = ">=3.9"
 files = [
     {file = "matplotlib-3.8.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:c4940bad88a932ddc69734274f6fb047207e008389489f2b6f77d9ca485f0e7a"},
@@ -1223,7 +1223,7 @@ files = [
 name = "moteus"
 version = "0.3.72"
 description = "moteus brushless controller library and tools"
-optional = true
+optional = false
 python-versions = "<4,>=3.7"
 files = [
     {file = "moteus-0.3.72-py3-none-any.whl", hash = "sha256:cc7b80e0d09c0823c493facccb0c2dc6633c3f1d3265453952f4b0afe8e4ba19"},
@@ -1243,7 +1243,7 @@ scipy = ">=1.8.0"
 name = "moteus-pi3hat"
 version = "0.3.29"
 description = "moteus brushless controller library and tools"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "moteus_pi3hat-0.3.29-cp310-cp310-manylinux_2_17_aarch64.whl", hash = "sha256:a315cad762dddaa0dcc5d3f6401bbe68daadf80865bc35c2efba143122a4d6e8"},
@@ -1263,7 +1263,7 @@ moteus = ">=0.3.22"
 name = "msgpack"
 version = "1.0.8"
 description = "MessagePack serializer"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "msgpack-1.0.8-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:505fe3d03856ac7d215dbe005414bc28505d26f0c128906037e66d98c4e95868"},
@@ -1465,7 +1465,7 @@ files = [
 name = "pendulum"
 version = "2.1.2"
 description = "Python datetimes made easy"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
     {file = "pendulum-2.1.2-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:b6c352f4bd32dff1ea7066bd31ad0f71f8d8100b9ff709fb343f3b86cee43efe"},
@@ -1499,7 +1499,7 @@ pytzdata = ">=2020.1"
 name = "pendulum"
 version = "3.0.0"
 description = "Python datetimes made easy"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "pendulum-3.0.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:2cf9e53ef11668e07f73190c805dbdf07a1939c3298b78d5a9203a86775d1bfd"},
@@ -1598,7 +1598,7 @@ test = ["time-machine (>=2.6.0)"]
 name = "pillow"
 version = "10.3.0"
 description = "Python Imaging Library (Fork)"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "pillow-10.3.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:90b9e29824800e90c84e4022dd5cc16eb2d9605ee13f05d47641eb183cd73d45"},
@@ -1732,7 +1732,7 @@ virtualenv = ">=20.10.0"
 name = "protobuf"
 version = "5.27.3"
 description = ""
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "protobuf-5.27.3-cp310-abi3-win32.whl", hash = "sha256:dcb307cd4ef8fec0cf52cb9105a03d06fbb5275ce6d84a6ae33bc6cf84e0a07b"},
@@ -1796,7 +1796,7 @@ toml = ["tomli (>=1.2.3)"]
 name = "pyelftools"
 version = "0.31"
 description = "Library for analyzing ELF files and DWARF debugging information"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "pyelftools-0.31-py3-none-any.whl", hash = "sha256:f52de7b3c7e8c64c8abc04a79a1cf37ac5fb0b8a49809827130b858944840607"},
@@ -1852,7 +1852,7 @@ testutils = ["gitpython (>3)"]
 name = "pyparsing"
 version = "3.1.2"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
-optional = true
+optional = false
 python-versions = ">=3.6.8"
 files = [
     {file = "pyparsing-3.1.2-py3-none-any.whl", hash = "sha256:f9db75911801ed778fe61bb643079ff86601aca99fcae6345aa67292038fb742"},
@@ -1866,7 +1866,7 @@ diagrams = ["jinja2", "railroad-diagrams"]
 name = "pyserial"
 version = "3.5"
 description = "Python Serial Port Extension"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
@@ -1974,7 +1974,7 @@ dev = ["pre-commit", "pytest-asyncio", "tox"]
 name = "python-can"
 version = "4.4.2"
 description = "Controller Area Network interface module for Python"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "python_can-4.4.2-py3-none-any.whl", hash = "sha256:e956d781b45563c244c1f3c8fe001e292d1857519cff663d7c184673a68879f9"},
@@ -2009,7 +2009,7 @@ viewer = ["windows-curses"]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
-optional = true
+optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
@@ -2023,7 +2023,7 @@ six = ">=1.5"
 name = "pytzdata"
 version = "2020.1"
 description = "The Olson timezone database for Python."
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "pytzdata-2020.1-py2.py3-none-any.whl", hash = "sha256:e1e14750bcf95016381e4d472bad004eef710f2d6417240904070b3d6654485f"},
@@ -2034,7 +2034,7 @@ files = [
 name = "pyudev"
 version = "0.24.3"
 description = "A libudev binding"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "pyudev-0.24.3-py3-none-any.whl", hash = "sha256:e8246f0a014fe370119ba2bc781bfbe62c0298d0d6b39c94e83102a8a3f56960"},
@@ -2059,7 +2059,7 @@ tokenize-rt = "<5"
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "pywin32-306-cp310-cp310-win32.whl", hash = "sha256:06d3420a5155ba65f0b72f2699b5bacf3109f36acbe8923765c22938a69dfc8d"},
@@ -2243,7 +2243,7 @@ files = [
 name = "s3transfer"
 version = "0.10.2"
 description = "An Amazon S3 Transfer Manager"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "s3transfer-0.10.2-py3-none-any.whl", hash = "sha256:eca1c20de70a39daee580aef4986996620f365c4e0fda6a86100231d62f1bf69"},
@@ -2283,7 +2283,7 @@ gitlab = ["python-gitlab (>=1.3.0)"]
 name = "scipy"
 version = "1.13.1"
 description = "Fundamental algorithms for scientific computing in Python"
-optional = true
+optional = false
 python-versions = ">=3.9"
 files = [
     {file = "scipy-1.13.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:20335853b85e9a49ff7572ab453794298bcf0354d8068c5f6775a0eabf350aca"},
@@ -2325,7 +2325,7 @@ test = ["array-api-strict", "asv", "gmpy2", "hypothesis (>=6.30)", "mpmath", "po
 name = "semantic-version"
 version = "2.10.0"
 description = "A library implementing the 'SemVer' scheme."
-optional = true
+optional = false
 python-versions = ">=2.7"
 files = [
     {file = "semantic_version-2.10.0-py2.py3-none-any.whl", hash = "sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177"},
@@ -2356,7 +2356,7 @@ testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jar
 name = "setuptools-scm"
 version = "8.0.4"
 description = "the blessed package to manage your versions by scm tags"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "setuptools-scm-8.0.4.tar.gz", hash = "sha256:b5f43ff6800669595193fd09891564ee9d1d7dcb196cab4b2506d53a2e1c95c7"},
@@ -2378,7 +2378,7 @@ test = ["build", "pytest", "rich", "wheel"]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
@@ -2389,7 +2389,7 @@ files = [
 name = "smbus2"
 version = "0.4.3"
 description = "smbus2 is a drop-in replacement for smbus-cffi/smbus-python in pure Python"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "smbus2-0.4.3-py2.py3-none-any.whl", hash = "sha256:a2fc29cfda4081ead2ed61ef2c4fc041d71dd40a8d917e85216f44786fca2d1d"},
@@ -2619,7 +2619,7 @@ files = [
 name = "tornado"
 version = "6.4"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
-optional = true
+optional = false
 python-versions = ">= 3.8"
 files = [
     {file = "tornado-6.4-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:02ccefc7d8211e5a7f9e8bc3f9e5b0ad6262ba2fbb683a6443ecc804e5224ce0"},
@@ -2633,6 +2633,17 @@ files = [
     {file = "tornado-6.4-cp38-abi3-win32.whl", hash = "sha256:6f8a6c77900f5ae93d8b4ae1196472d0ccc2775cc1dfdc9e7727889145c45052"},
     {file = "tornado-6.4-cp38-abi3-win_amd64.whl", hash = "sha256:10aeaa8006333433da48dec9fe417877f8bcc21f48dda8d661ae79da357b2a63"},
     {file = "tornado-6.4.tar.gz", hash = "sha256:72291fa6e6bc84e626589f1c29d90a5a6d593ef5ae68052ee2ef000dfd273dee"},
+]
+
+[[package]]
+name = "types-protobuf"
+version = "4.25.0.20240417"
+description = "Typing stubs for protobuf"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-protobuf-4.25.0.20240417.tar.gz", hash = "sha256:c34eff17b9b3a0adb6830622f0f302484e4c089f533a46e3f147568313544352"},
+    {file = "types_protobuf-4.25.0.20240417-py3-none-any.whl", hash = "sha256:e9b613227c2127e3d4881d75d93c93b4d6fd97b5f6a099a0b654a05351c8685d"},
 ]
 
 [[package]]
@@ -2650,7 +2661,7 @@ files = [
 name = "tzdata"
 version = "2024.1"
 description = "Provider of IANA time zone data"
-optional = true
+optional = false
 python-versions = ">=2"
 files = [
     {file = "tzdata-2024.1-py2.py3-none-any.whl", hash = "sha256:9068bc196136463f5245e51efda838afa15aaeca9903f49050dfa2679db4d252"},
@@ -2712,7 +2723,7 @@ test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
 name = "wrapt"
 version = "1.16.0"
 description = "Module for decorators, wrappers and monkey patching."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "wrapt-1.16.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ffa565331890b90056c01db69c0fe634a776f8019c143a5ae265f9c6bc4bd6d4"},
@@ -2803,13 +2814,12 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
 
 [extras]
-all = ["flexsea", "flexsea", "grpcio", "smbus2"]
 communication = ["smbus2"]
 dephy = ["flexsea", "flexsea"]
-messaging = ["grpcio", "grpcio-tools"]
+messaging = ["grpcio", "grpcio-tools", "types-protobuf"]
 moteus = ["moteus", "moteus-pi3hat"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0.0"
-content-hash = "62eb11b9f665cb7c46ce9ef3ff5dc6b4fbf79c07cc00be73b3ffe279b0b79bb2"
+content-hash = "e11f18d25d72977df05a0c98a56f0bbc72fe1a67cd3d06358ec78cec13fcb306"
