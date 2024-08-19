@@ -425,7 +425,7 @@ class DephyActuator(ActuatorBase, Device):
         Sets the motor voltage in mV.
 
         Args:
-            voltage_value (float): The voltage to set in mV.
+            value (float): The voltage to set in mV.
         """
         self.command_motor_voltage(value=int(value))
 
@@ -440,7 +440,7 @@ class DephyActuator(ActuatorBase, Device):
         If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
-            position (float): The position to set
+            value (float): The position to set
         """
         self.command_motor_position(
             value=int(
@@ -460,10 +460,10 @@ class DephyActuator(ActuatorBase, Device):
         Sets the position gains in arbitrary Dephy units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            kd (int): The derivative gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         self.set_gains(
             kp=int(kp),
@@ -485,9 +485,10 @@ class DephyActuator(ActuatorBase, Device):
         Sets the current gains in arbitrary Dephy units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         self.set_gains(
             kp=int(kp),
@@ -500,8 +501,9 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_motor_impedance(
         self,
-        kp: float = 40,
-        ki: float = 400,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
         k: float = 0.08922,
         b: float = 0.0038070,
         ff: float = 128,
@@ -510,15 +512,17 @@ class DephyActuator(ActuatorBase, Device):
         Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
 
         Args:
-            kp (int): Proportional gain. Defaults to 40.
-            ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
-            ff (int): Feedforward gain. Defaults to 128.
+            kp (float): Proportional gain. Defaults to 40.
+            ki (float): Integral gain. Defaults to 400.
+            kd (float): Derivative gain. Defaults to 0.
+            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (float): Feedforward gain. Defaults to 128.
         """
         self.set_impedance_gains(
             kp=kp,
             ki=ki,
+            kd=kd,
             k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
             b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
             ff=ff,
@@ -526,8 +530,9 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_joint_impedance(
         self,
-        kp: float = 40,
-        ki: float = 400,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
         k: float = 100.0,
         b: float = 3.0,
         ff: float = 128,
@@ -541,15 +546,17 @@ class DephyActuator(ActuatorBase, Device):
             B_motor = B_joint / (gear_ratio ** 2)
 
         Args:
-            kp (int): Proportional gain. Defaults to 40.
-            ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 100 Nm/rad.
-            B (float): Damping constant. Defaults to 3.0 Nm/rad/s.
-            ff (int): Feedforward gain. Defaults to 128.
+            kp (float): Proportional gain. Defaults to 40.
+            ki (float): Integral gain. Defaults to 400.
+            kd (float): Derivative gain. Defaults to 0.
+            k (float): Spring constant. Defaults to 100 Nm/rad.
+            b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
+            ff (float): Feedforward gain. Defaults to 128.
         """
         self.set_motor_impedance(
             kp=kp,
             ki=ki,
+            kd=kd,
             k=k / (self.gear_ratio**2),
             b=b / (self.gear_ratio**2),
             ff=ff,
@@ -569,11 +576,12 @@ class DephyActuator(ActuatorBase, Device):
         See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            k (int): The spring constant
-            b (int): The damping constant
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            k (float): The spring constant
+            b (float): The damping constant
+            ff (float): The feedforward gain
         """
         self.set_gains(
             kp=int(kp),
@@ -1057,8 +1065,13 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Args:
             homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
             homing_frequency (int): Frequency in Hz to use for homing. Default is the actuator's frequency.
+            homing_direction (int): Direction to move the actuator during homing. Default is -1.
+            joint_direction (int): Direction to move the joint during homing. Default is -1.
+            joint_position_offset (float): Offset in radians to add to the joint position. Default is 0.0.
+            motor_position_offset (float): Offset in radians to add to the motor position. Default is 0.0.
             current_threshold (int): Current threshold in mA to stop homing the joint or actuator. This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+
         """
         is_homing = True
         homing_frequency = (
@@ -1248,7 +1261,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Sets the motor voltage in mV.
 
         Args:
-            voltage_value (float): The voltage to set in mV.
+            value (float): The voltage to set in mV.
         """
         self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
 
@@ -1263,7 +1276,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
-            position (float): The position to set
+            value (float): The position to set
         """
         self.send_motor_command(
             ctrl_mode=c_int(self.mode.value),
@@ -1284,10 +1297,10 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Sets the position gains in arbitrary Dephy units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            kd (int): The derivative gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         self.set_gains(
             kp=int(kp),
@@ -1309,9 +1322,10 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Sets the current gains in arbitrary Dephy units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         self.set_gains(
             kp=int(kp),
@@ -1324,8 +1338,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     def set_joint_impedance(
         self,
-        kp: float = 40,
-        ki: float = 400,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
         k: float = 100.0,
         b: float = 3.0,
         ff: float = 128,
@@ -1339,15 +1354,17 @@ class DephyLegacyActuator(ActuatorBase, Device):
             B_motor = B_joint / (gear_ratio ** 2)
 
         Args:
-            kp (int): Proportional gain. Defaults to 40.
-            ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 100 Nm/rad.
-            B (float): Damping constant. Defaults to 3.0 Nm/rad/s.
-            ff (int): Feedforward gain. Defaults to 128.
+            kp (float): Proportional gain. Defaults to 40.
+            ki (float): Integral gain. Defaults to 400.
+            kd (float): Derivative gain. Defaults to 0.
+            k (float): Spring constant. Defaults to 100 Nm/rad.
+            b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
+            ff (float): Feedforward gain. Defaults to 128.
         """
         self.set_motor_impedance(
             kp=kp,
             ki=ki,
+            kd=kd,
             k=k / (self.gear_ratio**2),
             b=b / (self.gear_ratio**2),
             ff=ff,
@@ -1367,11 +1384,12 @@ class DephyLegacyActuator(ActuatorBase, Device):
         See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            k (int): The spring constant
-            b (int): The damping constant
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            k (float): The spring constant
+            b (float): The damping constant
+            ff (float): The feedforward gain
         """
         self.set_gains(
             kp=int(kp),
@@ -1395,11 +1413,12 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
 
         Args:
-            kp (int): Proportional gain. Defaults to 40.
-            ki (int): Integral gain. Defaults to 400.
-            K (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            B (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
-            ff (int): Feedforward gain. Defaults to 128.
+            kp (float): Proportional gain. Defaults to 40.
+            ki (float): Integral gain. Defaults to 400.
+            kd (float): Derivative gain. Defaults to 0.
+            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (float): Feedforward gain. Defaults to 128.
         """
         self.set_impedance_gains(
             kp=kp,

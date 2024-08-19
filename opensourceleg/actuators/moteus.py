@@ -328,7 +328,7 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the motor voltage in mV.
 
         Args:
-            voltage_value (float): The voltage to set in mV.
+            value (float): The voltage to set in mV.
         """
         LOGGER.info(f"Voltage Mode Not Implemented")
 
@@ -338,7 +338,7 @@ class MoteusActuator(ActuatorBase, Controller):
         If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
-            position (float): The position to set
+            value (float): The position to set
         """
         self._command = self.make_position(
             position=float(
@@ -357,10 +357,8 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the position gains in arbitrary Moteus units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            kd (int): The derivative gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
         """
         await self._stream.command(f"conf set servo.pid_dq.kp {kp}".encode())
         await self._stream.command(f"conf set servo.pid_dq.ki {ki}".encode())
@@ -376,10 +374,10 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the position gains in arbitrary Moteus units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            kd (int): The derivative gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         await self._stream.command(f"conf set servo.pid_position.kp {kp}".encode())
         await self._stream.command(f"conf set servo.pid_position.ki {ki}".encode())
@@ -396,10 +394,10 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the position gains in arbitrary Moteus units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            kd (int): The derivative gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         await self._stream.command(f"conf set servo.pid_position.kp {kp}".encode())
         await self._stream.command(f"conf set servo.pid_position.ki {ki}".encode())
@@ -416,9 +414,10 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the current gains in arbitrary Moteus units.
 
         Args:
-            kp (int): The proportional gain
-            ki (int): The integral gain
-            ff (int): The feedforward gain
+            kp (float): The proportional gain
+            ki (float): The integral gain
+            kd (float): The derivative gain
+            ff (float): The feedforward gain
         """
         LOGGER.info(msg=f"[{self.__repr__()}] Current mode not implemented.")
 
