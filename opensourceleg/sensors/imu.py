@@ -40,7 +40,7 @@ class LordMicrostrainIMU(IMUBase):
         self._frequency = frequency
         self._is_streaming = False
         self._connection = None
-        self._data = None
+        self._data: dict[str, float] = {}
 
     def _configure_mip_channels(self):
         channels = mscl.MipChannels()

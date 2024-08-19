@@ -34,7 +34,7 @@ class Logger(logging.Logger):
         stream_level: LogLevel = LogLevel.INFO,
         file_max_bytes: int = 0,
         file_backup_count: int = 5,
-        file_name: Optional[str] = None,
+        file_name: Union[str, None] = None,
         buffer_size: int = 1000,
     ) -> None:
         if not hasattr(self, "_initialized"):
@@ -47,21 +47,20 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self._user_file_name = file_name
 
-            self._file_path: Optional[str] = None
-            self._csv_path: Optional[str] = None
+            self._file_path: str = ""
+            self._csv_path: str = ""
             self._file: Optional[Any] = None
-            self._writer: Optional[csv.writer] = None
+            self._writer = None
             self._is_logging = False
             self._header_written = False
 
             self._tracked_vars: dict[int, Callable[[], Any]] = {}
             self._var_names: dict[int, str] = {}
-
-            self._buffer = deque(maxlen=buffer_size)
-            self._buffer_size = buffer_size
+            self._buffer: deque[list[str]] = deque(maxlen=buffer_size)
+            self._buffer_size: int = buffer_size
 
             self._setup_logging()
-            self._initialized = True
+            self._initialized: bool = True
         else:
             self.set_file_name(file_name)
             self.set_file_level(file_level)
@@ -70,6 +69,8 @@ class Logger(logging.Logger):
             self._file_max_bytes = file_max_bytes
             self._file_backup_count = file_backup_count
             self.set_buffer_size(buffer_size)
+
+            self._log_path = log_path
 
     def _setup_logging(self) -> None:
         self.setLevel(level=self._file_level.value)
@@ -81,7 +82,7 @@ class Logger(logging.Logger):
         self.addHandler(hdlr=self._stream_handler)
 
     def _setup_file_handler(self) -> None:
-        if self._file_path is None:
+        if self._file_path == "":
             self._generate_file_paths()
 
         self._file_handler = RotatingFileHandler(
@@ -111,10 +112,10 @@ class Logger(logging.Logger):
     def __repr__(self) -> str:
         return f"Logger(file_path={self._file_path})"
 
-    def set_file_name(self, file_name: str) -> None:
+    def set_file_name(self, file_name: Union[str, None]) -> None:
         self._user_file_name = file_name
-        self._file_path = None
-        self._csv_path = None
+        self._file_path = ""
+        self._csv_path = ""
 
     def set_file_level(self, level: LogLevel) -> None:
         self._file_level = level
@@ -169,7 +170,8 @@ class Logger(logging.Logger):
 
     def _write_header(self) -> None:
         header = list(self._var_names.values())
-        self._writer.writerow(header)
+
+        self._writer.writerow(header)  # type: ignore
         self._header_written = True
 
     def _generate_file_paths(self) -> None:
@@ -225,7 +227,7 @@ class Logger(logging.Logger):
 
     @property
     def file_name(self) -> str:
-        if self._file_path is None:
+        if self._file_path == "":
             self._generate_file_paths()
         return self._file_path
 
@@ -263,8 +265,8 @@ if __name__ == "__main__":
             self.a += 0.2
 
     my_logger = Logger(buffer_size=5000, file_name="my_log")
-    x = 0
-    y = 0
+    x = 0.0
+    y = 0.0
 
     test = Test()
 

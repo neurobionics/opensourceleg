@@ -6,20 +6,21 @@ The sensor library contains a [`base.py`](./base.py), an abstract base for custo
 
 ## Customization Guide of Sensor Module
 
-1. Import base module
+1.  Import base module
 
     ```Python
     import opensourceleg.hardware.sensor.base as base
     ```
 
-2. Customize the sensor classes from `class SensorIMU`
-    For example: 
+2.  Customize the sensor classes from `class SensorIMU`
+    For example:
+
     ```Python
     class DephyIMU(base.SensorIMU):
     def __init__(self, Sensor: "DephyIMU") -> None:
         super.__init__()
         <!-- Should implement your own steps below -->
-    
+
     def start_streaming(self):
         <!-- Should implement your own steps below -->
 
@@ -30,30 +31,31 @@ The sensor library contains a [`base.py`](./base.py), an abstract base for custo
         <!-- Should implement your own steps below -->
 
     <!-- Should implement your own methods below -->
-    ```    
-    
-
-3. Link it to your `class Actuator` in the actuator module
-
-    For example:
-    ```Python
-    class DephyActpack(base.Actuator, device)
-        
-        <!-- Irrelevant methods / members neglected -->
-
-        def update(self) -> None:
-            super().update()
-
-            if self.is_streaming:
-                self._data = self.read()
-                self.dephyIMU.update(self._data)
-            
-            <!-- Should implement your own steps below -->
     ```
-<!-- 
+
+3.  Link it to your `class Actuator` in the actuator module
+
+        For example:
+        ```Python
+        class DephyActuator(base.Actuator, device)
+
+            <!-- Irrelevant methods / members neglected -->
+
+            def update(self) -> None:
+                super().update()
+
+                if self.is_streaming:
+                    self._data = self.read()
+                    self.dephyIMU.update(self._data)
+
+                <!-- Should implement your own steps below -->
+        ```
+
+    <!--
+
 ## Reference: Base Class Structure Diagram
 
-```mermaid
+````mermaid
 classDiagram
   direction RL
   class ControlGains {
@@ -128,3 +130,4 @@ Actuator <.. CurrentMode
 Actuator <.. PositionMode
 Actuator <.. ImpedanceMode
 ``` -->
+````
