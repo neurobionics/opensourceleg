@@ -78,6 +78,23 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
     IDLE: Optional[ControlModeConfig] = None
 
 
+CONTROL_MODE_METHODS = [
+    "set_motor_torque",
+    "set_joint_torque",
+    "set_output_torque",
+    "set_motor_current",
+    "set_current",
+    "set_motor_voltage",
+    "set_voltage",
+    "set_motor_position",
+    "set_position_gains",
+    "set_current_gains",
+    "set_motor_impedance",
+    "set_joint_impedance",
+    "set_impedance_gains",
+]
+
+
 T = TypeVar("T", bound=Callable[..., Any])
 
 
@@ -138,11 +155,10 @@ class ActuatorBase(ABC):
         return None
 
     def _set_original_methods(self):
-        for method_name in dir(self):
-            if not method_name.startswith("_"):
-                method = getattr(self, method_name)
-                if callable(method) and hasattr(method, "_required_modes"):
-                    self._original_methods[method_name] = method
+        for method_name in CONTROL_MODE_METHODS:
+            method = getattr(self, method_name)
+            if callable(method) and hasattr(method, "_required_modes"):
+                self._original_methods[method_name] = method
 
     def _set_mutated_methods(self):
         for method_name, method in self._original_methods.items():

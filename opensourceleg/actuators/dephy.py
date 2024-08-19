@@ -599,7 +599,13 @@ class DephyActuator(ActuatorBase, Device):
     @property
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
+        if getattr(self, "_encoder_map", None) is not None:
+            return self._encoder_map
+        else:
+            LOGGER.debug(
+                msg="Encoder map is not set. Please call the make_encoder_map method to create one."
+            )
+            return None
 
     @property
     def motor_voltage(self) -> float:
@@ -607,7 +613,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["mot_volt"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -617,7 +623,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["mot_cur"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -627,7 +633,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -641,7 +647,7 @@ class DephyActuator(ActuatorBase, Device):
                 - self.motor_position_offset
             )
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -652,7 +658,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return int(self._data["mot_ang"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
             )
             return 0
@@ -663,7 +669,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return int(self._data["ank_ang"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
             )
             return 0
@@ -673,7 +679,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -683,7 +689,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["mot_acc"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -694,7 +700,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["batt_volt"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -705,7 +711,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["batt_curr"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -719,7 +725,7 @@ class DephyActuator(ActuatorBase, Device):
                 - self.joint_position_offset
             ) * self.joint_direction
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -729,7 +735,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -747,7 +753,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["temperature"])
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -778,7 +784,7 @@ class DephyActuator(ActuatorBase, Device):
                 ]
             )
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
             )
             return np.zeros(shape=6)
@@ -792,7 +798,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -806,7 +812,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -820,7 +826,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -834,7 +840,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -848,7 +854,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -862,7 +868,7 @@ class DephyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1436,7 +1442,13 @@ class DephyLegacyActuator(ActuatorBase, Device):
     @property
     def encoder_map(self):
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
-        return self._encoder_map
+        if getattr(self, "_encoder_map", None) is not None:
+            return self._encoder_map
+        else:
+            LOGGER.warning(
+                msg="Encoder map is not set. Please call the make_encoder_map method to create one."
+            )
+            return None
 
     @property
     def motor_voltage(self) -> float:
@@ -1444,7 +1456,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_volt)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1454,7 +1466,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_cur)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1464,7 +1476,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_cur * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1478,7 +1490,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
                 - self.motor_position_offset
             )
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1489,7 +1501,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return int(self._data.mot_ang)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
             )
             return 0
@@ -1500,7 +1512,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return int(self._data.ank_ang)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
             )
             return 0
@@ -1510,7 +1522,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return int(self._data.mot_vel) * RAD_PER_DEG
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1520,7 +1532,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.mot_acc)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1531,7 +1543,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.batt_volt)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1542,7 +1554,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.batt_curr)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1556,7 +1568,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
                 - self.joint_position_offset
             ) * self.joint_direction
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1566,7 +1578,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.ank_vel * RAD_PER_DEG) * self.joint_direction
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1584,7 +1596,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.temperature)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1615,7 +1627,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
                 ]
             )
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
             )
             return np.zeros(shape=6)
@@ -1629,7 +1641,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1643,7 +1655,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1657,7 +1669,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1671,7 +1683,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1685,7 +1697,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1699,7 +1711,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         if self._data is not None:
             return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.warning(
+            LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
