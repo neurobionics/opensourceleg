@@ -5,7 +5,6 @@ import os
 import time
 from dataclasses import dataclass
 
-import moteus_pi3hat as pihat
 import numpy as np
 from moteus import Command, Controller
 from moteus import Register as MoteusRegister
@@ -28,6 +27,11 @@ from opensourceleg.actuators.decorators import (
 from opensourceleg.logging.logger import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
+
+try:
+    import moteus_pi3hat as pihat
+except ImportError:
+    LOGGER.info(msg="Moteus PiHat not found. Please install the moteus_pi3hat package.")
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=0.07, ki=0.08, kd=0.012, k=0, b=0, ff=0)
 
