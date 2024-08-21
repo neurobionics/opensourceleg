@@ -4,8 +4,7 @@
 from typing import Any, Callable, List, Optional
 
 import time
-
-from opensourceleg.logging import LOGGER
+from dataclasses import dataclass, field
 
 """
 The state_machine module provides classes for implementing a finite state machine (FSM).
@@ -47,12 +46,30 @@ class State:
     def __init__(
         self,
         name: str = "state",
+        is_knee_active: bool = False,
+        knee_stiffness: float = 0.0,
+        knee_damping: float = 0.0,
+        knee_equilibrium_angle: float = 0.0,
+        is_ankle_active: bool = False,
+        ankle_stiffness: float = 0.0,
+        ankle_damping: float = 0.0,
+        ankle_equilibrium_angle: float = 0.0,
         minimum_time_in_state: float = 2.0,
-        custom_data: dict[str, Any] = {},
     ) -> None:
 
         self._name: str = name
-        self._custom_data: dict[str, Any] = custom_data
+
+        self._is_knee_active: bool = is_knee_active
+        self._knee_stiffness: float = knee_stiffness
+        self._knee_damping: float = knee_damping
+        self._knee_theta: float = knee_equilibrium_angle
+
+        self._is_ankle_active: bool = is_ankle_active
+        self._ankle_stiffness: float = ankle_stiffness
+        self._ankle_damping: float = ankle_damping
+        self._ankle_theta: float = ankle_equilibrium_angle
+
+        self._custom_data: dict[str, Any] = field(default_factory=dict)
 
         self._time_entered: float = 0.0
         self._time_exited: float = 0.0
@@ -85,6 +102,42 @@ class State:
             time (float): Minimum time spent in the state in seconds
         """
         self._min_time_in_state = time
+
+    def set_knee_impedance_paramters(self, theta, k, b) -> None:
+        """
+        Set the knee impedance parameters
+
+        Args:
+            theta (float): Equilibrium angle of the knee joint
+            k (float): Stiffness of the knee joint
+            b (float): Damping of the knee joint
+
+        Note:
+            The knee impedance parameters are only used if the knee is
+            active. You can make the knee active by calling the
+            `make_knee_active` method.
+        """
+        self._knee_theta = theta
+        self._knee_stiffness = k
+        self._knee_damping = b
+
+    def set_ankle_impedance_paramters(self, theta, k, b) -> None:
+        """
+        Set the ankle impedance parameters
+
+        Args:
+            theta (float): Equilibrium angle of the ankle joint
+            k (float): Stiffness of the ankle joint
+            b (float): Damping of the ankle joint
+
+        Note:
+            The ankle impedance parameters are only used if the ankle is
+            active. You can make the ankle active by calling the
+            `make_ankle_active` method.
+        """
+        self._ankle_theta = theta
+        self._ankle_stiffness = k
+        self._ankle_damping = b
 
     def set_custom_data(self, key: str, value: Any) -> None:
         """
@@ -128,9 +181,61 @@ class State:
         for c in self._exit_callbacks:
             c(data)
 
+    def make_knee_active(self):
+        """
+        Make the knee active
+
+        Note:
+            The knee impedance parameters are only used if the knee is
+            active.
+        """
+        self._is_knee_active = True
+
+    def make_ankle_active(self):
+        """
+        Make the ankle active
+
+        Note:
+            The ankle impedance parameters are only used if the ankle is
+            active.
+        """
+        self._is_ankle_active = True
+
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def knee_stiffness(self) -> float:
+        return self._knee_stiffness
+
+    @property
+    def knee_damping(self) -> float:
+        return self._knee_damping
+
+    @property
+    def knee_theta(self) -> float:
+        return self._knee_theta
+
+    @property
+    def ankle_stiffness(self) -> float:
+        return self._ankle_stiffness
+
+    @property
+    def ankle_damping(self) -> float:
+        return self._ankle_damping
+
+    @property
+    def ankle_theta(self) -> float:
+        return self._ankle_theta
+
+    @property
+    def is_knee_active(self) -> bool:
+        return self._is_knee_active
+
+    @property
+    def is_ankle_active(self) -> bool:
+        return self._is_ankle_active
 
     @property
     def minimum_time_spent_in_state(self) -> float:
@@ -301,7 +406,7 @@ class StateMachine:
         Whether or not the state machine is spoofing the state transitions.
     """
 
-    def __init__(self, robot=None, spoof: bool = False) -> None:
+    def __init__(self, osl=None, spoof: bool = False) -> None:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
@@ -313,7 +418,7 @@ class StateMachine:
         self._current_state: State = self._exit_state
 
         self._exited = True
-        self._robot: Any = robot
+        self._osl: Any = osl
 
         self._spoof: bool = spoof
 
@@ -381,11 +486,11 @@ class StateMachine:
         validity = False
 
         if not (self._initial_state or self._current_state):
-            raise ValueError("StateMachine isn't active.")
+            raise ValueError("OSL isn't active.")
 
         for transition in self._transitions:
             if transition.source_state == self._current_state:
-                self._current_state = transition(self._robot, spoof=self.is_spoofing)
+                self._current_state = transition(self._osl, spoof=self.is_spoofing)
 
                 if isinstance(self._current_state, Idle) and not self._exited:
                     self._exited = True
@@ -397,8 +502,8 @@ class StateMachine:
                 break
 
         if not validity:
-            assert self._robot is not None
-            LOGGER.debug(f"Event isn't valid at {self._current_state.name}")
+            assert self._osl is not None
+            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any = None) -> None:
         if not self._initial_state:

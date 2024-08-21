@@ -4,10 +4,16 @@ import os
 import time
 from concurrent import futures
 
-import grpc
-from google.protobuf import descriptor_pb2
-from google.protobuf.compiler import plugin_pb2
-from grpc_tools import protoc
+from opensourceleg.logging import LOGGER
+
+try:
+    import grpc
+    from google.protobuf import descriptor_pb2
+    from google.protobuf.compiler import plugin_pb2
+    from grpc_tools import protoc
+
+except ImportError:
+    LOGGER.error("grpcio-tools, types-protobuf, and grpcio must be installed.")
 
 
 class GRPCManager:
