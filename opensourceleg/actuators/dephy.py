@@ -129,8 +129,6 @@ class DephyActuator(ActuatorBase, Device):
 
         if self.is_offline:
             self.port = port
-            self.is_streaming: bool = False
-            self.is_open: bool = False
         else:
             Device.__init__(
                 self,

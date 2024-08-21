@@ -138,6 +138,9 @@ class ActuatorBase(ABC):
         self._joint_position_offset: float = 0.0
         self._joint_direction: int = 1
 
+        self._is_open: bool = False
+        self._is_streaming: bool = False
+
         self._original_methods: dict[str, MethodWithRequiredModes] = {}
 
         self._set_original_methods()
@@ -397,6 +400,14 @@ class ActuatorBase(ABC):
     @property
     def joint_direction(self) -> int:
         return self._joint_direction
+
+    @property
+    def is_open(self) -> bool:
+        return self._is_open
+
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming
 
 
 if __name__ == "__main__":
