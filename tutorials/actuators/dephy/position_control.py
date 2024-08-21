@@ -41,8 +41,8 @@ def main():
             for t in clock:
 
                 if t > TIME_TO_STEP:
-                    command_position = current_position + +np.pi / 2
-                    actpack.set_output_position(value=command_position)
+                    command_position = current_position + np.pi
+                    actpack.set_output_position(value = command_position)
                 else:
                     command_position = current_position
 
