@@ -1,3 +1,5 @@
+import time
+
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
     CONTROL_MODES,
@@ -11,10 +13,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-
 from opensourceleg.time import SoftRealtimeLoop
-
-import time
 
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
@@ -25,7 +24,8 @@ TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MAX_WINDING_TEMPERATURE=110,
 )
 
-from TMotorCANControl.mit_can import TMotorManager_mit_can, LOG_VARIABLES
+from TMotorCANControl.mit_can import LOG_VARIABLES, TMotorManager_mit_can
+
 
 def _tmotor_impedance_mode_exit(tmotor_actuator: "TMotorActuator") -> None:
     tmotor_actuator.stop_motor()
@@ -33,6 +33,7 @@ def _tmotor_impedance_mode_exit(tmotor_actuator: "TMotorActuator") -> None:
 
 def _tmotor_current_mode_exit(tmotor_actuator: "TMotorActuator") -> None:
     tmotor_actuator.stop_motor()
+
 
 def _tmotor_velocity_mode_exit(tmotor_actuator: "TMotorActuator") -> None:
     tmotor_actuator.stop_motor()
@@ -59,13 +60,14 @@ TMOTOR_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     ),
 )
 
+
 class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def __init__(
         self,
         tag: str = "TMotorActuator",
         port: str = "/dev/ttyACM0",
-        motor_type = "AK80-9",
-        motor_ID = 41,
+        motor_type="AK80-9",
+        motor_ID=41,
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -89,14 +91,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
         return TMOTOR_CONTROL_MODE_CONFIGS
 
-
     def home(self):
         # TODO: implement homing
         # LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
         pass
-
-
-
 
     @property
     def case_temperature(self):
@@ -125,7 +123,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
 
     @property
     def winding_temperature(self):
-        #Not implemented
+        # Not implemented
         pass
 
     def set_current_gains(self):
@@ -151,7 +149,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self.torque_motorside = value
 
     def set_motor_voltage(self, value):
-        #Not implemented
+        # Not implemented
         pass
 
     def start(self):
@@ -164,22 +162,15 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         TMotorManager_mit_can.update(self)
 
 
-
-
-
-
-
-
-
 if __name__ == "__main__":
     with TMotorMITCANActuator() as dev:
-        dev.set_zero_position() # has a delay!
+        dev.set_zero_position()  # has a delay!
         time.sleep(1.5)
-        dev.set_impedance_gains(K=10,B=0.5)
+        dev.set_impedance_gains(K=10, B=0.5)
 
         print("Starting position step demo. Press ctrl+C to quit.")
 
-        loop = SoftRealtimeLoop(dt = 0.01, report=True, fade=0)
+        loop = SoftRealtimeLoop(dt=0.01, report=True, fade=0)
         for t in loop:
             dev.update()
             if t < 1.0:
@@ -187,6 +178,11 @@ if __name__ == "__main__":
             else:
                 dev.set_motor_position(1.0)
 
-            print("Actual: ", round(dev.get_output_angle_radians(), 3), "Desired: ", dev._command.position)
+            print(
+                "Actual: ",
+                round(dev.get_output_angle_radians(), 3),
+                "Desired: ",
+                dev._command.position,
+            )
 
         del loop
