@@ -12,11 +12,15 @@ from opensourceleg.actuators.decorators import (
     check_actuator_stream,
 )
 
+from opensourceleg.time import SoftRealtimeLoop
+
+import time
+
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
-    NM_PER_RAD_TO_K=0.0,  # TODO: Change this value when impedance control is implemented
-    NM_S_PER_RAD_TO_B=0.0,  # TODO: Change this value when impedance control is implemented
+    NM_PER_RAD_TO_K=0.0,  # TODO: Find value
+    NM_S_PER_RAD_TO_B=0.0,  # TODO: Find value
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )
@@ -60,6 +64,8 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self,
         tag: str = "TMotorActuator",
         port: str = "/dev/ttyACM0",
+        motor_type = "AK80-9",
+        motor_ID = 41,
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
         frequency: int = 500,
@@ -75,8 +81,8 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         )
         TMotorManager_mit_can.__init__(
             self,
-            motor_type='AK80-9',
-            motor_ID=1,
+            motor_type=motor_type,
+            motor_ID=motor_ID,
         )
 
     @property
@@ -149,13 +155,13 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         pass
 
     def start(self):
-        TMotorManager_mit_can.__enter__()
+        TMotorManager_mit_can.__enter__(self)
 
     def stop(self):
-        TMotorManager_mit_can.__exit__()
+        TMotorManager_mit_can.__exit__(self, None, None, None)
 
     def update(self):
-        TMotorManager_mit_can.update()
+        TMotorManager_mit_can.update(self)
 
 
 
@@ -166,4 +172,21 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
 
 
 if __name__ == "__main__":
-    knee = TMotorMITCANActuator()
+    with TMotorMITCANActuator() as dev:
+        dev.set_zero_position() # has a delay!
+        time.sleep(1.5)
+        dev.set_impedance_gains(K=10,B=0.5)
+
+        print("Starting position step demo. Press ctrl+C to quit.")
+
+        loop = SoftRealtimeLoop(dt = 0.01, report=True, fade=0)
+        for t in loop:
+            dev.update()
+            if t < 1.0:
+                dev.set_motor_position(0.0)
+            else:
+                dev.set_motor_position(1.0)
+
+            print("Actual: ", round(dev.get_output_angle_radians(), 3), "Desired: ", dev._command.position)
+
+        del loop
