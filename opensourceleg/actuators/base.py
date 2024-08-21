@@ -2,6 +2,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     NamedTuple,
     Optional,
     Protocol,
@@ -9,6 +10,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    runtime_checkable,
 )
 
 from abc import ABC, abstractmethod
@@ -33,6 +35,9 @@ class MOTOR_CONSTANTS(NamedTuple):
 
     @property
     def RAD_PER_COUNT(self) -> float:
+        if self.MOTOR_COUNT_PER_REV == 0:
+            return 0
+
         return 2 * np.pi / self.MOTOR_COUNT_PER_REV
 
     @property
@@ -50,7 +55,7 @@ class CONTROL_MODES(Enum):
     IDLE = 6
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ControlGains:
     kp: float = 0
     ki: float = 0
@@ -60,7 +65,7 @@ class ControlGains:
     ff: float = 0
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ControlModeConfig:
     entry_callback: Callable[[Any], None]
     exit_callback: Callable[[Any], None]
@@ -78,7 +83,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
     IDLE: Optional[ControlModeConfig] = None
 
 
-CONTROL_MODE_METHODS = [
+CONTROL_MODE_METHODS: list[str] = [
     "set_motor_torque",
     "set_joint_torque",
     "set_output_torque",
@@ -98,13 +103,21 @@ CONTROL_MODE_METHODS = [
 T = TypeVar("T", bound=Callable[..., Any])
 
 
+@runtime_checkable
 class MethodWithRequiredModes(Protocol):
     _required_modes: set[CONTROL_MODES]
 
 
 def requires(*modes: CONTROL_MODES):
     def decorator(func: T) -> T:
-        setattr(func, "_required_modes", set(modes))
+        if not all(isinstance(mode, CONTROL_MODES) for mode in modes):
+            raise TypeError("All arguments to 'requires' must be of type CONTROL_MODES")
+
+        if not hasattr(func, "_required_modes"):
+            setattr(func, "_required_modes", set(modes))
+        else:
+            getattr(func, "_required_modes").update(modes)
+
         return func
 
     return decorator
@@ -408,7 +421,3 @@ class ActuatorBase(ABC):
     @property
     def is_streaming(self) -> bool:
         return self._is_streaming
-
-
-if __name__ == "__main__":
-    pass
