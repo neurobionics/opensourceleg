@@ -156,9 +156,14 @@ class ActuatorBase(ABC):
 
     def _set_original_methods(self):
         for method_name in CONTROL_MODE_METHODS:
-            method = getattr(self, method_name)
-            if callable(method) and hasattr(method, "_required_modes"):
-                self._original_methods[method_name] = method
+            try:
+                method = getattr(self, method_name)
+                if callable(method) and hasattr(method, "_required_modes"):
+                    self._original_methods[method_name] = method
+            except AttributeError:
+                LOGGER.debug(
+                    msg=f"[{self.tag}] {method_name}() is not implemented in {self.tag}."
+                )
 
     def _set_mutated_methods(self):
         for method_name, method in self._original_methods.items():
