@@ -42,7 +42,7 @@ def main():
 
                 if t > TIME_TO_STEP:
                     command_position = current_position + np.pi
-                    actpack.set_output_position(value = command_position)
+                    actpack.set_output_position(value=command_position)
                 else:
                     command_position = current_position
 
