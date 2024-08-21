@@ -55,7 +55,7 @@ TMOTOR_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     ),
 )
 
-class TMotorActuator(ActuatorBase, TMotorManager_mit_can):
+class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def __init__(
         self,
         tag: str = "TMotorActuator",
@@ -69,9 +69,14 @@ class TMotorActuator(ActuatorBase, TMotorManager_mit_can):
             self,
             tag=tag,
             gear_ratio=gear_ratio,
-            # motor_constants=DEPHY_ACTUATOR_CONSTANTS,
+            motor_constants=TMOTOR_ACTUATOR_CONSTANTS,
             frequency=frequency,
             offline=offline,
+        )
+        TMotorManager_mit_can.__init__(
+            self,
+            motor_type='AK80-9',
+            motor_ID=1,
         )
 
     @property
@@ -161,4 +166,4 @@ class TMotorActuator(ActuatorBase, TMotorManager_mit_can):
 
 
 if __name__ == "__main__":
-    knee = TMotorActuator()
+    knee = TMotorMITCANActuator()
