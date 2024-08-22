@@ -2,6 +2,7 @@ from typing import Union
 
 from opensourceleg.actuators.base import ActuatorBase
 from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import IMUBase, LoadcellBase, SensorBase
@@ -76,12 +77,13 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
 
 if __name__ == "__main__":
-    osl = OpenSourceLeg[DephyActuator, SensorBase](
+    osl = OpenSourceLeg(
         tag="opensourceleg",
         actuators={
             "knee": DephyActuator("knee", offline=True),
-            "ankle": DephyActuator("ankle", offline=True),
+            "ankle": MoteusActuator("ankle", offline=True),
         },
         sensors={},
     )
+    print(osl.actuators["knee"])
     print(osl.knee.tag)
