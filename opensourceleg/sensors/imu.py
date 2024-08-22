@@ -6,7 +6,9 @@ from dataclasses import dataclass
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
-
+import board
+import busio
+import adafruit_bno055
 try:
     import mscl
 except ImportError:
@@ -180,5 +182,100 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estFilterGpsTimeTow"]
 
 
+class BNO055(IMUBase):
+    """
+    Sensor class for the Bosch BNO055 IMU.
+    This class wraps a more comprehensive Adafruit library for a simplified use consistent
+    with the OSL library framework. 
+    
+    Connections: 
+        * The sensor should be connected to the main i2c bus. 
+        * It is also possible to connect it via uart, but this is not yet implemented. 
+    
+    Requirements:
+        * adafruit_bno055
+        * board
+        * busio
+
+    Author: Kevin Best
+    Date: 8/22/2024
+    """
+    
+    def __init__(
+            self,
+            addr: int = 40,
+    ):
+        self._address = addr
+        self._gyro_x = None
+        self._gyro_y = None
+        self._gyro_z = None
+        self._acc_x = None
+        self._acc_y = None
+        self._acc_z = None
+
+    def __repr__(self) -> str:
+        return f"BNO055_IMU"
+
+    def start(self):
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self._adafruit_imu = adafruit_bno055.BNO055_I2C(i2c, address=self._address)
+        self.configure_IMU_settings()
+
+    def stop(self):
+        pass
+
+    def update(self):
+        acc = self._adafruit_imu.acceleration
+        self._acc_x = acc[0]
+        self._acc_y = acc[1]
+        self._acc_z = acc[2]
+        gyro = self._adafruit_imu.gyro
+        self._gyro_x = gyro[0]
+        self._gyro_y = gyro[1]
+        self._gyro_z = gyro[2]
+
+    def configure_IMU_settings(self):
+        """
+        Configure the IMU mode and different range/bandwidth settings. 
+        Hard coding settings for now. 
+        Someone in the future could add wrapper support for these.
+        """
+        self._adafruit_imu.use_external_crystal = True
+        self._adafruit_imu.mode = adafruit_bno055.ACCGYRO_MODE
+        self._adafruit_imu.accel_range = adafruit_bno055.ACCEL_2G
+        self._adafruit_imu.accel_bandwidth = adafruit_bno055.ACCEL_15_63HZ
+        self._adafruit_imu.gyro_range = adafruit_bno055.GYRO_1000_DPS
+        self._adafruit_imu.gyro_bandwidth = adafruit_bno055.GYRO_23HZ
+
+    @property
+    def acc_x(self) -> float:
+        """Returns measured acceleration along the x-axis (m/s^2)."""
+        return self._acc_x
+    
+    @property
+    def acc_y(self) -> float:
+        """Returns measured acceleration along the y-axis (m/s^2)."""
+        return self._acc_y
+    
+    @property
+    def acc_z(self) -> float:
+        """Returns measured acceleration along the z-axis (m/s^2)."""
+        return self._acc_z
+    
+    @property
+    def gyro_x(self) -> float:
+        """Returns measured rotational velocity about the x-axis (rad/s)."""
+        return self._gyro_x
+    
+    @property
+    def gyro_y(self) -> float:
+        """Returns measured rotational velocity about the y-axis (rad/s)."""
+        return self._gyro_y
+    
+    @property
+    def gyro_z(self) -> float:
+        """Returns measured rotational velocity about the z-axis (rad/s)."""
+        return self._gyro_z
+    
 if __name__ == "__main__":
     pass

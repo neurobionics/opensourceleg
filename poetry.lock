@@ -19,6 +19,140 @@ dev = ["pillow", "pkginfo (>=1.10)", "playwright", "pre-commit", "setuptools", "
 tests = ["hypothesis", "pytest"]
 
 [[package]]
+name = "adafruit-blinka"
+version = "8.47.0"
+description = "CircuitPython APIs for non-CircuitPython versions of Python such as CPython on Linux and MicroPython."
+optional = false
+python-versions = ">=3.7.0"
+files = [
+    {file = "Adafruit_Blinka-8.47.0-py3-none-any.whl", hash = "sha256:86fb1f831196587b94c62eab1695e5b78a685f54e31c53d70b377a8bd86ac81d"},
+    {file = "adafruit_blinka-8.47.0.tar.gz", hash = "sha256:436a856acc38bf9c5346db8c413ba2ada95e762f6aa97a7dbe238434ccbc8519"},
+]
+
+[package.dependencies]
+adafruit-circuitpython-typing = "*"
+Adafruit-PlatformDetect = ">=3.70.1"
+Adafruit-PureIO = ">=1.1.7"
+binho-host-adapter = ">=0.1.6"
+pyftdi = ">=0.40.0"
+sysv-ipc = {version = ">=1.1.0", markers = "sys_platform == \"linux\" and platform_machine != \"mips\""}
+
+[[package]]
+name = "adafruit-bno055"
+version = "1.0.2"
+description = "Library for accessing the Bosch BNO055 absolute orientation sensor on a Raspberry Pi or Beaglebone Black."
+optional = false
+python-versions = "*"
+files = [
+    {file = "Adafruit_BNO055-1.0.2-py2-none-any.whl", hash = "sha256:e5edec219932d33720ce078a6e6ac9736ba80e85b769f6e4ed3c33e2214ffd64"},
+    {file = "Adafruit_BNO055-1.0.2.tar.gz", hash = "sha256:6a3848cda6a0a28f6b07f8c4ccae76f521d0d66d82e58971584947edc4bcf96d"},
+]
+
+[package.dependencies]
+Adafruit-GPIO = ">=0.9.3"
+pyserial = "*"
+
+[[package]]
+name = "adafruit-circuitpython-busdevice"
+version = "5.2.9"
+description = "CircuitPython bus device classes to manage bus sharing."
+optional = false
+python-versions = "*"
+files = [
+    {file = "adafruit_circuitpython_busdevice-5.2.9-py3-none-any.whl", hash = "sha256:78245c551eb3795a4f3739f1adac0b08a65c9fb0f722e866de620482cbbac51f"},
+    {file = "adafruit_circuitpython_busdevice-5.2.9.tar.gz", hash = "sha256:9f9c3df385091410dac5961918e475ec88faed7ff543ad6d74208f08c2566513"},
+]
+
+[package.dependencies]
+Adafruit-Blinka = ">=7.0.0"
+adafruit-circuitpython-typing = "*"
+
+[[package]]
+name = "adafruit-circuitpython-connectionmanager"
+version = "3.1.1"
+description = "A urllib3.poolmanager/urllib3.connectionpool-like library for managing sockets and connections"
+optional = false
+python-versions = "*"
+files = [
+    {file = "adafruit_circuitpython_connectionmanager-3.1.1-py3-none-any.whl", hash = "sha256:0b6df0f18c25208b59a007f7dcde58d8b147643738a1cd9ac03f3b1ac0129540"},
+    {file = "adafruit_circuitpython_connectionmanager-3.1.1.tar.gz", hash = "sha256:652bf7ec8a12f5a8b086b4d3540d56c53dc82915a6a08b0b8e46a1b82b0ad535"},
+]
+
+[package.dependencies]
+Adafruit-Blinka = "*"
+
+[[package]]
+name = "adafruit-circuitpython-requests"
+version = "4.1.6"
+description = "A requests-like library for web interfacing"
+optional = false
+python-versions = "*"
+files = [
+    {file = "adafruit_circuitpython_requests-4.1.6-py3-none-any.whl", hash = "sha256:4a7435ecf13924c1143b3204e0695cf17c91e18010741a29088892d73feaafb6"},
+    {file = "adafruit_circuitpython_requests-4.1.6.tar.gz", hash = "sha256:faf9b8ce563763844126aefbddb2a7e4ea57e2edfeae589779df7d209c7dcd84"},
+]
+
+[package.dependencies]
+Adafruit-Blinka = "*"
+Adafruit-Circuitpython-ConnectionManager = "*"
+
+[package.extras]
+optional = ["requests"]
+
+[[package]]
+name = "adafruit-circuitpython-typing"
+version = "1.11.0"
+description = "Types needed for type annotation that are not in `typing`"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "adafruit_circuitpython_typing-1.11.0-py3-none-any.whl", hash = "sha256:8855221f5cea28c6cc698d30ea748075c4bd170c42cf213fae09c80f24d8e4d9"},
+    {file = "adafruit_circuitpython_typing-1.11.0.tar.gz", hash = "sha256:840b679aa966899496ff34ece5d7bee0c4bdec3102f41a086569c9788852324e"},
+]
+
+[package.dependencies]
+Adafruit-Blinka = "*"
+adafruit-circuitpython-busdevice = "*"
+adafruit-circuitpython-requests = "*"
+typing-extensions = ">=4.0,<5.0"
+
+[[package]]
+name = "adafruit-gpio"
+version = "1.0.3"
+description = "Library to provide a cross-platform GPIO interface on the Raspberry Pi and Beaglebone Black using the RPi.GPIO and Adafruit_BBIO libraries."
+optional = false
+python-versions = "*"
+files = [
+    {file = "Adafruit_GPIO-1.0.3.tar.gz", hash = "sha256:d6465b92c866c51ca8f3bc1e8f2ec36f5ccdb46d0fd54101c1109756d4a2dcd0"},
+]
+
+[package.dependencies]
+adafruit-pureio = "*"
+spidev = "*"
+
+[[package]]
+name = "adafruit-platformdetect"
+version = "3.73.0"
+description = "Platform detection for use by libraries like Adafruit-Blinka."
+optional = false
+python-versions = "*"
+files = [
+    {file = "Adafruit_PlatformDetect-3.73.0-py3-none-any.whl", hash = "sha256:5fc80192a154c29dc1e2819e9c435ea7f8af8fe01c328f35e4bfdabb9934a425"},
+    {file = "adafruit_platformdetect-3.73.0.tar.gz", hash = "sha256:2309098adc8ff87b3d9a4a5d3aeebe3f7b7f55ab0e13d19eb75ffa865f36fab8"},
+]
+
+[[package]]
+name = "adafruit-pureio"
+version = "1.1.11"
+description = "Pure python (i.e. no native extensions) access to Linux IO    including I2C and SPI. Drop in replacement for smbus and spidev modules."
+optional = false
+python-versions = ">=3.5.0"
+files = [
+    {file = "Adafruit_PureIO-1.1.11-py3-none-any.whl", hash = "sha256:281ab2099372cc0decc26326918996cbf21b8eed694ec4764d51eefa029d324e"},
+    {file = "Adafruit_PureIO-1.1.11.tar.gz", hash = "sha256:c4cfbb365731942d1f1092a116f47dfdae0aef18c5b27f1072b5824ad5ea8c7c"},
+]
+
+[[package]]
 name = "alabaster"
 version = "0.7.16"
 description = "A light, configurable Sphinx theme"
@@ -103,6 +237,20 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
+name = "binho-host-adapter"
+version = "0.1.6"
+description = "Python Libraries for Binho Multi-Protocol USB Host Adapters"
+optional = false
+python-versions = "*"
+files = [
+    {file = "binho-host-adapter-0.1.6.tar.gz", hash = "sha256:1e6da7a84e208c13b5f489066f05774bff1d593d0f5bf1ca149c2b8e83eae856"},
+    {file = "binho_host_adapter-0.1.6-py3-none-any.whl", hash = "sha256:f71ca176c1e2fc1a5dce128beb286da217555c6c7c805f2ed282a6f3507ec277"},
+]
+
+[package.dependencies]
+pyserial = "*"
+
+[[package]]
 name = "black"
 version = "24.8.0"
 description = "The uncompromising code formatter."
@@ -147,6 +295,17 @@ colorama = ["colorama (>=0.4.3)"]
 d = ["aiohttp (>=3.7.4)", "aiohttp (>=3.7.4,!=3.9.0)"]
 jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
+
+[[package]]
+name = "board"
+version = "1.0"
+description = "Standard Board mechanism for Dojo tasks"
+optional = false
+python-versions = "*"
+files = [
+    {file = "board-1.0-py2.py3-none-any.whl", hash = "sha256:b97c986d0190a2a5181a7fe28959cd8515520b87f672796e21e1b0d32cc63e2f"},
+    {file = "board-1.0.tar.gz", hash = "sha256:cd718c3322a126d86455e24ae0cebb59a567cbdbaf03696391dccf88c8f456d6"},
+]
 
 [[package]]
 name = "boto3"
@@ -1838,6 +1997,21 @@ files = [
 ]
 
 [[package]]
+name = "pyftdi"
+version = "0.55.4"
+description = "FTDI device driver (pure Python)"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyftdi-0.55.4-py3-none-any.whl", hash = "sha256:64a804ea1c652e6935897df7867dbba18910848cad0a4927ccdb06813c072c85"},
+    {file = "pyftdi-0.55.4.tar.gz", hash = "sha256:cb2770b606507024a65e0a520bf892f239a36cec25cab45338ce3e3027de53c8"},
+]
+
+[package.dependencies]
+pyserial = ">=3.0"
+pyusb = ">=1.0.0,<1.2.0 || >1.2.0"
+
+[[package]]
 name = "pygments"
 version = "2.18.0"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -2087,6 +2261,17 @@ files = [
 
 [package.dependencies]
 tokenize-rt = "<5"
+
+[[package]]
+name = "pyusb"
+version = "1.2.1"
+description = "Python USB access module"
+optional = false
+python-versions = ">=3.6.0"
+files = [
+    {file = "pyusb-1.2.1-py3-none-any.whl", hash = "sha256:2b4c7cb86dbadf044dfb9d3a4ff69fd217013dbe78a792177a3feb172449ea36"},
+    {file = "pyusb-1.2.1.tar.gz", hash = "sha256:a4cc7404a203144754164b8b40994e2849fde1cfff06b08492f12fff9d9de7b9"},
+]
 
 [[package]]
 name = "pywin32"
@@ -2602,6 +2787,17 @@ standalone = ["Sphinx (>=5)"]
 test = ["pytest"]
 
 [[package]]
+name = "spidev"
+version = "3.6"
+description = "Python bindings for Linux SPI access through spidev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "spidev-3.6-cp39-cp39-linux_armv7l.whl", hash = "sha256:280abc00a1ef7780ef62c3f294f52a2527b6c47d8c269fea98664970bcaf6da5"},
+    {file = "spidev-3.6.tar.gz", hash = "sha256:14dbc37594a4aaef85403ab617985d3c3ef464d62bc9b769ef552db53701115b"},
+]
+
+[[package]]
 name = "stevedore"
 version = "5.3.0"
 description = "Manage dynamic plugins for Python applications"
@@ -2614,6 +2810,20 @@ files = [
 
 [package.dependencies]
 pbr = ">=2.0.0"
+
+[[package]]
+name = "sysv-ipc"
+version = "1.1.0"
+description = "System V IPC primitives (semaphores, shared memory and message queues) for Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "sysv_ipc-1.1.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:ff6e3c98d8aa3e1ae5378d86869c4699c76f94318705d08085c97fb010770a31"},
+    {file = "sysv_ipc-1.1.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:30611dccecd8fa0dc9f83d4d465e5047692df0ec9a095abef8b90ccc64afbdaf"},
+    {file = "sysv_ipc-1.1.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:4bbbe4e5ad5ab859e6d21fc8ff3e3b01082b959fa5c2cd76289dbcd56350c5f9"},
+    {file = "sysv_ipc-1.1.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:61190b934b0277f7a189092dcabceee8d9736fd73de90fd9b50ea69f0bac4723"},
+    {file = "sysv_ipc-1.1.0.tar.gz", hash = "sha256:0f063cbd36ec232032e425769ebc871f195a7d183b9af32f9901589ea7129ac3"},
+]
 
 [[package]]
 name = "tokenize-rt"
@@ -2855,4 +3065,4 @@ moteus = ["moteus", "moteus-pi3hat"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0.0"
-content-hash = "26e602b6a11505d13fb4b7604db6f6c6d73e2a2646f3f9fa7198caa8795a2459"
+content-hash = "d72994eb9790b53d0ca19ca48a283733d85a234908f8c399ef96606c0718b89b"
