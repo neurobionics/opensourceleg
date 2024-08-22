@@ -1,7 +1,11 @@
+import unittest
+from unittest.mock import Mock, patch
+
 import numpy as np
 import pytest
 
 from opensourceleg.actuators.base import *
+from opensourceleg.actuators.base import MOTOR_CONSTANTS
 
 DEFAULT_VALUES = [0, 1, 1000, -1000]
 
@@ -342,3 +346,222 @@ def test_requires_decorator_invalid():
         @requires(CONTROL_MODES.CURRENT, 2)
         def test_func():
             return True
+
+
+MOCK_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+    POSITION=ControlModeConfig(
+        entry_callback=lambda _: "Position entry callback",
+        exit_callback=lambda _: "Position exit callback",
+    ),
+    CURRENT=ControlModeConfig(
+        entry_callback=lambda _: "Current entry callback",
+        exit_callback=lambda _: "Current exit callback",
+    ),
+    VOLTAGE=ControlModeConfig(
+        entry_callback=lambda _: "Voltage entry callback",
+        exit_callback=lambda _: "Voltage exit callback",
+    ),
+    IMPEDANCE=ControlModeConfig(
+        entry_callback=lambda _: "Impedance entry callback",
+        exit_callback=lambda _: "Impedance exit callback",
+    ),
+    VELOCITY=ControlModeConfig(
+        entry_callback=lambda _: "Velocity entry callback",
+        exit_callback=lambda _: "Velocity exit callback",
+    ),
+    TORQUE=ControlModeConfig(
+        entry_callback=lambda _: "Torque entry callback",
+        exit_callback=lambda _: "Torque exit callback",
+    ),
+    IDLE=ControlModeConfig(
+        entry_callback=lambda _: "Idle entry callback",
+        exit_callback=lambda _: "Idle exit callback",
+    ),
+)
+
+
+class MockActuator(ActuatorBase):
+    @property
+    def _CONTROL_MODE_CONFIGS(self):
+        return MOCK_CONTROL_MODE_CONFIGS
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def update(self):
+        pass
+
+    def set_motor_voltage(self, value):
+        pass
+
+    def set_motor_current(self, value):
+        pass
+
+    def set_motor_position(self, value):
+        pass
+
+    def set_motor_torque(self, value):
+        pass
+
+    def set_joint_torque(self, value):
+        pass
+
+    def set_current_gains(self, kp, ki, kd, ff):
+        pass
+
+    def set_position_gains(self, kp, ki, kd, ff):
+        pass
+
+    def set_impedance_gains(self, kp, ki, kd, k, b, ff):
+        pass
+
+    def home(self):
+        pass
+
+    @property
+    def motor_position(self):
+        return 0.0
+
+    @property
+    def motor_velocity(self):
+        return 0.0
+
+    @property
+    def motor_voltage(self):
+        return 0.0
+
+    @property
+    def motor_current(self):
+        return 0.0
+
+    @property
+    def motor_torque(self):
+        return 0.0
+
+    @property
+    def case_temperature(self):
+        return 0.0
+
+    @property
+    def winding_temperature(self):
+        return 0.0
+
+
+@pytest.fixture
+def mock_actuator():
+    return MockActuator(
+        "test_actuator",
+        10.0,
+        MOTOR_CONSTANTS(
+            MOTOR_COUNT_PER_REV=1000,
+            NM_PER_AMP=0.1,
+            NM_PER_RAD_TO_K=1.0,
+            NM_S_PER_RAD_TO_B=0.1,
+            MAX_CASE_TEMPERATURE=100.0,
+            MAX_WINDING_TEMPERATURE=150.0,
+        ),
+    )
+
+
+def test_actuator_initialization(mock_actuator: MockActuator):
+    assert mock_actuator.tag == "test_actuator"
+    assert mock_actuator.gear_ratio == 10.0
+    assert mock_actuator.mode == CONTROL_MODES.IDLE
+    assert not mock_actuator.is_homed
+    assert not mock_actuator.is_offline
+    assert mock_actuator.frequency == 1000
+
+
+def test_set_control_mode(mock_actuator: MockActuator):
+    mock_actuator.set_control_mode(CONTROL_MODES.VOLTAGE)
+    assert mock_actuator.mode == CONTROL_MODES.VOLTAGE
+
+
+def test_set_and_get_positions(mock_actuator: MockActuator):
+    mock_actuator.set_motor_zero_position(1.0)
+    assert mock_actuator.motor_zero_position == 1.0
+
+    mock_actuator.set_motor_position_offset(2.0)
+    assert mock_actuator.motor_position_offset == 2.0
+
+    mock_actuator.set_joint_zero_position(3.0)
+    assert mock_actuator.joint_zero_position == 3.0
+
+    mock_actuator.set_joint_position_offset(4.0)
+    assert mock_actuator.joint_position_offset == 4.0
+
+
+def test_set_joint_direction(mock_actuator: MockActuator):
+    mock_actuator.set_joint_direction(1)
+    assert mock_actuator.joint_direction == 1
+
+    mock_actuator.set_joint_direction(-1)
+    assert mock_actuator.joint_direction == -1
+
+
+def test_output_position_and_velocity(mock_actuator: MockActuator):
+    with patch.object(
+        MockActuator, "motor_position", new_callable=Mock(return_value=10.0)
+    ):
+        assert mock_actuator.output_position == 1.0  # 10.0 / 10.0 (gear_ratio)
+
+    with patch.object(
+        MockActuator, "motor_velocity", new_callable=Mock(return_value=5.0)
+    ):
+        assert mock_actuator.output_velocity == 0.5  # 5.0 / 10.0 (gear_ratio)
+
+
+def test_temperature_limits(mock_actuator: MockActuator):
+    assert mock_actuator.max_case_temperature == 100.0
+    assert mock_actuator.max_winding_temperature == 150.0
+
+
+def test_method_restriction(mock_actuator: MockActuator):
+    mock_actuator.set_control_mode(CONTROL_MODES.IDLE)
+    assert (
+        mock_actuator.set_motor_voltage(5.0) is None
+    )  # Should be restricted in IDLE mode
+
+    mock_actuator.set_control_mode(CONTROL_MODES.VOLTAGE)
+    with patch.object(mock_actuator, "set_motor_voltage") as mock_method:
+        mock_actuator.set_motor_voltage(5.0)
+        mock_method.assert_called_once_with(5.0)
+
+
+# def test_context_manager():
+#     with (
+#         patch("opensourceleg.actuators.base.ActuatorBase.start") as mock_start,
+#         patch("opensourceleg.actuators.base.ActuatorBase.stop") as mock_stop,
+#     ):
+#         with MockActuator("test", 1.0, MOTOR_CONSTANTS(1, 1, 1, 1, 1, 1)):
+#             pass
+
+#         mock_start.assert_called_once()
+#         mock_stop.assert_called_once()
+
+
+def test_set_output_position(mock_actuator: MockActuator):
+    mock_actuator.set_control_mode(CONTROL_MODES.POSITION)
+    with patch.object(mock_actuator, "set_motor_position") as mock_set_motor_position:
+        mock_actuator.set_output_position(1.0)
+        mock_set_motor_position.assert_called_once_with(value=10.0)  # 1.0 * gear_ratio
+
+
+def test_motor_constants(mock_actuator: MockActuator):
+    assert mock_actuator.MOTOR_CONSTANTS.MOTOR_COUNT_PER_REV == 1000
+    assert mock_actuator.MOTOR_CONSTANTS.NM_PER_AMP == 0.1
+    assert mock_actuator.MOTOR_CONSTANTS.NM_PER_RAD_TO_K == 1.0
+    assert mock_actuator.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B == 0.1
+    assert mock_actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE == 100.0
+    assert mock_actuator.MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE == 150.0
+
+
+def test_motor_constants_properties(mock_actuator: MockActuator):
+    assert (
+        pytest.approx(mock_actuator.MOTOR_CONSTANTS.RAD_PER_COUNT, 0.00001)
+        == 2 * 3.14159 / 1000
+    )
+    assert mock_actuator.MOTOR_CONSTANTS.NM_PER_MILLIAMP == 0.0001

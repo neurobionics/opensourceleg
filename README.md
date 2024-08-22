@@ -11,7 +11,7 @@
 [![Security: bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/neurobionics/opensourceleg/blob/main/.pre-commit-config.yaml)
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
-![Coverage Report](https://github.com/neurobionics/opensourceleg/blob/6112694880e01a02307a81c44d49a74b58183b25/assets/images/coverage.svg)
+![Coverage Report](assets/images/coverage.svg)
 
 An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
 
