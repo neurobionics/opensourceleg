@@ -145,15 +145,16 @@ def test_control_gains_init_invalid(default_value):
     with pytest.raises(TypeError):
         control_gains = ControlGains(kt=default_value)
 
-    with pytest.raises(TypeError):
-        control_gains = ControlGains(
-            default_value,
-            default_value,
-            default_value,
-            default_value,
-            default_value,
-            default_value,
-        )
+    # Python3.9 does not support @dataclass(kw_only=True)
+    # with pytest.raises(TypeError):
+    #     control_gains = ControlGains(
+    #         default_value,
+    #         default_value,
+    #         default_value,
+    #         default_value,
+    #         default_value,
+    #         default_value,
+    #     )
 
 
 def test_control_gains_len():
@@ -185,11 +186,12 @@ def test_control_mode_config_init_invalid():
             has_gains=True,
         )
 
-    with pytest.raises(TypeError):
-        control_mode_config = ControlModeConfig(
-            lambda x: x,
-            lambda x: x**2,
-        )
+    # Python3.9 does not support @dataclass(kw_only=True)
+    # with pytest.raises(TypeError):
+    #     control_mode_config = ControlModeConfig(
+    #         lambda x: x,
+    #         lambda x: x**2,
+    #     )
 
 
 def test_control_mode_config_init():

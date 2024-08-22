@@ -55,7 +55,7 @@ class CONTROL_MODES(Enum):
     IDLE = 6
 
 
-@dataclass(kw_only=True)  # type: ignore
+@dataclass
 class ControlGains:
     kp: float = 0
     ki: float = 0
@@ -65,7 +65,7 @@ class ControlGains:
     ff: float = 0
 
 
-@dataclass(kw_only=True)  # type: ignore
+@dataclass
 class ControlModeConfig:
     entry_callback: Callable[[Any], None]
     exit_callback: Callable[[Any], None]
