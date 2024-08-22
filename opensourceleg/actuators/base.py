@@ -55,7 +55,7 @@ class CONTROL_MODES(Enum):
     IDLE = 6
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True)  # type: ignore
 class ControlGains:
     kp: float = 0
     ki: float = 0
@@ -65,7 +65,7 @@ class ControlGains:
     ff: float = 0
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True)  # type: ignore
 class ControlModeConfig:
     entry_callback: Callable[[Any], None]
     exit_callback: Callable[[Any], None]
@@ -95,7 +95,7 @@ CONTROL_MODE_METHODS: list[str] = [
     "set_position_gains",
     "set_current_gains",
     "set_motor_impedance",
-    "set_joint_impedance",
+    "set_output_impedance",
     "set_impedance_gains",
 ]
 

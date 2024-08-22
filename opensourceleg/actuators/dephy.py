@@ -113,10 +113,10 @@ class DephyActuator(ActuatorBase, Device):
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
         frequency: int = 500,
-        debug_level: int = 0,
+        debug_level: int = 4,
         dephy_log: bool = False,
         offline: bool = False,
-        stop_motor_on_disconnect: bool = False,
+        stop_motor_on_disconnect: bool = True,
     ) -> None:
         ActuatorBase.__init__(
             self,
@@ -127,6 +127,9 @@ class DephyActuator(ActuatorBase, Device):
             offline=offline,
         )
 
+        self._debug_level: int = debug_level if dephy_log else 6
+        self._dephy_log: bool = dephy_log
+
         if self.is_offline:
             self.port = port
         else:
@@ -135,11 +138,10 @@ class DephyActuator(ActuatorBase, Device):
                 firmwareVersion=firmware_version,
                 port=port,
                 baudRate=baud_rate,
+                logLevel=self._debug_level,
+                debug=self._dephy_log,
                 stopMotorOnDisconnect=stop_motor_on_disconnect,
             )
-
-        self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
@@ -172,6 +174,7 @@ class DephyActuator(ActuatorBase, Device):
         self.start_streaming(self._frequency)
         self._data = self.read()
 
+        # TODO: Verify if we need this sleep here
         time.sleep(0.1)
         # self._get_control_mode_config(self._mode).entry_callback(self)
 
@@ -210,7 +213,10 @@ class DephyActuator(ActuatorBase, Device):
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
-            raise RuntimeError("Actpack Thermal Limit Tripped")
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
+            )
+            raise ThermalLimitException("Internal thermal limit tripped.")
 
     def home(
         self,
@@ -526,7 +532,7 @@ class DephyActuator(ActuatorBase, Device):
             ff=ff,
         )
 
-    def set_joint_impedance(
+    def set_output_impedance(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
@@ -960,7 +966,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
         frequency: int = 500,
-        debug_level: int = 0,
+        debug_level: int = 4,
         dephy_log: bool = False,
         offline: bool = False,
     ) -> None:
@@ -980,7 +986,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         else:
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
-        self._debug_level: int = debug_level
+        self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
 
         self._thermal_model: ThermalModel = ThermalModel(
@@ -1340,7 +1346,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
             ff=int(ff),
         )
 
-    def set_joint_impedance(
+    def set_output_impedance(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: float = DEFAULT_IMPEDANCE_GAINS.ki,

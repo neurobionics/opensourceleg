@@ -1,9 +1,8 @@
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union
+from typing import Union
 
 from opensourceleg.actuators.base import ActuatorBase
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging import LOGGER
-from opensourceleg.logging.exceptions import ActuatorKeyException
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import IMUBase, LoadcellBase, SensorBase
 
@@ -56,22 +55,22 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
             exit(1)
 
     @property
-    def imu(self) -> Union[TSensor, IMUBase]:
+    def joint_encoder_knee(self) -> Union[TSensor, SensorBase]:
         try:
-            return self.sensors["imu"]
+            return self.sensors["joint_encoder_knee"]
         except KeyError:
             LOGGER.error(
-                "IMU sensor not found. Please check for `imu` key in the sensors dictionary."
+                "Knee joint encoder sensor not found. Please check for `joint_encoder_knee` key in the sensors dictionary."
             )
             exit(1)
 
     @property
-    def joint_encoder(self) -> Union[TSensor, SensorBase]:
+    def joint_encoder_ankle(self) -> Union[TSensor, SensorBase]:
         try:
-            return self.sensors["joint_encoder"]
+            return self.sensors["joint_encoder_ankle"]
         except KeyError:
             LOGGER.error(
-                "Joint encoder sensor not found. Please check for `joint_encoder` key in the sensors dictionary."
+                "Ankle joint encoder sensor not found. Please check for `joint_encoder_ankle` key in the sensors dictionary."
             )
             exit(1)
 
@@ -80,7 +79,7 @@ if __name__ == "__main__":
     osl = OpenSourceLeg[DephyActuator, SensorBase](
         tag="opensourceleg",
         actuators={
-            "hip": DephyActuator("hip", offline=True),
+            "knee": DephyActuator("knee", offline=True),
             "ankle": DephyActuator("ankle", offline=True),
         },
         sensors={},
