@@ -77,7 +77,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
 
 if __name__ == "__main__":
-    osl = OpenSourceLeg(
+    osl = OpenSourceLeg[DephyActuator, SensorBase](
         tag="opensourceleg",
         actuators={
             "knee": DephyActuator("knee", offline=True),
