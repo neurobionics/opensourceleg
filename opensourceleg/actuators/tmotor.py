@@ -9,6 +9,14 @@ from math import isfinite
 
 import can
 import numpy as np
+from TMotorCANControl.mit_can import (
+    CAN_Manager,
+    MIT_command,
+    MIT_Params,
+    TMotorManager_mit_can,
+    motor_state,
+    motorListener,
+)
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
@@ -26,7 +34,6 @@ from opensourceleg.actuators.decorators import (
 from opensourceleg.logging import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.time import SoftRealtimeLoop
-from TMotorCANControl.mit_can import MIT_Params, motor_state, MIT_command, motorListener, CAN_Manager, TMotorManager_mit_can
 
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
@@ -418,7 +425,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         else:
             return 0.0
 
-
     @property
     def motor_current(self):
         """
@@ -493,7 +499,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.kp = K
         self._command.kd = B
         self._command.velocity = 0.0
-
 
     def set_current_gains(self, kp=40, ki=400, ff=128, spoof=False):
         """
@@ -712,6 +717,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 self.is_open = False
         self._canman.notifier.remove_listener(Listener)
         return success
+
 
 if __name__ == "__main__":
     with TMotorMITCANActuator(motor_type="AK80-9", motor_ID=41) as dev:
