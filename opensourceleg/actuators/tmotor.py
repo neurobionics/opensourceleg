@@ -550,16 +550,16 @@ LOG_VARIABLES = [
     "output_torque"
 ]
 
-# possible states for the controller
-class _TMotorManState(Enum):
-    """
-    An Enum to keep track of different control states
-    """
-    IDLE = 0
-    IMPEDANCE = 1
-    CURRENT = 2
-    FULL_STATE = 3
-    SPEED = 4
+# # possible states for the controller
+# class _TMotorManState(Enum):
+#     """
+#     An Enum to keep track of different control states
+#     """
+#     IDLE = 0
+#     IMPEDANCE = 1
+#     CURRENT = 2
+#     FULL_STATE = 3
+#     SPEED = 4
 
 def _tmotor_impedance_mode_exit(tmotor_actuator: "TMotorMITCANActuator") -> None:
     tmotor_actuator.stop_motor()
@@ -714,13 +714,14 @@ class TMotorMITCANActuator(ActuatorBase):
         self.power_on()
         self._send_command()
         self._entered = True
+        self.is_streaming = True
         if not self.check_can_connection():
             raise RuntimeError("Device not connected: " + str(self.device_info_string()))
         return self
 
     @check_actuator_stream
     @check_actuator_open
-    def stop(self, etype, value, tb):
+    def stop(self):
         """
         Used to safely power the motor off and close the log file (if specified).
         """
@@ -730,8 +731,8 @@ class TMotorMITCANActuator(ActuatorBase):
         # if self.csv_file_name is not None:
         #     self.csv_file.__exit__(etype, value, tb)
 
-        if not (etype is None):
-            traceback.print_exception(etype, value, tb)
+        # if not (etype is None):
+        #     traceback.print_exception(etype, value, tb)
 
     def TMotor_current_to_qaxis_current(self, iTM):
         """
@@ -787,7 +788,7 @@ class TMotorMITCANActuator(ActuatorBase):
         if not self._entered:
             raise RuntimeError("Tried to update motor state before safely powering on for device: " + self.device_info_string())
 
-        if self.get_temperature_celsius() > self.max_temp:
+        if self.case_temperature > self.max_temp:
             raise RuntimeError("Temperature greater than {}C for device: {}".format(self.max_temp, self.device_info_string()))
 
         # check that the motor data is recent
@@ -1069,7 +1070,7 @@ class TMotorMITCANActuator(ActuatorBase):
         pass
 
     # used for either impedance or MIT mode to set output angle
-    def set_output_angle(self, value):
+    def set_output_position(self, value):
         """
         Used for either impedance or full state feedback mode to set output angle command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -1139,7 +1140,7 @@ class TMotorMITCANActuator(ActuatorBase):
         Args:
             torque: The desired motor-side torque in Nm.
         """
-        self.set_output_torque_newton_meters(value*MIT_Params[self.type]["Kt_actual"])
+        self.set_output_torque(value*MIT_Params[self.type]["Kt_actual"])
 
     def set_motor_position(self, value):
         """
@@ -1148,7 +1149,7 @@ class TMotorMITCANActuator(ActuatorBase):
         Args:
             pos: The desired motor-side position in rad.
         """
-        self.set_output_angle_radians(value/(MIT_Params[self.type]["GEAR_RATIO"]) )
+        self.set_output_position(value/(MIT_Params[self.type]["GEAR_RATIO"]) )
 
     def set_motor_velocity(self, value):
         """
@@ -1157,7 +1158,7 @@ class TMotorMITCANActuator(ActuatorBase):
         Args:
             vel: The desired motor-side velocity in rad/s.
         """
-        self.set_output_velocity_radians_per_second(value/(MIT_Params[self.type]["GEAR_RATIO"]) )
+        self.set_output_velocity(value/(MIT_Params[self.type]["GEAR_RATIO"]) )
 
     def set_motor_voltage(self, value):
         # Not implemented
@@ -1201,12 +1202,12 @@ class TMotorMITCANActuator(ActuatorBase):
         Returns:
             The most recently updated motor-side torque in Nm.
         """
-        return self.get_output_torque_newton_meters()*MIT_Params[self.type]["GEAR_RATIO"]
+        return self.output_torque*MIT_Params[self.type]["GEAR_RATIO"]
 
     # Pretty stuff
     def __str__(self):
         """Prints the motor's device info and current"""
-        return self.device_info_string() + " | Position: " + '{: 1f}'.format(round(self.output_angle,3)) + " rad | Velocity: " + '{: 1f}'.format(round(self.output_velocity,3)) + " rad/s | current: " + '{: 1f}'.format(round(self.motor_current,3)) + " A | torque: " + '{: 1f}'.format(round(self.get_output_torque_newton_meters(),3)) + " Nm"
+        return self.device_info_string() + " | Position: " + '{: 1f}'.format(round(self.output_angle,3)) + " rad | Velocity: " + '{: 1f}'.format(round(self.output_velocity,3)) + " rad/s | current: " + '{: 1f}'.format(round(self.motor_current,3)) + " A | torque: " + '{: 1f}'.format(round(self.output_torque,3)) + " Nm"
 
     def device_info_string(self):
         """Prints the motor's ID and device type."""
@@ -1250,7 +1251,7 @@ class TMotorMITCANActuator(ActuatorBase):
     """Q-axis current in amps"""
 
     # output-side variables
-    position = property(output_position, set_output_angle, doc="output_angle_radians_impedance_only")
+    position = property(output_position, set_output_position, doc="output_angle_radians_impedance_only")
     """Output angle in rad"""
 
     velocity = property (output_velocity, set_output_velocity, doc="output_velocity_radians_per_second")
@@ -1280,6 +1281,7 @@ if __name__ == "__main__":
     with TMotorMITCANActuator(motor_type='AK80-9', motor_ID=41) as dev:
         dev.set_zero_position() # has a delay!
         time.sleep(1.5)
+        dev.set_control_mode(CONTROL_MODES.IMPEDANCE)
         dev.set_impedance_gains(K=10,B=0.5)
 
         print("Starting position step demo. Press ctrl+C to quit.")
@@ -1290,11 +1292,8 @@ if __name__ == "__main__":
             if t < 1.0:
                 dev.set_motor_position(0.0)
             else:
-                dev.set_motor_position(5.0)
+                dev.set_motor_position(10)
 
-            print("Actual: ", round(dev.get_output_angle_radians(), 3), "Desired: ", dev._command.position)
+            print("Actual: ", round(dev.output_position, 3), "Desired: ", dev._command.position)
 
         del loop
-
-
-
