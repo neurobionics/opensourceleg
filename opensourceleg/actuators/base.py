@@ -22,6 +22,8 @@ import numpy as np
 
 from opensourceleg.logging.logger import LOGGER
 
+# TODO: Add validators for every custom data type
+
 
 @dataclass
 class MOTOR_CONSTANTS:
@@ -57,6 +59,7 @@ class CONTROL_MODES(Enum):
     IDLE = 6
 
 
+# TODO: This can be ordered and requires validation
 @dataclass
 class ControlGains:
     kp: float = 0
