@@ -120,12 +120,8 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         )
         TMotorManager_mit_can.__init__(
             self,
-            tag=tag,
             motor_type=motor_type,
             motor_ID=motor_ID,
-            gear_ratio=gear_ratio,
-            frequency=frequency,
-            offline=offline,
             max_mosfett_temp=max_mosfett_temp,
         )
         self.type = motor_type
@@ -689,6 +685,33 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             + " Nm"
         )
 
+    # Checks the motor connection by sending a 10 commands and making sure the motor responds.
+    def check_can_connection(self):
+        """
+        Checks the motor's connection by attempting to send 10 startup messages.
+        If it gets 10 replies, then the connection is confirmed.
+
+        Returns:
+            True if a connection is established and False otherwise.
+        """
+        if not self._entered:
+            raise RuntimeError(
+                "Tried to check_can_connection before entering motor control! Enter control using the __enter__ method, or instantiating the TMotorManager in a with block."
+            )
+        Listener = can.BufferedReader()
+        self._canman.notifier.add_listener(Listener)
+        for i in range(10):
+            self.power_on()
+            time.sleep(0.001)
+        success = True
+        self.is_open = True
+        time.sleep(0.1)
+        for i in range(10):
+            if Listener.get_message(timeout=0.1) is None:
+                success = False
+                self.is_open = False
+        self._canman.notifier.remove_listener(Listener)
+        return success
 
 if __name__ == "__main__":
     with TMotorMITCANActuator(motor_type="AK80-9", motor_ID=41) as dev:
