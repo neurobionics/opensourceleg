@@ -1,10 +1,5 @@
-import csv
-import os
 import time
-import traceback
 import warnings
-from collections import namedtuple
-from enum import Enum
 from math import isfinite
 
 import can
@@ -15,7 +10,6 @@ from TMotorCANControl.mit_can import (
     MIT_Params,
     TMotorManager_mit_can,
     motor_state,
-    motorListener,
 )
 
 from opensourceleg.actuators.base import (
