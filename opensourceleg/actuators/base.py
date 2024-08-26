@@ -22,22 +22,26 @@ import numpy as np
 
 from opensourceleg.logging.logger import LOGGER
 
+# TODO: Add validators for every custom data type
 
-class MOTOR_CONSTANTS(NamedTuple):
-    # TODO: Add thermal constants
+
+@dataclass
+class MOTOR_CONSTANTS:
     MOTOR_COUNT_PER_REV: float
     NM_PER_AMP: float
     NM_PER_RAD_TO_K: float
     NM_S_PER_RAD_TO_B: float
-
     MAX_CASE_TEMPERATURE: float
     MAX_WINDING_TEMPERATURE: float
 
+    def __post_init__(self):
+        if any(x <= 0 for x in self.__dict__.values()):
+            raise ValueError(
+                "All values in MOTOR_CONSTANTS must be non-zero and positive."
+            )
+
     @property
     def RAD_PER_COUNT(self) -> float:
-        if self.MOTOR_COUNT_PER_REV == 0:
-            return 0
-
         return 2 * np.pi / self.MOTOR_COUNT_PER_REV
 
     @property
@@ -55,6 +59,7 @@ class CONTROL_MODES(Enum):
     IDLE = 6
 
 
+# TODO: This can be ordered and requires validation
 @dataclass
 class ControlGains:
     kp: float = 0

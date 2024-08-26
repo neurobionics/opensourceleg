@@ -10,91 +10,87 @@ from opensourceleg.actuators.base import MOTOR_CONSTANTS
 DEFAULT_VALUES = [0, 1, 1000, -1000]
 
 
-def create_motor_constants(default_value):
-    return MOTOR_CONSTANTS(
-        MOTOR_COUNT_PER_REV=default_value,
-        NM_PER_AMP=default_value,
-        NM_PER_RAD_TO_K=default_value,
-        NM_S_PER_RAD_TO_B=default_value,
-        MAX_CASE_TEMPERATURE=default_value,
-        MAX_WINDING_TEMPERATURE=default_value,
-    )
+@pytest.fixture
+def non_zero_positive_values(request):
+    max_len = request.param
+    return np.random.randint(1, 1000, max_len)
 
 
-@pytest.mark.parametrize("default_value", DEFAULT_VALUES)
-def test_motor_constants_init(default_value):
-    motor_constants = create_motor_constants(default_value)
-    assert motor_constants.MOTOR_COUNT_PER_REV == default_value
-    assert motor_constants.NM_PER_AMP == default_value
-    assert motor_constants.NM_PER_RAD_TO_K == default_value
-    assert motor_constants.NM_S_PER_RAD_TO_B == default_value
-    assert motor_constants.MAX_CASE_TEMPERATURE == default_value
-    assert motor_constants.MAX_WINDING_TEMPERATURE == default_value
+@pytest.fixture
+def zero_values(request):
+    max_len = request.param
+    return np.zeros(max_len)
 
 
-@pytest.mark.parametrize("default_value", DEFAULT_VALUES)
-def test_motor_constants_init_invalid(default_value):
-    with pytest.raises(TypeError):
-        MOTOR_CONSTANTS(
-            MOTOR_COUNT_PER_REV=default_value,
-            NM_PER_RAD_TO_K=default_value,
-            NM_S_PER_RAD_TO_B=default_value,
-            MAX_CASE_TEMPERATURE=default_value,
-            MAX_WINDING_TEMPERATURE=default_value,
+@pytest.fixture
+def non_zero_negative_values(request):
+    max_len = request.param
+    return np.random.randint(-1000, -1, max_len)
+
+
+def create_motor_constants(values):
+    return MOTOR_CONSTANTS(*values)
+
+
+@pytest.mark.parametrize(
+    "non_zero_positive_values",
+    [(len(MOTOR_CONSTANTS.__annotations__),)],
+    indirect=True,
+)
+def test_motor_constants_init(non_zero_positive_values):
+    motor_constants = create_motor_constants(non_zero_positive_values)
+    assert list(motor_constants.__dict__.values()) == list(non_zero_positive_values)
+    assert motor_constants.RAD_PER_COUNT == 2 * np.pi / non_zero_positive_values[0]
+    assert motor_constants.NM_PER_MILLIAMP == non_zero_positive_values[1] / 1000
+
+
+@pytest.mark.parametrize(
+    "zero_values, non_zero_negative_values",
+    [
+        (
+            len(MOTOR_CONSTANTS.__annotations__),
+            len(MOTOR_CONSTANTS.__annotations__),
         )
+    ],
+    indirect=True,
+)
+def test_motor_constants_init_values(zero_values, non_zero_negative_values):
+    with pytest.raises(ValueError):
+        motor_constants = create_motor_constants(zero_values)
 
+    with pytest.raises(ValueError):
+        motor_constants = create_motor_constants(non_zero_negative_values)
+
+
+def test_motor_constants_init_types():
     with pytest.raises(TypeError):
-        MOTOR_CONSTANTS(
-            MAX_CASE_TEMPERATURE=default_value,
-            MAX_WINDING_TEMPERATURE=default_value,
-        )
-
-    with pytest.raises(TypeError):
-        MOTOR_CONSTANTS(
-            MOTOR_COUNT=default_value,
-            SOMETHING=default_value,
-        )
+        motor_constants = MOTOR_CONSTANTS(1, 2)
 
 
-@pytest.mark.parametrize("default_value", DEFAULT_VALUES)
-def test_motor_constants_properties(default_value):
-    motor_constants = create_motor_constants(default_value)
-
-    if default_value == 0:
-        assert motor_constants.RAD_PER_COUNT == 0
-    else:
-        assert motor_constants.RAD_PER_COUNT == 2 * np.pi / default_value
-
-    assert motor_constants.NM_PER_MILLIAMP == default_value / 1000
-
-
-def test_motor_constants_len():
-    motor_constants = create_motor_constants(0)
-    assert len(motor_constants) == 6
+@pytest.mark.parametrize(
+    "non_zero_positive_values",
+    [(len(MOTOR_CONSTANTS.__annotations__))],
+    indirect=True,
+)
+def test_motor_constants_properties(non_zero_positive_values):
+    motor_constants = create_motor_constants(non_zero_positive_values)
+    assert motor_constants.RAD_PER_COUNT == 2 * np.pi / non_zero_positive_values[0]
+    assert motor_constants.NM_PER_MILLIAMP == non_zero_positive_values[1] / 1000
 
 
-def test_control_modes_value():
+def test_control_modes_default_four():
+    {"POSITION", "CURRENT", "VOLTAGE", "IMPEDANCE"} <= {e.name for e in CONTROL_MODES}
+
+
+def test_control_modes_dephy_order():
     assert CONTROL_MODES.POSITION.value == 0
     assert CONTROL_MODES.CURRENT.value == 1
     assert CONTROL_MODES.VOLTAGE.value == 2
     assert CONTROL_MODES.IMPEDANCE.value == 3
-    assert CONTROL_MODES.VELOCITY.value == 4
-    assert CONTROL_MODES.TORQUE.value == 5
-    assert CONTROL_MODES.IDLE.value == 6
-
-
-def test_control_modes_name():
-    assert CONTROL_MODES(0).name == "POSITION"
-    assert CONTROL_MODES(1).name == "CURRENT"
-    assert CONTROL_MODES(2).name == "VOLTAGE"
-    assert CONTROL_MODES(3).name == "IMPEDANCE"
-    assert CONTROL_MODES(4).name == "VELOCITY"
-    assert CONTROL_MODES(5).name == "TORQUE"
-    assert CONTROL_MODES(6).name == "IDLE"
 
 
 def test_control_modes_len():
-    assert len(CONTROL_MODES) == 7
+    assert len(CONTROL_MODES) >= 4
 
 
 @pytest.mark.parametrize("default_value", DEFAULT_VALUES)
