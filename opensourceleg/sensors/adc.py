@@ -148,7 +148,7 @@ class ADS131M0x(ADCBase):
     def read_register(self, address: int) -> int:
         """Read value at register located at specified address.
 
-        Arg:
+        Args:
             address: Address of the register to be read.
 
         Returns:
@@ -174,7 +174,7 @@ class ADS131M0x(ADCBase):
     def spi_comm(self, bytes: list) -> list:
         """Send SPI message to ADS131M0x.
 
-        Arg:
+        Args:
             bytes: message to be sent to the ADS131M0x separated into bytes.
 
         Returns:
