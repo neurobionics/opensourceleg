@@ -1,8 +1,6 @@
 ﻿from abc import ABC, abstractmethod
 from functools import wraps
 
-import numpy as np
-
 
 class SensorNotStreamingException(Exception):
     def __init__(self, sensor_name: str = "Sensor") -> None:
@@ -28,6 +26,10 @@ class SensorBase(ABC):
     def __repr__(self) -> str:
         return f"SensorBase"
 
+    @property
+    def data(self):
+        return self._data
+
     @abstractmethod
     def start(self) -> None:
         pass
@@ -51,6 +53,52 @@ class SensorBase(ABC):
     @abstractmethod
     def is_streaming(self) -> bool:
         pass
+
+
+class ADCBase(SensorBase, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __repr__(self) -> str:
+        return f"ADCBase"
+
+    def reset(self) -> None:
+        pass
+
+    def calibrate(self) -> None:
+        pass
+
+    @property
+    def ch0(self):
+        raise NotImplementedError
+
+    @property
+    def ch1(self):
+        raise NotImplementedError
+
+    @property
+    def ch2(self):
+        raise NotImplementedError
+
+    @property
+    def ch3(self):
+        raise NotImplementedError
+
+    @property
+    def ch4(self):
+        raise NotImplementedError
+
+    @property
+    def ch5(self):
+        raise NotImplementedError
+
+    @property
+    def ch6(self):
+        raise NotImplementedError
+
+    @property
+    def ch7(self):
+        raise NotImplementedError
 
 
 class EncoderBase(SensorBase, ABC):
@@ -79,11 +127,12 @@ class LoadcellBase(SensorBase, ABC):
         return f"LoadcellBase"
 
     @abstractmethod
-    def calibrate(self) -> None:
+    def reset(self) -> None:
         pass
 
+    @property
     @abstractmethod
-    def reset(self) -> None:
+    def adc(self) -> ADCBase:
         pass
 
     @property
@@ -114,11 +163,6 @@ class LoadcellBase(SensorBase, ABC):
     @property
     @abstractmethod
     def mz(self) -> float:
-        pass
-
-    @property
-    @abstractmethod
-    def is_calibrated(self) -> bool:
         pass
 
 
