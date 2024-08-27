@@ -1,3 +1,14 @@
+"""
+EXPERIMENTAL
+
+This script is experimental and still under development and is subject to significant changes.
+
+The goal of this script is to create a base gRPC class and eventually use gRPC services throughout the 
+library to pass messages between different components of the robot (such as sensors, actuators, .. etc).
+
+Note: This script relies on the `grpcio-tools`, `protobuf`, and `grpcio` packages, which must be installed.
+"""
+
 import importlib
 import math
 import os
