@@ -1,7 +1,8 @@
 # AFTER DONE, TEST WITH NEWLY IMAGED PI
-import spidev
 import math
 from time import sleep
+
+import spidev
 from base import ADCBase
 
 

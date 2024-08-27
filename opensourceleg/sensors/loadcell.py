@@ -6,7 +6,7 @@ from enum import Enum
 
 import numpy as np
 from adc import ADS131M0x
-from base import LoadcellBase, ADCBase
+from base import ADCBase, LoadcellBase
 
 
 class SRILoadcell(LoadcellBase):
