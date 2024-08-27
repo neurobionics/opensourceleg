@@ -378,8 +378,7 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_motor_torque(self, value: float) -> None:
         """
-        Sets the motor torque in Nm.
-
+        Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
         Args:
             value (float): The torque to set in Nm.
         """
@@ -634,6 +633,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def motor_torque(self) -> float:
+        """
+        Torque at the motor output in Nm.
+        """
         if self._data is not None:
             return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
@@ -644,6 +646,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def motor_position(self) -> float:
+        """
+        Motor position in radians.
+        """
         if self._data is not None:
             return (
                 float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -680,6 +685,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def motor_velocity(self) -> float:
+        """
+        Motor velocity in rad/s.
+        """
         if self._data is not None:
             return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
@@ -690,6 +698,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def motor_acceleration(self) -> float:
+        """
+        Motor acceleration in rad/s^2.
+        """
         if self._data is not None:
             return float(self._data["mot_acc"])
         else:
@@ -722,6 +733,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def joint_position(self) -> float:
+        """
+        Joint position in radians.
+        """
         if self._data is not None:
             return (
                 float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -736,6 +750,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def joint_velocity(self) -> float:
+        """
+        Joint velocity in rad/s.
+        """
         if self._data is not None:
             return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
         else:
@@ -754,6 +771,9 @@ class DephyActuator(ActuatorBase, Device):
 
     @property
     def case_temperature(self) -> float:
+        """
+        Case temperature of the actuator in celsius.
+        """
         if self._data is not None:
             return float(self._data["temperature"])
         else:
