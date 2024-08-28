@@ -612,35 +612,6 @@ class DephyLegacyActuator(ActuatorBase, Device):
             ff=int(ff),
         )
 
-    def set_motor_impedance(
-        self,
-        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
-        k: float = 0.08922,
-        b: float = 0.0038070,
-        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
-    ) -> None:
-        """
-        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
-
-        Args:
-            kp (float): Proportional gain. Defaults to 40.
-            ki (float): Integral gain. Defaults to 400.
-            kd (float): Derivative gain. Defaults to 0.
-            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
-            ff (float): Feedforward gain. Defaults to 128.
-        """
-        self.set_impedance_gains(
-            kp=kp,
-            ki=ki,
-            kd=kd,
-            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
-            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
-            ff=ff,
-        )
-
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map
@@ -1021,7 +992,7 @@ class DephyActuator(DephyLegacyActuator):
             port=port,
             gear_ratio=gear_ratio,
             baud_rate=baud_rate,
-            frequenct=frequency,
+            frequency=frequency,
             debug_level=debug_level,
             dephy_log=dephy_log,
             offline=offline,

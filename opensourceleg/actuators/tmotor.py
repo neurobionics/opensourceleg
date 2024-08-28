@@ -703,12 +703,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             self.power_on()
             time.sleep(0.001)
         success = True
-        self.is_open = True
+        self._is_open = True
         time.sleep(0.1)
         for i in range(10):
             if Listener.get_message(timeout=0.1) is None:
                 success = False
-                self.is_open = False
+                self._is_open = False
         self._canman.notifier.remove_listener(Listener)
         return success
 
