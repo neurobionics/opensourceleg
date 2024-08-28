@@ -96,20 +96,13 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         call __enter__, mostly commonly by using a with block, before attempting to control the motor.
 
         Args:
-            motor_type: The type of motor being controlled, ie AK80-9.
-            motor_ID: The CAN ID of the motor.
-            max_mosfett_temp: temperature of the mosfett above which to throw an error, in Celsius
-            CSV_file: A CSV file to output log info to. If None, no log will be recorded.
-            log_vars: The variables to log as a python list. The full list of possibilities is
-                - "output_angle"
-                - "output_velocity"
-                - "output_acceleration"
-                - "current"
-                - "output_torque"
-                - "motor_angle"
-                - "motor_velocity"
-                - "motor_acceleration"
-                - "motor_torque"
+            tag: A string tag to identify the motor
+            motor_type: The type of motor to control. Must be a key in MIT_Params.
+            motor_ID: The ID of the motor to control.
+            gear_ratio: The gear ratio of the motor. Default is 1.0.
+            frequency: The frequency at which to send commands to the motor. Default is 500.
+            offline: Whether to run the motor in offline mode. Default is False.
+            max_mosfett_temp: The maximum temperature of the mosfet in degrees C. Default is 50.
         """
         ActuatorBase.__init__(
             self,
@@ -527,7 +520,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         which will be sent when update() is called.
 
         Args:
-            pos: The desired output position in rads
+            value: The desired output position in rads
+
+        Raises:
+            RuntimeError: If the position command is outside the range of the motor.
         """
         # position commands must be within a certain range :/
         # pos = (np.abs(pos) % MIT_Params[self.type]["P_max"])*np.sign(pos) # this doesn't work because it will unwind itself!
@@ -550,7 +546,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         which will be sent when update() is called.
 
         Args:
-            vel: The desired output speed in rad/s
+            value: The desired output speed in rad/s
+
+        Raises:
+            RuntimeError: If the velocity command is outside the range of the motor.
         """
         if np.abs(value) >= MIT_Params[self.type]["V_max"]:
             raise RuntimeError(
@@ -572,7 +571,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         which will be sent when update() is called.
 
         Args:
-            current: the desired current in amps.
+            value: the desired current in amps.
         """
         # if self._control_state not in [_TMotorManState.CURRENT, _TMotorManState.FULL_STATE]:
         #     raise RuntimeError("Attempted to send current command before entering current mode for device " + self.device_info_string())
@@ -586,14 +585,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Otherwise it will just use the motor's torque constant.
 
         Args:
-            torque: The desired output torque in Nm.
+            value: The desired output torque in Nm.
         """
         self.set_motor_current(
-            (
-                value
-                / MIT_Params[self.type]["Kt_actual"]
-                / MIT_Params[self.type]["GEAR_RATIO"]
-            )
+            value
+            / MIT_Params[self.type]["Kt_actual"]
+            / MIT_Params[self.type]["GEAR_RATIO"]
         )
 
     # motor-side functions to account for the gear ratio
@@ -602,7 +599,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Version of set_output_torque that accounts for gear ratio to control motor-side torque
 
         Args:
-            torque: The desired motor-side torque in Nm.
+            value: The desired motor torque in Nm.
         """
         self.set_output_torque(value * MIT_Params[self.type]["Kt_actual"])
 
@@ -611,7 +608,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Wrapper for set_output_angle that accounts for gear ratio to control motor-side angle
 
         Args:
-            pos: The desired motor-side position in rad.
+            value: The desired motor position in rad.
         """
         self.set_output_position(value / (MIT_Params[self.type]["GEAR_RATIO"]))
 
@@ -620,7 +617,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Wrapper for set_output_velocity that accounts for gear ratio to control motor-side velocity
 
         Args:
-            vel: The desired motor-side velocity in rad/s.
+            value: The desired motor velocity in rad/s.
         """
         self.set_output_velocity(value / (MIT_Params[self.type]["GEAR_RATIO"]))
 
@@ -674,24 +671,27 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return (
             self.device_info_string()
             + " | Position: "
-            + "{: 1f}".format(round(self.output_angle, 3))
+            + f"{round(self.output_angle, 3): 1f}"
             + " rad | Velocity: "
-            + "{: 1f}".format(round(self.output_velocity, 3))
+            + f"{round(self.output_velocity, 3): 1f}"
             + " rad/s | current: "
-            + "{: 1f}".format(round(self.motor_current, 3))
+            + f"{round(self.motor_current, 3): 1f}"
             + " A | torque: "
-            + "{: 1f}".format(round(self.output_torque, 3))
+            + f"{round(self.output_torque, 3): 1f}"
             + " Nm"
         )
 
     # Checks the motor connection by sending a 10 commands and making sure the motor responds.
-    def check_can_connection(self):
+    def check_can_connection(self) -> bool:
         """
         Checks the motor's connection by attempting to send 10 startup messages.
         If it gets 10 replies, then the connection is confirmed.
 
         Returns:
             True if a connection is established and False otherwise.
+
+        Raises:
+            RuntimeError: If the motor control has not been entered.
         """
         if not self._entered:
             raise RuntimeError(
