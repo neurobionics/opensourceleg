@@ -77,3 +77,18 @@ class VoltageModeMissingException(Exception):
 
     def __init__(self, tag: str) -> None:
         super().__init__(f"{tag} must have a voltage mode")
+
+
+class ActuatorKeyException(Exception):
+    """Actuator Key Error
+
+    Attributes
+    ----------
+    message (str): Error message
+
+    """
+
+    def __init__(self, tag: str, key: str) -> None:
+        super().__init__(
+            f"{tag} does not have {key} key in the actuators dictionary. Please check the actuators dictionary for the `{key}` key."
+        )

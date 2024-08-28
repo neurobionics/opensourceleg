@@ -48,7 +48,7 @@ async def main():
             # current_time = time.monotonic()
             if t > TIME_TO_STEP:
                 mc1.set_motor_torque(
-                    value=0.3,
+                    value=0.27225,
                 )
                 await mc1.update()
 

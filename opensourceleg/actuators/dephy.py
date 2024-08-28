@@ -31,7 +31,7 @@ from opensourceleg.logging.decorators import (
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
 
-DEFAULT_POSITION_GAINS = ControlGains(kp=50, ki=0, kd=0, k=0, b=0, ff=0)
+DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 
 DEFAULT_CURRENT_GAINS = ControlGains(kp=40, ki=400, kd=0, k=0, b=0, ff=128)
 
@@ -135,7 +135,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
         frequency: int = 500,
-        debug_level: int = 0,
+        debug_level: int = 4,
         dephy_log: bool = False,
         offline: bool = False,
     ) -> None:
@@ -148,15 +148,14 @@ class DephyLegacyActuator(ActuatorBase, Device):
             offline=offline,
         )
 
+        self._debug_level: int = debug_level if dephy_log else 6
+        self._dephy_log: bool = dephy_log
+
         if self.is_offline:
             self.port = port
-            self.is_streaming: bool = False
-            self.is_open: bool = False
         else:
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
-        self._debug_level: int = debug_level
-        self._dephy_log: bool = dephy_log
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
@@ -188,6 +187,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
         self._data = self.read()
 
+        # TODO: Verify if we need this sleep here
         time.sleep(0.1)
         default_mode_config = self._get_control_mode_config(self._mode)
         if default_mode_config:
@@ -223,8 +223,12 @@ class DephyLegacyActuator(ActuatorBase, Device):
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
-        if self._data.status_ex & 0b00000010 == 0b00000010:
-            raise RuntimeError("Actpack Thermal Limit Tripped")
+
+        if self._data["status_ex"] & 0b00000010 == 0b00000010:
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
+            )
+            raise ThermalLimitException("Internal thermal limit tripped.")
 
     def home(
         self,
@@ -391,8 +395,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     def set_motor_torque(self, value: float) -> None:
         """
-        Sets the motor torque in Nm.
-
+        Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
         Args:
             value (float): The torque to set in Nm.
         """
@@ -517,7 +520,36 @@ class DephyLegacyActuator(ActuatorBase, Device):
             ff=int(ff),
         )
 
-    def set_joint_impedance(
+    def set_motor_impedance(
+        self,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        k: float = 0.08922,
+        b: float = 0.0038070,
+        ff: float = 128,
+    ) -> None:
+        """
+        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
+
+        Args:
+            kp (float): Proportional gain. Defaults to 40.
+            ki (float): Integral gain. Defaults to 400.
+            kd (float): Derivative gain. Defaults to 0.
+            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (float): Feedforward gain. Defaults to 128.
+        """
+        self.set_impedance_gains(
+            kp=kp,
+            ki=ki,
+            kd=kd,
+            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
+            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
+            ff=ff,
+        )
+
+    def set_output_impedance(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
@@ -648,6 +680,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def motor_torque(self) -> float:
+        """
+        Torque at the motor output in Nm.
+        """
         if self._data is not None:
             return float(self._data.mot_cur * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
@@ -658,6 +693,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def motor_position(self) -> float:
+        """
+        Motor position in radians.
+        """
         if self._data is not None:
             return (
                 float(self._data.mot_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -694,6 +732,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def motor_velocity(self) -> float:
+        """
+        Motor velocity in rad/s.
+        """
         if self._data is not None:
             return int(self._data.mot_vel) * RAD_PER_DEG
         else:
@@ -704,6 +745,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def motor_acceleration(self) -> float:
+        """
+        Motor acceleration in rad/s^2.
+        """
         if self._data is not None:
             return float(self._data.mot_acc)
         else:
@@ -736,6 +780,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def joint_position(self) -> float:
+        """
+        Joint position in radians.
+        """
         if self._data is not None:
             return (
                 float(self._data.ank_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -750,6 +797,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def joint_velocity(self) -> float:
+        """
+        Joint velocity in rad/s.
+        """
         if self._data is not None:
             return float(self._data.ank_vel * RAD_PER_DEG) * self.joint_direction
         else:
@@ -768,6 +818,9 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     @property
     def case_temperature(self) -> float:
+        """
+        Case temperature of the actuator in celsius.
+        """
         if self._data is not None:
             return float(self._data.temperature)
         else:
@@ -958,7 +1011,7 @@ class DephyActuator(DephyLegacyActuator):
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
         frequency: int = 500,
-        debug_level: int = 0,
+        debug_level: int = 4,
         dephy_log: bool = False,
         offline: bool = False,
         stop_motor_on_disconnect: bool = False,
@@ -988,7 +1041,7 @@ class DephyActuator(DephyLegacyActuator):
                 stopMotorOnDisconnect=stop_motor_on_disconnect,
             )
 
-        self._debug_level: int = debug_level
+        self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
 
         self._thermal_model: ThermalModel = ThermalModel(

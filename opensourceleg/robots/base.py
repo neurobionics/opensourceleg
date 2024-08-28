@@ -3,30 +3,23 @@ from typing import Any, Dict, Generic, TypeVar
 from abc import ABC, abstractmethod
 
 from opensourceleg.actuators.base import ActuatorBase
-from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import SensorBase
 
-T = TypeVar("T")
+TActuator = TypeVar("TActuator", bound=ActuatorBase)
+TSensor = TypeVar("TSensor", bound=SensorBase)
 
 
-class ActuatorCollection(Generic[T]):
-    def __init__(self) -> None:
-        self._map: dict[str, T] = {}
-
-
-class RobotBase(ABC):
+class RobotBase(ABC, Generic[TActuator, TSensor]):
     def __init__(
         self,
         tag: str,
-        frequency: int,
-        actuators: ActuatorCollection[DephyActuator],
-        sensors: dict[str, SensorBase],
+        actuators: dict[str, TActuator],
+        sensors: dict[str, TSensor],
     ):
         self._tag = tag
-        self._frequency = frequency
-
-        self._actuators = actuators
-        self._sensors = sensors
+        self.actuators: dict[str, TActuator] = actuators
+        self.sensors: dict[str, TSensor] = sensors
 
     def __enter__(self):
         self.start()
@@ -37,31 +30,41 @@ class RobotBase(ABC):
 
     @abstractmethod
     def start(self):
-        pass
+        for actuator in self.actuators.values():
+            LOGGER.debug(f"Calling start method of {actuator.tag}")
+            actuator.start()
+
+        for sensor in self.sensors.values():
+            LOGGER.debug(f"Calling start method of {sensor.tag}")
+            sensor.start()
 
     @abstractmethod
     def stop(self):
-        pass
+        for actuator in self.actuators.values():
+            LOGGER.debug(f"Calling stop method of {actuator.tag}")
+            actuator.stop()
+
+        for sensor in self.sensors.values():
+            LOGGER.debug(f"Calling stop method of {sensor.tag}")
+            sensor.stop()
 
     @abstractmethod
     def update(self):
-        pass
+        for actuator in self.actuators.values():
+            actuator.update()
+
+        for sensor in self.sensors.values():
+            sensor.update()
 
     @property
     def tag(self):
         return self._tag
 
-    @property
-    def frequency(self):
-        return self._frequency
-
-    @property
-    def actuators(self):
-        return self._actuators
-
-    @property
-    def sensors(self):
-        return self._sensors
+    # You can pipe values from the actuators to custom @property methods
+    # to get the values from the actuators with dot notation
+    # @property
+    # def knee(self) -> TActuator:
+    #     return self.actuators["knee"]
 
 
 if __name__ == "__main__":

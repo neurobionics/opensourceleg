@@ -91,7 +91,7 @@ def _moteus_velocity_mode_exit(moteus_actuator: "MoteusActuator") -> None:
     moteus_actuator.set_motor_velocity(0)
 
 
-DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+MOTEUS_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     POSITION=ControlModeConfig(
         entry_callback=lambda _: None,
         exit_callback=lambda _: None,
@@ -210,7 +210,7 @@ class MoteusActuator(ActuatorBase, Controller):
 
     @property
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
-        return DEPHY_CONTROL_MODE_CONFIGS
+        return MOTEUS_CONTROL_MODE_CONFIGS
 
     @check_actuator_connection
     async def start(self) -> None:

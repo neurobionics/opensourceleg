@@ -82,7 +82,7 @@ async def main():
             await asyncio.sleep(DT)
 
     finally:
-        position_data.to_csv("position_data.csv", index=False)
+        position_data.to_csv("position_data_moteus.csv", index=False)
         await mc1.stop()
 
 

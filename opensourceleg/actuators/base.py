@@ -2,6 +2,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     NamedTuple,
     Optional,
     Protocol,
@@ -9,6 +10,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    runtime_checkable,
 )
 
 from abc import ABC, abstractmethod
@@ -20,16 +22,23 @@ import numpy as np
 
 from opensourceleg.logging.logger import LOGGER
 
+# TODO: Add validators for every custom data type
 
-class MOTOR_CONSTANTS(NamedTuple):
-    # TODO: Add thermal constants
+
+@dataclass
+class MOTOR_CONSTANTS:
     MOTOR_COUNT_PER_REV: float
     NM_PER_AMP: float
     NM_PER_RAD_TO_K: float
     NM_S_PER_RAD_TO_B: float
-
     MAX_CASE_TEMPERATURE: float
     MAX_WINDING_TEMPERATURE: float
+
+    def __post_init__(self):
+        if any(x <= 0 for x in self.__dict__.values()):
+            raise ValueError(
+                "All values in MOTOR_CONSTANTS must be non-zero and positive."
+            )
 
     @property
     def RAD_PER_COUNT(self) -> float:
@@ -50,6 +59,7 @@ class CONTROL_MODES(Enum):
     IDLE = 6
 
 
+# TODO: This can be ordered and requires validation
 @dataclass
 class ControlGains:
     kp: float = 0
@@ -78,7 +88,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
     IDLE: Optional[ControlModeConfig] = None
 
 
-CONTROL_MODE_METHODS = [
+CONTROL_MODE_METHODS: list[str] = [
     "set_motor_torque",
     "set_joint_torque",
     "set_output_torque",
@@ -90,7 +100,7 @@ CONTROL_MODE_METHODS = [
     "set_position_gains",
     "set_current_gains",
     "set_motor_impedance",
-    "set_joint_impedance",
+    "set_output_impedance",
     "set_impedance_gains",
 ]
 
@@ -98,13 +108,21 @@ CONTROL_MODE_METHODS = [
 T = TypeVar("T", bound=Callable[..., Any])
 
 
+@runtime_checkable
 class MethodWithRequiredModes(Protocol):
     _required_modes: set[CONTROL_MODES]
 
 
 def requires(*modes: CONTROL_MODES):
     def decorator(func: T) -> T:
-        setattr(func, "_required_modes", set(modes))
+        if not all(isinstance(mode, CONTROL_MODES) for mode in modes):
+            raise TypeError("All arguments to 'requires' must be of type CONTROL_MODES")
+
+        if not hasattr(func, "_required_modes"):
+            setattr(func, "_required_modes", set(modes))
+        else:
+            getattr(func, "_required_modes").update(modes)
+
         return func
 
     return decorator
@@ -137,6 +155,9 @@ class ActuatorBase(ABC):
         self._joint_zero_position: float = 0.0
         self._joint_position_offset: float = 0.0
         self._joint_direction: int = 1
+
+        self._is_open: bool = False
+        self._is_streaming: bool = False
 
         self._original_methods: dict[str, MethodWithRequiredModes] = {}
 
@@ -398,6 +419,10 @@ class ActuatorBase(ABC):
     def joint_direction(self) -> int:
         return self._joint_direction
 
+    @property
+    def is_open(self) -> bool:
+        return self._is_open
 
-if __name__ == "__main__":
-    pass
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming

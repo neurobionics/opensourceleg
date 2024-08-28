@@ -4,14 +4,14 @@
 
 The actuators library supports multiple controllers for the Open-Source Leg Project, and an API as [base.py](./base.py) for quick development.
 
-The documentation mainly focus on how to develop a custom **actuator module**. Structures for the example implementations ([`dephy.py`](./dephy.py), etc) can be found in Section Reference.
+The documentation mainly focus on how to develop a custom **actuator module**. Structures for the example implementations ([`dephy.py`](./dephy.py), etc) can be found in Reference.
 
 ## Customization Guide of Actuators Module
 
 1. Import base module
 
    ```Python
-   import opensourceleg.hardware.actuators.base as base
+   import opensourceleg.actuators.base as base
    ```
 
 2. Customize the Modes of Actuators from `base.ActuatorMode`
@@ -34,10 +34,10 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
            pass
    ```
 
-   Or customizing from `class ActuatorMode` if new modes are needed:
+   Or customizing from `class ControlModeBase` if new modes are needed:
 
    ```Python
-   class TorqueMode(base.ActuatorMode)
+   class TorqueMode(base.ControlModeBase)
        def __init__(self, device: "DephyActuator") -> None:
 
            super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
@@ -48,19 +48,31 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
        pass
    ```
 
-3. Customize the actuator object from `base.Actuator`
+   Index from `class ControlModesBase` is needed if constructing the Actuator Object from `base.ActuatorBase`. For example: 
+    ```Python
+    @dataclass(init=False)
+    class ActuatorControlModes(ControlModesBase):
 
-   For example, when customizing `class VoltageMode`:
+    def __init__(self, actuator: "Actuator") -> None:
+
+        self.VOLTAGE = VoltageMode(actuator=actuator)
+        self.CURRENT = CurrentMode(actuator=actuator)
+        self.POSITION = PositionMode(actuator=actuator)
+        self.IMPEDANCE = ImpedanceMode(actuator=actuator)
+   ```
+
+3. Customize the actuator object from `base.ActuatorBase`
+
 
    ```Python
-   class Motor(base.Actuator):
+   class Motor(base.ActuatorBase):
 
        def __init__(
            self,
-           name: str = "DephyActuator",
-           port: str = "/dev/ttyACM0",
+           tag: str = "Motor1"
+           port: str = "/dev/ttM0",
            baud_rate: int = 230400,
-           frequency: int = 500,
+           frequency: int = 200,
            logger: Logger = Logger(),
            debug_level: int = 0,
            dephy_log: bool = False,
@@ -98,11 +110,11 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
            # Should implement your own steps below
            pass
 
-       def set_voltage(self, voltage_value: float):
+       def set_motor_voltage(self, voltage_value: float):
            # Should implement your own steps below
            pass
 
-       def set_current(
+       def set_motor_current(
            self,
            current_value: float,
        ):
@@ -116,86 +128,21 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
 
 ## Reference
 
-### Structure of [base.py](./base.py)
+### Structure of [base.py](./base.py) with Example Applications
 
-```mermaid
-classDiagram
-  namespace Mode_Switch{
-    class ControlModesMapping{
-        POSITION
-        VOLTAGE
-        CURRENT
-        IMPEDANCE
-    }
-    class ControlModesMeta{
+![](./images/Class%20Diagram%20Base%20Lib.svg)
 
-    }
-    class ControlModeBase{
-        self._control_mode_map: ControlModesMapping = control_mode_map
-        self._has_gains: bool = False
-        self._gains: Any = None
-        self._entry_callbacks: list[Callable[[], None]] = entry_callbacks
-        self._exit_callbacks: list[Callable[[], None]] = exit_callbacks
-        self._actuator: "ActuatorBase" = actuator
-        self._max_command: float = max_command
-        self._max_gains: ControlGains = max_gains
-        enter()
-        exit()
-        transition()
-        add_actuator()
-        set_gains()
-        set_command()
-    }
-    class ControlModesBase{
 
-    }
-  }
-  class ActuatorBase{
-        self._CONTROL_MODES: ControlModesBase = control_modes
-        self._MOTOR_CONSTANTS: MotorConstants = motor_constants
-        self._gear_ratio: float = gear_ratio
-        self._actuator_name: str = actuator_name
-        self._frequency: int = frequency
-        self._data: Any = None
-        self._mode: ControlModeBase = default_control_mode
-        self._is_offline: bool = offline
-        start()
-        stop()
-        update()
-        set_control_mode()
-
-  }
-  namespace Data{
-    class ControlGains{
-        kp
-        ki
-        kd
-        k
-        b
-        ff
-    }
-    class MotorConstants{
-        MOTOR_COUNT_PER_REV
-        NM_PER_AMP
-        IMPEDANCE_A
-        IMPEDANCE_C
-        MAX_CASE_TEMPERATURE
-        M_PER_SEC_SQUARED_ACCLSB
-    }
-  }
-
-  ActuatorBase <.. ControlModesBase: self._CONTROL_MODES
-  ActuatorBase <.. ControlGains: self._max_gains
-  ControlModesMeta ..> ControlModeBase: ControlModesBase(metaclass=ControlModesMeta)
-  ActuatorBase <.. MotorConstants: self._MOTOR_CONSTANTS
-```
-
-### [DephyActuator](./dephy.py)
-
-### [Moteus Drivers](./moteus.py)
+### [DephyActpack](./dephy.py) Support
 
 #### Known Issues
 
+- Support for DephyActpack new firmware not finished
+
+### [Moteus Controller](./moteus.py) Support
+
+#### Known Issues [Check [Issue Page](https://github.com/neurobionics/opensourceleg/issues) for Details] 
+
 - Missing Joint Properties (e.g. `homing`)
 
-- Multiple actuators sharing same cycle not supported, manual access to `MoteusInterface` Required
+- [Multiple actuators sharing same cycle not supported, manual access to `MoteusInterface` Required](https://github.com/neurobionics/opensourceleg/issues)
