@@ -156,7 +156,6 @@ class DephyLegacyActuator(ActuatorBase, Device):
         else:
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
-
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
             soft_border_C_windings=10,
