@@ -212,16 +212,23 @@ class BNO055(IMUBase):
         self._acc_x = None
         self._acc_y = None
         self._acc_z = None
+        self._is_streaming = False
 
     def __repr__(self) -> str:
         return f"BNO055_IMU"
 
     def start(self):
         i2c = busio.I2C(board.SCL, board.SDA)
-        self._adafruit_imu = adafruit_bno055.BNO055_I2C(i2c, address=self._address)
+        try:
+            self._adafruit_imu = adafruit_bno055.BNO055_I2C(i2c, address=self._address)
+        except ValueError as ve:
+            print("BNO055 IMU Not Found on i2c bus! Check wiring!")
+
         self.configure_IMU_settings()
+        self._is_streaming = True
 
     def stop(self):
+        self._is_streaming = False
         pass
 
     def update(self):
@@ -276,6 +283,10 @@ class BNO055(IMUBase):
     def gyro_z(self) -> float:
         """Returns measured rotational velocity about the z-axis (rad/s)."""
         return self._gyro_z
+
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming
     
 if __name__ == "__main__":
     pass

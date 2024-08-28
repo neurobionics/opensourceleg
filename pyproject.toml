@@ -45,8 +45,8 @@ types-protobuf = "^4.21.0"
 moteus = "^0.3.72"
 moteus-pi3hat = {version = "^0.3.29", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
 board = "^1.0"
-adafruit-bno055 = "^1.0.2"
-adafruit-blinka = "^8.47.0"
+adafruit-circuitpython-bno055 = "^5.4.13"
+adafruit-circuitpython-lis3dh = "^5.2.2"
 
 [tool.poetry.extras]
 dephy = ["flexsea"]
