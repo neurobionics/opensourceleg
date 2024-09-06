@@ -1,14 +1,16 @@
-﻿from typing import Union
+﻿from typing import List, Union
 
 import os
 import time
 from dataclasses import dataclass
 
-from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import IMUBase, check_sensor_stream
+import adafruit_bno055
 import board
 import busio
-import adafruit_bno055
+
+from opensourceleg.logging import LOGGER
+from opensourceleg.sensors.base import IMUBase, check_sensor_stream
+
 try:
     import mscl
 except ImportError:
@@ -186,12 +188,12 @@ class BNO055(IMUBase):
     """
     Sensor class for the Bosch BNO055 IMU.
     This class wraps a more comprehensive Adafruit library for a simplified use consistent
-    with the OSL library framework. 
-    
-    Connections: 
-        * The sensor should be connected to the main i2c bus. 
-        * It is also possible to connect it via uart, but this is not yet implemented. 
-    
+    with the OSL library framework.
+
+    Connections:
+        * The sensor should be connected to the main i2c bus.
+        * It is also possible to connect it via uart, but this is not yet implemented.
+
     Requirements:
         * adafruit_bno055
         * board
@@ -200,18 +202,14 @@ class BNO055(IMUBase):
     Author: Kevin Best
     Date: 8/22/2024
     """
-    
+
     def __init__(
-            self,
-            addr: int = 40,
+        self,
+        addr: int = 40,
     ):
-        self._address = addr
-        self._gyro_x = None
-        self._gyro_y = None
-        self._gyro_z = None
-        self._acc_x = None
-        self._acc_y = None
-        self._acc_z = None
+        self._address: int = addr
+        self._gyro_data: list[float] = [0.0, 0.0, 0.0]
+        self._acc_data: list[float] = [0.0, 0.0, 0.0]
         self._is_streaming = False
 
     def __repr__(self) -> str:
@@ -232,19 +230,13 @@ class BNO055(IMUBase):
         pass
 
     def update(self):
-        acc = self._adafruit_imu.acceleration
-        self._acc_x = acc[0]
-        self._acc_y = acc[1]
-        self._acc_z = acc[2]
-        gyro = self._adafruit_imu.gyro
-        self._gyro_x = gyro[0]
-        self._gyro_y = gyro[1]
-        self._gyro_z = gyro[2]
+        self._acc_data = self._adafruit_imu.acceleration
+        self._gyro_data = self._adafruit_imu.gyro
 
     def configure_IMU_settings(self):
         """
-        Configure the IMU mode and different range/bandwidth settings. 
-        Hard coding settings for now. 
+        Configure the IMU mode and different range/bandwidth settings.
+        Hard coding settings for now.
         Someone in the future could add wrapper support for these.
         """
         self._adafruit_imu.use_external_crystal = True
@@ -257,36 +249,37 @@ class BNO055(IMUBase):
     @property
     def acc_x(self) -> float:
         """Returns measured acceleration along the x-axis (m/s^2)."""
-        return self._acc_x
-    
+        return self._acc_data[0]
+
     @property
     def acc_y(self) -> float:
         """Returns measured acceleration along the y-axis (m/s^2)."""
-        return self._acc_y
-    
+        return self._acc_data[1]
+
     @property
     def acc_z(self) -> float:
         """Returns measured acceleration along the z-axis (m/s^2)."""
-        return self._acc_z
-    
+        return self._acc_data[2]
+
     @property
     def gyro_x(self) -> float:
         """Returns measured rotational velocity about the x-axis (rad/s)."""
-        return self._gyro_x
-    
+        return self._gyro_data[0]
+
     @property
     def gyro_y(self) -> float:
         """Returns measured rotational velocity about the y-axis (rad/s)."""
-        return self._gyro_y
-    
+        return self._gyro_data[1]
+
     @property
     def gyro_z(self) -> float:
         """Returns measured rotational velocity about the z-axis (rad/s)."""
-        return self._gyro_z
+        return self._gyro_data[2]
 
     @property
     def is_streaming(self) -> bool:
         return self._is_streaming
-    
+
+
 if __name__ == "__main__":
     pass

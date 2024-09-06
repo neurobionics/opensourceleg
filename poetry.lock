@@ -2555,7 +2555,6 @@ github = ["jinja2 (>=3.1.0)", "pygithub (>=1.43.3)"]
 gitlab = ["python-gitlab (>=1.3.0)"]
 
 [[package]]
-
 name = "scipy"
 version = "1.13.1"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -2631,7 +2630,6 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-
 enabler = ["pytest-enabler (>=2.2)"]
 test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-home (>=0.5)", "pytest-perf", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel (>=0.44.0)"]
 type = ["importlib-metadata (>=7.0.2)", "jaraco.develop (>=7.21)", "mypy (==1.11.*)", "pytest-mypy"]
-
 
 [[package]]
 name = "six"
@@ -2834,7 +2832,6 @@ test = ["pytest"]
 
 [[package]]
 name = "stevedore"
-
 version = "5.3.0"
 description = "Manage dynamic plugins for Python applications"
 optional = false
@@ -3105,4 +3102,4 @@ moteus = ["moteus", "moteus-pi3hat"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0.0"
-content-hash = "bb2bc756ea3968ee3431109a80668eebba78b7ddc0635c1f16e12ce4bd8b73e9"
+content-hash = "c39ef41ae65c3e0a19f6cb4eb398e392051308da10db4169a8be41a343ad1300"
