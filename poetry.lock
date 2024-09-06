@@ -3097,7 +3097,6 @@ type = ["pytest-mypy"]
 communication = ["smbus2"]
 dephy = ["flexsea", "flexsea"]
 messaging = ["grpcio", "grpcio-tools", "types-protobuf"]
-moteus = ["moteus", "moteus-pi3hat"]
 
 [metadata]
 lock-version = "2.0"
