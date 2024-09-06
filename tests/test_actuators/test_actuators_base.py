@@ -264,7 +264,6 @@ def test_typevar_usage_invalid():
 
 
 def test_method_with_required_modes():
-
     class TestClass(MethodWithRequiredModes):
         _required_modes = {CONTROL_MODES.POSITION, CONTROL_MODES.CURRENT}
 
