@@ -52,8 +52,8 @@ class MOTOR_CONSTANTS:
 class CONTROL_MODES(Enum):
     IDLE = -1
     POSITION = 0
-    CURRENT = 1
-    VOLTAGE = 2
+    VOLTAGE = 1
+    CURRENT = 2
     IMPEDANCE = 3
     VELOCITY = 4
     TORQUE = 5

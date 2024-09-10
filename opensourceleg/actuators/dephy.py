@@ -936,7 +936,6 @@ class DephyActuator(ActuatorBase, Device):
 def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
 
-
 def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
 
@@ -951,26 +950,19 @@ def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
 
 def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
-    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
-    time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
-    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
-    time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
-    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
-    time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
-    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
-    time.sleep(DEPHY_SLEEP_DURATION)
+
 
 
 DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -1074,9 +1066,11 @@ class DephyLegacyActuator(DephyActuator):
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
         self.set_motor_voltage(value=0)
 
-        time.sleep(0.1)
+        # time.sleep(0.2)
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
+        time.sleep(0.1)
         self.close()
+        # time.sleep(0.1)
 
     def update(self) -> None:
 
