@@ -57,41 +57,41 @@ DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
 
 
 def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Voltage control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering Voltage control mode.")
 
 
 def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Voltage control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Voltage control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Current control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Current control mode.")
 
 
 def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Current control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Current control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Position control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Position control mode.")
 
 
 def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Position control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Position control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Impedance control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Impedance control mode.")
 
 
 def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Impedance control mode.")
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Impedance control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
@@ -159,7 +159,7 @@ class DephyActuator(ActuatorBase, Device):
                 self,
                 firmwareVersion=firmware_version,
                 port=port,
-                baudRate=baud_rate,
+                baud_rate=baud_rate,
                 stopMotorOnDisconnect=stop_motor_on_disconnect,
             )
 
@@ -171,7 +171,7 @@ class DephyActuator(ActuatorBase, Device):
         )
         self._thermal_scale: float = 1.0
 
-        self._mode = CONTROL_MODES.VOLTAGE
+        self._mode = CONTROL_MODES.IDLE
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyLegacyActuator]"
@@ -195,11 +195,8 @@ class DephyActuator(ActuatorBase, Device):
         self._data = self.read()
 
         time.sleep(0.1)
-        # self._get_control_mode_config(self._mode).entry_callback(self)
 
-        default_mode_config = self._get_control_mode_config(self._mode)
-        if default_mode_config:
-            default_mode_config.entry_callback(self)
+        self.set_control_mode(CONTROL_MODES.VOLTAGE)
 
     @check_actuator_stream
     @check_actuator_open
@@ -936,48 +933,68 @@ class DephyActuator(ActuatorBase, Device):
         return self._thermal_scale
 
 
-def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
+def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
+
+
+def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
+
+
+def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
+
+
+def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
+
+
+def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
+    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
+def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
+    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
+def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
+    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
+def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
+    dephy_actuator.send_motor_command(ctrl_mode=c_int(CONTROL_MODES.VOLTAGE.value), value=0)
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     POSITION=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_position_mode_exit,
+        entry_callback=_dephy_legacy_position_mode_entry,
+        exit_callback=_dephy_legacy_position_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
     ),
     CURRENT=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_current_mode_exit,
+        entry_callback=_dephy_legacy_current_mode_entry,
+        exit_callback=_dephy_legacy_current_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
     ),
     VOLTAGE=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_voltage_mode_exit,
+        entry_callback=_dephy_legacy_voltage_mode_entry,
+        exit_callback=_dephy_legacy_voltage_mode_exit,
         has_gains=False,
         max_gains=None,
     ),
     IMPEDANCE=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_impedance_mode_exit,
+        entry_callback=_dephy_legacy_impedance_mode_entry,
+        exit_callback=_dephy_legacy_impedance_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
     ),
@@ -1021,14 +1038,14 @@ class DephyLegacyActuator(DephyActuator):
         )
         self._thermal_scale: float = 1.0
 
-        self._mode = CONTROL_MODES.VOLTAGE
+        self._mode = CONTROL_MODES.IDLE
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActuator]"
 
     @property
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
-        return DEPHY_CONTROL_MODE_CONFIGS
+        return DEPHY_LEGACY_CONTROL_MODE_CONFIGS
 
     @check_actuator_connection
     def start(self) -> None:
@@ -1049,9 +1066,7 @@ class DephyLegacyActuator(DephyActuator):
 
         # TODO: Verify if we need this sleep here
         time.sleep(0.1)
-        default_mode_config = self._get_control_mode_config(self._mode)
-        if default_mode_config:
-            default_mode_config.entry_callback(self)
+        self.set_control_mode(CONTROL_MODES.VOLTAGE)
 
     @check_actuator_stream
     @check_actuator_open
@@ -1060,6 +1075,7 @@ class DephyLegacyActuator(DephyActuator):
         self.set_motor_voltage(value=0)
 
         time.sleep(0.1)
+        self.set_control_mode(mode=CONTROL_MODES.IDLE)
         self.close()
 
     def update(self) -> None:
@@ -1084,7 +1100,7 @@ class DephyLegacyActuator(DephyActuator):
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
 
-        if self._data["status_ex"] & 0b00000010 == 0b00000010:
+        if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
                 msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
             )
