@@ -27,8 +27,9 @@ class SensorBase(ABC):
         return f"SensorBase"
 
     @property
+    @abstractmethod
     def data(self):
-        return self._data
+        pass
 
     @abstractmethod
     def start(self) -> None:
@@ -67,38 +68,6 @@ class ADCBase(SensorBase, ABC):
 
     def calibrate(self) -> None:
         pass
-
-    @property
-    def ch0(self):
-        raise NotImplementedError
-
-    @property
-    def ch1(self):
-        raise NotImplementedError
-
-    @property
-    def ch2(self):
-        raise NotImplementedError
-
-    @property
-    def ch3(self):
-        raise NotImplementedError
-
-    @property
-    def ch4(self):
-        raise NotImplementedError
-
-    @property
-    def ch5(self):
-        raise NotImplementedError
-
-    @property
-    def ch6(self):
-        raise NotImplementedError
-
-    @property
-    def ch7(self):
-        raise NotImplementedError
 
 
 class EncoderBase(SensorBase, ABC):

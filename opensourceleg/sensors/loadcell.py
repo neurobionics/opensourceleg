@@ -3,26 +3,19 @@ from adc import ADS131M0x
 from base import LoadcellBase, ADCBase
 
 
-class SRILoadcell(LoadcellBase):
+class SRILoadcell_ADC(LoadcellBase):
 
     def __init__(
         self,
         matrix=None,
         excitation_voltage=5,
-        adc: ADCBase = None,
-        adc_board="neurobionics",
         **kwargs,
     ):
-        """Initializes Sunrise Instruments Loadcell"""
+        """Initializes Sunrise Instruments Loadcell using ADC"""
         self.matrix = matrix
         self._excitation_voltage = excitation_voltage
 
-        if adc is not None:
-            self._adc = adc
-        elif adc_board == "neurobionics":
-            self._adc = ADS131M0x(**kwargs)
-        elif adc_board == "dephy":
-            raise NotImplementedError("Dephy board class is not supported currently")
+        self._adc = ADS131M0x(**kwargs)
 
     def __repr__(self) -> str:
         return f"Loadcell"
@@ -50,32 +43,40 @@ class SRILoadcell(LoadcellBase):
 
     @property
     def adc(self) -> ADCBase:
+        """Returns the ADS131M0x object of the Loadcell"""
         return self._adc
 
     @property
     def is_streaming(self) -> bool:
+        """Returns whether the ADC of the Loadcell is streaming data or not"""
         return self.adc._streaming
 
     @property
     def fx(self) -> float:
+        """Returns the force in the x direction of the loadcell"""
         return self.data[0]
 
     @property
     def fy(self) -> float:
+        """Returns the force in the y direction of the loadcell"""
         return self.data[1]
 
     @property
     def fz(self) -> float:
+        """Returns the force in the z direction of the loadcell"""
         return self.data[2]
 
     @property
     def mx(self) -> float:
+        """Returns the moment in the x direction of the loadcell"""
         return self.data[3]
 
     @property
     def my(self) -> float:
+        """Returns the moment in the y direction of the loadcell"""
         return self.data[4]
 
     @property
     def mz(self) -> float:
+        """Returns the moment in the z direction of the loadcell"""
         return self.data[5]

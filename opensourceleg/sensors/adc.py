@@ -3,6 +3,7 @@ import spidev
 import math
 from time import sleep
 from base import ADCBase
+from typing import List
 
 
 class ADS131M0x(ADCBase):
@@ -63,9 +64,9 @@ class ADS131M0x(ADCBase):
         spi_chip: int = 0,
         num_channels: int = 6,
         max_speed_hz: int = 8192000,
-        channel_gains: list = [32, 128] * 3,
+        channel_gains: List[int] = [32, 128] * 3,
         voltage_reference: float = 1.2,
-        gain_error: list = None,
+        gain_error: List[int] = None,
     ):
         """Initializes ADS131M0x class.
 
@@ -168,9 +169,17 @@ class ADS131M0x(ADCBase):
         addr_msg = (address << 7) | (self._WREG_PREFIX << 13)
         addr_bytes = self._message_to_word(addr_msg)
         reg_bytes = self._message_to_word(reg_val)
-        self.spi_comm(addr_bytes + reg_bytes)
+        self._spi_message(addr_bytes + reg_bytes)
 
-    def spi_comm(self, bytes: list) -> list:
+    @property
+    def is_streaming(self) -> bool:
+        return self._streaming
+
+    @property
+    def gains(self) -> List[int]:
+        return self._gains
+
+    def _spi_message(self, bytes: List[int]) -> List[int]:
         """Send SPI message to ADS131M0x.
 
         Arg:
@@ -181,46 +190,6 @@ class ADS131M0x(ADCBase):
         """
         self._spi.xfer2(bytes)
         return self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
-
-    @property
-    def is_streaming(self) -> bool:
-        return self._streaming
-
-    @property
-    def gains(self) -> list:
-        return self._gains
-
-    @property
-    def ch0(self) -> float:
-        return self._data[0]
-
-    @property
-    def ch1(self) -> float:
-        return self._data[1]
-
-    @property
-    def ch2(self) -> float:
-        return self._data[2]
-
-    @property
-    def ch3(self) -> float:
-        return self._data[3]
-
-    @property
-    def ch4(self) -> float:
-        return self._data[4]
-
-    @property
-    def ch5(self) -> float:
-        return self._data[5]
-
-    @property
-    def ch6(self) -> float:
-        return self._data[6]
-
-    @property
-    def ch7(self) -> float:
-        return self._data[7]
 
     def _channel_enable(self, state: bool) -> None:
         """Enables or disables streaming on all channels."""
@@ -296,7 +265,7 @@ class ADS131M0x(ADCBase):
             gain_correction = (1 + self._gain_error[i]) / self._GCAL_STEP_SIZE
             self.write_register(self._GCAL_MSB_ADDRS[i], gain_correction >> 8)
 
-    def _message_to_word(self, msg: int) -> list:
+    def _message_to_word(self, msg: int) -> List[int]:
         """Separates message into bytes to be sent to ADC."""
         word = [0] * 3
         word[0] = (msg >> 8) & 0xFF
@@ -309,6 +278,7 @@ class ADS131M0x(ADCBase):
         return reply == self._ready_status
 
     def _read_data_millivolts(self) -> float:
+        """Returns a list representing the voltage in millivolts for all channels of the ADC"""
         mV = [
             1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference)
             for dat in self._read_data_counts()
@@ -330,6 +300,7 @@ class ADS131M0x(ADCBase):
         return val
 
     def _twos_complement(num, bits: int) -> int:
+        """Takes in a number and the number of bits used to represent them, then converts the number to twos complement"""
         val = num
         if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
             val = num - (1 << bits)  # compute negative value
