@@ -13,6 +13,7 @@ license = "GNU LGPL v2.1"
 repository = "https://github.com/neurobionics/opensourceleg"
 homepage = "https://github.com/neurobionics/opensourceleg"
 
+
 # Keywords description https://python-poetry.org/docs/pyproject/#keywords
 keywords = []  #! Update me
 
@@ -32,10 +33,23 @@ in-project = true
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0.0"
-pyserial = "^3.5"
-flexsea = "^8.0.1"
-smbus2 = "^0.4.2"
 numpy = "^1.24.3"
+flexsea = [
+    {version = "^12.0.3", python = ">=3.11"},
+    {version = ">=8.0.1", python = "<3.10"}
+]
+smbus2 = ">=0.4.2"
+grpcio = "^1.65.5"
+grpcio-tools = "^1.65.5"
+types-protobuf = "^4.21.0"
+moteus = "^0.3.72"
+moteus-pi3hat = {version = "^0.3.29", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
+
+[tool.poetry.extras]
+dephy = ["flexsea"]
+moteus = ["moteus", "moteus-pi3hat"]
+communication = ["smbus2"]
+messaging = ["grpcio", "grpcio-tools", "types-protobuf"]
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"
@@ -56,11 +70,9 @@ coverage-badge = "^1.1.0"
 pytest-html = "^4.1.1"
 pytest-cov = ">=3,<5"
 click = "8.1.7"
-sphinx = "^7.2.6"
+sphinx = "^7.4.7"
 wheel = "^0.41.2"
 sphinx-book-theme = "^1.0.1"
-jinja2 = "^3.1.3"
-requests = "^2.32.3"
 
 [tool.bandit]
 skips = ["B101"]
