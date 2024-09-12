@@ -152,8 +152,8 @@ class DephyActuator(ActuatorBase, Device):
 
         if self.is_offline:
             self.port = port
-            self.is_streaming: bool = False
-            self.is_open: bool = False
+            self._is_streaming: bool = False
+            self._is_open: bool = False
         else:
             Device.__init__(
                 self,
@@ -1006,7 +1006,19 @@ class DephyLegacyActuator(DephyActuator):
 
         if self.is_offline:
             self.port = port
+            self._is_streaming: bool = False
+            self._is_open: bool = False
         else:
+
+            def set_is_streaming(self, value):
+                self._is_streaming = value
+
+            def set_is_open(self, value):
+                self._is_open = value
+
+            type(self).is_streaming = property(fset=set_is_streaming)
+            type(self).is_open = property(fset=set_is_open)
+
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
         self._thermal_model: ThermalModel = ThermalModel(
@@ -1422,15 +1434,32 @@ class DephyLegacyActuator(DephyActuator):
 
 
 if __name__ == "__main__":
-    knee = DephyActuator(
-        tag="knee",
-        firmware_version="7.2.0",
-        port="/dev/ttyACM0",
-        gear_ratio=1.0,
-        baud_rate=230400,
-        frequency=500,
-        debug_level=0,
-        dephy_log=False,
-        offline=True,
-        stop_motor_on_disconnect=False,
-    )
+
+    # Example of multiple inheritance with read-only properties and setters
+    class BaseClass:
+        def __init__(self) -> None:
+            self._is_streaming = False
+
+        @property
+        def is_streaming(self):
+            return self._is_streaming
+
+    class DephyClass:
+        def __init__(self) -> None:
+            self.is_streaming = False
+
+        def open(self):
+            self.is_streaming = True
+
+    class ActpackClass(BaseClass, DephyClass):
+        def __init__(self):
+            BaseClass.__init__(self)
+
+            def set_is_streaming(self, value):
+                self._is_streaming = value
+
+            type(self).is_streaming = property(fset=set_is_streaming)
+
+            DephyClass.__init__(self)
+
+    actpack = ActpackClass()
