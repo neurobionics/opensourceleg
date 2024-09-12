@@ -427,7 +427,7 @@ class DephyActuator(ActuatorBase, Device):
 
     def set_motor_current(
         self,
-        value=float,
+        value: float,
     ):
         """
         Sets the motor current in mA.
@@ -455,7 +455,7 @@ class DephyActuator(ActuatorBase, Device):
 
         self.command_motor_voltage(value=int(value))
 
-    def set_motor_position(self, value=float) -> None:
+    def set_motor_position(self, value: float) -> None:
         """
         Sets the motor position in radians.
         If in impedance mode, this sets the equilibrium angle in radians.
@@ -518,35 +518,6 @@ class DephyActuator(ActuatorBase, Device):
             k=0,
             b=0,
             ff=int(ff),
-        )
-
-    def set_motor_impedance(
-        self,
-        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
-        k: float = 0.08922,
-        b: float = 0.0038070,
-        ff: float = 128,
-    ) -> None:
-        """
-        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
-
-        Args:
-            kp (float): Proportional gain. Defaults to 40.
-            ki (float): Integral gain. Defaults to 400.
-            kd (float): Derivative gain. Defaults to 0.
-            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
-            ff (float): Feedforward gain. Defaults to 128.
-        """
-        self.set_impedance_gains(
-            kp=kp,
-            ki=ki,
-            kd=kd,
-            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
-            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
-            ff=ff,
         )
 
     def set_output_impedance(
@@ -934,35 +905,51 @@ class DephyActuator(ActuatorBase, Device):
 
 
 def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode."
+    )
+
 
 def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode."
+    )
 
 
 def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode."
+    )
 
 
 def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode."
+    )
 
 
 def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode."
+    )
 
 
 def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode."
+    )
 
 
 def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode."
+    )
 
 
 def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
-
+    LOGGER.debug(
+        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode."
+    )
 
 
 DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(

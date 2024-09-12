@@ -59,7 +59,6 @@ class CONTROL_MODES(Enum):
     TORQUE = 5
 
 
-
 # TODO: This can be ordered and requires validation
 @dataclass
 class ControlGains:
@@ -238,7 +237,6 @@ class ActuatorBase(ABC):
             new_config.entry_callback(self)
 
         self._set_mutated_methods()
-
 
     @abstractmethod
     @requires(CONTROL_MODES.VOLTAGE)
@@ -421,10 +419,10 @@ class ActuatorBase(ABC):
     def joint_direction(self) -> int:
         return self._joint_direction
 
-    # @property
-    # def is_open(self) -> bool:
-    #     return self._is_open
+    @property
+    def is_open(self) -> bool:
+        return self._is_open
 
-    # @property
-    # def is_streaming(self) -> bool:
-    #     return self._is_streaming
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming
