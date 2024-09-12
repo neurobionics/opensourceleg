@@ -56,81 +56,79 @@ DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
 )
 
 
-def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Voltage control mode.")
+def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering Voltage control mode.")
 
 
-def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Voltage control mode.")
-    dephy_actuator.set_motor_voltage(value=0)
+def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Voltage control mode.")
+    dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Current control mode.")
+def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Current control mode.")
 
 
-def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Current control mode.")
-    dephy_actuator.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-    dephy_actuator.set_motor_voltage(value=0)
+def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Current control mode.")
+    dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Position control mode.")
+def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Position control mode.")
 
 
-def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Position control mode.")
-    dephy_actuator.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-    dephy_actuator.set_motor_voltage(value=0)
+def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Position control mode.")
+    dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Entering Impedance control mode.")
+def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Impedance control mode.")
 
 
-def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[DephyControlMode] Exiting Impedance control mode.")
-    dephy_actuator.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-    dephy_actuator.set_motor_voltage(value=0)
+def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Impedance control mode.")
+    dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
-DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     POSITION=ControlModeConfig(
-        entry_callback=_dephy_legacy_position_mode_entry,
-        exit_callback=_dephy_legacy_position_mode_exit,
+        entry_callback=_dephy_position_mode_entry,
+        exit_callback=_dephy_position_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
     ),
     CURRENT=ControlModeConfig(
-        entry_callback=_dephy_legacy_current_mode_entry,
-        exit_callback=_dephy_legacy_current_mode_exit,
+        entry_callback=_dephy_current_mode_entry,
+        exit_callback=_dephy_current_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
     ),
     VOLTAGE=ControlModeConfig(
-        entry_callback=_dephy_legacy_voltage_mode_entry,
-        exit_callback=_dephy_legacy_voltage_mode_exit,
+        entry_callback=_dephy_voltage_mode_entry,
+        exit_callback=_dephy_voltage_mode_exit,
         has_gains=False,
         max_gains=None,
     ),
     IMPEDANCE=ControlModeConfig(
-        entry_callback=_dephy_legacy_impedance_mode_entry,
-        exit_callback=_dephy_legacy_impedance_mode_exit,
+        entry_callback=_dephy_impedance_mode_entry,
+        exit_callback=_dephy_impedance_mode_exit,
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
     ),
 )
 
 
-class DephyLegacyActuator(ActuatorBase, Device):
+class DephyActuator(ActuatorBase, Device):
     def __init__(
         self,
         tag: str = "DephyActuator",
+        firmware_version: str = "7.2.0",
         port: str = "/dev/ttyACM0",
         gear_ratio: float = 1.0,
         baud_rate: int = 230400,
@@ -138,6 +136,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         debug_level: int = 4,
         dephy_log: bool = False,
         offline: bool = False,
+        stop_motor_on_disconnect: bool = False,
     ) -> None:
         ActuatorBase.__init__(
             self,
@@ -153,8 +152,16 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
         if self.is_offline:
             self.port = port
+            self.is_streaming: bool = False
+            self.is_open: bool = False
         else:
-            Device.__init__(self, port=port, baud_rate=baud_rate)
+            Device.__init__(
+                self,
+                firmwareVersion=firmware_version,
+                port=port,
+                baud_rate=baud_rate,
+                stopMotorOnDisconnect=stop_motor_on_disconnect,
+            )
 
         self._thermal_model: ThermalModel = ThermalModel(
             temp_limit_windings=self.max_winding_temperature,
@@ -164,19 +171,19 @@ class DephyLegacyActuator(ActuatorBase, Device):
         )
         self._thermal_scale: float = 1.0
 
-        self._mode = CONTROL_MODES.VOLTAGE
+        self._mode = CONTROL_MODES.IDLE
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyLegacyActuator]"
 
+    @property
+    def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
+        return DEPHY_CONTROL_MODE_CONFIGS
+
     @check_actuator_connection
     def start(self) -> None:
         try:
-            self.open(
-                freq=self._frequency,
-                log_level=self._debug_level,
-                log_enabled=self._dephy_log,
-            )
+            self.open()
         except OSError as e:
             print("\n")
             LOGGER.error(
@@ -184,19 +191,18 @@ class DephyLegacyActuator(ActuatorBase, Device):
             )
             os._exit(status=1)
 
+        self.start_streaming(self._frequency)
         self._data = self.read()
 
-        # TODO: Verify if we need this sleep here
         time.sleep(0.1)
-        default_mode_config = self._get_control_mode_config(self._mode)
-        if default_mode_config:
-            default_mode_config.entry_callback(self)
+
+        self.set_control_mode(CONTROL_MODES.VOLTAGE)
 
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-        self.set_motor_voltage(value=0)
+        self.stop_motor()
 
         time.sleep(0.1)
         self.close()
@@ -222,12 +228,8 @@ class DephyLegacyActuator(ActuatorBase, Device):
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
-
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
-            )
-            raise ThermalLimitException("Internal thermal limit tripped.")
+            raise RuntimeError("Actpack Thermal Limit Tripped")
 
     def home(
         self,
@@ -425,7 +427,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
 
     def set_motor_current(
         self,
-        value: float,
+        value=float,
     ):
         """
         Sets the motor current in mA.
@@ -433,11 +435,11 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Args:
             value (float): The current to set in mA.
         """
-        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+        self.command_motor_current(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_current)
     def set_current(self, value: float) -> None:
-        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+        self.command_motor_current(value=int(value))
 
     def set_motor_voltage(self, value: float) -> None:
         """
@@ -446,14 +448,14 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Args:
             value (float): The voltage to set in mV.
         """
-        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+        self.command_motor_voltage(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
 
-        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+        self.command_motor_voltage(value=int(value))
 
-    def set_motor_position(self, value: float) -> None:
+    def set_motor_position(self, value=float) -> None:
         """
         Sets the motor position in radians.
         If in impedance mode, this sets the equilibrium angle in radians.
@@ -461,8 +463,7 @@ class DephyLegacyActuator(ActuatorBase, Device):
         Args:
             value (float): The position to set
         """
-        self.send_motor_command(
-            ctrl_mode=c_int(self.mode.value),
+        self.command_motor_position(
             value=int(
                 (value + self.motor_zero_position + self.motor_position_offset)
                 / self.MOTOR_CONSTANTS.RAD_PER_COUNT
@@ -612,6 +613,35 @@ class DephyLegacyActuator(ActuatorBase, Device):
             ff=int(ff),
         )
 
+    def set_motor_impedance(
+        self,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        k: float = 0.08922,
+        b: float = 0.0038070,
+        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
+    ) -> None:
+        """
+        Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
+
+        Args:
+            kp (float): Proportional gain. Defaults to 40.
+            ki (float): Integral gain. Defaults to 400.
+            kd (float): Derivative gain. Defaults to 0.
+            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
+            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff (float): Feedforward gain. Defaults to 128.
+        """
+        self.set_impedance_gains(
+            kp=kp,
+            ki=ki,
+            kd=kd,
+            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
+            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
+            ff=ff,
+        )
+
     def set_encoder_map(self, encoder_map) -> None:
         """Sets the joint encoder map"""
         self._encoder_map = encoder_map
@@ -626,6 +656,495 @@ class DephyLegacyActuator(ActuatorBase, Device):
                 msg="Encoder map is not set. Please call the make_encoder_map method to create one."
             )
             return None
+
+    @property
+    def motor_voltage(self) -> float:
+        """Q-axis motor voltage in mV."""
+        if self._data is not None:
+            return float(self._data["mot_volt"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def motor_current(self) -> float:
+        if self._data is not None:
+            return float(self._data["mot_cur"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def motor_torque(self) -> float:
+        if self._data is not None:
+            return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def motor_position(self) -> float:
+        if self._data is not None:
+            return (
+                float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
+                - self.motor_zero_position
+                - self.motor_position_offset
+            )
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def motor_encoder_counts(self) -> int:
+        """Raw reading from motor encoder in counts."""
+        if self._data is not None:
+            return int(self._data["mot_ang"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
+            )
+            return 0
+
+    @property
+    def joint_encoder_counts(self) -> int:
+        """Raw reading from joint encoder in counts."""
+        if self._data is not None:
+            return int(self._data["ank_ang"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
+            )
+            return 0
+
+    @property
+    def motor_velocity(self) -> float:
+        if self._data is not None:
+            return int(self._data["mot_vel"]) * RAD_PER_DEG
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def motor_acceleration(self) -> float:
+        if self._data is not None:
+            return float(self._data["mot_acc"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def battery_voltage(self) -> float:
+        """Battery voltage in mV."""
+        if self._data is not None:
+            return float(self._data["batt_volt"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def battery_current(self) -> float:
+        """Battery current in mA."""
+        if self._data is not None:
+            return float(self._data["batt_curr"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def joint_position(self) -> float:
+        if self._data is not None:
+            return (
+                float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
+                - self.joint_zero_position
+                - self.joint_position_offset
+            ) * self.joint_direction
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def joint_velocity(self) -> float:
+        if self._data is not None:
+            return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def joint_torque(self) -> float:
+        """
+        Torque at the joint output in Nm.
+        This is calculated using motor current, k_t, and the gear ratio.
+        """
+        return self.motor_torque * self.gear_ratio
+
+    @property
+    def case_temperature(self) -> float:
+        if self._data is not None:
+            return float(self._data["temperature"])
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def winding_temperature(self) -> float:
+        """
+        ESTIMATED temperature of the windings in celsius.
+        This is calculated based on the thermal model using motor current.
+        """
+        if self._data is not None:
+            return float(self._thermal_model.T_w)
+        else:
+            return 0.0
+
+    @property
+    def genvars(self):
+        """Dephy's 'genvars' object."""
+        if self._data is not None:
+            return np.array(
+                object=[
+                    self._data["genvar_0"],
+                    self._data["genvar_1"],
+                    self._data["genvar_2"],
+                    self._data["genvar_3"],
+                    self._data["genvar_4"],
+                    self._data["genvar_5"],
+                ]
+            )
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
+            )
+            return np.zeros(shape=6)
+
+    @property
+    def accelx(self) -> float:
+        """
+        Acceleration in x direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def accely(self) -> float:
+        """
+        Acceleration in y direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def accelz(self) -> float:
+        """
+        Acceleration in z direction in m/s^2.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def gyrox(self) -> float:
+        """
+        Angular velocity in x direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def gyroy(self) -> float:
+        """
+        Angular velocity in y direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def gyroz(self) -> float:
+        """
+        Angular velocity in z direction in rad/s.
+        Measured using actpack's onboard IMU.
+        """
+        if self._data is not None:
+            return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
+        else:
+            LOGGER.debug(
+                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
+            )
+            return 0.0
+
+    @property
+    def thermal_scaling_factor(self) -> float:
+        """
+        Scale factor to use in torque control, in [0,1].
+        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        For a proof, see paper referenced in thermal model.
+        """
+        return self._thermal_scale
+
+
+def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
+
+def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
+
+
+def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
+
+
+def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
+
+
+def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
+
+
+def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
+
+
+def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
+
+
+def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
+
+
+
+DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+    POSITION=ControlModeConfig(
+        entry_callback=_dephy_legacy_position_mode_entry,
+        exit_callback=_dephy_legacy_position_mode_exit,
+        has_gains=False,
+        max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
+    ),
+    CURRENT=ControlModeConfig(
+        entry_callback=_dephy_legacy_current_mode_entry,
+        exit_callback=_dephy_legacy_current_mode_exit,
+        has_gains=False,
+        max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
+    ),
+    VOLTAGE=ControlModeConfig(
+        entry_callback=_dephy_legacy_voltage_mode_entry,
+        exit_callback=_dephy_legacy_voltage_mode_exit,
+        has_gains=False,
+        max_gains=None,
+    ),
+    IMPEDANCE=ControlModeConfig(
+        entry_callback=_dephy_legacy_impedance_mode_entry,
+        exit_callback=_dephy_legacy_impedance_mode_exit,
+        has_gains=False,
+        max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
+    ),
+)
+
+
+class DephyLegacyActuator(DephyActuator):
+    def __init__(
+        self,
+        tag: str = "DephyActuator",
+        port: str = "/dev/ttyACM0",
+        gear_ratio: float = 1.0,
+        baud_rate: int = 230400,
+        frequency: int = 500,
+        debug_level: int = 4,
+        dephy_log: bool = False,
+        offline: bool = False,
+    ) -> None:
+        ActuatorBase.__init__(
+            self,
+            tag=tag,
+            gear_ratio=gear_ratio,
+            motor_constants=DEPHY_ACTUATOR_CONSTANTS,
+            frequency=frequency,
+            offline=offline,
+        )
+
+        self._debug_level: int = debug_level if dephy_log else 6
+        self._dephy_log: bool = dephy_log
+
+        if self.is_offline:
+            self.port = port
+        else:
+            Device.__init__(self, port=port, baud_rate=baud_rate)
+
+        self._thermal_model: ThermalModel = ThermalModel(
+            temp_limit_windings=self.max_winding_temperature,
+            soft_border_C_windings=10,
+            temp_limit_case=self.max_case_temperature,
+            soft_border_C_case=10,
+        )
+        self._thermal_scale: float = 1.0
+
+        self._mode = CONTROL_MODES.IDLE
+
+    def __repr__(self) -> str:
+        return f"{self.tag}[DephyActuator]"
+
+    @property
+    def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
+        return DEPHY_LEGACY_CONTROL_MODE_CONFIGS
+
+    @check_actuator_connection
+    def start(self) -> None:
+        try:
+            self.open(
+                freq=self._frequency,
+                log_level=self._debug_level,
+                log_enabled=self._dephy_log,
+            )
+        except OSError as e:
+            print("\n")
+            LOGGER.error(
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+            )
+            os._exit(status=1)
+
+        self._data = self.read()
+
+        # TODO: Verify if we need this sleep here
+        time.sleep(0.1)
+        self.set_control_mode(CONTROL_MODES.VOLTAGE)
+
+    @check_actuator_stream
+    @check_actuator_open
+    def stop(self) -> None:
+        self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
+        self.set_motor_voltage(value=0)
+
+        # time.sleep(0.2)
+        self.set_control_mode(mode=CONTROL_MODES.IDLE)
+        time.sleep(0.1)
+        self.close()
+        # time.sleep(0.1)
+
+    def update(self) -> None:
+
+        self._data = self.read()
+
+        self._thermal_model.T_c = self.case_temperature
+        self._thermal_scale = self._thermal_model.update_and_get_scale(
+            dt=1 / self.frequency,
+            motor_current=self.motor_current,
+        )
+        if self.case_temperature >= self.max_case_temperature:
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+            )
+            raise ThermalLimitException()
+
+        if self.winding_temperature >= self.max_winding_temperature:
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+            )
+            raise ThermalLimitException()
+        # Check for thermal fault, bit 2 of the execute status byte
+
+        if self._data.status_ex & 0b00000010 == 0b00000010:
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
+            )
+            raise ThermalLimitException("Internal thermal limit tripped.")
+
+    def set_motor_current(
+        self,
+        value: float,
+    ):
+        """
+        Sets the motor current in mA.
+
+        Args:
+            value (float): The current to set in mA.
+        """
+        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+
+    @deprecated_with_routing(alternative_func=set_motor_current)
+    def set_current(self, value: float) -> None:
+        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+
+    def set_motor_voltage(self, value: float) -> None:
+        """
+        Sets the motor voltage in mV.
+
+        Args:
+            value (float): The voltage to set in mV.
+        """
+        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+
+    @deprecated_with_routing(alternative_func=set_motor_voltage)
+    def set_voltage(self, value: float) -> None:
+
+        self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
+
+    def set_motor_position(self, value: float) -> None:
+        """
+        Sets the motor position in radians.
+        If in impedance mode, this sets the equilibrium angle in radians.
+
+        Args:
+            value (float): The position to set
+        """
+        self.send_motor_command(
+            ctrl_mode=c_int(self.mode.value),
+            value=int(
+                (value + self.motor_zero_position + self.motor_position_offset)
+                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+            ),
+        )
 
     @property
     def motor_voltage(self) -> float:
@@ -908,488 +1427,6 @@ class DephyLegacyActuator(ActuatorBase, Device):
         """
         if self._data is not None:
             return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def thermal_scaling_factor(self) -> float:
-        """
-        Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
-        For a proof, see paper referenced in thermal model.
-        """
-        return self._thermal_scale
-
-
-def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
-
-
-def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
-
-
-def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
-
-
-def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
-
-
-DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
-    POSITION=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_position_mode_exit,
-        has_gains=False,
-        max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
-    ),
-    CURRENT=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_current_mode_exit,
-        has_gains=False,
-        max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
-    ),
-    VOLTAGE=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_voltage_mode_exit,
-        has_gains=False,
-        max_gains=None,
-    ),
-    IMPEDANCE=ControlModeConfig(
-        entry_callback=lambda _: None,
-        exit_callback=_dephy_impedance_mode_exit,
-        has_gains=False,
-        max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
-    ),
-)
-
-
-class DephyActuator(DephyLegacyActuator):
-    def __init__(
-        self,
-        tag: str = "DephyActuator",
-        firmware_version: str = "7.2.0",
-        port: str = "/dev/ttyACM0",
-        gear_ratio: float = 1.0,
-        baud_rate: int = 230400,
-        frequency: int = 500,
-        debug_level: int = 4,
-        dephy_log: bool = False,
-        offline: bool = False,
-        stop_motor_on_disconnect: bool = False,
-    ) -> None:
-        DephyLegacyActuator.__init__(
-            self,
-            tag=tag,
-            port=port,
-            gear_ratio=gear_ratio,
-            baud_rate=baud_rate,
-            frequency=frequency,
-            debug_level=debug_level,
-            dephy_log=dephy_log,
-            offline=offline,
-        )
-
-        if self.is_offline:
-            self.port = port
-            self.is_streaming: bool = False
-            self.is_open: bool = False
-        else:
-            Device.__init__(
-                self,
-                firmwareVersion=firmware_version,
-                port=port,
-                baudRate=baud_rate,
-                stopMotorOnDisconnect=stop_motor_on_disconnect,
-            )
-
-        self._debug_level: int = debug_level if dephy_log else 6
-        self._dephy_log: bool = dephy_log
-
-        self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
-        )
-        self._thermal_scale: float = 1.0
-
-        self._mode = CONTROL_MODES.VOLTAGE
-
-    def __repr__(self) -> str:
-        return f"{self.tag}[DephyActuator]"
-
-    @property
-    def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
-        return DEPHY_CONTROL_MODE_CONFIGS
-
-    @check_actuator_connection
-    def start(self) -> None:
-        try:
-            self.open()
-        except OSError as e:
-            print("\n")
-            LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
-            )
-            os._exit(status=1)
-
-        self.start_streaming(self._frequency)
-        self._data = self.read()
-
-        time.sleep(0.1)
-        # self._get_control_mode_config(self._mode).entry_callback(self)
-
-        default_mode_config = self._get_control_mode_config(self._mode)
-        if default_mode_config:
-            default_mode_config.entry_callback(self)
-
-    @check_actuator_stream
-    @check_actuator_open
-    def stop(self) -> None:
-        self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-        self.stop_motor()
-
-        time.sleep(0.1)
-        self.close()
-
-    def update(self) -> None:
-
-        self._data = self.read()
-
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
-            dt=1 / self.frequency,
-            motor_current=self.motor_current,
-        )
-        if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
-            )
-            raise ThermalLimitException()
-
-        if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
-            )
-            raise ThermalLimitException()
-        # Check for thermal fault, bit 2 of the execute status byte
-        if self._data["status_ex"] & 0b00000010 == 0b00000010:
-            raise RuntimeError("Actpack Thermal Limit Tripped")
-
-    def set_motor_current(
-        self,
-        value=float,
-    ):
-        """
-        Sets the motor current in mA.
-
-        Args:
-            value (float): The current to set in mA.
-        """
-        self.command_motor_current(value=int(value))
-
-    @deprecated_with_routing(alternative_func=set_motor_current)
-    def set_current(self, value: float) -> None:
-        self.command_motor_current(value=int(value))
-
-    def set_motor_voltage(self, value: float) -> None:
-        """
-        Sets the motor voltage in mV.
-
-        Args:
-            value (float): The voltage to set in mV.
-        """
-        self.command_motor_voltage(value=int(value))
-
-    @deprecated_with_routing(alternative_func=set_motor_voltage)
-    def set_voltage(self, value: float) -> None:
-
-        self.command_motor_voltage(value=int(value))
-
-    def set_motor_position(self, value=float) -> None:
-        """
-        Sets the motor position in radians.
-        If in impedance mode, this sets the equilibrium angle in radians.
-
-        Args:
-            value (float): The position to set
-        """
-        self.command_motor_position(
-            value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
-        )
-
-    @property
-    def motor_voltage(self) -> float:
-        """Q-axis motor voltage in mV."""
-        if self._data is not None:
-            return float(self._data["mot_volt"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def motor_current(self) -> float:
-        if self._data is not None:
-            return float(self._data["mot_cur"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def motor_torque(self) -> float:
-        if self._data is not None:
-            return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def motor_position(self) -> float:
-        if self._data is not None:
-            return (
-                float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self.motor_zero_position
-                - self.motor_position_offset
-            )
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def motor_encoder_counts(self) -> int:
-        """Raw reading from motor encoder in counts."""
-        if self._data is not None:
-            return int(self._data["mot_ang"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
-            )
-            return 0
-
-    @property
-    def joint_encoder_counts(self) -> int:
-        """Raw reading from joint encoder in counts."""
-        if self._data is not None:
-            return int(self._data["ank_ang"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
-            )
-            return 0
-
-    @property
-    def motor_velocity(self) -> float:
-        if self._data is not None:
-            return int(self._data["mot_vel"]) * RAD_PER_DEG
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def motor_acceleration(self) -> float:
-        if self._data is not None:
-            return float(self._data["mot_acc"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def battery_voltage(self) -> float:
-        """Battery voltage in mV."""
-        if self._data is not None:
-            return float(self._data["batt_volt"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def battery_current(self) -> float:
-        """Battery current in mA."""
-        if self._data is not None:
-            return float(self._data["batt_curr"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_position(self) -> float:
-        if self._data is not None:
-            return (
-                float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self.joint_zero_position
-                - self.joint_position_offset
-            ) * self.joint_direction
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_velocity(self) -> float:
-        if self._data is not None:
-            return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_torque(self) -> float:
-        """
-        Torque at the joint output in Nm.
-        This is calculated using motor current, k_t, and the gear ratio.
-        """
-        return self.motor_torque * self.gear_ratio
-
-    @property
-    def case_temperature(self) -> float:
-        if self._data is not None:
-            return float(self._data["temperature"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def winding_temperature(self) -> float:
-        """
-        ESTIMATED temperature of the windings in celsius.
-        This is calculated based on the thermal model using motor current.
-        """
-        if self._data is not None:
-            return float(self._thermal_model.T_w)
-        else:
-            return 0.0
-
-    @property
-    def genvars(self):
-        """Dephy's 'genvars' object."""
-        if self._data is not None:
-            return np.array(
-                object=[
-                    self._data["genvar_0"],
-                    self._data["genvar_1"],
-                    self._data["genvar_2"],
-                    self._data["genvar_3"],
-                    self._data["genvar_4"],
-                    self._data["genvar_5"],
-                ]
-            )
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
-            )
-            return np.zeros(shape=6)
-
-    @property
-    def accelx(self) -> float:
-        """
-        Acceleration in x direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def accely(self) -> float:
-        """
-        Acceleration in y direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def accelz(self) -> float:
-        """
-        Acceleration in z direction in m/s^2.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def gyrox(self) -> float:
-        """
-        Angular velocity in x direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def gyroy(self) -> float:
-        """
-        Angular velocity in y direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def gyroz(self) -> float:
-        """
-        Angular velocity in z direction in rad/s.
-        Measured using actpack's onboard IMU.
-        """
-        if self._data is not None:
-            return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
         else:
             LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
