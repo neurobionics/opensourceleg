@@ -1451,31 +1451,3 @@ class DephyLegacyActuator(DephyActuator):
 
 if __name__ == "__main__":
     pass
-    # # Example of multiple inheritance with read-only properties and setters
-    # class BaseClass:
-    #     def __init__(self) -> None:
-    #         self._is_streaming = False
-
-    #     @property
-    #     def is_streaming(self):
-    #         return self._is_streaming
-
-    # class DephyClass:
-    #     def __init__(self) -> None:
-    #         self.is_streaming = False
-
-    #     def open(self):
-    #         self.is_streaming = True
-
-    # class ActpackClass(BaseClass, DephyClass):
-    #     def __init__(self):
-    #         BaseClass.__init__(self)
-
-    #         def set_is_streaming(self, value):
-    #             self._is_streaming = value
-
-    #         type(self).is_streaming = property(fset=set_is_streaming)
-
-    #         DephyClass.__init__(self)
-
-    # actpack = ActpackClass()
