@@ -124,7 +124,7 @@ DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
 )
 
 
-class DephyActuator(ActuatorBase, Device):
+class DephyActuator(Device, ActuatorBase):
     def __init__(
         self,
         tag: str = "DephyActuator",
@@ -1010,14 +1010,14 @@ class DephyLegacyActuator(DephyActuator):
             self._is_open: bool = False
         else:
 
-            def set_is_streaming(self, value):
-                self._is_streaming = value
+            # def set_is_streaming(self, value):
+            #     self._is_streaming = value
 
-            def set_is_open(self, value):
-                self._is_open = value
+            # def set_is_open(self, value):
+            #     self._is_open = value
 
-            type(self).is_streaming = property(fset=set_is_streaming)
-            type(self).is_open = property(fset=set_is_open)
+            # type(self).is_streaming = property(fset=set_is_streaming)
+            # type(self).is_open = property(fset=set_is_open)
 
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
@@ -1419,6 +1419,22 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
+    def is_streaming(self):
+        return self._is_streaming
+
+    @is_streaming.setter
+    def is_streaming(self, value: bool):
+        self._is_streaming = value
+
+    @property
+    def is_open(self):
+        return self._is_open
+
+    @is_open.setter
+    def is_open(self, value: bool):
+        self._is_open = value
+
+    @property
     def gyroz(self) -> float:
         """
         Angular velocity in z direction in rad/s.
@@ -1434,32 +1450,32 @@ class DephyLegacyActuator(DephyActuator):
 
 
 if __name__ == "__main__":
+    pass
+    # # Example of multiple inheritance with read-only properties and setters
+    # class BaseClass:
+    #     def __init__(self) -> None:
+    #         self._is_streaming = False
 
-    # Example of multiple inheritance with read-only properties and setters
-    class BaseClass:
-        def __init__(self) -> None:
-            self._is_streaming = False
+    #     @property
+    #     def is_streaming(self):
+    #         return self._is_streaming
 
-        @property
-        def is_streaming(self):
-            return self._is_streaming
+    # class DephyClass:
+    #     def __init__(self) -> None:
+    #         self.is_streaming = False
 
-    class DephyClass:
-        def __init__(self) -> None:
-            self.is_streaming = False
+    #     def open(self):
+    #         self.is_streaming = True
 
-        def open(self):
-            self.is_streaming = True
+    # class ActpackClass(BaseClass, DephyClass):
+    #     def __init__(self):
+    #         BaseClass.__init__(self)
 
-    class ActpackClass(BaseClass, DephyClass):
-        def __init__(self):
-            BaseClass.__init__(self)
+    #         def set_is_streaming(self, value):
+    #             self._is_streaming = value
 
-            def set_is_streaming(self, value):
-                self._is_streaming = value
+    #         type(self).is_streaming = property(fset=set_is_streaming)
 
-            type(self).is_streaming = property(fset=set_is_streaming)
+    #         DephyClass.__init__(self)
 
-            DephyClass.__init__(self)
-
-    actpack = ActpackClass()
+    # actpack = ActpackClass()
