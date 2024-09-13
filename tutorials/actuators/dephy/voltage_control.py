@@ -5,7 +5,7 @@ from opensourceleg.logging.logger import LOGGER
 
 actpack = Dephy.DephyActuator(
     port="/dev/ttyACM0",
-    gear_ratio=9.0,
+    gear_ratio=1.0,
 )
 with actpack:
     try:
