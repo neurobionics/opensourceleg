@@ -1,9 +1,11 @@
 # AFTER DONE, TEST WITH NEWLY IMAGED PI
-import spidev
+from typing import List
+
 import math
 from time import sleep
+
+import spidev
 from base import ADCBase
-from typing import List
 
 
 class ADS131M0x(ADCBase):
@@ -11,15 +13,6 @@ class ADS131M0x(ADCBase):
 
     This class allows you to configure the ADS131M0x family of chips as well as
     read out the ADC values in units of mV.
-
-    Attributes:
-        spi_bus: An integer indicating which SPI bus the ADC is connected to.
-        spi_chip: An integer indicating which CS signal the ADC is connected to.
-        num_channels: An integer count of how many channels are present on the ADC.
-        max_speed_hz: An integer specifying the maximum clock frequency of the SPI communication.
-        channel_gains: A list of integers setting the gain of the programmable gain amplifier for all channels.
-        voltage_reference: A float indicating the reference voltage used by the ADC.
-        gain_error: A list of user-calculated integers used for correcting the gain of each channel for additional precision.
     """
 
     _MAX_CHANNELS = 8
@@ -64,14 +57,24 @@ class ADS131M0x(ADCBase):
         spi_chip: int = 0,
         num_channels: int = 6,
         max_speed_hz: int = 8192000,
-        channel_gains: List[int] = [32, 128] * 3,
+        channel_gains: list[int] = [32, 128] * 3,
         voltage_reference: float = 1.2,
-        gain_error: List[int] = None,
+        gain_error: list[int] = [],
     ):
         """Initializes ADS131M0x class.
 
+        Args:
+        - spi_bus: An integer indicating which SPI bus the ADC is connected to.
+        - spi_chip: An integer indicating which CS signal the ADC is connected to.
+        - num_channels: An integer count of how many channels are present on the ADC.
+        - max_speed_hz: An integer specifying the maximum clock frequency of the SPI communication.
+        - channel_gains: A list of integers setting the gain of the programmable gain amplifier for all channels.
+        - voltage_reference: A float indicating the reference voltage used by the ADC.
+        - gain_error: A list of user-calculated integers used for correcting the gain of each channel for additional precision.
+
         Raises:
-            ValueError: If length of channel_gains is not equal to number of channels, or if gain is not a power of 2 between 1 and 128.
+           ValueError: If length of channel_gains is not equal to number of channels, or if gain is not a power of 2 between 1 and 128.
+
         """
 
         if len(channel_gains) != num_channels:
@@ -96,7 +99,6 @@ class ADS131M0x(ADCBase):
 
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
-
         self._spi = spidev.SpiDev()
         self._streaming = False
         self._words_per_frame = 2 + num_channels
@@ -105,7 +107,7 @@ class ADS131M0x(ADCBase):
         for i in range(self._num_channels):
             self._ready_status |= 1 << i
 
-        self._data = [0] * num_channels
+        self._data = [0.0] * num_channels
 
     def __repr__(self) -> str:
         return f"ADS131M0x"
@@ -148,23 +150,22 @@ class ADS131M0x(ADCBase):
     def read_register(self, address: int) -> int:
         """Read value at register located at specified address.
 
-        Arg:
-            address: Address of the register to be read.
-
+        Args:
+         - address: Address of the register to be read.
         Returns:
             Value stored at register located at address.
         """
         msg = (address << 7) | (self._RREG_PREFIX << 13)
         word = self._message_to_word(msg)
         rsp = self.spi_comm(word)
-        return rsp[0] << 8 | rsp[1]
+        return (int)(rsp[0] << 8 | rsp[1])
 
     def write_register(self, address: int, reg_val: int) -> None:
         """Writes specific value to register located at designated address.
 
         Args:
-            address: Address of the register to be written.
-            reg_val: Value to be written to register at address.
+         - address: Address of the register to be written.
+         - reg_val: Value to be written to register at address.
         """
         addr_msg = (address << 7) | (self._WREG_PREFIX << 13)
         addr_bytes = self._message_to_word(addr_msg)
@@ -176,23 +177,28 @@ class ADS131M0x(ADCBase):
         return self._streaming
 
     @property
-    def gains(self) -> List[int]:
+    def gains(self) -> list[int]:
         return self._gains
 
-    def _spi_message(self, bytes: List[int]) -> List[int]:
+    def _spi_message(self, bytes: list[int]) -> list[int]:
         """Send SPI message to ADS131M0x.
 
-        Arg:
-            bytes: message to be sent to the ADS131M0x separated into bytes.
-
+        Args:
+         - bytes: message to be sent to the ADS131M0x separated into bytes.
         Returns:
             The response to the message sent, including the entire frame following the response.
         """
         self._spi.xfer2(bytes)
-        return self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
+        return (list[int])(
+            self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
+        )
 
     def _channel_enable(self, state: bool) -> None:
-        """Enables or disables streaming on all channels."""
+        """Enables or disables streaming on all channels.
+
+        Arg:
+         - state: sets whether or not the ADC is streaming
+        """
         if state == True:
             self.write_register(self._CLOCK_REG, self._ENABLE_CHANNELS_CLOCK)
         elif state == False:
@@ -250,7 +256,7 @@ class ADS131M0x(ADCBase):
         self._set_voltage_source(1)
         self._clear_stale_data()
         num_data_points = 1000
-        offsets = [0] * num_data_points
+        offsets = [[0] * self._num_channels] * num_data_points
         for i in range(num_data_points):
             offsets[i] = self._read_data_counts()
         offset_avg = [int(sum(values) / len(values)) for values in zip(*offsets)]
@@ -263,9 +269,9 @@ class ADS131M0x(ADCBase):
         """Corrects actual gain to desired gain using user-calculated gain error for each channel."""
         for i in range(self._num_channels):
             gain_correction = (1 + self._gain_error[i]) / self._GCAL_STEP_SIZE
-            self.write_register(self._GCAL_MSB_ADDRS[i], gain_correction >> 8)
+            self.write_register(self._GCAL_MSB_ADDRS[i], (int)(gain_correction) >> 8)
 
-    def _message_to_word(self, msg: int) -> List[int]:
+    def _message_to_word(self, msg: int) -> list[int]:
         """Separates message into bytes to be sent to ADC."""
         word = [0] * 3
         word[0] = (msg >> 8) & 0xFF
@@ -277,7 +283,7 @@ class ADS131M0x(ADCBase):
         reply = self.read_register(self._STATUS_REG)
         return reply == self._ready_status
 
-    def _read_data_millivolts(self) -> float:
+    def _read_data_millivolts(self) -> list[float]:
         """Returns a list representing the voltage in millivolts for all channels of the ADC"""
         mV = [
             1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference)
@@ -285,7 +291,7 @@ class ADS131M0x(ADCBase):
         ]
         return mV
 
-    def _read_data_counts(self) -> int:
+    def _read_data_counts(self) -> list[int]:
         """Returns signed ADC value.
 
         Ranges from -2^23 --> 2^23
@@ -299,9 +305,13 @@ class ADS131M0x(ADCBase):
             )
         return val
 
-    def _twos_complement(num, bits: int) -> int:
-        """Takes in a number and the number of bits used to represent them, then converts the number to twos complement"""
-        val = num
-        if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
-            val = num - (1 << bits)  # compute negative value
-        return val
+
+def _twos_complement(
+    num: int,
+    bits: int,
+) -> int:
+    """Takes in a number and the number of bits used to represent them, then converts the number to twos complement"""
+    val = num
+    if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
+        val = num - (1 << bits)  # compute negative value
+    return val

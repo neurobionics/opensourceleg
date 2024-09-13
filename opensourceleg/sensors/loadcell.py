@@ -6,7 +6,7 @@ from enum import Enum
 
 import numpy as np
 from adc import ADS131M0x
-from base import LoadcellBase, ADCBase
+from base import ADCBase, LoadcellBase
 
 
 class SRILoadcell_ADC(LoadcellBase):
@@ -55,34 +55,34 @@ class SRILoadcell_ADC(LoadcellBase):
     @property
     def is_streaming(self) -> bool:
         """Returns whether the ADC of the Loadcell is streaming data or not"""
-        return self.adc._streaming
+        return (bool)(self.adc.is_streaming)
 
     @property
     def fx(self) -> float:
         """Returns the force in the x direction of the loadcell"""
-        return self.data[0]
+        return (float)(self.data[0])
 
     @property
     def fy(self) -> float:
         """Returns the force in the y direction of the loadcell"""
-        return self.data[1]
+        return (float)(self.data[1])
 
     @property
     def fz(self) -> float:
         """Returns the force in the z direction of the loadcell"""
-        return self.data[2]
+        return (float)(self.data[2])
 
     @property
     def mx(self) -> float:
         """Returns the moment in the x direction of the loadcell"""
-        return self.data[3]
+        return (float)(self.data[3])
 
     @property
     def my(self) -> float:
         """Returns the moment in the y direction of the loadcell"""
-        return self.data[4]
+        return (float)(self.data[4])
 
     @property
     def mz(self) -> float:
         """Returns the moment in the z direction of the loadcell"""
-        return self.data[5]
+        return (float)(self.data[5])
