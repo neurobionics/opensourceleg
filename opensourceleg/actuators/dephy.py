@@ -159,7 +159,7 @@ class DephyActuator(Device, ActuatorBase):
                 self,
                 firmwareVersion=firmware_version,
                 port=port,
-                baud_rate=baud_rate,
+                baudRate=baud_rate,
                 stopMotorOnDisconnect=stop_motor_on_disconnect,
             )
 
