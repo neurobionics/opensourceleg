@@ -37,3 +37,50 @@ def get_ctype(token):
         raise Exception("Unknown type: " + token)
 
     return out
+
+
+def to_twos_compliment(value: int, bit_length: int) -> int:
+    """Converts a signed integer to 2's compliment for of a defined number of bits
+    as an unsigned integer
+
+    Args:
+        value (int): Signed integer to convert
+        bits (int): Number of bits of 2's compliment representation
+
+    Returns:
+        int: Unsigned integer 2's compliment
+
+    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
+    """
+    assert value >= -(
+        2 ** (bit_length - 1)
+    ), f"Value {value} is too small for {bit_length} bits"
+    assert value < 2 ** (
+        bit_length - 1
+    ), f"Value {value} is too large for {bit_length} bits"
+    if value >= 0:
+        return value
+    return value + 2**bit_length
+
+
+def from_twos_compliment(value: int, bit_length: int) -> int:
+    """Converts a 2's compliment integer to a signed integer
+
+    Args:
+        value (int): 2's compliment integer
+        bit_length (int): Number of bits of 2's compliment representation
+
+    Returns:
+        int: Signed integer
+
+    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
+    """
+    assert type(value) == int
+    assert value >= 0
+    assert type(bit_length) == int
+    assert bit_length >= 0
+    assert value.bit_length() <= bit_length
+    if value >= 2 ** (bit_length - 1):
+        return int(value - (2**bit_length))
+    else:
+        return int(value)
