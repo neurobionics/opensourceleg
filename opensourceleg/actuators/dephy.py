@@ -184,6 +184,7 @@ class DephyActuator(Device, ActuatorBase):
     def start(self) -> None:
         try:
             self.open()
+            self._is_open = True
         except OSError as e:
             print("\n")
             LOGGER.error(
@@ -192,19 +193,20 @@ class DephyActuator(Device, ActuatorBase):
             os._exit(status=1)
 
         self.start_streaming(self._frequency)
+        time.sleep(0.2)
+        self._is_streaming = True
+
         self._data = self.read()
-
-        time.sleep(0.1)
-
         self.set_control_mode(CONTROL_MODES.VOLTAGE)
 
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
-        self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-        self.stop_motor()
 
-        time.sleep(0.1)
+        self.stop_motor()
+        self.set_control_mode(mode=CONTROL_MODES.IDLE)
+        self._is_streaming = False
+        self._is_open = False
         self.close()
 
     def update(self) -> None:
@@ -220,6 +222,7 @@ class DephyActuator(Device, ActuatorBase):
             LOGGER.error(
                 msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
             )
+            # self.stop()
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
@@ -229,6 +232,7 @@ class DephyActuator(Device, ActuatorBase):
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
+            self.stop()
             raise RuntimeError("Actpack Thermal Limit Tripped")
 
     def home(
@@ -1065,11 +1069,9 @@ class DephyLegacyActuator(DephyActuator):
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
         self.set_motor_voltage(value=0)
 
-        # time.sleep(0.2)
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         time.sleep(0.1)
         self.close()
-        # time.sleep(0.1)
 
     def update(self) -> None:
 
