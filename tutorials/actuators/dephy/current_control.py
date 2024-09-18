@@ -2,6 +2,7 @@
 
 import pandas as pd
 
+from opensourceleg.actuators.base import CONTROL_MODES
 import opensourceleg.actuators.dephy as Dephy
 from opensourceleg.logging.logger import LOGGER
 from opensourceleg.time import SoftRealtimeLoop
@@ -27,7 +28,7 @@ def main():
     with actpack:
 
         try:
-            actpack.set_control_mode(mode=actpack.CONTROL_MODES.CURRENT)
+            actpack.set_control_mode(mode=CONTROL_MODES.CURRENT)
             actpack.set_current_gains(
                 # if no input, then default gains are applied
             )
