@@ -10,6 +10,7 @@ from smbus2 import SMBus
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import LoadcellBase
+from opensourceleg.utilities.utilities import Counter
 
 
 class LoadcellNotRespondingException(Exception):
@@ -43,6 +44,7 @@ class SRILoadcell(LoadcellBase):
         calibration_matrix=None,
         bus: int = 1,
         i2c_address: int = 0x66,
+        enable_diagnostics = True,
     ) -> None:
         self._amp_gain: float = amp_gain
         self._exc: float = exc
@@ -62,6 +64,10 @@ class SRILoadcell(LoadcellBase):
         self._zero_calibration_offset: npt.NDArray[np.double] = self._calibration_offset
         self._is_calibrated: bool = False
         self._is_streaming: bool = False
+        self._enable_diagnostics: bool = enable_diagnostics
+        self._data_potentially_invalid: bool = False
+        if self._enable_diagnostics:
+            self._diagnostics_counter = Counter()
 
     def start(self) -> None:
         if self._bus or self._i2c_address is None:
@@ -96,6 +102,25 @@ class SRILoadcell(LoadcellBase):
             np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data)))
             - calibration_offset
         )
+        if self._enable_diagnostics:
+            self.check_data()
+
+    def check_data(
+        self,
+    ) -> None:
+        """
+        Watches raw values from the load cell to try to catch broken wires. 
+        """
+        ADC_saturated_high = any(self._data == self.ADC_RANGE)
+        ADC_saturated_low = any(self._data == 0)
+        concerning_data_found = ADC_saturated_high or ADC_saturated_low
+        self._diagnostics_counter.update(concerning_data_found)
+        if self._diagnostics_counter.current_count >= 5:
+            self._data_potentially_invalid = True
+
+    @property
+    def data_potentially_invalid(self):
+        return self._data_potentially_invalid            
 
     def calibrate(
         self,

@@ -37,3 +37,24 @@ def get_ctype(token):
         raise Exception("Unknown type: " + token)
 
     return out
+
+class Counter:
+    """
+    A simple counter class that increments a counter each time the increment_counter argument is set true. 
+    To reset the counter, call update with increment_counter set to false. 
+
+    Author: Kevin Best, 9/25/2024
+    https://github.com/tkevinbest
+    """
+    def __init__(self):
+        self._count: int = 0
+
+    def update(self, increment_counter:bool):
+        if increment_counter:
+            self._count += 1
+        else:
+            self._count = 0
+
+    @property
+    def current_count(self):
+        return self._count
