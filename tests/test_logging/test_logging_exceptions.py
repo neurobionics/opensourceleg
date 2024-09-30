@@ -30,10 +30,10 @@ def test_actuator_is_none_exception():
 def test_control_mode_exception():
     test_str = "test"
     test_att = "att"
-    test_new = "new"
+    test_mode = "mode"
     with pytest.raises(ControlModeException) as e:
-        raise ControlModeException(test_str, test_att, test_new)
-    assert str(e.value) == f"[{test_str}] Cannot set {test_att} in {test_new} mode. Please set the actuator to {test_att} mode first."
+        raise ControlModeException(test_str, test_att, test_mode)
+    assert str(e.value) == f"[{test_str}] Cannot set {test_att} in {test_mode} mode. Please set the actuator to {test_att} mode first."
 
 #Test VoltageModeMissingException
 def test_voltage_mode_missing_exception():

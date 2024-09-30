@@ -1,5 +1,3 @@
-import pytest
-
 from opensourceleg.logging.decorators import *
 from unittest.mock import Mock
 
@@ -25,6 +23,7 @@ def test_deprecated_with_suggestion():
 
     def alternate(y):
           return y
+    assert alternate(4) == 4
 
     @deprecated_with_suggestion(alternate)
     def testing(x):
@@ -43,6 +42,7 @@ def test_deprecated_with_routing():
     
     def alternate(y):
           return y * 3
+    assert alternate(4) == 12
 
     @deprecated_with_routing(alternate)
     def testing(x):

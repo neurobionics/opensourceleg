@@ -225,6 +225,7 @@ class Logger(logging.Logger):
         self._buffer.clear()
         self._tracked_vars.clear()
         self._var_names.clear()
+        self._header_written = False
         if hasattr(self, '_file_handler'):
             self._file_handler.close()
             del self._file_handler

@@ -14,15 +14,9 @@ def test_log_level_value_logging():
     assert LogLevel.ERROR.value == logging.ERROR
     assert LogLevel.CRITICAL.value == logging.CRITICAL
 
-def test_log_level_value_num():
-    assert LogLevel.DEBUG.value == 10
-    assert LogLevel.INFO.value == 20
-    assert LogLevel.WARNING.value == 30
-    assert LogLevel.ERROR.value == 40
-    assert LogLevel.CRITICAL.value == 50
 
 def test_log_level_len():
-    assert len(LogLevel) >= 5
+    assert len(LogLevel) == 5
 
 
 #Test Logger class
@@ -45,9 +39,11 @@ def test_logger_new():
 def test_logger_init_default():
     logger = Logger()
     assert logger._log_path == "./"
-    assert logger._file_max_bytes == 0
-    assert logger._file_backup_count == 5
+    assert isinstance(logger.file_level, LogLevel)
     assert isinstance(logger.stream_level, LogLevel)
+    assert logger.file_max_bytes == 0
+    assert logger._file_backup_count == 5
+    assert logger.buffer_size == 1000
     logger.reset()
     
 def test_logger_init_set():
@@ -62,8 +58,8 @@ def test_logger_init_set():
 def test_setup_logging():
     test_logger = Logger(log_format="%(levelname)s", file_level=LogLevel.DEBUG, stream_level=LogLevel.INFO)
     test_logger._setup_logging()
-    assert test_logger.level == 10
-    assert test_logger._stream_handler.level == 20
+    assert test_logger.level == LogLevel.DEBUG.value
+    assert test_logger._stream_handler.level == LogLevel.INFO.value
     assert test_logger._stream_handler.formatter._fmt == "%(levelname)s"
     test_logger.reset()
 
@@ -77,7 +73,7 @@ def test_setup_file_handler():
 
     assert test_logger._file_handler.maxBytes == 10
     assert test_logger._file_handler.backupCount == 20
-    assert test_logger._file_handler.level == 30
+    assert test_logger._file_handler.level == LogLevel.WARNING.value
     assert test_logger._file_handler.mode == "a"
     assert test_logger._file_handler.formatter._fmt == "%(levelname)s"
     assert hasattr(test_logger, "_file_handler")
@@ -86,7 +82,7 @@ def test_setup_file_handler():
 
 
 #Test ensure file handler
-def test_ensure_file_handler(test_logger: Logger):
+def test_ensure_file_handler_called_once(test_logger: Logger):
     test_logger._original_setup = test_logger._setup_file_handler
     
     test_logger._setup_file_handler = Mock()
@@ -96,12 +92,20 @@ def test_ensure_file_handler(test_logger: Logger):
     test_logger._setup_file_handler = test_logger._original_setup
     del test_logger._original_setup
 
+def test_ensure_file_handler(test_logger: Logger):
+    assert not hasattr(test_logger, "_file_handler")
+    test_logger._ensure_file_handler()
+    assert hasattr(test_logger, "_file_handler")
+
+    test_logger.reset() 
+
 
 #Test track & untrack variable
 def test_track_and_untrack_variable(test_logger: Logger):
     def test_func() -> list:
         return  [1,2,3]
-    
+    assert test_func() == [1,2,3]
+
     test_logger.track_variable(test_func, "Testing")
     assert test_func in list(test_logger._tracked_vars.values())
     assert "Testing" in list(test_logger._var_names.values())
@@ -144,7 +148,7 @@ def test_set_file_level_has_attr(test_logger: Logger):
     
     test_logger.set_file_level(LogLevel.DEBUG)
     assert test_logger._file_level == LogLevel.DEBUG
-    assert test_logger._file_handler.level == test_logger._file_level.value
+    assert test_logger._file_handler.level == LogLevel.DEBUG.value
 
 
 #Test set stream level
@@ -152,7 +156,7 @@ def test_set_stream_level(test_logger: Logger):
     test_logger.set_stream_level(LogLevel.ERROR)
     assert hasattr(test_logger, "_stream_handler")
     assert test_logger._stream_level == LogLevel.ERROR
-    assert test_logger._stream_handler.level == 40
+    assert test_logger._stream_handler.level == LogLevel.ERROR.value
 
 
 #Test set format
@@ -200,8 +204,8 @@ def test_update(test_logger: Logger):
     assert len(test_logger._buffer) == 2
 
 
-#Test flush buffer
-def test_flush_buffer(test_logger: Logger):
+#Test update size exceeded
+def test_update_size_exceeded(test_logger: Logger):
     def test_func() -> int:
         return -2
     test_logger.set_buffer_size(2)
@@ -212,38 +216,66 @@ def test_flush_buffer(test_logger: Logger):
     test_logger.track_variable(test_func, "test2")
     test_logger.update()
     assert len(test_logger._buffer) == 0
+
+
+#Test flush buffer
+def test_flush_buffer(test_logger: Logger):
+    def test_func() -> int:
+        return -2
+    
+    test_logger.track_variable(test_func, "test")
+    test_logger.update()
+    assert len(test_logger._buffer) == 1
+
+    test_logger._ensure_file_handler()
+
+    #Clear the file to start since it is being used by other tests
+    test_logger._file = open(test_logger._csv_path, "w", newline="")
+    test_logger.close()
+
+    test_logger.flush_buffer()
+    assert len(test_logger._buffer) == 0
+
+    #Ensure expected output was written
+    file = open(test_logger._csv_path,'r')
+    expected = "test\n-2\n"
+    assert expected == file.read()
+    file.close()
     
     
 #Test write header
 def test_write_header(test_logger: Logger):
     test_logger.track_variable(lambda: 2, "first")
     test_logger.track_variable(lambda: 4, "second")
-    header = ['first', 'second']
     
     test_logger._ensure_file_handler()
-    test_logger._file = open(test_logger._csv_path, "a", newline="")
+    test_logger._file = open(test_logger._csv_path, "w", newline="")
     test_logger._writer = csv.writer(test_logger._file)
-
-    
-    test_logger.original_writer = test_logger._writer
-    
-    test_logger._writer = Mock()
     test_logger._write_header()
-    test_logger._writer.writerow.assert_called_once_with(header)
-    
+    test_logger.close()
     assert test_logger._header_written == True
-
-    test_logger._writer = test_logger.original_writer
-    del test_logger.original_writer
+    
+    #Ensure expected output was written
+    file = open(test_logger._csv_path, 'r')
+    header_contents = file.read()
+    expected = "first,second\n"
+    assert expected==header_contents
+    file.close()
 
 
 #Test generate file paths
-def test_generate_file_paths(test_logger: Logger):
+def test_generate_file_paths_no_input_filename(test_logger: Logger):
+    test_logger._user_file_name = None
     test_logger._generate_file_paths()
     assert ".log" in test_logger._file_path
-
-    test_logger._generate_file_paths()
     assert ".csv" in test_logger._csv_path
+    #For timestamp-based file names, portion of string minus script name will be 20 chars
+    assert len(test_logger._csv_path) >= 20
+
+def test_generate_file_paths_with_input_filename(test_logger: Logger):
+    test_logger._user_file_name = "test_file"
+    test_logger._generate_file_paths()
+    assert test_logger._csv_path == "./test_file.csv"
 
 
 #Test enter
@@ -271,6 +303,32 @@ def test_exit(test_logger: Logger):
     test_logger.close = test_logger.original_close
     del test_logger.original_flush
     del test_logger.original_close
+
+
+#Test reset
+def test_reset(test_logger: Logger):
+    test_logger.track_variable(lambda: 2, "test")
+    test_logger.update()
+    test_logger._setup_file_handler()
+    assert len(test_logger._buffer) == 1
+    assert len(test_logger._tracked_vars) == 1
+    assert len(test_logger._var_names) == 1
+    assert hasattr(test_logger, "_file_handler")
+
+    test_logger.reset()
+    assert len(test_logger._buffer) == 0
+    assert len(test_logger._tracked_vars) == 0
+    assert len(test_logger._var_names) == 0
+    assert not hasattr(test_logger, "_file_handler")
+
+def test_reset_header(test_logger: Logger):
+    test_logger.track_variable(lambda: 2, "test")
+    test_logger.update()
+    test_logger.flush_buffer()   
+    assert test_logger._header_written == True
+
+    test_logger.reset()
+    assert test_logger._header_written == False
 
 
 #Test close
@@ -327,7 +385,6 @@ def test_warning(test_logger: Logger):
     del test_logger.original_ensure
 
 
-
 #Test error
 def test_error(test_logger: Logger):
     test_logger.original_ensure = test_logger._ensure_file_handler
@@ -370,11 +427,8 @@ def test_log(test_logger: Logger):
     del test_logger.original_ensure
 
 
-#Test file name
+#Test file path
 def test_file_path(test_logger: Logger):
-    test_logger._file_path = "here"
-    assert test_logger.file_path == "here"
-
     test_logger.original_generate = test_logger._generate_file_paths  
 
     test_logger._generate_file_paths = Mock()
@@ -388,8 +442,8 @@ def test_file_path(test_logger: Logger):
 
 #Test buffer size
 def test_buffer_size(test_logger: Logger):
-    test_logger.set_buffer_size(0)
-    assert test_logger.buffer_size == 0
+    test_logger.set_buffer_size(5)
+    assert test_logger.buffer_size == 5
 
 
 #Test file level
@@ -418,7 +472,6 @@ def test_file_backup_count():
     test_logger.reset()
 
 
-#Test initialized global logger?
+#Test initialized global logger
 def test_global():
     assert isinstance(LOGGER, Logger)
-    assert LOGGER.file_max_bytes == 0
