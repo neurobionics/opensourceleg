@@ -81,7 +81,7 @@ class ADS131M0x(ADCBase):
             raise ValueError(
                 "Length of channel_gains does not equal number of channels"
             )
-        if gain_error is not None and len(gain_error) != num_channels:
+        if gain_error != [] and len(gain_error) != num_channels:
             raise ValueError(
                 "Length of channel_gains does not equal number of channels"
             )
@@ -103,7 +103,7 @@ class ADS131M0x(ADCBase):
         self._streaming = False
         self._words_per_frame = 2 + num_channels
 
-        self._ready_status = 0x01 << 8
+        self._ready_status = 0x05 << 8
         for i in range(self._num_channels):
             self._ready_status |= 1 << i
 
@@ -157,7 +157,7 @@ class ADS131M0x(ADCBase):
         """
         msg = (address << 7) | (self._RREG_PREFIX << 13)
         word = self._message_to_word(msg)
-        rsp = self.spi_comm(word)
+        rsp = self._spi_message(word)
         return (int)(rsp[0] << 8 | rsp[1])
 
     def write_register(self, address: int, reg_val: int) -> None:
@@ -179,6 +179,10 @@ class ADS131M0x(ADCBase):
     @property
     def gains(self) -> list[int]:
         return self._gains
+
+    @property
+    def data(self):
+        return adc._data()
 
     def _spi_message(self, bytes: list[int]) -> list[int]:
         """Send SPI message to ADS131M0x.
@@ -305,13 +309,13 @@ class ADS131M0x(ADCBase):
             )
         return val
 
-
-def _twos_complement(
-    num: int,
-    bits: int,
-) -> int:
-    """Takes in a number and the number of bits used to represent them, then converts the number to twos complement"""
-    val = num
-    if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
-        val = num - (1 << bits)  # compute negative value
-    return val
+    def _twos_complement(
+        self,
+        num: int,
+        bits: int,
+    ) -> int:
+        """Takes in a number and the number of bits used to represent them, then converts the number to twos complement"""
+        val = num
+        if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
+            val = num - (1 << bits)  # compute negative value
+        return val

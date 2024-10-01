@@ -45,7 +45,7 @@ class SRILoadcell_ADC(LoadcellBase):
         coupled = np.asarray(self.adc.data) / (
             self._excitation_voltage * np.asarray(self.adc.gains)
         )
-        self.data = np.asarray(self.matrix) @ coupled
+        self._data = np.asarray(self.matrix) @ coupled
 
     @property
     def adc(self) -> ADCBase:
@@ -56,6 +56,10 @@ class SRILoadcell_ADC(LoadcellBase):
     def is_streaming(self) -> bool:
         """Returns whether the ADC of the Loadcell is streaming data or not"""
         return (bool)(self.adc.is_streaming)
+
+    @property
+    def data(self):
+        return self._data
 
     @property
     def fx(self) -> float:
