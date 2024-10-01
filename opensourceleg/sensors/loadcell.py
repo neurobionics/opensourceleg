@@ -9,7 +9,7 @@ from adc import ADS131M0x
 from base import ADCBase, LoadcellBase
 
 
-class SRILoadcell_ADC(LoadcellBase):
+class SRILoadcell(LoadcellBase):
 
     def __init__(
         self,
