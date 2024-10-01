@@ -64,13 +64,13 @@ class ADS131M0x(ADCBase):
         """Initializes ADS131M0x class.
 
         Args:
-        - spi_bus: An integer indicating which SPI bus the ADC is connected to.
-        - spi_chip: An integer indicating which CS signal the ADC is connected to.
-        - num_channels: An integer count of how many channels are present on the ADC.
-        - max_speed_hz: An integer specifying the maximum clock frequency of the SPI communication.
-        - channel_gains: A list of integers setting the gain of the programmable gain amplifier for all channels.
-        - voltage_reference: A float indicating the reference voltage used by the ADC.
-        - gain_error: A list of user-calculated integers used for correcting the gain of each channel for additional precision.
+        - spi_bus(int): Which SPI bus the ADC is connected to. Default: 0
+        - spi_chip(int): Which CS signal the ADC is connected to. Default: 0
+        - num_channels(int): How many channels are present on the ADC. Default: 6
+        - max_speed_hz(int): Maximum clock frequency of the SPI communication. Default: 8192000
+        - channel_gains(list[int]): Gains of the programmable gain amplifier for all channels. Default: [32,128] * 3
+        - voltage_reference(float): Reference voltage used by the ADC. Default: 1.2
+        - gain_error(list[int]): User-calculated integers used for correcting the gain of each channel for additional precision. Default: []
 
         Raises:
            ValueError: If length of channel_gains is not equal to number of channels, or if gain is not a power of 2 between 1 and 128.
@@ -151,7 +151,7 @@ class ADS131M0x(ADCBase):
         """Read value at register located at specified address.
 
         Args:
-         - address: Address of the register to be read.
+         - address(int): Address of the register to be read.
         Returns:
             Value stored at register located at address.
         """
@@ -164,8 +164,8 @@ class ADS131M0x(ADCBase):
         """Writes specific value to register located at designated address.
 
         Args:
-         - address: Address of the register to be written.
-         - reg_val: Value to be written to register at address.
+         - address(int): Address of the register to be written.
+         - reg_val(int): Value to be written to register at address.
         """
         addr_msg = (address << 7) | (self._WREG_PREFIX << 13)
         addr_bytes = self._message_to_word(addr_msg)
@@ -182,13 +182,13 @@ class ADS131M0x(ADCBase):
 
     @property
     def data(self):
-        return adc._data()
+        return self._data()
 
     def _spi_message(self, bytes: list[int]) -> list[int]:
         """Send SPI message to ADS131M0x.
 
         Args:
-         - bytes: message to be sent to the ADS131M0x separated into bytes.
+         - bytes(list[int]): message to be sent to the ADS131M0x separated into bytes.
         Returns:
             The response to the message sent, including the entire frame following the response.
         """
@@ -201,7 +201,7 @@ class ADS131M0x(ADCBase):
         """Enables or disables streaming on all channels.
 
         Arg:
-         - state: sets whether or not the ADC is streaming
+         - state(bool): sets whether or not the ADC is streaming
         """
         if state == True:
             self.write_register(self._CLOCK_REG, self._ENABLE_CHANNELS_CLOCK)
@@ -212,7 +212,7 @@ class ADS131M0x(ADCBase):
         """Sets state of internal state machine.
 
         Args:
-            state: Device state
+            state(int): Device state
                 0 -- Standby
                 1 -- Continuous Conversion Mode
         """
@@ -230,7 +230,7 @@ class ADS131M0x(ADCBase):
     def _set_voltage_source(self, source: int) -> None:
         """Changes voltage source for ADC input.
         Args:
-            source: Selects which voltage source to use for ADC data.
+            source(int): Selects which voltage source to use for ADC data.
                 0 -- external input
                 1 -- shorts differential pairs for value of ~0
                 2 -- positive internal test signal ((160mV / gain) * (Vref / 1.25))
@@ -296,10 +296,7 @@ class ADS131M0x(ADCBase):
         return mV
 
     def _read_data_counts(self) -> list[int]:
-        """Returns signed ADC value.
-
-        Ranges from -2^23 --> 2^23
-        """
+        """Returns signed ADC value from -2^23 -> 2^23"""
         reply = self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
         val = [0] * self._num_channels
         for byte in range(3, self._num_channels * 3 + 1, 3):
@@ -314,7 +311,11 @@ class ADS131M0x(ADCBase):
         num: int,
         bits: int,
     ) -> int:
-        """Takes in a number and the number of bits used to represent them, then converts the number to twos complement"""
+        """Takes in a number and the number of bits used to represent them, then converts the number to twos complement
+        Args:
+            num(int): number to be converted
+            bits(int): number of bits that represent num
+        """
         val = num
         if (num >> (bits - 1)) != 0:  # if sign bit is set e.g.
             val = num - (1 << bits)  # compute negative value

@@ -54,7 +54,7 @@ class SRILoadcell(LoadcellBase):
 
     @property
     def is_streaming(self) -> bool:
-        """Returns whether the ADC of the Loadcell is streaming data or not"""
+        """Returns true if the ADC is streaming"""
         return (bool)(self.adc.is_streaming)
 
     @property
@@ -63,30 +63,30 @@ class SRILoadcell(LoadcellBase):
 
     @property
     def fx(self) -> float:
-        """Returns the force in the x direction of the loadcell"""
+        """Returns the force in the x direction of the loadcell in Newtons"""
         return (float)(self.data[0])
 
     @property
     def fy(self) -> float:
-        """Returns the force in the y direction of the loadcell"""
+        """Returns the force in the y direction of the loadcell in Newtons"""
         return (float)(self.data[1])
 
     @property
     def fz(self) -> float:
-        """Returns the force in the z direction of the loadcell"""
+        """Returns the force in the z direction of the loadcell in Newtons"""
         return (float)(self.data[2])
 
     @property
     def mx(self) -> float:
-        """Returns the moment in the x direction of the loadcell"""
+        """Returns the moment in the x direction of the loadcell in Newton-metres"""
         return (float)(self.data[3])
 
     @property
     def my(self) -> float:
-        """Returns the moment in the y direction of the loadcell"""
+        """Returns the moment in the y direction of the loadcell in Newton-metres"""
         return (float)(self.data[4])
 
     @property
     def mz(self) -> float:
-        """Returns the moment in the z direction of the loadcell"""
+        """Returns the moment in the z direction of the loadcell in Newton-metres"""
         return (float)(self.data[5])
