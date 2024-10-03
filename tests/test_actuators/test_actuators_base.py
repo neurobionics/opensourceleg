@@ -562,3 +562,7 @@ def test_motor_constants_properties(mock_actuator: MockActuator):
         == 2 * 3.14159 / 1000
     )
     assert mock_actuator.MOTOR_CONSTANTS.NM_PER_MILLIAMP == 0.0001
+
+
+def test_hello_world():
+    assert len("Hello World") == 11

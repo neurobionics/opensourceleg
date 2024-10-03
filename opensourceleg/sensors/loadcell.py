@@ -38,12 +38,26 @@ class SRILoadcell(LoadcellBase):
 
     def __init__(
         self,
+        calibration_matrix: npt.NDArray[np.double],
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        calibration_matrix=None,
         bus: int = 1,
         i2c_address: int = 0x66,
     ) -> None:
+        '''
+        TODO: Write docstring for initial values
+        '''
+        # Check that parameters are set correctly:
+        if calibration_matrix.shape != (6, 6):
+            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
+            raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
+        if amp_gain <= 0:
+            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
+            raise ValueError("amp_gain must be a floating point value greater than 0.")
+        if exc <= 0 :
+            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
+            raise ValueError("exc must be a floating point value greater than 0.")
+
         self._amp_gain: float = amp_gain
         self._exc: float = exc
 
@@ -64,7 +78,8 @@ class SRILoadcell(LoadcellBase):
         self._is_streaming: bool = False
 
     def start(self) -> None:
-        if self._bus or self._i2c_address is None:
+        # TODO: What is the purpose of this check?
+        if (self._bus) or (self._i2c_address is None):
             return
 
         self._smbus = SMBus(self._bus)
@@ -89,7 +104,7 @@ class SRILoadcell(LoadcellBase):
         if calibration_offset is None:
             calibration_offset = self._calibration_offset
 
-        signed_data = (data - self.OFFSET) / self.ADC_RANGE * self._exc
+        signed_data = ((data - self.OFFSET) / self.ADC_RANGE) * self._exc
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
         self._data = (
@@ -105,7 +120,7 @@ class SRILoadcell(LoadcellBase):
     ) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero.
-        This is automatically subtraced off for subsequent calls of the update method.
+        This is automatically subtracted off for subsequent calls of the update method.
         """
 
         if not self.is_calibrated:
