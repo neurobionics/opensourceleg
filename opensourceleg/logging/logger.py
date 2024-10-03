@@ -221,6 +221,15 @@ class Logger(logging.Logger):
         self.flush_buffer()
         self.close()
 
+    def reset(self):
+        self._buffer.clear()
+        self._tracked_vars.clear()
+        self._var_names.clear()
+        self._header_written = False
+        if hasattr(self, '_file_handler'):
+            self._file_handler.close()
+            del self._file_handler
+
     def close(self) -> None:
         if self._file:
             self._file.close()
@@ -252,7 +261,7 @@ class Logger(logging.Logger):
         super().log(level, msg, *args, **kwargs)
 
     @property
-    def file_name(self) -> str:
+    def file_path(self) -> str:
         if self._file_path == "":
             self._generate_file_paths()
         return self._file_path
