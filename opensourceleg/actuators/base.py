@@ -50,13 +50,13 @@ class MOTOR_CONSTANTS:
 
 
 class CONTROL_MODES(Enum):
+    IDLE = -1
     POSITION = 0
-    CURRENT = 1
-    VOLTAGE = 2
+    VOLTAGE = 1
+    CURRENT = 2
     IMPEDANCE = 3
     VELOCITY = 4
     TORQUE = 5
-    IDLE = 6
 
 
 # TODO: This can be ordered and requires validation
@@ -79,13 +79,13 @@ class ControlModeConfig:
 
 
 class CONTROL_MODE_CONFIGS(NamedTuple):
+    IDLE: Optional[ControlModeConfig] = None
     POSITION: Optional[ControlModeConfig] = None
     CURRENT: Optional[ControlModeConfig] = None
     VOLTAGE: Optional[ControlModeConfig] = None
     IMPEDANCE: Optional[ControlModeConfig] = None
     VELOCITY: Optional[ControlModeConfig] = None
     TORQUE: Optional[ControlModeConfig] = None
-    IDLE: Optional[ControlModeConfig] = None
 
 
 CONTROL_MODE_METHODS: list[str] = [
@@ -221,21 +221,21 @@ class ActuatorBase(ABC):
         )
 
     def set_control_mode(self, mode: CONTROL_MODES) -> None:
-        if self._mode == mode:
-            LOGGER.debug(msg=f"[{self.tag}] Already in {mode.name} control mode.")
+
+        if self.mode == mode:
+            LOGGER.debug(msg=f"[{self.tag}] Already in {self.mode.name} control mode.")
             return
 
-        current_config = self._get_control_mode_config(self._mode)
+        current_config = self._get_control_mode_config(self.mode)
         if current_config:
-            LOGGER.debug(msg=f"[{self.tag}] Exiting {mode.name} control mode.")
             current_config.exit_callback(self)
 
-        new_config = self._get_control_mode_config(mode)
+        self._mode = mode
+
+        new_config = self._get_control_mode_config(self.mode)
         if new_config:
-            LOGGER.debug(msg=f"[{self.tag}] Entering {mode.name} control mode.")
             new_config.entry_callback(self)
 
-        self._mode = mode
         self._set_mutated_methods()
 
     @abstractmethod

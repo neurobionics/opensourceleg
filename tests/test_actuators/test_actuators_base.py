@@ -84,8 +84,8 @@ def test_control_modes_default_four():
 
 def test_control_modes_dephy_order():
     assert CONTROL_MODES.POSITION.value == 0
-    assert CONTROL_MODES.CURRENT.value == 1
-    assert CONTROL_MODES.VOLTAGE.value == 2
+    assert CONTROL_MODES.VOLTAGE.value == 1
+    assert CONTROL_MODES.CURRENT.value == 2
     assert CONTROL_MODES.IMPEDANCE.value == 3
 
 
@@ -264,7 +264,6 @@ def test_typevar_usage_invalid():
 
 
 def test_method_with_required_modes():
-
     class TestClass(MethodWithRequiredModes):
         _required_modes = {CONTROL_MODES.POSITION, CONTROL_MODES.CURRENT}
 
