@@ -1,5 +1,5 @@
-﻿import time
-import sys
+﻿import sys
+import time
 
 import opensourceleg.actuators.dephy as Dephy
 from opensourceleg.logging.logger import LOGGER

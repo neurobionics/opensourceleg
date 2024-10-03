@@ -79,7 +79,7 @@ def is_negative(clamp: bool = False):
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value > 0:
+            if value >= 0:
                 if clamp:
                     return 0
                 raise ValueError("Value must be negative")
@@ -104,7 +104,7 @@ def is_positive(clamp: bool = False):
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value < 0:
+            if value <= 0:
                 if clamp:
                     return 0
                 raise ValueError("Value must be positive")
@@ -251,6 +251,7 @@ class SafetyDecorators:
     is_changing = is_changing
     is_negative = is_negative
     is_positive = is_positive
+    is_zero = is_zero
     is_within_range = is_within_range
     is_greater_than = is_greater_than
     is_less_than = is_less_than
