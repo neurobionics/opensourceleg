@@ -26,13 +26,12 @@
 #         time.sleep(0.005)
 
 
-
 import time
 
 import pandas as pd
 
-from opensourceleg.actuators.base import CONTROL_MODES
 import opensourceleg.actuators.dephy as Dephy
+from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.logging.logger import LOGGER
 from opensourceleg.time import SoftRealtimeLoop
 
