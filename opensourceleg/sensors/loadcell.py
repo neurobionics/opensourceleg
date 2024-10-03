@@ -44,18 +44,24 @@ class SRILoadcell(LoadcellBase):
         bus: int = 1,
         i2c_address: int = 0x66,
     ) -> None:
-        '''
+        """
         TODO: Write docstring for initial values
-        '''
+        """
         # Check that parameters are set correctly:
         if calibration_matrix.shape != (6, 6):
-            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
+            LOGGER.info(
+                f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double."
+            )
             raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
         if amp_gain <= 0:
-            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
+            LOGGER.info(
+                f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0."
+            )
             raise ValueError("amp_gain must be a floating point value greater than 0.")
-        if exc <= 0 :
-            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
+        if exc <= 0:
+            LOGGER.info(
+                f"[{self.__repr__()}] exc must be a floating point value greater than 0."
+            )
             raise ValueError("exc must be a floating point value greater than 0.")
 
         self._amp_gain: float = amp_gain
