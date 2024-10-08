@@ -4,21 +4,26 @@ import os
 import time
 from dataclasses import dataclass
 
-import adafruit_bno055
-import board
-import busio
-
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 try:
+    import sys
+    sys.path.append('/usr/share/python3-mscl')
     import mscl
 except ImportError:
     LOGGER.error(
         "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
     )
 
-
+try:
+    import adafruit_bno055
+    import board
+    import busio    
+except ImportError:
+    LOGGER.error(
+        "Failed to import adafruit libs. Please install them using pip"
+    )
 class LordMicrostrainIMU(IMUBase):
     """
     Sensor class for the Lord Microstrain IMU.
@@ -80,7 +85,7 @@ class LordMicrostrainIMU(IMUBase):
         self._connection = mscl.Connection.Serial(self.port, self.baud_rate)
         self._node = mscl.InertialNode(self._connection)
         self._node.setActiveChannelFields(
-            mscl.MipTypes.CLASS_ESTFILTER, self._configure_channels()
+            mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels()
         )
         self._node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
@@ -177,6 +182,18 @@ class LordMicrostrainIMU(IMUBase):
     def acc_z(self) -> float:
         """Returns estimated linear acceleration along the z-axis (m/s^2)."""
         return self._data["estLinearAccelZ"]
+    
+    @property
+    def gyro_x(self) -> float:
+        pass
+
+    @property
+    def gyro_y(self) -> float:
+        pass
+
+    @property
+    def gyro_z(self) -> float:
+        pass    
 
     @property
     def timestamp(self) -> float:

@@ -17,7 +17,7 @@ class LoadcellNotRespondingException(Exception):
         super().__init__(message)
 
 
-class MEMORY_CHANNELS(Enum):
+class MEMORY_CHANNELS(int, Enum):
     CH1_H = 8
     CH1_L = 9
     CH2_H = 10
@@ -84,10 +84,6 @@ class SRILoadcell(LoadcellBase):
         self._is_streaming: bool = False
 
     def start(self) -> None:
-        # TODO: What is the purpose of this check?
-        if (self._bus) or (self._i2c_address is None):
-            return
-
         self._smbus = SMBus(self._bus)
         time.sleep(1)
         self._is_streaming = True
@@ -131,8 +127,9 @@ class SRILoadcell(LoadcellBase):
 
         if not self.is_calibrated:
             LOGGER.info(
-                f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force.\n{input('Press any key to start.')}"
+                f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force."
             )
+            input('Press any key to start.')
 
             self.update(data_callback=data_callback)
             self._calibration_offset = self._data
@@ -219,7 +216,7 @@ class SRILoadcell(LoadcellBase):
         Latest force in the x (medial/lateral) direction in Newtons.
         If using the standard OSL setup, this is positive towards the user's right.
         """
-        return self._data[0]
+        return self.data[0]
 
     @property
     def fy(self):
@@ -227,7 +224,7 @@ class SRILoadcell(LoadcellBase):
         Latest force in the y (anterior/posterior) direction in Newtons.
         If using the standard OSL setup, this is positive in the posterior direction.
         """
-        return self._data[1]
+        return self.data[1]
 
     @property
     def fz(self):
@@ -236,7 +233,7 @@ class SRILoadcell(LoadcellBase):
         If using the standard OSL setup, this should be positive downwards.
         i.e. quiet standing on the OSL should give a negative Fz.
         """
-        return self._data[2]
+        return self.data[2]
 
     @property
     def mx(self):
@@ -244,7 +241,7 @@ class SRILoadcell(LoadcellBase):
         Latest moment about the x (medial/lateral) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the user's right.
         """
-        return self._data[3]
+        return self.data[3]
 
     @property
     def my(self):
@@ -252,7 +249,7 @@ class SRILoadcell(LoadcellBase):
         Latest moment about the y (anterior/posterior) axis in Nm.
         If using the standard OSL setup, this axis is positive in the posterior direction.
         """
-        return self._data[4]
+        return self.data[4]
 
     @property
     def mz(self):
@@ -260,7 +257,7 @@ class SRILoadcell(LoadcellBase):
         Latest moment about the z (vertical) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the ground.
         """
-        return self._data[5]
+        return self.data[5]
 
     @property
     def data(self):

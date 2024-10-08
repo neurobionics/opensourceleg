@@ -132,6 +132,9 @@ class IMUBase(SensorBase, ABC):
     @property
     @abstractmethod
     def acc_x(self) -> float:
+        """
+        Returns estimated linear acceleration along the x-axis (m/s^2).
+        """
         pass
 
     @property
