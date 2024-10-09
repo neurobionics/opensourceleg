@@ -34,6 +34,7 @@ def test_SRILoadcell_init():
     assert SRI._bus == 1
     assert SRI._i2c_address == 0x66
 
+
 # TODO: Commenting out this test case as it needs to be reworked
 # def test_SRILoadcell_start():
 
