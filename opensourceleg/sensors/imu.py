@@ -9,7 +9,8 @@ from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 try:
     import sys
-    sys.path.append('/usr/share/python3-mscl')
+
+    sys.path.append("/usr/share/python3-mscl")
     import mscl
 except ImportError:
     LOGGER.error(
@@ -19,11 +20,11 @@ except ImportError:
 try:
     import adafruit_bno055
     import board
-    import busio    
+    import busio
 except ImportError:
-    LOGGER.error(
-        "Failed to import adafruit libs. Please install them using pip"
-    )
+    LOGGER.error("Failed to import adafruit libs. Please install them using pip")
+
+
 class LordMicrostrainIMU(IMUBase):
     """
     Sensor class for the Lord Microstrain IMU.
@@ -182,18 +183,21 @@ class LordMicrostrainIMU(IMUBase):
     def acc_z(self) -> float:
         """Returns estimated linear acceleration along the z-axis (m/s^2)."""
         return self._data["estLinearAccelZ"]
-    
+
     @property
     def gyro_x(self) -> float:
-        pass
+        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        return 0.0
 
     @property
     def gyro_y(self) -> float:
-        pass
+        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        return 0.0
 
     @property
     def gyro_z(self) -> float:
-        pass    
+        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        return 0.0
 
     @property
     def timestamp(self) -> float:

@@ -1,18 +1,16 @@
 from typing import Union
 
-from opensourceleg.actuators.base import ActuatorBase
+import time
+
+import numpy as np
+
+from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
 from opensourceleg.actuators.dephy import DephyLegacyActuator
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import IMUBase, LoadcellBase, SensorBase
 from opensourceleg.sensors.imu import LordMicrostrainIMU
-
-from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.sensors.loadcell import SRILoadcell
-
-import time
-import numpy as np
-
 
 
 class OpenSourceLeg(RobotBase[TActuator, TSensor]):
@@ -88,23 +86,25 @@ if __name__ == "__main__":
 
     LOADCELL_MATRIX = np.array(
         [
-        (-5.45598,-1317.68604,27.14505,22.8468,-11.1176,1283.02856),
-        (-20.23942,773.01343,-9.44841,-1546.70923,21.78232,744.52325),
-        (-811.76398,-16.82792,-825.67261,2.93904,-829.06409,7.45233),
-        (16.38306,0.22658,-0.50331,-0.23233,-17.0822,-0.03632),
-        (-9.81471,-0.03671,19.47362,-0.161,-9.76819,0.25571),
-        (-0.51744,-20.6571,0.18245,-20.42393,0.01944,-20.38067),
+            (-5.45598, -1317.68604, 27.14505, 22.8468, -11.1176, 1283.02856),
+            (-20.23942, 773.01343, -9.44841, -1546.70923, 21.78232, 744.52325),
+            (-811.76398, -16.82792, -825.67261, 2.93904, -829.06409, 7.45233),
+            (16.38306, 0.22658, -0.50331, -0.23233, -17.0822, -0.03632),
+            (-9.81471, -0.03671, 19.47362, -0.161, -9.76819, 0.25571),
+            (-0.51744, -20.6571, 0.18245, -20.42393, 0.01944, -20.38067),
         ]
     )
 
     osl = OpenSourceLeg[DephyLegacyActuator, SensorBase](
         tag="opensourceleg",
         actuators={
-            "knee": DephyLegacyActuator("knee", offline=False, frequency=frequency, gear_ratio=9 * (83/18)),
+            "knee": DephyLegacyActuator(
+                "knee", offline=False, frequency=frequency, gear_ratio=9 * (83 / 18)
+            ),
         },
         sensors={
             "imu": LordMicrostrainIMU(frequency=frequency, port="/dev/ttyS0"),
-            "loadcell": SRILoadcell(calibration_matrix=LOADCELL_MATRIX)
+            "loadcell": SRILoadcell(calibration_matrix=LOADCELL_MATRIX),
         },
     )
 
@@ -114,14 +114,13 @@ if __name__ == "__main__":
         osl.knee.set_control_mode(CONTROL_MODES.POSITION)
         osl.knee.set_position_gains()
         osl.knee.set_output_position(osl.knee.output_position + np.deg2rad(10))
-        osl.loadcell.calibrate()
-        
+        # osl.loadcell.calibrate()
+
         while True:
             try:
                 osl.update()
-                print(osl.sensors["loadcell"].fz)
-                time.sleep(1/frequency)
+                # print(osl.sensors["loadcell"].fz)
+                time.sleep(1 / frequency)
 
             except KeyboardInterrupt:
                 exit()
-

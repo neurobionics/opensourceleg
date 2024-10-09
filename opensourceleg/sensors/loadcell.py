@@ -129,7 +129,7 @@ class SRILoadcell(LoadcellBase):
             LOGGER.info(
                 f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force."
             )
-            input('Press any key to start.')
+            input("Press any key to start.")
 
             self.update(data_callback=data_callback)
             self._calibration_offset = self._data
