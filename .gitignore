@@ -622,4 +622,3 @@ opensourceleg/knee_encoder_map.npy
 opensourceleg/ankle_encoder_map.npy
 
 .vscode/
-poetry.lock
