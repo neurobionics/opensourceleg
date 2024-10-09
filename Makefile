@@ -51,7 +51,8 @@ check-codestyle:
 
 .PHONY: mypy
 mypy:
-	poetry run mypy --config-file pyproject.toml ./ --explicit-package-bases
+	poetry run mypy --config-file pyproject.toml ./ --explicit-package-bases 
+#* --check-untyped-defs
 
 .PHONY: check-safety
 check-safety:
