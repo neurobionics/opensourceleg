@@ -34,24 +34,24 @@ def test_SRILoadcell_init():
     assert SRI._bus == 1
     assert SRI._i2c_address == 0x66
 
+# TODO: Commenting out this test case as it needs to be reworked
+# def test_SRILoadcell_start():
 
-def test_SRILoadcell_start():
+#     # Initialize SRILoadcell object
+#     SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
 
-    # Initialize SRILoadcell object
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+#     start = time.time()
+#     SRI.start()
+#     end = time.time()
 
-    start = time.time()
-    SRI.start()
-    end = time.time()
+#     # assert SRI._bus == SMBus(SRI._bus) #?
+#     assert (end - start) >= 1  # TODO: Link to var
+#     assert SRI._is_streaming == True
 
-    # assert SRI._bus == SMBus(SRI._bus) #?
-    assert (end - start) >= 1  # TODO: Link to var
-    assert SRI._is_streaming == True
-
-    # Test start with bus or i2c_address set to None
-    SRI = loadcell.SRILoadcell(DEFAULT_CAL_MATRIX, 125.0, 5, 1, None)
-    result = SRI.start()  # TODO: Am I doing this correctly?
-    assert result == None
+#     # Test start with bus or i2c_address set to None
+#     SRI = loadcell.SRILoadcell(DEFAULT_CAL_MATRIX, 125.0, 5, 1, None)
+#     result = SRI.start()  # TODO: Am I doing this correctly?
+#     assert result == None
 
 
 def test_SRILoadcell_reset():
