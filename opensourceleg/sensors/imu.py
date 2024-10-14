@@ -140,6 +140,10 @@ class LordMicrostrainIMU(IMUBase):
         return self._is_streaming
 
     @property
+    def data(self) -> dict[str, float]:
+        return self._data
+
+    @property
     def roll(self) -> float:
         """Returns estimated roll (rad)."""
         return self._data["estRoll"]

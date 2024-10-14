@@ -28,6 +28,11 @@ class SensorBase(ABC):
     def __repr__(self) -> str:
         return f"SensorBase"
 
+    @property
+    @abstractmethod
+    def data(self):
+        pass
+
     @abstractmethod
     def start(self) -> None:
         pass
@@ -50,6 +55,20 @@ class SensorBase(ABC):
     @property
     @abstractmethod
     def is_streaming(self) -> bool:
+        pass
+
+
+class ADCBase(SensorBase, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __repr__(self) -> str:
+        return f"ADCBase"
+
+    def reset(self) -> None:
+        pass
+
+    def calibrate(self) -> None:
         pass
 
 

@@ -149,6 +149,9 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
         max_value (float): Maximum value of the range.
         clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
 
+    Raises:
+        ValueError: If the maximum value is less than or equal to the minimum value.
+
     Returns:
         Callable: Decorator function.
     """
