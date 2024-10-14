@@ -15,7 +15,7 @@ DT = 1 / FREQUENCY
 def main():
     actpack = Dephy.DephyActuator(
         port="/dev/ttyACM0",
-        gear_ratio=9.0,
+        gear_ratio=1.0,
     )
 
     position_data = pd.DataFrame(
@@ -41,7 +41,7 @@ def main():
             for t in clock:
 
                 if t > TIME_TO_STEP:
-                    command_position = current_position + +np.pi / 2
+                    command_position = current_position + np.pi
                     actpack.set_output_position(value=command_position)
                 else:
                     command_position = current_position

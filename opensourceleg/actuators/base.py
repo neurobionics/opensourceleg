@@ -2,6 +2,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     NamedTuple,
     Optional,
     Protocol,
@@ -9,6 +10,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    runtime_checkable,
 )
 
 from abc import ABC, abstractmethod
@@ -20,16 +22,23 @@ import numpy as np
 
 from opensourceleg.logging.logger import LOGGER
 
+# TODO: Add validators for every custom data type
 
-class MOTOR_CONSTANTS(NamedTuple):
-    # TODO: Add thermal constants
+
+@dataclass
+class MOTOR_CONSTANTS:
     MOTOR_COUNT_PER_REV: float
     NM_PER_AMP: float
     NM_PER_RAD_TO_K: float
     NM_S_PER_RAD_TO_B: float
-
     MAX_CASE_TEMPERATURE: float
     MAX_WINDING_TEMPERATURE: float
+
+    def __post_init__(self):
+        if any(x <= 0 for x in self.__dict__.values()):
+            raise ValueError(
+                "All values in MOTOR_CONSTANTS must be non-zero and positive."
+            )
 
     @property
     def RAD_PER_COUNT(self) -> float:
@@ -41,15 +50,16 @@ class MOTOR_CONSTANTS(NamedTuple):
 
 
 class CONTROL_MODES(Enum):
+    IDLE = -1
     POSITION = 0
-    CURRENT = 1
-    VOLTAGE = 2
+    VOLTAGE = 1
+    CURRENT = 2
     IMPEDANCE = 3
     VELOCITY = 4
     TORQUE = 5
-    IDLE = 6
 
 
+# TODO: This can be ordered and requires validation
 @dataclass
 class ControlGains:
     kp: float = 0
@@ -69,25 +79,50 @@ class ControlModeConfig:
 
 
 class CONTROL_MODE_CONFIGS(NamedTuple):
+    IDLE: Optional[ControlModeConfig] = None
     POSITION: Optional[ControlModeConfig] = None
     CURRENT: Optional[ControlModeConfig] = None
     VOLTAGE: Optional[ControlModeConfig] = None
     IMPEDANCE: Optional[ControlModeConfig] = None
     VELOCITY: Optional[ControlModeConfig] = None
     TORQUE: Optional[ControlModeConfig] = None
-    IDLE: Optional[ControlModeConfig] = None
+
+
+CONTROL_MODE_METHODS: list[str] = [
+    "set_motor_torque",
+    "set_joint_torque",
+    "set_output_torque",
+    "set_motor_current",
+    "set_current",
+    "set_motor_voltage",
+    "set_voltage",
+    "set_motor_position",
+    "set_position_gains",
+    "set_current_gains",
+    "set_motor_impedance",
+    "set_output_impedance",
+    "set_impedance_gains",
+]
 
 
 T = TypeVar("T", bound=Callable[..., Any])
 
 
+@runtime_checkable
 class MethodWithRequiredModes(Protocol):
     _required_modes: set[CONTROL_MODES]
 
 
 def requires(*modes: CONTROL_MODES):
     def decorator(func: T) -> T:
-        setattr(func, "_required_modes", set(modes))
+        if not all(isinstance(mode, CONTROL_MODES) for mode in modes):
+            raise TypeError("All arguments to 'requires' must be of type CONTROL_MODES")
+
+        if not hasattr(func, "_required_modes"):
+            setattr(func, "_required_modes", set(modes))
+        else:
+            getattr(func, "_required_modes").update(modes)
+
         return func
 
     return decorator
@@ -121,6 +156,9 @@ class ActuatorBase(ABC):
         self._joint_position_offset: float = 0.0
         self._joint_direction: int = 1
 
+        self._is_open: bool = False
+        self._is_streaming: bool = False
+
         self._original_methods: dict[str, MethodWithRequiredModes] = {}
 
         self._set_original_methods()
@@ -138,11 +176,15 @@ class ActuatorBase(ABC):
         return None
 
     def _set_original_methods(self):
-        for method_name in dir(self):
-            if not method_name.startswith("_"):
+        for method_name in CONTROL_MODE_METHODS:
+            try:
                 method = getattr(self, method_name)
                 if callable(method) and hasattr(method, "_required_modes"):
                     self._original_methods[method_name] = method
+            except AttributeError:
+                LOGGER.debug(
+                    msg=f"[{self.tag}] {method_name}() is not implemented in {self.tag}."
+                )
 
     def _set_mutated_methods(self):
         for method_name, method in self._original_methods.items():
@@ -179,21 +221,21 @@ class ActuatorBase(ABC):
         )
 
     def set_control_mode(self, mode: CONTROL_MODES) -> None:
-        if self._mode == mode:
-            LOGGER.debug(msg=f"[{self.tag}] Already in {mode.name} control mode.")
+
+        if self.mode == mode:
+            LOGGER.debug(msg=f"[{self.tag}] Already in {self.mode.name} control mode.")
             return
 
-        current_config = self._get_control_mode_config(self._mode)
+        current_config = self._get_control_mode_config(self.mode)
         if current_config:
-            LOGGER.debug(msg=f"[{self.tag}] Exiting {mode.name} control mode.")
             current_config.exit_callback(self)
 
-        new_config = self._get_control_mode_config(mode)
+        self._mode = mode
+
+        new_config = self._get_control_mode_config(self.mode)
         if new_config:
-            LOGGER.debug(msg=f"[{self.tag}] Entering {mode.name} control mode.")
             new_config.entry_callback(self)
 
-        self._mode = mode
         self._set_mutated_methods()
 
     @abstractmethod
@@ -377,6 +419,10 @@ class ActuatorBase(ABC):
     def joint_direction(self) -> int:
         return self._joint_direction
 
+    @property
+    def is_open(self) -> bool:
+        return self._is_open
 
-if __name__ == "__main__":
-    pass
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming

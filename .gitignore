@@ -621,12 +621,5 @@ MigrationBackup/
 opensourceleg/knee_encoder_map.npy
 opensourceleg/ankle_encoder_map.npy
 
-
-localtest.py
-opensourceleg/hardware/Re_Actuators.md
-opensourceleg/hardware/actuators_base.py
-Moteus_Spec.md
-
 .vscode/
-
-localtest2.py
+poetry.lock

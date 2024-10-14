@@ -79,7 +79,7 @@ def is_negative(clamp: bool = False):
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value > 0:
+            if value >= 0:
                 if clamp:
                     return 0
                 raise ValueError("Value must be negative")
@@ -104,7 +104,7 @@ def is_positive(clamp: bool = False):
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value < 0:
+            if value <= 0:
                 if clamp:
                     return 0
                 raise ValueError("Value must be positive")
@@ -153,6 +153,9 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
         Callable: Decorator function.
     """
 
+    if max_value <= min_value:
+        raise ValueError("Maximum value must be greater than minimum value of range")
+
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
@@ -167,13 +170,15 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
     return decorator
 
 
-def is_greater_than(min_value: float, clamp: bool = False):
+def is_greater_than(min_value: float, clamp: bool = False, equality: bool = False):
     """
-    Creates a decorator to check if a property's value is greater than a given value.
+    Creates a decorator to check if a property's value is greater than a given value. Gives user
+    choice to implement is_greater_than_or_equal_to with equality bool
 
     Args:
         min_value (float): Minimum value to check against.
         clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        equality (bool): If True, the decorator will check for is greater than or equal to, instead of is greater than.
 
     Returns:
         Callable: Decorator function.
@@ -182,10 +187,18 @@ def is_greater_than(min_value: float, clamp: bool = False):
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value < min_value:
-                if clamp:
-                    return min_value
-                raise ValueError(f"Value must be greater than {min_value}")
+            if equality:
+                if value < min_value:
+                    if clamp:
+                        return min_value
+                    raise ValueError(
+                        f"Value must be greater than or equal to {min_value}"
+                    )
+            else:
+                if value <= min_value:
+                    if clamp:
+                        return min_value
+                    raise ValueError(f"Value must be greater than {min_value}")
             return value
 
         return wrapper
@@ -193,13 +206,15 @@ def is_greater_than(min_value: float, clamp: bool = False):
     return decorator
 
 
-def is_less_than(max_value: float, clamp: bool = False):
+def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
     """
-    Creates a decorator to check if a property's value is less than a given value.
+    Creates a decorator to check if a property's value is less than a given value. Gives user
+    choice to implement is_less_than_or_equal_to with equality bool
 
     Args:
         max_value (float): Maximum value to check against.
         clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        equality (bool): If True, the decorator will check for is less than or equal to, instead of is less than.
 
     Returns:
         Callable: Decorator function.
@@ -208,10 +223,16 @@ def is_less_than(max_value: float, clamp: bool = False):
     def decorator(func):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
-            if value > max_value:
-                if clamp:
-                    return max_value
-                raise ValueError(f"Value must be less than {max_value}")
+            if equality:
+                if value > max_value:
+                    if clamp:
+                        return max_value
+                    raise ValueError(f"Value must be less than or equal to {max_value}")
+            else:
+                if value >= max_value:
+                    if clamp:
+                        return max_value
+                    raise ValueError(f"Value must be less than {max_value}")
             return value
 
         return wrapper
@@ -251,6 +272,7 @@ class SafetyDecorators:
     is_changing = is_changing
     is_negative = is_negative
     is_positive = is_positive
+    is_zero = is_zero
     is_within_range = is_within_range
     is_greater_than = is_greater_than
     is_less_than = is_less_than

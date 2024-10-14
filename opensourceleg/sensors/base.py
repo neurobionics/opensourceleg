@@ -1,6 +1,8 @@
 ﻿from abc import ABC, abstractmethod
 from functools import wraps
 
+import numpy as np
+
 
 class SensorNotStreamingException(Exception):
     def __init__(self, sensor_name: str = "Sensor") -> None:
@@ -96,12 +98,11 @@ class LoadcellBase(SensorBase, ABC):
         return f"LoadcellBase"
 
     @abstractmethod
-    def reset(self) -> None:
+    def calibrate(self) -> None:
         pass
 
-    @property
     @abstractmethod
-    def adc(self) -> ADCBase:
+    def reset(self) -> None:
         pass
 
     @property
@@ -134,6 +135,11 @@ class LoadcellBase(SensorBase, ABC):
     def mz(self) -> float:
         pass
 
+    @property
+    @abstractmethod
+    def is_calibrated(self) -> bool:
+        pass
+
 
 class IMUBase(SensorBase, ABC):
     def __init__(self) -> None:
@@ -145,6 +151,9 @@ class IMUBase(SensorBase, ABC):
     @property
     @abstractmethod
     def acc_x(self) -> float:
+        """
+        Returns estimated linear acceleration along the x-axis (m/s^2).
+        """
         pass
 
     @property

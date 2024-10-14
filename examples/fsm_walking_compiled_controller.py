@@ -204,7 +204,7 @@ with knee, ankle, loadcell:
         )
 
         # Write to the hardware
-        knee.set_joint_impedance(
+        knee.set_output_impedance(
             k=units.convert_to_default(
                 outputs.knee_impedance.stiffness, units.stiffness.N_m_per_rad
             ),
@@ -217,7 +217,7 @@ with knee, ankle, loadcell:
                 outputs.knee_impedance.eq_angle, units.position.deg
             )
         )
-        ankle.set_joint_impedance(
+        ankle.set_output_impedance(
             k=units.convert_to_default(
                 outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_rad
             ),
