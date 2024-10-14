@@ -1,11 +1,11 @@
-# AFTER DONE, TEST WITH NEWLY IMAGED PI
 from typing import List
 
 import math
 from time import sleep
 
 import spidev
-from base import ADCBase
+
+from opensourceleg.sensors.base import ADCBase
 
 
 class ADS131M0x(ADCBase):
@@ -68,9 +68,9 @@ class ADS131M0x(ADCBase):
         - spi_chip(int): Which CS signal the ADC is connected to. Default: 0
         - num_channels(int): How many channels are present on the ADC. Default: 6
         - max_speed_hz(int): Maximum clock frequency of the SPI communication. Default: 8192000
-        - channel_gains(list[int]): Gains of the programmable gain amplifier for all channels. Default: [32,128] * 3
+        - channel_gains(List[int]): Gains of the programmable gain amplifier for all channels. Default: [32,128] * 3
         - voltage_reference(float): Reference voltage used by the ADC. Default: 1.2
-        - gain_error(list[int]): User-calculated integers used for correcting the gain of each channel for additional precision. Default: []
+        - gain_error(List[int]): User-calculated integers used for correcting the gain of each channel for additional precision. Default: []
 
         Raises:
            ValueError: If length of channel_gains is not equal to number of channels, or if gain is not a power of 2 between 1 and 128.
@@ -182,13 +182,13 @@ class ADS131M0x(ADCBase):
 
     @property
     def data(self):
-        return self._data()
+        return self._data
 
     def _spi_message(self, bytes: list[int]) -> list[int]:
         """Send SPI message to ADS131M0x.
 
         Args:
-         - bytes(list[int]): message to be sent to the ADS131M0x separated into bytes.
+         - bytes(List[int]): message to be sent to the ADS131M0x separated into bytes.
         Returns:
             The response to the message sent, including the entire frame following the response.
         """
@@ -288,7 +288,7 @@ class ADS131M0x(ADCBase):
         return reply == self._ready_status
 
     def _read_data_millivolts(self) -> list[float]:
-        """Returns a list representing the voltage in millivolts for all channels of the ADC"""
+        """Returns a List representing the voltage in millivolts for all channels of the ADC"""
         mV = [
             1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference)
             for dat in self._read_data_counts()
