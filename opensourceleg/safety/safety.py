@@ -191,7 +191,9 @@ def is_greater_than(min_value: float, clamp: bool = False, equality: bool = Fals
                 if value < min_value:
                     if clamp:
                         return min_value
-                    raise ValueError(f"Value must be greater than or equal to {min_value}")
+                    raise ValueError(
+                        f"Value must be greater than or equal to {min_value}"
+                    )
             else:
                 if value <= min_value:
                     if clamp:
@@ -222,17 +224,17 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
             if equality:
-                if value > max_value: 
+                if value > max_value:
                     if clamp:
                         return max_value
                     raise ValueError(f"Value must be less than or equal to {max_value}")
             else:
-                if value >= max_value: 
+                if value >= max_value:
                     if clamp:
                         return max_value
                     raise ValueError(f"Value must be less than {max_value}")
             return value
-            
+
         return wrapper
 
     return decorator
