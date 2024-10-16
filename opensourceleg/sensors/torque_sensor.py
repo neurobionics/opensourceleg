@@ -48,11 +48,14 @@ class AdcManager(object):
             self.csv_writer.writerow([time(),self.volts, dur])
         return self.volts
 
-class Futek100Nm(AdcManager, SensorBase):
-    def __init__(self, **kwargs):
+class Futek(AdcManager, SensorBase):
+    def __init__(self, torque=-42.0, bias=0, torque_rating=100, wait_time=5, voltage=5, **kwargs):
         super().__init__(**kwargs)
-        self.torque = -42.0
-        self.bias = 0
+        self.torque = torque
+        self.bias = bias
+        self.torque_rating = torque_rating
+        self.wait_time = wait_time
+        self.voltage = voltage
 
     def start(self):
         self._is_streaming = True
@@ -65,8 +68,8 @@ class Futek100Nm(AdcManager, SensorBase):
 
     def get_torque(self):
         self.update_adc()
-        torque_rating = 100 # 100 Nm = 5V
-        self.torque = (self.volts-2.5-self.bias)/2.5*torque_rating
+        torque_rating = self.torque_rating # 100 Nm = 5V
+        self.torque = (self.volts-self.voltage/2-self.bias)/self.voltage/2*torque_rating
         return self.torque
 
     def calibrate_loadcell(self,Calibrate=True,SaveCal=False):
@@ -75,12 +78,12 @@ class Futek100Nm(AdcManager, SensorBase):
             voltage_cal = []
             print("calibrating loadcell")
             start_time = time()
-            while time() - start_time < 5:
+            while time() - start_time < self.wait_time:
                 self.update()
                 voltage_cal.append(self.volts)
 
             avg_volt = np.mean(np.array(voltage_cal))
-            bias = avg_volt - 2.5
+            bias = avg_volt - self.voltage/2
             print("Bias: {} V".format(bias))
             self.update()
             self.bias = bias

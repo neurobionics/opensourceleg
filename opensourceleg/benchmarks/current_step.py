@@ -4,7 +4,7 @@ from opensourceleg.time import SoftRealtimeLoop
 from opensourceleg.actuators.base import CONTROL_MODES
 from flexsea.device import Device
 
-from opensourceleg.sensors.torque_sensor import Futek100Nm
+from opensourceleg.sensors.torque_sensor import Futek
 from opensourceleg.benchmarks.benchmark_manager import SimpleTimer, LimitVelocity
 import numpy as np
 import csv
@@ -22,7 +22,7 @@ def current_step():
     # current_steps = np.linspace(0, max_current, num=num_steps)
     current_steps = [(i / (num_steps - 1)) * max_current for i in range(num_steps)]
 
-    futek = Futek100Nm()
+    futek = Futek()
     futek.calibrate_loadcell()
 
     on_target = 0
@@ -51,8 +51,6 @@ def current_step():
 
             driving_motor.update()
 
-            # print("1")
-
             if timer.is_done:
                 if timer.just_done:
                     if current_steps is not None:
@@ -63,7 +61,6 @@ def current_step():
                         stopping = True
                 elif on_target:
                     timer.start(t_cond)
-            # print("2")
 
             curr_command_lim = ramp.update(curr_command)
 
@@ -72,7 +69,6 @@ def current_step():
 
             on_target = ramp.on_target
 
-            # print(curr_command_lim)
             driving_motor.set_motor_current(curr_command_lim)
 
             current = driving_motor.motor_current

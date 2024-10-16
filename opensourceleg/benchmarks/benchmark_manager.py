@@ -1,4 +1,4 @@
-from time import time
+import time
 import numpy as np
 
 
@@ -10,7 +10,7 @@ class SimpleTimer:
         self._checked_end = False
 
     def start(self, timer_duration):
-        self.start_time = time()
+        self.start_time = time.monotonic()
         self.end_time = self.start_time + timer_duration
         self._checked_end = False
 
@@ -24,7 +24,7 @@ class SimpleTimer:
 
     @property
     def is_done(self) -> bool:
-        return time() >= self.end_time
+        return time.monotonic() >= self.end_time
 
 
 class LimitVelocity:

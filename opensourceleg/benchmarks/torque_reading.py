@@ -14,12 +14,6 @@ import csv
 FREQUENCY = 200
 
 
-
-
-
-
-
-
 if __name__ == "__main__":
     driving_motor = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY)
     clock = SoftRealtimeLoop(dt=1/FREQUENCY, report=True)
