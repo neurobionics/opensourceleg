@@ -69,7 +69,7 @@ class State:
         self._ankle_damping: float = ankle_damping
         self._ankle_theta: float = ankle_equilibrium_angle
 
-        self._custom_data: dict[str, Any] = field(default_factory=dict)
+        self._custom_data: Optional[dict[str, Any]] = {} #field(default_factory=dict)
 
         self._time_entered: float = 0.0
         self._time_exited: float = 0.0
@@ -149,7 +149,8 @@ class State:
             key (str): Key of the data
             value (Any): Value of the data
         """
-        self._custom_data[key] = value
+
+        self._custom_data.setdefault(key, value) #key] = value
 
     def get_custom_data(self, key: str) -> Any:
         """
