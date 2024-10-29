@@ -281,7 +281,7 @@ class Event:
             return False
 
     def __ne__(self, __o) -> bool:
-        return not self.__eq__
+        return not self.__eq__(__o) # TODO: Check this fix
 
     def __repr__(self) -> str:
         return f"Event[{self._name}]"
