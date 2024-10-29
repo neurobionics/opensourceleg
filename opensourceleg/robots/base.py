@@ -35,7 +35,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             actuator.start()
 
         for sensor in self.sensors.values():
-            LOGGER.debug(f"Calling start method of {sensor.tag}")
+            LOGGER.debug(f"Calling start method of {sensor}")
             sensor.start()
 
     @abstractmethod
@@ -45,7 +45,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             actuator.stop()
 
         for sensor in self.sensors.values():
-            LOGGER.debug(f"Calling stop method of {sensor.tag}")
+            LOGGER.debug(f"Calling stop method of {sensor}")
             sensor.stop()
 
     @abstractmethod

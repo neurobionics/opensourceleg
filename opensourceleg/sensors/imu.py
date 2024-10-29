@@ -4,10 +4,6 @@ import os
 import time
 from dataclasses import dataclass
 
-import adafruit_bno055
-import board
-import busio
-
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
@@ -17,6 +13,21 @@ except ImportError:
     LOGGER.error(
         "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
     )
+
+try:
+    import adafruit_bno055
+except ImportError:
+    LOGGER.error("Failed to import adafruit_bno055")
+
+try:
+    import board
+except ImportError:
+    LOGGER.error("Failed to import board")
+
+try:
+    import busio
+except ImportError:
+    LOGGER.error("Failed to import busio")
 
 
 class LordMicrostrainIMU(IMUBase):
