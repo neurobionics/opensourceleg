@@ -69,7 +69,7 @@ class State:
         self._ankle_damping: float = ankle_damping
         self._ankle_theta: float = ankle_equilibrium_angle
 
-        self._custom_data: Optional[dict[str, Any]] = {} #field(default_factory=dict)
+        self._custom_data: Optional[dict[str, Any]] = {}  # field(default_factory=dict)
 
         self._time_entered: float = 0.0
         self._time_exited: float = 0.0
@@ -150,7 +150,7 @@ class State:
             value (Any): Value of the data
         """
 
-        self._custom_data.setdefault(key, value) #key] = value
+        self._custom_data.setdefault(key, value)  # key] = value
 
     def get_custom_data(self, key: str) -> Any:
         """
@@ -165,16 +165,16 @@ class State:
             Any: Value of the data
         """
         return self._custom_data[key]
-    
+
     def get_all_custom_data(self) -> Any:
-        '''
+        """
         Get the entire custom data dictionary for the state. The custom data is a dictionary
         that can be used to store any data you want to associate with
         the state.
 
         Returns:
             dict: All custom data
-        '''
+        """
         return self._custom_data
 
     def on_entry(self, callback: Callable[[Any], None]) -> None:
@@ -293,7 +293,7 @@ class Event:
             return False
 
     def __ne__(self, __o) -> bool:
-        return not self.__eq__(__o) # TODO: Check this fix
+        return not self.__eq__(__o)  # TODO: Check this fix
 
     def __repr__(self) -> str:
         return f"Event[{self._name}]"
