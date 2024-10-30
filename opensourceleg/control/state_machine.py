@@ -166,7 +166,7 @@ class State:
         """
         return self._custom_data[key]
 
-    def get_all_custom_data(self) -> Any:
+    def get_all_custom_data(self) -> dict:
         """
         Get the entire custom data dictionary for the state. The custom data is a dictionary
         that can be used to store any data you want to associate with
