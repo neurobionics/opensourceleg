@@ -12,7 +12,7 @@ from opensourceleg.control.state_machine import (
 )
 
 
-# We'll use a dummy OSL class to simulate the OpenSourceLeg object
+# Use a dummy OSL class to simulate the OpenSourceLeg object
 class DummyOSL:
     class Logger:
         def debug(self, msg):
@@ -83,7 +83,10 @@ def test_ankle_impedance_parameters():
 def test_custom_data():
     state = State()
     state.set_custom_data("test_key", "test_value")
+    state.set_custom_data("test_key_2", "test_value_2")
     assert state.get_custom_data("test_key") == "test_value"
+    assert state.get_custom_data("test_key_2") == "test_value_2"
+    assert list(state._custom_data.keys()) == ["test_key", "test_key_2"]
 
 
 def test_callbacks():
