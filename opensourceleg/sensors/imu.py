@@ -19,10 +19,18 @@ except ImportError:
 
 try:
     import adafruit_bno055
+except ImportError:
+    LOGGER.error("Failed to import adafruit_bno055")
+
+try:
     import board
+except ImportError:
+    LOGGER.error("Failed to import board")
+
+try:
     import busio
 except ImportError:
-    LOGGER.error("Failed to import adafruit libs. Please install them using pip")
+    LOGGER.error("Failed to import busio")
 
 
 class LordMicrostrainIMU(IMUBase):
