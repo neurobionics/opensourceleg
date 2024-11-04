@@ -177,7 +177,6 @@ def test_set_file_name_str(test_logger: Logger):
     )
 
 
-
 def test_set_file_name_none(test_logger: Logger):
     test_logger.set_file_name(None)
     assert all(
@@ -200,13 +199,11 @@ def test_set_file_level(test_logger: Logger):
     )
 
 
-
 def test_set_file_level_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
     assert all(
         [hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"]
     )
-
 
     test_logger.set_file_level(LogLevel.DEBUG)
     assert all(
@@ -241,7 +238,6 @@ def test_set_format(test_logger: Logger):
             test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
         ]
     )
-
 
 
 def test_set_format_has_attr(test_logger: Logger):
@@ -322,7 +318,7 @@ def test_flush_buffer(test_logger: Logger):
     assert len(test_logger._buffer) == 0
 
     # Ensure expected output was written
-    file = open(test_logger._csv_path, "r")
+    file = open(test_logger._csv_path)
     expected = "test\n-2\n"
     assert expected == file.read()
     file.close()
@@ -341,7 +337,7 @@ def test_write_header(test_logger: Logger):
     assert test_logger._header_written == True
 
     # Ensure expected output was written
-    file = open(test_logger._csv_path, "r")
+    file = open(test_logger._csv_path)
     header_contents = file.read()
     expected = "first,second\n"
     assert expected == header_contents
@@ -412,7 +408,6 @@ def test_reset(test_logger: Logger):
             not hasattr(test_logger, "_file_handler"),
         ]
     )
-
 
 
 def test_reset_header(test_logger: Logger):
