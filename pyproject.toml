@@ -41,7 +41,7 @@ flexsea = [
 smbus2 = ">=0.4.2"
 grpcio = "^1.65.5"
 grpcio-tools = "^1.65.5"
-types-protobuf = "^4.21.0"
+types-protobuf = ">=4.21,<6.0"
 moteus = "^0.3.72"
 moteus-pi3hat = {version = "^0.3.29", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
 board = "^1.0"
