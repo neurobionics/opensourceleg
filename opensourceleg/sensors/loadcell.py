@@ -17,7 +17,7 @@ class LoadcellNotRespondingException(Exception):
         super().__init__(message)
 
 
-class MEMORY_CHANNELS(Enum):
+class MEMORY_CHANNELS(int, Enum):
     CH1_H = 8
     CH1_L = 9
     CH2_H = 10
@@ -38,12 +38,32 @@ class SRILoadcell(LoadcellBase):
 
     def __init__(
         self,
+        calibration_matrix: npt.NDArray[np.double],
         amp_gain: float = 125.0,
         exc: float = 5.0,
-        calibration_matrix=None,
         bus: int = 1,
         i2c_address: int = 0x66,
     ) -> None:
+        """
+        TODO: Write docstring for initial values
+        """
+        # Check that parameters are set correctly:
+        if calibration_matrix.shape != (6, 6):
+            LOGGER.info(
+                f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double."
+            )
+            raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
+        if amp_gain <= 0:
+            LOGGER.info(
+                f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0."
+            )
+            raise ValueError("amp_gain must be a floating point value greater than 0.")
+        if exc <= 0:
+            LOGGER.info(
+                f"[{self.__repr__()}] exc must be a floating point value greater than 0."
+            )
+            raise ValueError("exc must be a floating point value greater than 0.")
+
         self._amp_gain: float = amp_gain
         self._exc: float = exc
 
@@ -64,9 +84,6 @@ class SRILoadcell(LoadcellBase):
         self._is_streaming: bool = False
 
     def start(self) -> None:
-        if self._bus or self._i2c_address is None:
-            return
-
         self._smbus = SMBus(self._bus)
         time.sleep(1)
         self._is_streaming = True
@@ -89,7 +106,7 @@ class SRILoadcell(LoadcellBase):
         if calibration_offset is None:
             calibration_offset = self._calibration_offset
 
-        signed_data = (data - self.OFFSET) / self.ADC_RANGE * self._exc
+        signed_data = ((data - self.OFFSET) / self.ADC_RANGE) * self._exc
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
         self._data = (
@@ -105,13 +122,14 @@ class SRILoadcell(LoadcellBase):
     ) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero.
-        This is automatically subtraced off for subsequent calls of the update method.
+        This is automatically subtracted off for subsequent calls of the update method.
         """
 
         if not self.is_calibrated:
             LOGGER.info(
-                f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force.\n{input('Press any key to start.')}"
+                f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force."
             )
+            input("Press any key to start.")
 
             self.update(data_callback=data_callback)
             self._calibration_offset = self._data
@@ -193,12 +211,12 @@ class SRILoadcell(LoadcellBase):
         return self._is_streaming
 
     @property
-    def fx(self):
+    def fx(self) -> float:
         """
         Latest force in the x (medial/lateral) direction in Newtons.
         If using the standard OSL setup, this is positive towards the user's right.
         """
-        return self._data[0]
+        return float(self.data[0])
 
     @property
     def fy(self):
@@ -206,7 +224,7 @@ class SRILoadcell(LoadcellBase):
         Latest force in the y (anterior/posterior) direction in Newtons.
         If using the standard OSL setup, this is positive in the posterior direction.
         """
-        return self._data[1]
+        return float(self.data[1])
 
     @property
     def fz(self):
@@ -215,7 +233,7 @@ class SRILoadcell(LoadcellBase):
         If using the standard OSL setup, this should be positive downwards.
         i.e. quiet standing on the OSL should give a negative Fz.
         """
-        return self._data[2]
+        return float(self.data[2])
 
     @property
     def mx(self):
@@ -223,7 +241,7 @@ class SRILoadcell(LoadcellBase):
         Latest moment about the x (medial/lateral) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the user's right.
         """
-        return self._data[3]
+        return float(self.data[3])
 
     @property
     def my(self):
@@ -231,7 +249,7 @@ class SRILoadcell(LoadcellBase):
         Latest moment about the y (anterior/posterior) axis in Nm.
         If using the standard OSL setup, this axis is positive in the posterior direction.
         """
-        return self._data[4]
+        return float(self.data[4])
 
     @property
     def mz(self):
@@ -239,7 +257,7 @@ class SRILoadcell(LoadcellBase):
         Latest moment about the z (vertical) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the ground.
         """
-        return self._data[5]
+        return float(self.data[5])
 
     @property
     def data(self):

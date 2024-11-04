@@ -2,7 +2,7 @@ import asyncio
 import threading
 import time
 
-from benchmarks.decorators import profile_time
+from opensourceleg.benchmarks.decorators import profile_time
 
 counter = 0
 PROFILING_ITERATIONS = 1000

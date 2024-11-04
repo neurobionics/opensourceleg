@@ -8,6 +8,9 @@ from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 try:
+    import sys
+
+    sys.path.append("/usr/share/python3-mscl")
     import mscl
 except ImportError:
     LOGGER.error(
@@ -91,7 +94,7 @@ class LordMicrostrainIMU(IMUBase):
         self._connection = mscl.Connection.Serial(self.port, self.baud_rate)
         self._node = mscl.InertialNode(self._connection)
         self._node.setActiveChannelFields(
-            mscl.MipTypes.CLASS_ESTFILTER, self._configure_channels()
+            mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels()
         )
         self._node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
@@ -145,6 +148,10 @@ class LordMicrostrainIMU(IMUBase):
         return self._is_streaming
 
     @property
+    def data(self) -> dict[str, float]:
+        return self._data
+
+    @property
     def roll(self) -> float:
         """Returns estimated roll (rad)."""
         return self._data["estRoll"]
@@ -188,6 +195,21 @@ class LordMicrostrainIMU(IMUBase):
     def acc_z(self) -> float:
         """Returns estimated linear acceleration along the z-axis (m/s^2)."""
         return self._data["estLinearAccelZ"]
+
+    @property
+    def gyro_x(self) -> float:
+        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        return 0.0
+
+    @property
+    def gyro_y(self) -> float:
+        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        return 0.0
+
+    @property
+    def gyro_z(self) -> float:
+        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        return 0.0
 
     @property
     def timestamp(self) -> float:

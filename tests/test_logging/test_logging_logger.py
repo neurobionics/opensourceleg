@@ -177,6 +177,7 @@ def test_set_file_name_str(test_logger: Logger):
     )
 
 
+
 def test_set_file_name_none(test_logger: Logger):
     test_logger.set_file_name(None)
     assert all(
@@ -199,11 +200,13 @@ def test_set_file_level(test_logger: Logger):
     )
 
 
+
 def test_set_file_level_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
     assert all(
         [hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"]
     )
+
 
     test_logger.set_file_level(LogLevel.DEBUG)
     assert all(
@@ -238,6 +241,7 @@ def test_set_format(test_logger: Logger):
             test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
         ]
     )
+
 
 
 def test_set_format_has_attr(test_logger: Logger):
@@ -275,7 +279,6 @@ def test_update(test_logger: Logger):
     test_logger.update()
     test_logger.track_variable(test_func2, "second")
     test_logger.update()
-
     assert all(
         [
             test_logger._buffer[0] == ["18"],
@@ -409,6 +412,7 @@ def test_reset(test_logger: Logger):
             not hasattr(test_logger, "_file_handler"),
         ]
     )
+
 
 
 def test_reset_header(test_logger: Logger):
