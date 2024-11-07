@@ -74,7 +74,7 @@ def test_logger_init_set():
 # Test setup logging
 def test_setup_logging():
     test_logger = Logger(
-        log_format="%(levelname)s",
+        log_format="[%(levelname)s]",
         file_level=LogLevel.DEBUG,
         stream_level=LogLevel.INFO,
     )
@@ -83,7 +83,7 @@ def test_setup_logging():
         [
             test_logger.level == LogLevel.DEBUG.value,
             test_logger._stream_handler.level == LogLevel.INFO.value,
-            test_logger._stream_handler.formatter._fmt == "%(levelname)s",
+            test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
         ]
     )
     test_logger.reset()
@@ -92,10 +92,10 @@ def test_setup_logging():
 # Test setup file handler
 def test_setup_file_handler():
     test_logger = Logger(
-        file_max_bytes=10,
+        file_max_bytes=0,
         file_backup_count=20,
         file_level=LogLevel.WARNING,
-        log_format="%(levelname)s",
+        log_format="[%(levelname)s]",
     )
     assert not hasattr(test_logger, "_file_handler")
 
@@ -103,11 +103,11 @@ def test_setup_file_handler():
 
     assert all(
         [
-            test_logger._file_handler.maxBytes == 10,
+            test_logger._file_handler.maxBytes == 0,
             test_logger._file_handler.backupCount == 20,
             test_logger._file_handler.level == LogLevel.WARNING.value,
             test_logger._file_handler.mode == "a",
-            test_logger._file_handler.formatter._fmt == "%(levelname)s",
+            test_logger._file_handler.formatter._fmt == "[%(levelname)s]",
             hasattr(test_logger, "_file_handler"),
         ]
     )
@@ -117,14 +117,13 @@ def test_setup_file_handler():
 
 # Test ensure file handler
 def test_ensure_file_handler_called_once(test_logger: Logger):
-    test_logger._original_setup = test_logger._setup_file_handler
+    original_setup = test_logger._setup_file_handler
 
     test_logger._setup_file_handler = Mock()
     test_logger._ensure_file_handler()
     test_logger._setup_file_handler.assert_called_once()
 
-    test_logger._setup_file_handler = test_logger._original_setup
-    del test_logger._original_setup
+    test_logger._setup_file_handler = original_setup
 
 
 def test_ensure_file_handler(test_logger: Logger):
@@ -177,7 +176,6 @@ def test_set_file_name_str(test_logger: Logger):
     )
 
 
-
 def test_set_file_name_none(test_logger: Logger):
     test_logger.set_file_name(None)
     assert all(
@@ -200,13 +198,11 @@ def test_set_file_level(test_logger: Logger):
     )
 
 
-
 def test_set_file_level_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
     assert all(
         [hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"]
     )
-
 
     test_logger.set_file_level(LogLevel.DEBUG)
     assert all(
@@ -241,7 +237,6 @@ def test_set_format(test_logger: Logger):
             test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
         ]
     )
-
 
 
 def test_set_format_has_attr(test_logger: Logger):
@@ -322,7 +317,7 @@ def test_flush_buffer(test_logger: Logger):
     assert len(test_logger._buffer) == 0
 
     # Ensure expected output was written
-    file = open(test_logger._csv_path, "r")
+    file = open(test_logger._csv_path)
     expected = "test\n-2\n"
     assert expected == file.read()
     file.close()
@@ -341,7 +336,7 @@ def test_write_header(test_logger: Logger):
     assert test_logger._header_written == True
 
     # Ensure expected output was written
-    file = open(test_logger._csv_path, "r")
+    file = open(test_logger._csv_path)
     header_contents = file.read()
     expected = "first,second\n"
     assert expected == header_contents
@@ -374,8 +369,8 @@ def test_exit(test_logger: Logger):
     test_logger.track_variable(lambda: 2, "first")
     test_logger.update()
 
-    test_logger.original_flush = test_logger.flush_buffer
-    test_logger.original_close = test_logger.close
+    original_flush = test_logger.flush_buffer
+    original_close = test_logger.close
     test_logger.flush_buffer = Mock()
     test_logger.close = Mock()
 
@@ -383,10 +378,8 @@ def test_exit(test_logger: Logger):
     test_logger.flush_buffer.assert_called_once()
     test_logger.close.assert_called_once()
 
-    test_logger.flush_buffer = test_logger.original_flush
-    test_logger.close = test_logger.original_close
-    del test_logger.original_flush
-    del test_logger.original_close
+    test_logger.flush_buffer = original_flush
+    test_logger.close = original_close
 
 
 # Test reset
@@ -412,7 +405,6 @@ def test_reset(test_logger: Logger):
             not hasattr(test_logger, "_file_handler"),
         ]
     )
-
 
 
 def test_reset_header(test_logger: Logger):
@@ -529,15 +521,14 @@ def test_log(test_logger: Logger):
 
 # Test file path
 def test_file_path(test_logger: Logger):
-    test_logger.original_generate = test_logger._generate_file_paths
+    original_generate = test_logger._generate_file_paths
 
     test_logger._generate_file_paths = Mock()
     test_logger._file_path = ""
     filename = test_logger.file_path
     test_logger._generate_file_paths.assert_called_once()
 
-    test_logger._generate_file_paths = test_logger.original_generate
-    del test_logger.original_generate
+    test_logger._generate_file_paths = original_generate
 
 
 # Test buffer size

@@ -28,6 +28,9 @@ class MockSensor(SensorBase):
     def __init__(self):
         self._is_streaming = False
 
+    def data(self):
+        pass
+
     def start(self):
         pass
 
