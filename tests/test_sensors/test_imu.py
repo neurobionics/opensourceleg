@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 
 from opensourceleg.logging import LOGGER
@@ -134,17 +132,15 @@ def sample_imu_init():
 
 # Test init
 def test_init_default(sample_imu: MockLordMicrostrainIMU):
-    assert all(
-        [
-            sample_imu._port == "/dev/ttyUSB0",
-            sample_imu._baud_rate == 921600,
-            sample_imu._frequency == 200,
-            sample_imu._is_streaming == False,
-            sample_imu._connection == None,
-            sample_imu._data == {},
-            type(sample_imu._data) == dict,
-        ]
-    )
+    assert all([
+        sample_imu._port == "/dev/ttyUSB0",
+        sample_imu._baud_rate == 921600,
+        sample_imu._frequency == 200,
+        sample_imu._is_streaming == False,
+        sample_imu._connection == None,
+        sample_imu._data == {},
+        type(sample_imu._data) == dict,
+    ])
 
 
 def test_init_set():
@@ -152,13 +148,11 @@ def test_init_set():
     baud = 10
     freq = 20
     sample_imu = MockLordMicrostrainIMU(port=port_name, baud_rate=baud, frequency=freq)
-    assert all(
-        [
-            sample_imu._port == port_name,
-            sample_imu._baud_rate == baud,
-            sample_imu._frequency == freq,
-        ]
-    )
+    assert all([
+        sample_imu._port == port_name,
+        sample_imu._baud_rate == baud,
+        sample_imu._frequency == freq,
+    ])
 
 
 # Test configure mip channels
@@ -166,32 +160,26 @@ def test_configure_mip_channels(sample_imu: MockLordMicrostrainIMU):
     channels = sample_imu._configure_mip_channels()
     assert len(channels) == 4
     for i in range(0, 4):
-        assert all(
-            [channels[i].miptype in MockTypes, type(channels[i]) == MockMipChannel]
-        )
+        assert all([channels[i].miptype in MockTypes, type(channels[i]) == MockMipChannel])
 
 
 # Test start
 def test_start(sample_imu: MockLordMicrostrainIMU):
-    assert all(
-        [
-            sample_imu._connection == None,
-            not hasattr(sample_imu, "_node"),
-            sample_imu._is_streaming == False,
-        ]
-    )
+    assert all([
+        sample_imu._connection == None,
+        not hasattr(sample_imu, "_node"),
+        sample_imu._is_streaming == False,
+    ])
 
     sample_imu.start()
 
-    assert all(
-        [
-            type(sample_imu._connection) == MockConnection,
-            type(sample_imu._node) == MockNode,
-            sample_imu._is_streaming == True,
-            sample_imu._node.type == "mocktype",
-            sample_imu._node.datastream == "mocktype",
-        ]
-    )
+    assert all([
+        type(sample_imu._connection) == MockConnection,
+        type(sample_imu._node) == MockNode,
+        sample_imu._is_streaming == True,
+        sample_imu._node.type == "mocktype",
+        sample_imu._node.datastream == "mocktype",
+    ])
 
 
 # Test stop

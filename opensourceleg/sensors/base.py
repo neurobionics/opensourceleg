@@ -1,7 +1,5 @@
-﻿from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod
 from functools import wraps
-
-import numpy as np
 
 
 class SensorNotStreamingException(Exception):
@@ -26,7 +24,7 @@ class SensorBase(ABC):
         pass
 
     def __repr__(self) -> str:
-        return f"SensorBase"
+        return "SensorBase"
 
     @property
     @abstractmethod
@@ -63,7 +61,7 @@ class ADCBase(SensorBase, ABC):
         super().__init__()
 
     def __repr__(self) -> str:
-        return f"ADCBase"
+        return "ADCBase"
 
     def reset(self) -> None:
         pass
@@ -77,7 +75,7 @@ class EncoderBase(SensorBase, ABC):
         super().__init__()
 
     def __repr__(self) -> str:
-        return f"EncoderBase"
+        return "EncoderBase"
 
     @property
     @abstractmethod
@@ -95,7 +93,7 @@ class LoadcellBase(SensorBase, ABC):
         pass
 
     def __repr__(self) -> str:
-        return f"LoadcellBase"
+        return "LoadcellBase"
 
     @abstractmethod
     def calibrate(self) -> None:
@@ -146,7 +144,7 @@ class IMUBase(SensorBase, ABC):
         pass
 
     def __repr__(self) -> str:
-        return f"IMU"
+        return "IMU"
 
     @property
     @abstractmethod

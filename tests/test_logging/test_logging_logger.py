@@ -11,15 +11,13 @@ def test_log_level_default():
 
 
 def test_log_level_value_logging():
-    assert all(
-        [
-            LogLevel.DEBUG.value == logging.DEBUG,
-            LogLevel.INFO.value == logging.INFO,
-            LogLevel.WARNING.value == logging.WARNING,
-            LogLevel.ERROR.value == logging.ERROR,
-            LogLevel.CRITICAL.value == logging.CRITICAL,
-        ]
-    )
+    assert all([
+        LogLevel.DEBUG.value == logging.DEBUG,
+        LogLevel.INFO.value == logging.INFO,
+        LogLevel.WARNING.value == logging.WARNING,
+        LogLevel.ERROR.value == logging.ERROR,
+        LogLevel.CRITICAL.value == logging.CRITICAL,
+    ])
 
 
 def test_log_level_len():
@@ -46,28 +44,24 @@ def test_logger_new():
 # Test init
 def test_logger_init_default():
     logger = Logger()
-    assert all(
-        [
-            logger._log_path == "./",
-            isinstance(logger.file_level, LogLevel),
-            isinstance(logger.stream_level, LogLevel),
-            logger.file_max_bytes == 0,
-            logger._file_backup_count == 5,
-            logger.buffer_size == 1000,
-        ]
-    )
+    assert all([
+        logger._log_path == "./",
+        isinstance(logger.file_level, LogLevel),
+        isinstance(logger.stream_level, LogLevel),
+        logger.file_max_bytes == 0,
+        logger._file_backup_count == 5,
+        logger.buffer_size == 1000,
+    ])
     logger.reset()
 
 
 def test_logger_init_set():
     logger = Logger(buffer_size=10, file_level=LogLevel.CRITICAL)
-    assert all(
-        [
-            logger._log_format == "[%(asctime)s] %(levelname)s: %(message)s",
-            logger._buffer_size == 10,
-            logger._file_level == LogLevel.CRITICAL,
-        ]
-    )
+    assert all([
+        logger._log_format == "[%(asctime)s] %(levelname)s: %(message)s",
+        logger._buffer_size == 10,
+        logger._file_level == LogLevel.CRITICAL,
+    ])
     logger.reset()
 
 
@@ -79,13 +73,11 @@ def test_setup_logging():
         stream_level=LogLevel.INFO,
     )
     test_logger._setup_logging()
-    assert all(
-        [
-            test_logger.level == LogLevel.DEBUG.value,
-            test_logger._stream_handler.level == LogLevel.INFO.value,
-            test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
-        ]
-    )
+    assert all([
+        test_logger.level == LogLevel.DEBUG.value,
+        test_logger._stream_handler.level == LogLevel.INFO.value,
+        test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
+    ])
     test_logger.reset()
 
 
@@ -101,16 +93,14 @@ def test_setup_file_handler():
 
     test_logger._setup_file_handler()
 
-    assert all(
-        [
-            test_logger._file_handler.maxBytes == 0,
-            test_logger._file_handler.backupCount == 20,
-            test_logger._file_handler.level == LogLevel.WARNING.value,
-            test_logger._file_handler.mode == "a",
-            test_logger._file_handler.formatter._fmt == "[%(levelname)s]",
-            hasattr(test_logger, "_file_handler"),
-        ]
-    )
+    assert all([
+        test_logger._file_handler.maxBytes == 0,
+        test_logger._file_handler.backupCount == 20,
+        test_logger._file_handler.level == LogLevel.WARNING.value,
+        test_logger._file_handler.mode == "a",
+        test_logger._file_handler.formatter._fmt == "[%(levelname)s]",
+        hasattr(test_logger, "_file_handler"),
+    ])
 
     test_logger.reset()
 
@@ -142,20 +132,16 @@ def test_track_and_untrack_variable(test_logger: Logger):
     assert test_func() == [1, 2, 3]
 
     test_logger.track_variable(test_func, "Testing")
-    assert all(
-        [
-            test_func in list(test_logger._tracked_vars.values()),
-            "Testing" in list(test_logger._var_names.values()),
-        ]
-    )
+    assert all([
+        test_func in list(test_logger._tracked_vars.values()),
+        "Testing" in list(test_logger._var_names.values()),
+    ])
 
     test_logger.untrack_variable(test_func)
-    assert all(
-        [
-            not test_func in list(test_logger._tracked_vars.values()),
-            not "Testing" in list(test_logger._var_names.values()),
-        ]
-    )
+    assert all([
+        test_func not in list(test_logger._tracked_vars.values()),
+        "Testing" not in list(test_logger._var_names.values()),
+    ])
 
 
 # Test repr
@@ -167,83 +153,67 @@ def test_repr(test_logger: Logger):
 # Test set file name
 def test_set_file_name_str(test_logger: Logger):
     test_logger.set_file_name("test_file")
-    assert all(
-        [
-            test_logger._user_file_name == "test_file",
-            test_logger._file_path == "",
-            test_logger._csv_path == "",
-        ]
-    )
+    assert all([
+        test_logger._user_file_name == "test_file",
+        test_logger._file_path == "",
+        test_logger._csv_path == "",
+    ])
 
 
 def test_set_file_name_none(test_logger: Logger):
     test_logger.set_file_name(None)
-    assert all(
-        [
-            test_logger._user_file_name == None,
-            test_logger._file_path == "",
-            test_logger._csv_path == "",
-        ]
-    )
+    assert all([
+        test_logger._user_file_name == None,
+        test_logger._file_path == "",
+        test_logger._csv_path == "",
+    ])
 
 
 # Test set file level
 def test_set_file_level(test_logger: Logger):
     test_logger.set_file_level(LogLevel.CRITICAL)
-    assert all(
-        [
-            test_logger._file_level == LogLevel.CRITICAL,
-            not hasattr(test_logger, "_file_handler"),
-        ]
-    )
+    assert all([
+        test_logger._file_level == LogLevel.CRITICAL,
+        not hasattr(test_logger, "_file_handler"),
+    ])
 
 
 def test_set_file_level_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
-    assert all(
-        [hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"]
-    )
+    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"])
 
     test_logger.set_file_level(LogLevel.DEBUG)
-    assert all(
-        [
-            test_logger._file_level == LogLevel.DEBUG,
-            test_logger._file_handler.level == LogLevel.DEBUG.value,
-        ]
-    )
+    assert all([
+        test_logger._file_level == LogLevel.DEBUG,
+        test_logger._file_handler.level == LogLevel.DEBUG.value,
+    ])
 
 
 # Test set stream level
 def test_set_stream_level(test_logger: Logger):
     test_logger.set_stream_level(LogLevel.ERROR)
-    assert all(
-        [
-            hasattr(test_logger, "_stream_handler"),
-            test_logger._stream_level == LogLevel.ERROR,
-            test_logger._stream_handler.level == LogLevel.ERROR.value,
-        ]
-    )
+    assert all([
+        hasattr(test_logger, "_stream_handler"),
+        test_logger._stream_level == LogLevel.ERROR,
+        test_logger._stream_handler.level == LogLevel.ERROR.value,
+    ])
 
 
 # Test set format
 def test_set_format(test_logger: Logger):
     test_logger.set_format("[%(levelname)s]")
-    assert all(
-        [
-            test_logger._log_format == "[%(levelname)s]",
-            isinstance(test_logger._std_formatter, logging.Formatter),
-            test_logger._std_formatter._fmt == "[%(levelname)s]",
-            not hasattr(test_logger, "_file_handler"),
-            test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
-        ]
-    )
+    assert all([
+        test_logger._log_format == "[%(levelname)s]",
+        isinstance(test_logger._std_formatter, logging.Formatter),
+        test_logger._std_formatter._fmt == "[%(levelname)s]",
+        not hasattr(test_logger, "_file_handler"),
+        test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
+    ])
 
 
 def test_set_format_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
-    assert all(
-        [hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"]
-    )
+    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"])
 
     test_logger.set_format("[%(test)s]")
     assert test_logger._file_handler.formatter._fmt == "[%(test)s]"
@@ -252,13 +222,11 @@ def test_set_format_has_attr(test_logger: Logger):
 # Test set buffer size
 def test_set_buffer_size(test_logger: Logger):
     test_logger.set_buffer_size(5)
-    assert all(
-        [
-            test_logger._buffer_size == 5,
-            isinstance(test_logger._buffer, deque),
-            test_logger._buffer.maxlen == 5,
-        ]
-    )
+    assert all([
+        test_logger._buffer_size == 5,
+        isinstance(test_logger._buffer, deque),
+        test_logger._buffer.maxlen == 5,
+    ])
 
 
 # Test update
@@ -274,13 +242,11 @@ def test_update(test_logger: Logger):
     test_logger.update()
     test_logger.track_variable(test_func2, "second")
     test_logger.update()
-    assert all(
-        [
-            test_logger._buffer[0] == ["18"],
-            test_logger._buffer[1] == ["18", "8"],
-            len(test_logger._buffer) == 2,
-        ]
-    )
+    assert all([
+        test_logger._buffer[0] == ["18"],
+        test_logger._buffer[1] == ["18", "8"],
+        len(test_logger._buffer) == 2,
+    ])
 
 
 # Test update size exceeded
@@ -387,24 +353,20 @@ def test_reset(test_logger: Logger):
     test_logger.track_variable(lambda: 2, "test")
     test_logger.update()
     test_logger._setup_file_handler()
-    assert all(
-        [
-            len(test_logger._buffer) == 1,
-            len(test_logger._tracked_vars) == 1,
-            len(test_logger._var_names) == 1,
-            hasattr(test_logger, "_file_handler"),
-        ]
-    )
+    assert all([
+        len(test_logger._buffer) == 1,
+        len(test_logger._tracked_vars) == 1,
+        len(test_logger._var_names) == 1,
+        hasattr(test_logger, "_file_handler"),
+    ])
 
     test_logger.reset()
-    assert all(
-        [
-            len(test_logger._buffer) == 0,
-            len(test_logger._tracked_vars) == 0,
-            len(test_logger._var_names) == 0,
-            not hasattr(test_logger, "_file_handler"),
-        ]
-    )
+    assert all([
+        len(test_logger._buffer) == 0,
+        len(test_logger._tracked_vars) == 0,
+        len(test_logger._var_names) == 0,
+        not hasattr(test_logger, "_file_handler"),
+    ])
 
 
 def test_reset_header(test_logger: Logger):

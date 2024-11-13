@@ -59,18 +59,14 @@ def test_robot_base_init():
     test_actuators = {"actuator": test_tactuator}
     test_tsensor = MockSensor()
     test_sensors = {"sensor": test_tsensor}
-    sample_robot = MockRobot(
-        tag=tag_name, actuators=test_actuators, sensors=test_sensors
-    )
-    assert all(
-        [
-            sample_robot.tag == tag_name,
-            sample_robot.actuators == test_actuators,
-            sample_robot.sensors == test_sensors,
-            type(sample_robot.actuators) == dict,
-            type(sample_robot.sensors) == dict,
-        ]
-    )
+    sample_robot = MockRobot(tag=tag_name, actuators=test_actuators, sensors=test_sensors)
+    assert all([
+        sample_robot.tag == tag_name,
+        sample_robot.actuators == test_actuators,
+        sample_robot.sensors == test_sensors,
+        type(sample_robot.actuators) == dict,
+        type(sample_robot.sensors) == dict,
+    ])
 
 
 # Test enter
@@ -101,9 +97,9 @@ def test_robot_base_start(mock_robot: MockRobot):
 
     mock_robot.start()
 
-    file = open(LOGGER._file_path, "r")
+    file = open(LOGGER._file_path)
     contents = file.read()
-    assert (f"DEBUG: Calling start method of act_tag") in contents
+    assert ("DEBUG: Calling start method of act_tag") in contents
     assert "DEBUG: Calling start method of SensorBase" in contents
     file.close()
 
@@ -122,7 +118,7 @@ def test_robot_base_stop(mock_robot: MockRobot):
 
     mock_robot.stop()
 
-    file = open(LOGGER._file_path, "r")
+    file = open(LOGGER._file_path)
     contents = file.read()
     assert "DEBUG: Calling stop method of act_tag" in contents
     assert "DEBUG: Calling stop method of SensorBase" in contents

@@ -1,6 +1,6 @@
 /** dot_product_3d.cpp
 An example cpp file to demonstrate the compiled controller functionality
-in the opensourceleg library. 
+in the opensourceleg library.
 Kevin Best
 University of Michigan
 October 2023

@@ -137,7 +137,6 @@ def test_softrealtimeloop_iter(patch_time_time2):
 
 
 def test_softrealtimeloop_fade_prop(patch_time_time3):
-
     srtlf = SoftRealtimeLoop(fade=1.0)
     assert srtlf.fade == 1.0
     srtlf.killer._kill_soon = True

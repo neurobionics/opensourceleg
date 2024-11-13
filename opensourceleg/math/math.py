@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -53,7 +53,6 @@ class ThermalModel:
         temp_limit_case: float = 80,
         soft_border_C_case: float = 5,
     ) -> None:
-
         # The following parameters result from Jack Schuchmann's test with no fans
         self.C_w: float = 0.20 * 81.46202695970649
         self.R_WC = 1.0702867186480716
@@ -67,9 +66,7 @@ class ThermalModel:
         self.T_w: float = ambient
         self.T_c: float = ambient
         self.T_a: float = ambient
-        self.soft_max_temp_windings: float = (
-            temp_limit_windings - soft_border_C_windings
-        )
+        self.soft_max_temp_windings: float = temp_limit_windings - soft_border_C_windings
         self.abs_max_temp_windings: float = temp_limit_windings
         self.soft_border_windings: float = soft_border_C_windings
 
@@ -78,7 +75,7 @@ class ThermalModel:
         self.soft_border_case: float = soft_border_C_case
 
     def __repr__(self) -> str:
-        return f"ThermalModel"
+        return "ThermalModel"
 
     def update(self, dt: float = 1 / 200, motor_current: float = 0) -> None:
         """
@@ -100,9 +97,7 @@ class ThermalModel:
         )  # accounts for resistance change due to temp.
 
         dTw_dt = (I2R + (self.T_c - self.T_w) / self.R_WC) / self.C_w
-        dTc_dt: float = (
-            (self.T_w - self.T_c) / self.R_WC + (self.T_a - self.T_c) / self.R_CA
-        ) / self.C_c
+        dTc_dt: float = ((self.T_w - self.T_c) / self.R_WC + (self.T_a - self.T_c) / self.R_CA) / self.C_c
         self.T_w += dt * dTw_dt
         self.T_c += dt * dTc_dt
 
@@ -139,16 +134,12 @@ class ThermalModel:
         if self.T_c > self.abs_max_temp_case:
             scale = 0.0
         elif self.T_c > self.soft_max_temp_case:
-            scale *= (self.abs_max_temp_case - self.T_w) / (
-                self.abs_max_temp_case - self.soft_max_temp_case
-            )
+            scale *= (self.abs_max_temp_case - self.T_w) / (self.abs_max_temp_case - self.soft_max_temp_case)
 
         I2R = I2R_des * scale
 
         dTw_dt = (I2R + (self.T_c - self.T_w) / self.R_WC) / self.C_w
-        dTc_dt: float = (
-            (self.T_w - self.T_c) / self.R_WC + (self.T_a - self.T_c) / self.R_CA
-        ) / self.C_c
+        dTc_dt: float = ((self.T_w - self.T_c) / self.R_WC + (self.T_a - self.T_c) / self.R_CA) / self.C_c
         self.T_w += dt * dTw_dt
         self.T_c += dt * dTc_dt
 
@@ -176,7 +167,7 @@ class EdgeDetector:
         self.falling_edge = False
 
     def __repr__(self) -> str:
-        return f"EdgeDetector"
+        return "EdgeDetector"
 
     def update(self, bool_in):
         self.rising_edge = bool_in and not self.cur_state
@@ -212,7 +203,7 @@ class SaturatingRamp:
         self.value = 0.0
 
     def __repr__(self) -> str:
-        return f"SaturatingRamp"
+        return "SaturatingRamp"
 
     def update(self, enable_ramp=False):
         """

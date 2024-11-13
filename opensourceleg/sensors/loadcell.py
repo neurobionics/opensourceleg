@@ -1,8 +1,6 @@
-from typing import Any, Callable, Union
-
 import time
-from dataclasses import dataclass
 from enum import Enum
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -49,19 +47,13 @@ class SRILoadcell(LoadcellBase):
         """
         # Check that parameters are set correctly:
         if calibration_matrix.shape != (6, 6):
-            LOGGER.info(
-                f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double."
-            )
+            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
             raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
         if amp_gain <= 0:
-            LOGGER.info(
-                f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0."
-            )
+            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
             raise ValueError("amp_gain must be a floating point value greater than 0.")
         if exc <= 0:
-            LOGGER.info(
-                f"[{self.__repr__()}] exc must be a floating point value greater than 0."
-            )
+            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
             raise ValueError("exc must be a floating point value greater than 0.")
 
         self._amp_gain: float = amp_gain
@@ -76,9 +68,7 @@ class SRILoadcell(LoadcellBase):
         self._prev_data: npt.NDArray[np.double] = self._data
         self._failed_reads = 0
 
-        self._calibration_offset: npt.NDArray[np.double] = np.zeros(
-            shape=(1, 6), dtype=np.double
-        )
+        self._calibration_offset: npt.NDArray[np.double] = np.zeros(shape=(1, 6), dtype=np.double)
         self._zero_calibration_offset: npt.NDArray[np.double] = self._calibration_offset
         self._is_calibrated: bool = False
         self._is_streaming: bool = False
@@ -109,10 +99,7 @@ class SRILoadcell(LoadcellBase):
         signed_data = ((data - self.OFFSET) / self.ADC_RANGE) * self._exc
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
-        self._data = (
-            np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data)))
-            - calibration_offset
-        )
+        self._data = np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
 
     def calibrate(
         self,
@@ -140,9 +127,7 @@ class SRILoadcell(LoadcellBase):
                     data_callback=data_callback,
                 )
                 iterative_calibration_offset = self._data
-                self._calibration_offset = (
-                    iterative_calibration_offset + self._calibration_offset
-                ) / 2.0
+                self._calibration_offset = (iterative_calibration_offset + self._calibration_offset) / 2.0
 
             self._is_calibrated = True
             LOGGER.info(f"[{self.__repr__()}] Calibration routine complete.")
@@ -164,11 +149,9 @@ class SRILoadcell(LoadcellBase):
     def _read_compressed_strain(self):
         """Used for more recent versions of strain amp firmware"""
         try:
-            data = self._smbus.read_i2c_block_data(
-                self._i2c_address, MEMORY_CHANNELS.CH1_H, 10
-            )
+            data = self._smbus.read_i2c_block_data(self._i2c_address, MEMORY_CHANNELS.CH1_H, 10)
             self.failed_reads = 0
-        except OSError as e:
+        except OSError:
             self.failed_reads += 1
 
             if self.failed_reads >= 5:

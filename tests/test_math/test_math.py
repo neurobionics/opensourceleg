@@ -4,7 +4,6 @@ from opensourceleg.math import EdgeDetector, SaturatingRamp, ThermalModel
 
 
 def test_edge_detector_init():
-
     edi = EdgeDetector(bool_in=False)
     assert edi.cur_state == False
     assert edi.rising_edge == False
@@ -12,7 +11,6 @@ def test_edge_detector_init():
 
 
 def test_edge_detector_update():
-
     edu = EdgeDetector(bool_in=False)
     edu.update(bool_in=True)
     assert edu.rising_edge == True
@@ -26,14 +24,12 @@ def test_edge_detector_update():
 
 
 def test_saturating_ramp_init():
-
     sri = SaturatingRamp(loop_frequency=100, ramp_time=1.0)
     assert sri.delta_per_update == 1.0 / 100
     assert sri.value == 0.0
 
 
 def test_saturating_ramp_update():
-
     sru = SaturatingRamp(loop_frequency=100, ramp_time=1.0)
     sru.update(enable_ramp=True)
     assert sru.value == 0.01
@@ -113,14 +109,7 @@ def test_update():
     # Testing the default ThermalModel update method with motor_current arg
     test_model_default.update(motor_current=1000)
     default_T_w_update1 = (
-        21
-        + (
-            ((1000 * 1e-3) ** 2)
-            * 0.376
-            * (1 + (0.393 * 1 / 100) * (21 - 65))
-            / (16.292405391941298)
-        )
-        / 200
+        21 + (((1000 * 1e-3) ** 2) * 0.376 * (1 + (0.393 * 1 / 100) * (21 - 65)) / (16.292405391941298)) / 200
     )
     assert test_model_default.T_w == default_T_w_update1
     assert test_model_default.T_c == 21
@@ -131,9 +120,7 @@ def test_update():
         default_T_w_update1
         + (
             (
-                ((1000 * 1e-3) ** 2)
-                * 0.376
-                * (1 + (0.393 * 1 / 100) * (default_T_w_update1 - 65))
+                ((1000 * 1e-3) ** 2) * 0.376 * (1 + (0.393 * 1 / 100) * (default_T_w_update1 - 65))
                 + (21 - default_T_w_update1) / 1.0702867186480716
             )
             / (16.292405391941298)
@@ -142,10 +129,6 @@ def test_update():
     )
     assert test_model_default.T_w == default_T_w_update2
     assert (
-        test_model_default.T_c
-        == (((default_T_w_update1 - 21) / 1.0702867186480716) / 512.249065845453)
-        * 1
-        / 200
-        + 21
+        test_model_default.T_c == (((default_T_w_update1 - 21) / 1.0702867186480716) / 512.249065845453) * 1 / 200 + 21
     )
     assert test_model_default.T_a == 21

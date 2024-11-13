@@ -1,7 +1,6 @@
-from typing import Callable, List
-
 from collections import deque
 from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 
@@ -50,9 +49,7 @@ def is_changing(
                 current_std = np.std(list(history))
                 if current_std < threshold:
                     if proxy_attribute_name is not None:
-                        print(
-                            f"{attribute_name} isn't stable, returning {proxy_attribute_name}"
-                        )
+                        print(f"{attribute_name} isn't stable, returning {proxy_attribute_name}")
                         if not hasattr(instance, proxy_key):
                             setattr(instance, proxy_key, True)
                         return getattr(instance, proxy_attribute_name)
@@ -194,9 +191,7 @@ def is_greater_than(min_value: float, clamp: bool = False, equality: bool = Fals
                 if value < min_value:
                     if clamp:
                         return min_value
-                    raise ValueError(
-                        f"Value must be greater than or equal to {min_value}"
-                    )
+                    raise ValueError(f"Value must be greater than or equal to {min_value}")
             else:
                 if value <= min_value:
                     if clamp:
@@ -258,7 +253,7 @@ def custom_criteria(criteria: Callable):  # type: ignore
         def wrapper(instance, *args, **kwargs):
             value = func(instance, *args, **kwargs)
             if not criteria(value):
-                raise ValueError(f"Value does not meet custom criteria")
+                raise ValueError("Value does not meet custom criteria")
             return value
 
         return wrapper
@@ -301,9 +296,7 @@ class SafetyManager:
         """
 
         if not hasattr(instance, attribute):
-            print(
-                f"Error: The attribute '{attribute}' does not exist in the given object."
-            )
+            print(f"Error: The attribute '{attribute}' does not exist in the given object.")
             return
 
         original_attribute = getattr(instance.__class__, attribute, None)
@@ -326,11 +319,8 @@ class SafetyManager:
         Applies all decorators to the properties of the objects in the safe_objects dictionary.
         """
         for container, safe_attributes in self.safe_objects.items():
-            container_subclass = type(
-                f"{container.__class__.__name__}:SAFE", (container.__class__,), {}
-            )
+            container_subclass = type(f"{container.__class__.__name__}:SAFE", (container.__class__,), {})
             for attribute_name, attribute_decorators in safe_attributes.items():
-
                 original_property = getattr(container.__class__, attribute_name)
                 decorated_getter = original_property.fget
                 for attribute_decorator in reversed(attribute_decorators):
@@ -339,9 +329,7 @@ class SafetyManager:
                 setattr(
                     container_subclass,
                     attribute_name,
-                    property(
-                        decorated_getter, original_property.fset, original_property.fdel
-                    ),
+                    property(decorated_getter, original_property.fset, original_property.fdel),
                 )
 
             container.__class__ = container_subclass

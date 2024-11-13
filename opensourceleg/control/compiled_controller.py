@@ -1,6 +1,5 @@
-from typing import Any
-
 import ctypes
+from typing import Any
 
 import numpy.ctypeslib as ctl
 
@@ -46,7 +45,7 @@ class CompiledController:
         self.init_function = self._load_function(initialization_function_name)
         # Note if requested function name is None, returned handle is also none
 
-        if not self.init_function == None:
+        if self.init_function != None:
             self.init_function()
 
         # This alias makes defining types from top script easier without second import
@@ -66,11 +65,11 @@ class CompiledController:
         self.outputs = None
 
     def __del__(self):
-        if not self.cleanup_func == None:
+        if self.cleanup_func != None:
             self.cleanup_func()
 
     def __repr__(self):
-        return f"CompiledController"
+        return "CompiledController"
 
     def _load_function(self, function_name):
         if function_name == None:
@@ -79,9 +78,7 @@ class CompiledController:
             try:
                 function_handle = getattr(self.lib, function_name)
             except AttributeError:
-                raise AttributeError(
-                    f"Function {function_name} not found in library {self.lib}"
-                )
+                raise AttributeError(f"Function {function_name} not found in library {self.lib}")
             return function_handle
 
     def define_inputs(self, input_list: list[Any]) -> None:
@@ -164,13 +161,9 @@ class CompiledController:
             ValueError: If define_inputs() or define_outputs() have not been called.
         """
         if self.inputs is None:
-            raise ValueError(
-                "Must define input type before calling controller.run(). Use define_inputs() method."
-            )
+            raise ValueError("Must define input type before calling controller.run(). Use define_inputs() method.")
         if self.outputs is None:
-            raise ValueError(
-                "Must define output type before calling controller.run(). Use define_outputs() method."
-            )
+            raise ValueError("Must define output type before calling controller.run(). Use define_outputs() method.")
         self.main_function(ctypes.byref(self.inputs), ctypes.byref(self.outputs))
         return self.outputs
 

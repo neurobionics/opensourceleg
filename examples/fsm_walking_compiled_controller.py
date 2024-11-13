@@ -42,16 +42,14 @@ ankle = DephyActuator(
 actuators = [knee, ankle]
 
 
-LOADCELL_MATRIX = np.array(
-    [
-        (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
-        (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
-        (-1047.16800, 8.63900, -1047.28200, -20.70000, -1073.08800, -8.92300),
-        (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
-        (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
-        (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
-    ]
-)
+LOADCELL_MATRIX = np.array([
+    (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
+    (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
+    (-1047.16800, 8.63900, -1047.28200, -20.70000, -1073.08800, -8.92300),
+    (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
+    (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
+    (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
+])
 
 loadcell = SRILoadcell(
     calibration_matrix=LOADCELL_MATRIX,
@@ -110,21 +108,17 @@ controller.define_type(
 )
 controller.define_type("sensors", controller.DEFAULT_SENSOR_LIST)
 
-controller.define_inputs(
-    [
-        ("parameters", controller.types.UserParameters),
-        ("sensors", controller.types.sensors),
-        ("time", controller.types.c_double),
-    ]
-)
-controller.define_outputs(
-    [
-        ("current_state", controller.types.c_int),
-        ("time_in_current_state", controller.types.c_double),
-        ("knee_impedance", controller.types.impedance_param_type),
-        ("ankle_impedance", controller.types.impedance_param_type),
-    ]
-)
+controller.define_inputs([
+    ("parameters", controller.types.UserParameters),
+    ("sensors", controller.types.sensors),
+    ("time", controller.types.c_double),
+])
+controller.define_outputs([
+    ("current_state", controller.types.c_int),
+    ("time_in_current_state", controller.types.c_double),
+    ("knee_impedance", controller.types.impedance_param_type),
+    ("ankle_impedance", controller.types.impedance_param_type),
+])
 
 # Populate Controller inputs as needed
 controller.inputs.parameters.knee_impedance.early_stance.stiffness = 99.372  # type: ignore
@@ -181,8 +175,12 @@ with knee, ankle, loadcell:
             units.convert_from_default(knee.output_position, units.position.deg)
         )
         controller.inputs.sensors.ankle_angle = units.convert_from_default(ankle.output_position, units.position.deg)  # type: ignore
-        controller.inputs.sensors.knee_velocity = units.convert_from_default(knee.output_velocity, units.velocity.deg_per_s)  # type: ignore
-        controller.inputs.sensors.ankle_velocity = units.convert_from_default(ankle.output_velocity, units.velocity.deg_per_s)  # type: ignore
+        controller.inputs.sensors.knee_velocity = units.convert_from_default(
+            knee.output_velocity, units.velocity.deg_per_s
+        )  # type: ignore
+        controller.inputs.sensors.ankle_velocity = units.convert_from_default(
+            ankle.output_velocity, units.velocity.deg_per_s
+        )  # type: ignore
         controller.inputs.sensors.Fz = loadcell.fz  # type: ignore
 
         # Update any control inputs that change every loop
@@ -193,42 +191,20 @@ with knee, ankle, loadcell:
 
         # Test print to ensure external library call works
         print(
-            "Current time in state {}: {:.2f} seconds, Knee Eq {:.2f}, Ankle Eq {:.2f}, Fz {:.2f}".format(
-                outputs.current_state,
-                outputs.time_in_current_state,
-                outputs.knee_impedance.eq_angle,
-                outputs.ankle_impedance.eq_angle,
-                loadcell.fz,
-            ),
+            f"Current time in state {outputs.current_state}: {outputs.time_in_current_state:.2f} seconds, Knee Eq {outputs.knee_impedance.eq_angle:.2f}, Ankle Eq {outputs.ankle_impedance.eq_angle:.2f}, Fz {loadcell.fz:.2f}",
             end="\r",
         )
 
         # Write to the hardware
         knee.set_output_impedance(
-            k=units.convert_to_default(
-                outputs.knee_impedance.stiffness, units.stiffness.N_m_per_rad
-            ),
-            b=units.convert_to_default(
-                outputs.knee_impedance.damping, units.damping.N_m_per_rad_per_s
-            ),
+            k=units.convert_to_default(outputs.knee_impedance.stiffness, units.stiffness.N_m_per_rad),
+            b=units.convert_to_default(outputs.knee_impedance.damping, units.damping.N_m_per_rad_per_s),
         )
-        knee.set_output_position(
-            value=units.convert_to_default(
-                outputs.knee_impedance.eq_angle, units.position.deg
-            )
-        )
+        knee.set_output_position(value=units.convert_to_default(outputs.knee_impedance.eq_angle, units.position.deg))
         ankle.set_output_impedance(
-            k=units.convert_to_default(
-                outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_rad
-            ),
-            b=units.convert_to_default(
-                outputs.ankle_impedance.damping, units.damping.N_m_per_rad_per_s
-            ),
+            k=units.convert_to_default(outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_rad),
+            b=units.convert_to_default(outputs.ankle_impedance.damping, units.damping.N_m_per_rad_per_s),
         )
-        ankle.set_output_position(
-            value=units.convert_to_default(
-                outputs.ankle_impedance.eq_angle, units.position.deg
-            )
-        )
+        ankle.set_output_position(value=units.convert_to_default(outputs.ankle_impedance.eq_angle, units.position.deg))
 
     print("\n")

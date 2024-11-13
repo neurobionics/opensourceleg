@@ -1,8 +1,7 @@
-﻿import asyncio
+import asyncio
 
 import numpy as np
 import pandas as pd
-from moteus import Register
 
 from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.logging.logger import LOGGER
@@ -22,13 +21,11 @@ async def main():
         gear_ratio=9.0,
     )
 
-    position_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Position": [],
-            "Command_Position": [],
-        }
-    )
+    position_data = pd.DataFrame({
+        "Time": [],
+        "Output_Position": [],
+        "Command_Position": [],
+    })
 
     clock = SoftRealtimeLoop(dt=DT)
 
@@ -44,7 +41,6 @@ async def main():
         await mc1.update()
 
         for t in clock:
-
             # current_time = time.monotonic()
 
             if t > TIME_TO_STEP:
@@ -56,29 +52,22 @@ async def main():
             else:
                 command_position = position
 
-            print(f"######")
-            LOGGER.info(
-                "".join(
-                    f"Motor Position: {mc1.output_position}\t"
-                    + f"Command_Position: {command_position}\t"
-                )
-            )
+            print("######")
+            LOGGER.info("".join(f"Motor Position: {mc1.output_position}\t" + f"Command_Position: {command_position}\t"))
 
             position_data = pd.concat(
                 [
                     position_data,
-                    pd.DataFrame(
-                        {
-                            "Time": [t],
-                            "Output_Position": [mc1.output_position],
-                            "Command_Position": [command_position],
-                        }
-                    ),
+                    pd.DataFrame({
+                        "Time": [t],
+                        "Output_Position": [mc1.output_position],
+                        "Command_Position": [command_position],
+                    }),
                 ],
                 ignore_index=True,
             )
 
-            print(f"------")
+            print("------")
             await asyncio.sleep(DT)
 
     finally:

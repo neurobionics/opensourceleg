@@ -1,4 +1,3 @@
-import unittest
 from unittest.mock import Mock, patch
 
 import numpy as np
@@ -40,8 +39,8 @@ def create_motor_constants(values):
 def test_motor_constants_init(non_zero_positive_values):
     motor_constants = create_motor_constants(non_zero_positive_values)
     assert list(motor_constants.__dict__.values()) == list(non_zero_positive_values)
-    assert motor_constants.RAD_PER_COUNT == 2 * np.pi / non_zero_positive_values[0]
-    assert motor_constants.NM_PER_MILLIAMP == non_zero_positive_values[1] / 1000
+    assert 2 * np.pi / non_zero_positive_values[0] == motor_constants.RAD_PER_COUNT
+    assert non_zero_positive_values[1] / 1000 == motor_constants.NM_PER_MILLIAMP
 
 
 @pytest.mark.parametrize(
@@ -74,8 +73,8 @@ def test_motor_constants_init_types():
 )
 def test_motor_constants_properties(non_zero_positive_values):
     motor_constants = create_motor_constants(non_zero_positive_values)
-    assert motor_constants.RAD_PER_COUNT == 2 * np.pi / non_zero_positive_values[0]
-    assert motor_constants.NM_PER_MILLIAMP == non_zero_positive_values[1] / 1000
+    assert 2 * np.pi / non_zero_positive_values[0] == motor_constants.RAD_PER_COUNT
+    assert non_zero_positive_values[1] / 1000 == motor_constants.NM_PER_MILLIAMP
 
 
 def test_control_modes_default_four():
@@ -232,10 +231,10 @@ def test_control_mode_configs_init():
         IMPEDANCE=default_control_mode_config,
     )
 
-    assert control_mode_configs.POSITION == default_control_mode_config
-    assert control_mode_configs.CURRENT == default_control_mode_config
-    assert control_mode_configs.VOLTAGE == default_control_mode_config
-    assert control_mode_configs.IMPEDANCE == default_control_mode_config
+    assert default_control_mode_config == control_mode_configs.POSITION
+    assert default_control_mode_config == control_mode_configs.CURRENT
+    assert default_control_mode_config == control_mode_configs.VOLTAGE
+    assert default_control_mode_config == control_mode_configs.IMPEDANCE
     assert control_mode_configs.VELOCITY == None
     assert control_mode_configs.TORQUE == None
     assert control_mode_configs.IDLE == None
@@ -500,14 +499,10 @@ def test_set_joint_direction(mock_actuator: MockActuator):
 
 
 def test_output_position_and_velocity(mock_actuator: MockActuator):
-    with patch.object(
-        MockActuator, "motor_position", new_callable=Mock(return_value=10.0)
-    ):
+    with patch.object(MockActuator, "motor_position", new_callable=Mock(return_value=10.0)):
         assert mock_actuator.output_position == 1.0  # 10.0 / 10.0 (gear_ratio)
 
-    with patch.object(
-        MockActuator, "motor_velocity", new_callable=Mock(return_value=5.0)
-    ):
+    with patch.object(MockActuator, "motor_velocity", new_callable=Mock(return_value=5.0)):
         assert mock_actuator.output_velocity == 0.5  # 5.0 / 10.0 (gear_ratio)
 
 
@@ -518,9 +513,7 @@ def test_temperature_limits(mock_actuator: MockActuator):
 
 def test_method_restriction(mock_actuator: MockActuator):
     mock_actuator.set_control_mode(CONTROL_MODES.IDLE)
-    assert (
-        mock_actuator.set_motor_voltage(5.0) is None
-    )  # Should be restricted in IDLE mode
+    assert mock_actuator.set_motor_voltage(5.0) is None  # Should be restricted in IDLE mode
 
     mock_actuator.set_control_mode(CONTROL_MODES.VOLTAGE)
     with patch.object(mock_actuator, "set_motor_voltage") as mock_method:
@@ -557,10 +550,7 @@ def test_motor_constants(mock_actuator: MockActuator):
 
 
 def test_motor_constants_properties(mock_actuator: MockActuator):
-    assert (
-        pytest.approx(mock_actuator.MOTOR_CONSTANTS.RAD_PER_COUNT, 0.00001)
-        == 2 * 3.14159 / 1000
-    )
+    assert pytest.approx(mock_actuator.MOTOR_CONSTANTS.RAD_PER_COUNT, 0.00001) == 2 * 3.14159 / 1000
     assert mock_actuator.MOTOR_CONSTANTS.NM_PER_MILLIAMP == 0.0001
 
 

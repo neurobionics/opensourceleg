@@ -1,5 +1,3 @@
-from typing import List
-
 import math
 from time import sleep
 
@@ -78,13 +76,9 @@ class ADS131M0x(ADCBase):
         """
 
         if len(channel_gains) != num_channels:
-            raise ValueError(
-                "Length of channel_gains does not equal number of channels"
-            )
+            raise ValueError("Length of channel_gains does not equal number of channels")
         if gain_error != [] and len(gain_error) != num_channels:
-            raise ValueError(
-                "Length of channel_gains does not equal number of channels"
-            )
+            raise ValueError("Length of channel_gains does not equal number of channels")
 
         self._spi_bus = spi_bus
         self._spi_chip = spi_chip
@@ -110,7 +104,7 @@ class ADS131M0x(ADCBase):
         self._data = [0.0] * num_channels
 
     def __repr__(self) -> str:
-        return f"ADS131M0x"
+        return "ADS131M0x"
 
     def start(self) -> None:
         """Opens SPI port, calibrates ADC, and begins streaming ADC data."""
@@ -131,9 +125,7 @@ class ADS131M0x(ADCBase):
 
     def reset(self) -> None:
         """Resets all register values."""
-        self._spi.xfer2(
-            self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
-        )
+        self._spi.xfer2(self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
 
     def update(self) -> None:
         """Reads ADC data."""
@@ -193,9 +185,7 @@ class ADS131M0x(ADCBase):
             The response to the message sent, including the entire frame following the response.
         """
         self._spi.xfer2(bytes)
-        return (list[int])(
-            self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
-        )
+        return (list[int])(self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame))
 
     def _channel_enable(self, state: bool) -> None:
         """Enables or disables streaming on all channels.
@@ -217,14 +207,10 @@ class ADS131M0x(ADCBase):
                 1 -- Continuous Conversion Mode
         """
         if state == 0:
-            self._spi.xfer2(
-                self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
-            )
+            self._spi.xfer2(self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
             self._streaming = False
         elif state == 1:
-            self._spi.xfer2(
-                self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
-            )
+            self._spi.xfer2(self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
             self._streaming = True
 
     def _set_voltage_source(self, source: int) -> None:
@@ -290,8 +276,7 @@ class ADS131M0x(ADCBase):
     def _read_data_millivolts(self) -> list[float]:
         """Returns a List representing the voltage in millivolts for all channels of the ADC"""
         mV = [
-            1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference)
-            for dat in self._read_data_counts()
+            1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference) for dat in self._read_data_counts()
         ]
         return mV
 

@@ -24,8 +24,6 @@ Usage Guide:
 
 """
 
-from typing import Any, Callable, Dict, List, Optional, Union
-
 import csv
 import logging
 import os
@@ -34,6 +32,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
+from typing import Any, Callable, Optional, Union
 
 
 class LogLevel(Enum):

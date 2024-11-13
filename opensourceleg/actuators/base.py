@@ -1,22 +1,18 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from functools import partial
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
     NamedTuple,
     Optional,
     Protocol,
-    Set,
     TypeVar,
     Union,
     cast,
     runtime_checkable,
 )
-
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from enum import Enum
-from functools import partial
 
 import numpy as np
 
@@ -36,9 +32,7 @@ class MOTOR_CONSTANTS:
 
     def __post_init__(self):
         if any(x <= 0 for x in self.__dict__.values()):
-            raise ValueError(
-                "All values in MOTOR_CONSTANTS must be non-zero and positive."
-            )
+            raise ValueError("All values in MOTOR_CONSTANTS must be non-zero and positive.")
 
     @property
     def RAD_PER_COUNT(self) -> float:
@@ -119,9 +113,9 @@ def requires(*modes: CONTROL_MODES):
             raise TypeError("All arguments to 'requires' must be of type CONTROL_MODES")
 
         if not hasattr(func, "_required_modes"):
-            setattr(func, "_required_modes", set(modes))
+            func._required_modes = set(modes)
         else:
-            getattr(func, "_required_modes").update(modes)
+            func._required_modes.update(modes)
 
         return func
 
@@ -182,18 +176,14 @@ class ActuatorBase(ABC):
                 if callable(method) and hasattr(method, "_required_modes"):
                     self._original_methods[method_name] = method
             except AttributeError:
-                LOGGER.debug(
-                    msg=f"[{self.tag}] {method_name}() is not implemented in {self.tag}."
-                )
+                LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.tag}.")
 
     def _set_mutated_methods(self):
         for method_name, method in self._original_methods.items():
             if self._mode in method._required_modes:
                 setattr(self, method_name, method)
             else:
-                setattr(
-                    self, method_name, partial(self._restricted_method, method_name)
-                )
+                setattr(self, method_name, partial(self._restricted_method, method_name))
 
     @property
     @abstractmethod
@@ -212,16 +202,13 @@ class ActuatorBase(ABC):
     def update(self) -> None:
         pass
 
-    def _get_control_mode_config(
-        self, mode: CONTROL_MODES
-    ) -> Optional[ControlModeConfig]:
+    def _get_control_mode_config(self, mode: CONTROL_MODES) -> Optional[ControlModeConfig]:
         return cast(
             Optional[ControlModeConfig],
             getattr(self._CONTROL_MODE_CONFIGS, mode.name),
         )
 
     def set_control_mode(self, mode: CONTROL_MODES) -> None:
-
         if self.mode == mode:
             LOGGER.debug(msg=f"[{self.tag}] Already in {self.mode.name} control mode.")
             return
@@ -281,9 +268,7 @@ class ActuatorBase(ABC):
 
     @abstractmethod
     @requires(CONTROL_MODES.IMPEDANCE)
-    def set_impedance_gains(
-        self, kp: float, ki: float, kd: float, k: float, b: float, ff: float
-    ) -> None:
+    def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
         pass
 
     @abstractmethod

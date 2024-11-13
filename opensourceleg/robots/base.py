@@ -1,6 +1,5 @@
-from typing import Any, Dict, Generic, TypeVar
-
 from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 
 from opensourceleg.actuators.base import ActuatorBase
 from opensourceleg.logging import LOGGER

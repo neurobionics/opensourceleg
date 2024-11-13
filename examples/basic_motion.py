@@ -69,12 +69,7 @@ with knee, ankle:
         ankle.set_output_position(ankle_setpoint)
 
         print(
-            "Ankle Desired {:+.2f} rad, Ankle Actual {:+.2f} rad, Knee Desired {:+.2f} rad, Ankle Desired {:+.2f} rad".format(
-                ankle_setpoint,
-                ankle.output_position,
-                knee_setpoint,
-                knee.output_position,
-            ),
+            f"Ankle Desired {ankle_setpoint:+.2f} rad, Ankle Actual {ankle.output_position:+.2f} rad, Knee Desired {knee_setpoint:+.2f} rad, Ankle Desired {knee.output_position:+.2f} rad",
             end="\r",
         )
 

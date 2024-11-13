@@ -8,9 +8,7 @@ class ActuatorStreamException(Exception):
     """
 
     def __init__(self, tag: str) -> None:
-        super().__init__(
-            f"{tag} is not streaming, please call start() method before sending commands"
-        )
+        super().__init__(f"{tag} is not streaming, please call start() method before sending commands")
 
 
 class ActuatorConnectionException(Exception):

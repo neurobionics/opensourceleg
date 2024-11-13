@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 # A simple and scalable Finite State Machine module
 
-from typing import Any, Callable, List, Optional
-
 import time
-from dataclasses import dataclass, field
+from typing import Any, Callable, Optional
 
 """
 The state_machine module provides classes for implementing a finite state machine (FSM).
@@ -56,7 +54,6 @@ class State:
         ankle_equilibrium_angle: float = 0.0,
         minimum_time_in_state: float = 2.0,
     ) -> None:
-
         self._name: str = name
 
         self._is_knee_active: bool = is_knee_active
@@ -326,9 +323,7 @@ class Transition:
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (
-            f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
-        )
+        return f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
 
     def add_criteria(self, callback: Callable[[Any], bool]) -> None:
         self._criteria = callback
@@ -357,19 +352,14 @@ class FromToTransition(Transition):
         destination: State,
         callback: Callable[[Any], bool] = None,
     ) -> None:
-        super().__init__(
-            event=event, source=source, destination=destination, callback=callback
-        )
+        super().__init__(event=event, source=source, destination=destination, callback=callback)
 
         self._from: State = source
         self._to: State = destination
 
     def __call__(self, data: Any, spoof: bool = False) -> State:
         if spoof:
-            if (
-                self._from.current_time_in_state
-                > self._from.minimum_time_spent_in_state
-            ):
+            if self._from.current_time_in_state > self._from.minimum_time_spent_in_state:
                 if self._action:
                     self._action(data)
 
@@ -435,7 +425,7 @@ class StateMachine:
         self._spoof: bool = spoof
 
     def __repr__(self) -> str:
-        return f"StateMachine"
+        return "StateMachine"
 
     def add_state(self, state: State, initial_state: bool = False) -> None:
         """
@@ -482,14 +472,8 @@ class StateMachine:
         """
         transition = None
 
-        if (
-            source in self._states
-            and destination in self._states
-            and event in self._events
-        ):
-            transition = FromToTransition(
-                event=event, source=source, destination=destination, callback=callback
-            )
+        if source in self._states and destination in self._states and event in self._events:
+            transition = FromToTransition(event=event, source=source, destination=destination, callback=callback)
             self._transitions.append(transition)
 
         return transition

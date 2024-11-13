@@ -1,6 +1,4 @@
 # Global Units Dictionary
-import enum
-from dataclasses import dataclass
 
 import numpy as np
 import pytest
@@ -54,7 +52,6 @@ def test_convert_to_from_default():
 
 
 def test_force():
-
     assert force.N == 1.0
     assert force.lbf == 4.4482216152605
     assert force.kgf == 9.80665
@@ -62,7 +59,6 @@ def test_force():
 
 
 def test_torque():
-
     assert torque.N_m == 1.0
     assert torque.lbf_inch == 0.1129848290276167
     assert torque.kgf_cm == 0.0980665
@@ -70,7 +66,6 @@ def test_torque():
 
 
 def test_stiffness():
-
     assert stiffness.N_m_per_rad == 1.0
     assert stiffness.N_m_per_deg == 0.017453292519943295
 
@@ -78,7 +73,6 @@ def test_stiffness():
 
 
 def test_damping():
-
     assert damping.N_m_per_rad_per_s == 1.0
     assert damping.N_m_per_deg_per_s == 0.017453292519943295
 
@@ -86,7 +80,6 @@ def test_damping():
 
 
 def test_length():
-
     assert length.m == 1.0
     assert length.cm == 0.01
     assert length.inch == 0.0254
@@ -95,7 +88,6 @@ def test_length():
 
 
 def test_position():
-
     assert position.rad == 1.0
     assert position.deg == 0.017453292519943295
 
@@ -103,7 +95,6 @@ def test_position():
 
 
 def test_mass():
-
     assert mass.kg == 1.0
     assert mass.g == 0.001
     assert mass.lb == 0.45359237
@@ -112,7 +103,6 @@ def test_mass():
 
 
 def test_velocity():
-
     assert velocity.rad_per_s == 1.0
     assert velocity.deg_per_s == 0.017453292519943295
     assert velocity.rpm == 0.10471975511965977
@@ -121,7 +111,6 @@ def test_velocity():
 
 
 def test_acceleration():
-
     assert acceleration.rad_per_s2 == 1.0
     assert acceleration.deg_per_s2 == 0.017453292519943295
 
@@ -129,7 +118,6 @@ def test_acceleration():
 
 
 def test_time():
-
     assert time.s == 1.0
     assert time.ms == 0.001
 
@@ -137,7 +125,6 @@ def test_time():
 
 
 def test_current():
-
     assert current.mA == 1
     assert current.A == 1000
 
@@ -145,7 +132,6 @@ def test_current():
 
 
 def test_voltage():
-
     assert voltage.mV == 1
     assert voltage.V == 1000
 

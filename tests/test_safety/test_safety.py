@@ -1,5 +1,5 @@
 from io import StringIO
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -37,9 +37,7 @@ def test_Thermal_Limit_Exception_initialization():
 
 def test_Thermal_Limit_Exception_initialization_with_default():
     thermal_limit_exception = ThermalLimitException()
-    assert (
-        thermal_limit_exception.message == "Software thermal limit exceeded. Exiting."
-    )
+    assert thermal_limit_exception.message == "Software thermal limit exceeded. Exiting."
 
 
 # Test def is_changing & decorator
@@ -117,9 +115,7 @@ def test_is_changing_four_points_less_than_threshold_with_proxy_att_name():
 
     with patch("sys.stdout", new=StringIO()) as temp_out:
         test_changing_point1(instance)
-        assert (
-            temp_out.getvalue() == f"{att} isn't stable, returning {proxy_att_name}\n"
-        )
+        assert temp_out.getvalue() == f"{att} isn't stable, returning {proxy_att_name}\n"
 
 
 def test_is_changing_parameters():
@@ -386,9 +382,7 @@ def test_is_within_range_max_less_min():
     # Test maximum value greater than minimum value for range
     min = 4
     max = 1
-    with pytest.raises(
-        ValueError, match=f"Maximum value must be greater than minimum value of range"
-    ):
+    with pytest.raises(ValueError, match="Maximum value must be greater than minimum value of range"):
 
         @is_within_range(min, max)
         def test_for_min_greater_than_max(instance: object):
@@ -463,9 +457,7 @@ def test_is_greater_equality_false_out():
     def test_less_with_false_clamp(instance: object):
         return 1
 
-    with pytest.raises(
-        ValueError, match=f"Value must be greater than or equal to {min}"
-    ):
+    with pytest.raises(ValueError, match=f"Value must be greater than or equal to {min}"):
         test_less_with_false_clamp({})
 
 
@@ -687,9 +679,7 @@ def test_add_safety_att_doesnt_exist(mock_print):
 
     attribute = "wrong"
     test_manager.add_safety(samp, attribute, SafetyDecorators.is_positive())
-    mock_print.assert_called_once_with(
-        f"Error: The attribute '{attribute}' does not exist in the given object."
-    )
+    mock_print.assert_called_once_with(f"Error: The attribute '{attribute}' does not exist in the given object.")
 
 
 @patch("builtins.print")

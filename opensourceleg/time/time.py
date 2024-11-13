@@ -34,7 +34,7 @@ class LoopKiller:
         self._soft_kill_time = None
 
     def __repr__(self) -> str:
-        return f"LoopKiller"
+        return "LoopKiller"
 
     def handle_signal(self, signum, frame):
         self.kill_now = True
@@ -111,7 +111,7 @@ class SoftRealtimeLoop:
         self.report = report
 
     def __repr__(self) -> str:
-        return f"SoftRealtimeLoop"
+        return "SoftRealtimeLoop"
 
     def __del__(self):
         if self.report:
@@ -121,10 +121,7 @@ class SoftRealtimeLoop:
                 "\tstddev error: %.3f milliseconds"
                 % (1e3 * sqrt((self.sum_var - self.sum_err**2 / self.n) / (self.n - 1)))
             )
-            print(
-                "\tpercent of time sleeping: %.1f %%"
-                % (self.sleep_t_agg / self.time() * 100.0)
-            )
+            print("\tpercent of time sleeping: %.1f %%" % (self.sleep_t_agg / self.time() * 100.0))
 
     @property
     def fade(self):
@@ -139,9 +136,7 @@ class SoftRealtimeLoop:
             if ret == 0:
                 self.stop()
             while time.monotonic() < self.t1 and not self.killer.kill_now:
-                if signal.sigtimedwait(
-                    [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
-                ):
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
                     self.stop()
             self.t1 += dt
 
@@ -162,21 +157,14 @@ class SoftRealtimeLoop:
         if self.killer.kill_now:
             raise StopIteration
 
-        while (
-            time.monotonic() < self.t1 - 2 * PRECISION_OF_SLEEP
-            and not self.killer.kill_now
-        ):
+        while time.monotonic() < self.t1 - 2 * PRECISION_OF_SLEEP and not self.killer.kill_now:
             t_pre_sleep = time.monotonic()
-            time.sleep(
-                max(PRECISION_OF_SLEEP, self.t1 - time.monotonic() - PRECISION_OF_SLEEP)
-            )
+            time.sleep(max(PRECISION_OF_SLEEP, self.t1 - time.monotonic() - PRECISION_OF_SLEEP))
             self.sleep_t_agg += time.monotonic() - t_pre_sleep
 
         while time.monotonic() < self.t1 and not self.killer.kill_now:
             try:
-                if signal.sigtimedwait(
-                    [signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0
-                ):
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
                     self.stop()
             except AttributeError:
                 pass

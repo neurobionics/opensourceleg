@@ -8,10 +8,7 @@ def test_actuator_stream_exception():
     test_str = "test"
     with pytest.raises(ActuatorStreamException) as e:
         raise ActuatorStreamException(test_str)
-    assert (
-        str(e.value)
-        == f"{test_str} is not streaming, please call start() method before sending commands"
-    )
+    assert str(e.value) == f"{test_str} is not streaming, please call start() method before sending commands"
 
 
 # Test ActuatorConnectionException

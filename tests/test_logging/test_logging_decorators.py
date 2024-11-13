@@ -13,9 +13,7 @@ def test_deprecated_decorator():
         return x
 
     assert testing(2) == 2
-    LOGGER.warning.assert_called_once_with(
-        f"Function `{testing.__name__}` is deprecated."
-    )
+    LOGGER.warning.assert_called_once_with(f"Function `{testing.__name__}` is deprecated.")
 
     LOGGER.warning = LOGGER.original_warning
     del LOGGER.original_warning

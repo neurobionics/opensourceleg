@@ -1,7 +1,7 @@
 ---
 name: 🐛 Bug report
 about: If something isn't working 🔧
-title: ''
+title: ""
 labels: bug
 assignees:
 ---
@@ -22,8 +22,8 @@ Steps to reproduce the behavior:
 
 ### Environment
 
-* OS: [e.g. Linux / Windows / macOS]
-* Python version, get it with:
+- OS: [e.g. Linux / Windows / macOS]
+- Python version, get it with:
 
 ```bash
 python --version

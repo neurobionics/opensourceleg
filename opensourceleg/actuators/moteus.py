@@ -1,14 +1,9 @@
-﻿from typing import Any, Union
-
 import math
 import os
-import time
-from dataclasses import dataclass
 
 import numpy as np
-from moteus import Command, Controller
+from moteus import Command, Controller, Stream
 from moteus import Register as MoteusRegister
-from moteus import Stream
 from moteus import multiplex as mp
 
 from opensourceleg.actuators.base import (
@@ -56,7 +51,6 @@ MOTEUS_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
 
 
 class MoteusQueryResolution:
-
     mode = mp.INT8
     position = mp.F32
     velocity = mp.F32
@@ -139,10 +133,9 @@ class MoteusInterface:
         pass
 
     def __repr__(self):
-        return f"MoteusInterface"
+        return "MoteusInterface"
 
     def _add2map(self, servo_id, bus_id) -> None:
-
         if bus_id in self.bus_map.keys():
             self.bus_map[bus_id].append(servo_id)
         else:
@@ -227,7 +220,7 @@ class MoteusActuator(ActuatorBase, Controller):
             self._is_open = True
             self._is_streaming = True
 
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
@@ -239,9 +232,7 @@ class MoteusActuator(ActuatorBase, Controller):
             default_mode_config.entry_callback(self)
 
         if (await self._interface.transport.cycle([self.make_stop(query=True)])) == []:
-            LOGGER.error(
-                msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection."
-            )
+            LOGGER.error(msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection.")
             self._is_streaming = False
             self._is_open = False
         # Keep the default command as query -- reading sensor data
@@ -256,7 +247,6 @@ class MoteusActuator(ActuatorBase, Controller):
         self._command = self.make_query()
 
     async def update(self):
-
         self._data = await self._interface.transport.cycle([self._command])
 
         self._thermal_model.T_c = self.case_temperature
@@ -314,15 +304,12 @@ class MoteusActuator(ActuatorBase, Controller):
         self,
         value: float,
     ):
-        LOGGER.info(f"Current Mode Not Implemented")
+        LOGGER.info("Current Mode Not Implemented")
 
     def set_motor_velocity(self, value: float) -> None:
         self._command = self.make_position(
             position=math.nan,
-            velocity=value
-            / (
-                np.pi * 2
-            ),  # TODO: Verify this conversion, are we converting from rad/s to rev/s?
+            velocity=value / (np.pi * 2),  # TODO: Verify this conversion, are we converting from rad/s to rev/s?
             query=True,
             watchdog_timeout=math.nan,
         )
@@ -334,7 +321,7 @@ class MoteusActuator(ActuatorBase, Controller):
         Args:
             value (float): The voltage to set in mV.
         """
-        LOGGER.info(f"Voltage Mode Not Implemented")
+        LOGGER.info("Voltage Mode Not Implemented")
 
     def set_motor_position(self, value: float) -> None:
         """
@@ -345,9 +332,7 @@ class MoteusActuator(ActuatorBase, Controller):
             value (float): The position to set
         """
         self._command = self.make_position(
-            position=float(
-                (value) / (2 * np.pi)
-            ),  # TODO: Verify this conversion, are we converting from rad to rev?
+            position=float((value) / (2 * np.pi)),  # TODO: Verify this conversion, are we converting from rad to rev?
             query=True,
             watchdog_timeout=math.nan,
         )
@@ -460,10 +445,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @property
     def motor_torque(self) -> float:
         if self._data is not None:
-            return (
-                float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
-                / self.gear_ratio
-            )
+            return float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP) / self.gear_ratio
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."

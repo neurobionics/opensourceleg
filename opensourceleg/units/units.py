@@ -1,5 +1,4 @@
 # Global Units Dictionary
-import enum
 from dataclasses import dataclass
 
 """
@@ -23,7 +22,7 @@ class force:
     kgf = 9.80665
 
     def __repr__(self) -> str:
-        return f"force"
+        return "force"
 
 
 @dataclass
@@ -33,7 +32,7 @@ class torque:
     kgf_cm = 0.0980665
 
     def __repr__(self) -> str:
-        return f"torque"
+        return "torque"
 
 
 @dataclass
@@ -42,7 +41,7 @@ class stiffness:
     N_m_per_deg = 0.017453292519943295
 
     def __repr__(self) -> str:
-        return f"stiffness"
+        return "stiffness"
 
 
 @dataclass
@@ -51,7 +50,7 @@ class damping:
     N_m_per_deg_per_s = 0.017453292519943295
 
     def __repr__(self) -> str:
-        return f"damping"
+        return "damping"
 
 
 @dataclass
@@ -61,7 +60,7 @@ class length:
     inch = 0.0254
 
     def __repr__(self) -> str:
-        return f"length"
+        return "length"
 
 
 @dataclass
@@ -70,7 +69,7 @@ class position:
     deg = 0.017453292519943295
 
     def __repr__(self) -> str:
-        return f"position"
+        return "position"
 
 
 @dataclass
@@ -80,7 +79,7 @@ class mass:
     lb = 0.45359237
 
     def __repr__(self) -> str:
-        return f"mass"
+        return "mass"
 
 
 @dataclass
@@ -90,7 +89,7 @@ class velocity:
     rpm = 0.10471975511965977
 
     def __repr__(self) -> str:
-        return f"velocity"
+        return "velocity"
 
 
 @dataclass
@@ -99,7 +98,7 @@ class acceleration:
     deg_per_s2 = 0.017453292519943295
 
     def __repr__(self) -> str:
-        return f"acceleration"
+        return "acceleration"
 
 
 @dataclass
@@ -108,7 +107,7 @@ class time:
     ms = 0.001
 
     def __repr__(self) -> str:
-        return f"time"
+        return "time"
 
 
 @dataclass
@@ -117,7 +116,7 @@ class current:
     A = 1000
 
     def __repr__(self) -> str:
-        return f"current"
+        return "current"
 
 
 @dataclass
@@ -126,7 +125,7 @@ class voltage:
     V = 1000
 
     def __repr__(self) -> str:
-        return f"voltage"
+        return "voltage"
 
 
 def convert_to_default(value: float, from_unit: float) -> float:

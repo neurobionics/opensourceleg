@@ -1,10 +1,6 @@
-from typing import Any, Callable, Union, overload
-
 import os
 import time
 from ctypes import c_int
-from dataclasses import dataclass
-from unittest.mock import Mock
 
 import numpy as np
 from flexsea.device import Device
@@ -24,9 +20,7 @@ from opensourceleg.actuators.decorators import (
 )
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
-    deprecated,
     deprecated_with_routing,
-    deprecated_with_suggestion,
 )
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
@@ -185,7 +179,7 @@ class DephyActuator(Device, ActuatorBase):
         try:
             self.open()
             self._is_open = True
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
@@ -202,7 +196,6 @@ class DephyActuator(Device, ActuatorBase):
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
-
         self.stop_motor()
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         self._is_streaming = False
@@ -210,7 +203,6 @@ class DephyActuator(Device, ActuatorBase):
         self.close()
 
     def update(self) -> None:
-
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -264,15 +256,11 @@ class DephyActuator(Device, ActuatorBase):
 
         """
         is_homing = True
-        homing_frequency = (
-            homing_frequency if homing_frequency is not None else self.frequency
-        )
+        homing_frequency = homing_frequency if homing_frequency is not None else self.frequency
 
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
-        self.set_motor_voltage(
-            value=homing_direction * homing_voltage
-        )  # mV, negative for counterclockwise
+        self.set_motor_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
         _joint_encoder_array = []
@@ -287,10 +275,7 @@ class DephyActuator(Device, ActuatorBase):
                 _motor_encoder_array.append(self.motor_position)
                 _joint_encoder_array.append(self.joint_position)
 
-                if (
-                    abs(self.output_velocity) <= velocity_threshold
-                    or abs(self.motor_current) >= current_threshold
-                ):
+                if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
                     is_homing = False
 
@@ -339,15 +324,11 @@ class DephyActuator(Device, ActuatorBase):
         """
 
         if not self.is_homed:
-            LOGGER.warning(
-                msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map."
-            )
+            LOGGER.warning(msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map.")
             return
 
         if os.path.exists(f"./{self.tag}_encoder_map.npy") and not overwrite:
-            LOGGER.info(
-                msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation."
-            )
+            LOGGER.info(msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation.")
             return
 
         self.set_control_mode(mode=CONTROL_MODES.CURRENT)
@@ -382,9 +363,7 @@ class DephyActuator(Device, ActuatorBase):
             LOGGER.warning(msg="Encoder map interrupted.")
             return
 
-        LOGGER.info(
-            msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint."
-        )
+        LOGGER.info(msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint.")
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
@@ -394,9 +373,7 @@ class DephyActuator(Device, ActuatorBase):
         self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
 
         np.save(file=f"./{self.tag}_encoder_map.npy", arr=_coeffs)
-        LOGGER.info(
-            msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'."
-        )
+        LOGGER.info(msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'.")
 
     def set_motor_torque(self, value: float) -> None:
         """
@@ -456,7 +433,6 @@ class DephyActuator(Device, ActuatorBase):
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
-
         self.command_motor_voltage(value=int(value))
 
     def set_motor_position(self, value: float) -> None:
@@ -469,8 +445,7 @@ class DephyActuator(Device, ActuatorBase):
         """
         self.command_motor_position(
             value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
 
@@ -627,9 +602,7 @@ class DephyActuator(Device, ActuatorBase):
         if getattr(self, "_encoder_map", None) is not None:
             return self._encoder_map
         else:
-            LOGGER.warning(
-                msg="Encoder map is not set. Please call the make_encoder_map method to create one."
-            )
+            LOGGER.warning(msg="Encoder map is not set. Please call the make_encoder_map method to create one.")
             return None
 
     @property
@@ -909,51 +882,35 @@ class DephyActuator(Device, ActuatorBase):
 
 
 def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -1013,7 +970,6 @@ class DephyLegacyActuator(DephyActuator):
             self._is_streaming: bool = False
             self._is_open: bool = False
         else:
-
             # def set_is_streaming(self, value):
             #     self._is_streaming = value
 
@@ -1050,7 +1006,7 @@ class DephyLegacyActuator(DephyActuator):
                 log_level=self._debug_level,
                 log_enabled=self._dephy_log,
             )
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
@@ -1074,7 +1030,6 @@ class DephyLegacyActuator(DephyActuator):
         self.close()
 
     def update(self) -> None:
-
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -1128,7 +1083,6 @@ class DephyLegacyActuator(DephyActuator):
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
-
         self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
 
     def set_motor_position(self, value: float) -> None:
@@ -1142,8 +1096,7 @@ class DephyLegacyActuator(DephyActuator):
         self.send_motor_command(
             ctrl_mode=c_int(self.mode.value),
             value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
 
