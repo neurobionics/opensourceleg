@@ -5,10 +5,10 @@ site_description: An open-source software library for numerical computation, dat
 site_author: Open-Source Leg
 edit_uri: edit/main/docs/
 repo_name: neurobionics/opensourceleg
-copyright: Maintained by <a href="https://neurobionics.com">Florian</a>.
+copyright: Maintained by <a href="https://github.com/senthurayyappan">Senthur Ayyappan</a>.
 
 nav:
-  - Home: index.md
+  - Overview: index.md
   - Modules: modules.md
 plugins:
   - search
