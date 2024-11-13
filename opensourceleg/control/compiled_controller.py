@@ -95,7 +95,7 @@ class CompiledController:
                 All types can be accessed as CompiledController.types.(type_name)
         """
         self._input_type = self.define_type("inputs", input_list)
-        self.inputs = self._input_type()  # type: ignore
+        self.inputs = self._input_type()
 
     def define_outputs(self, output_list: list[Any]) -> None:
         """
@@ -111,7 +111,7 @@ class CompiledController:
                 All types can be accessed as CompiledController.types.(type_name)
         """
         self._output_type = self.define_type("outputs", output_list)
-        self.outputs = self._output_type()  # type: ignore
+        self.outputs = self._output_type()
 
     def define_type(self, type_name: str, parameter_list: list[Any]):
         """

@@ -31,8 +31,8 @@ vector2.x = -0.7395
 vector2.y = 0.6716
 vector2.z = -0.0460
 
-my_linalg.inputs.vector1 = vector1  # type: ignore
-my_linalg.inputs.vector2 = vector2  # type: ignore
+my_linalg.inputs.vector1 = vector1
+my_linalg.inputs.vector2 = vector2
 
 outputs = my_linalg.run()
 

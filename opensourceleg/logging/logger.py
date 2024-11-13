@@ -196,7 +196,7 @@ class Logger(logging.Logger):
     def _write_header(self) -> None:
         header = list(self._var_names.values())
 
-        self._writer.writerow(header)  # type: ignore
+        self._writer.writerow(header)
         self._header_written = True
 
     def _generate_file_paths(self) -> None:

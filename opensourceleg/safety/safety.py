@@ -238,7 +238,7 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
     return decorator
 
 
-def custom_criteria(criteria: Callable):  # type: ignore
+def custom_criteria(criteria: Callable):
     """
     Creates a decorator to check if a property's value meets a custom criteria. The criteria is a function that takes the property's value as an argument and returns a boolean.
 
@@ -285,7 +285,7 @@ class SafetyManager:
     def __init__(self):
         self._safe_objects: dict[object, dict[str, list[Callable]]] = {}
 
-    def add_safety(self, instance: object, attribute: str, decorator: Callable):  # type: ignore
+    def add_safety(self, instance: object, attribute: str, decorator: Callable):
         """
         Adds a safety decorator to the given object's attribute. The decorator will be applied to the property's getter.
 

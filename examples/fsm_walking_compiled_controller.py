@@ -58,7 +58,7 @@ loadcell = SRILoadcell(
 
 sensors = [loadcell]
 
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))  # type: ignore
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 controller = CompiledController(
     library_name="FSMController",
     library_path=currentdir,
@@ -121,42 +121,42 @@ controller.define_outputs([
 ])
 
 # Populate Controller inputs as needed
-controller.inputs.parameters.knee_impedance.early_stance.stiffness = 99.372  # type: ignore
-controller.inputs.parameters.knee_impedance.early_stance.damping = 3.180  # type: ignore
-controller.inputs.parameters.knee_impedance.early_stance.eq_angle = 5  # type: ignore
-controller.inputs.parameters.knee_impedance.late_stance.stiffness = 99.372  # type: ignore
-controller.inputs.parameters.knee_impedance.late_stance.damping = 1.272  # type: ignore
-controller.inputs.parameters.knee_impedance.late_stance.eq_angle = 8  # type: ignore
-controller.inputs.parameters.knee_impedance.early_swing.stiffness = 39.746  # type: ignore
-controller.inputs.parameters.knee_impedance.early_swing.damping = 0.063  # type: ignore
-controller.inputs.parameters.knee_impedance.early_swing.eq_angle = 60  # type: ignore
-controller.inputs.parameters.knee_impedance.late_swing.stiffness = 15.899  # type: ignore
-controller.inputs.parameters.knee_impedance.late_swing.damping = 3.186  # type: ignore
-controller.inputs.parameters.knee_impedance.late_swing.eq_angle = 5  # type: ignore
-controller.inputs.parameters.ankle_impedance.early_stance.stiffness = 19.874  # type: ignore
-controller.inputs.parameters.ankle_impedance.early_stance.damping = 0  # type: ignore
-controller.inputs.parameters.ankle_impedance.early_stance.eq_angle = -2  # type: ignore
-controller.inputs.parameters.ankle_impedance.late_stance.stiffness = 79.498  # type: ignore
-controller.inputs.parameters.ankle_impedance.late_stance.damping = 0.063  # type: ignore
-controller.inputs.parameters.ankle_impedance.late_stance.eq_angle = -20  # type: ignore
-controller.inputs.parameters.ankle_impedance.early_swing.stiffness = 7.949  # type: ignore
-controller.inputs.parameters.ankle_impedance.early_swing.damping = 0  # type: ignore
-controller.inputs.parameters.ankle_impedance.early_swing.eq_angle = 25  # type: ignore
-controller.inputs.parameters.ankle_impedance.late_swing.stiffness = 7.949  # type: ignore
-controller.inputs.parameters.ankle_impedance.late_swing.damping = 0.0  # type: ignore
-controller.inputs.parameters.ankle_impedance.late_swing.eq_angle = 15  # type: ignore
+controller.inputs.parameters.knee_impedance.early_stance.stiffness = 99.372
+controller.inputs.parameters.knee_impedance.early_stance.damping = 3.180
+controller.inputs.parameters.knee_impedance.early_stance.eq_angle = 5
+controller.inputs.parameters.knee_impedance.late_stance.stiffness = 99.372
+controller.inputs.parameters.knee_impedance.late_stance.damping = 1.272
+controller.inputs.parameters.knee_impedance.late_stance.eq_angle = 8
+controller.inputs.parameters.knee_impedance.early_swing.stiffness = 39.746
+controller.inputs.parameters.knee_impedance.early_swing.damping = 0.063
+controller.inputs.parameters.knee_impedance.early_swing.eq_angle = 60
+controller.inputs.parameters.knee_impedance.late_swing.stiffness = 15.899
+controller.inputs.parameters.knee_impedance.late_swing.damping = 3.186
+controller.inputs.parameters.knee_impedance.late_swing.eq_angle = 5
+controller.inputs.parameters.ankle_impedance.early_stance.stiffness = 19.874
+controller.inputs.parameters.ankle_impedance.early_stance.damping = 0
+controller.inputs.parameters.ankle_impedance.early_stance.eq_angle = -2
+controller.inputs.parameters.ankle_impedance.late_stance.stiffness = 79.498
+controller.inputs.parameters.ankle_impedance.late_stance.damping = 0.063
+controller.inputs.parameters.ankle_impedance.late_stance.eq_angle = -20
+controller.inputs.parameters.ankle_impedance.early_swing.stiffness = 7.949
+controller.inputs.parameters.ankle_impedance.early_swing.damping = 0
+controller.inputs.parameters.ankle_impedance.early_swing.eq_angle = 25
+controller.inputs.parameters.ankle_impedance.late_swing.stiffness = 7.949
+controller.inputs.parameters.ankle_impedance.late_swing.damping = 0.0
+controller.inputs.parameters.ankle_impedance.late_swing.eq_angle = 15
 
 # Configure state machine
 body_weight = 82  # kg
-controller.inputs.parameters.body_weight = body_weight  # type: ignore
-controller.inputs.parameters.transition_parameters.min_time_in_state = 0.20  # type: ignore
-controller.inputs.parameters.transition_parameters.loadLStance = -body_weight * 0.25  # type: ignore
-controller.inputs.parameters.transition_parameters.ankleThetaEstanceToLstance = 6.0  # type: ignore
-controller.inputs.parameters.transition_parameters.loadESwing = -body_weight * 0.15  # type: ignore
-controller.inputs.parameters.transition_parameters.kneeThetaESwingToLSwing = 50  # type: ignore
-controller.inputs.parameters.transition_parameters.kneeDthetaESwingToLSwing = 3  # type: ignore
-controller.inputs.parameters.transition_parameters.loadEStance = -body_weight * 0.4  # type: ignore
-controller.inputs.parameters.transition_parameters.kneeThetaLSwingToEStance = 30  # type: ignore
+controller.inputs.parameters.body_weight = body_weight
+controller.inputs.parameters.transition_parameters.min_time_in_state = 0.20
+controller.inputs.parameters.transition_parameters.loadLStance = -body_weight * 0.25
+controller.inputs.parameters.transition_parameters.ankleThetaEstanceToLstance = 6.0
+controller.inputs.parameters.transition_parameters.loadESwing = -body_weight * 0.15
+controller.inputs.parameters.transition_parameters.kneeThetaESwingToLSwing = 50
+controller.inputs.parameters.transition_parameters.kneeDthetaESwingToLSwing = 3
+controller.inputs.parameters.transition_parameters.loadEStance = -body_weight * 0.4
+controller.inputs.parameters.transition_parameters.kneeThetaLSwingToEStance = 30
 
 with knee, ankle, loadcell:
     knee.home()
@@ -171,20 +171,18 @@ with knee, ankle, loadcell:
         ankle.update()
         loadcell.update()
 
-        controller.inputs.sensors.knee_angle = (  # type: ignore
-            units.convert_from_default(knee.output_position, units.position.deg)
-        )
-        controller.inputs.sensors.ankle_angle = units.convert_from_default(ankle.output_position, units.position.deg)  # type: ignore
+        controller.inputs.sensors.knee_angle = units.convert_from_default(knee.output_position, units.position.deg)
+        controller.inputs.sensors.ankle_angle = units.convert_from_default(ankle.output_position, units.position.deg)
         controller.inputs.sensors.knee_velocity = units.convert_from_default(
             knee.output_velocity, units.velocity.deg_per_s
-        )  # type: ignore
+        )
         controller.inputs.sensors.ankle_velocity = units.convert_from_default(
             ankle.output_velocity, units.velocity.deg_per_s
-        )  # type: ignore
-        controller.inputs.sensors.Fz = loadcell.fz  # type: ignore
+        )
+        controller.inputs.sensors.Fz = loadcell.fz
 
         # Update any control inputs that change every loop
-        controller.inputs.time = t  # type: ignore
+        controller.inputs.time = t
 
         # Call the controller
         outputs = controller.run()
