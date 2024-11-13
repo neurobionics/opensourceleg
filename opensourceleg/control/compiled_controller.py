@@ -45,7 +45,7 @@ class CompiledController:
         self.init_function = self._load_function(initialization_function_name)
         # Note if requested function name is None, returned handle is also none
 
-        if self.init_function != None:
+        if self.init_function is not None:
             self.init_function()
 
         # This alias makes defining types from top script easier without second import
@@ -65,14 +65,14 @@ class CompiledController:
         self.outputs = None
 
     def __del__(self):
-        if self.cleanup_func != None:
+        if self.cleanup_func is not None:
             self.cleanup_func()
 
     def __repr__(self):
         return "CompiledController"
 
     def _load_function(self, function_name):
-        if function_name == None:
+        if function_name is None:
             return None
         else:
             try:

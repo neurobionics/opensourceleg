@@ -136,8 +136,8 @@ def test_init_default(sample_imu: MockLordMicrostrainIMU):
         sample_imu._port == "/dev/ttyUSB0",
         sample_imu._baud_rate == 921600,
         sample_imu._frequency == 200,
-        sample_imu._is_streaming == False,
-        sample_imu._connection == None,
+        sample_imu._is_streaming is False,
+        sample_imu._connection is None,
         sample_imu._data == {},
         type(sample_imu._data) == dict,
     ])
@@ -166,9 +166,9 @@ def test_configure_mip_channels(sample_imu: MockLordMicrostrainIMU):
 # Test start
 def test_start(sample_imu: MockLordMicrostrainIMU):
     assert all([
-        sample_imu._connection == None,
+        sample_imu._connection is None,
         not hasattr(sample_imu, "_node"),
-        sample_imu._is_streaming == False,
+        sample_imu._is_streaming is False,
     ])
 
     sample_imu.start()
@@ -176,7 +176,7 @@ def test_start(sample_imu: MockLordMicrostrainIMU):
     assert all([
         type(sample_imu._connection) == MockConnection,
         type(sample_imu._node) == MockNode,
-        sample_imu._is_streaming == True,
+        sample_imu._is_streaming is True,
         sample_imu._node.type == "mocktype",
         sample_imu._node.datastream == "mocktype",
     ])
@@ -194,11 +194,11 @@ def test_stop_not_started(sample_imu: MockLordMicrostrainIMU):
 
 def test_stop(sample_imu: MockLordMicrostrainIMU):
     sample_imu.start()
-    assert sample_imu._is_streaming == True
+    assert sample_imu._is_streaming is True
 
     sample_imu.stop()
 
-    assert all([sample_imu._is_streaming == False, sample_imu._node.idle == True])
+    assert all([sample_imu._is_streaming is False, sample_imu._node.idle is True])
 
 
 # Test ping
@@ -285,7 +285,7 @@ def test_frequency(sample_imu: MockLordMicrostrainIMU):
 # Test is_streaming
 def test_is_streaming(sample_imu: MockLordMicrostrainIMU):
     sample_imu._is_streaming = True
-    assert sample_imu.is_streaming == True
+    assert sample_imu.is_streaming is True
 
 
 # Test roll

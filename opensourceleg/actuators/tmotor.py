@@ -640,13 +640,13 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             )
         Listener = can.BufferedReader()
         self._canman.notifier.add_listener(Listener)
-        for i in range(10):
+        for _i in range(10):
             self.power_on()
             time.sleep(0.001)
         success = True
         self._is_open = True
         time.sleep(0.1)
-        for i in range(10):
+        for _i in range(10):
             if Listener.get_message(timeout=0.1) is None:
                 success = False
                 self._is_open = False

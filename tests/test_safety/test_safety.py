@@ -601,9 +601,7 @@ def test_is_less_parameter2():
 
 # Test def custom_criteria & decorator. Will return true if x > 2
 def custom_func(x: float):
-    if x ^ 2 > 4:
-        return True
-    return False
+    return x ^ 2 > 4
 
 
 def test_custom_criteria_def_in():
@@ -729,7 +727,7 @@ def test_start():
 
     test_manager.start()
     with pytest.raises(ValueError, match="Value must be negative"):
-        test = samp.test
+        pass
 
 
 # Test update & safe objects

@@ -1,6 +1,6 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -15,7 +15,7 @@ def is_changing(
     attribute_name: str,
     max_points: int = 10,
     threshold: float = 1e-6,
-    proxy_attribute_name: str = None,
+    proxy_attribute_name: Optional[str] = None,
 ):
     """
     Creates a decorator to check if a property's value is changing. If the standard deviation of the last 'max_points' values is less than 'threshold', the decorator will raise an error or return a proxy attribute.
@@ -306,8 +306,8 @@ class SafetyManager:
             )
             return
 
-        if instance in self._safe_objects.keys():
-            if attribute in self._safe_objects[instance].keys():
+        if instance in self._safe_objects:
+            if attribute in self._safe_objects[instance]:
                 self._safe_objects[instance][attribute].append(decorator)
             else:
                 self._safe_objects[instance][attribute] = [decorator]

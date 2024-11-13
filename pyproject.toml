@@ -61,7 +61,6 @@ warn_unused_ignores = "True"
 show_error_codes = "True"
 
 
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
@@ -102,10 +101,10 @@ select = [
     "TRY",
 ]
 ignore = [
-    # LineTooLong
-    "E501",
     # DoNotAssignLambda
     "E731",
+    "TRY003",
+    "SIM115",
 ]
 
 [tool.ruff.format]

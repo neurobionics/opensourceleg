@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -85,7 +85,7 @@ class SRILoadcell(LoadcellBase):
     def update(
         self,
         calibration_offset: npt.NDArray[np.double] = None,
-        data_callback: Callable[..., npt.NDArray[np.uint8]] = None,
+        data_callback: Optional[Callable[..., npt.NDArray[np.uint8]]] = None,
     ) -> None:
         """
         Queries the loadcell for the latest data.
@@ -105,7 +105,7 @@ class SRILoadcell(LoadcellBase):
         self,
         number_of_iterations: int = 2000,
         reset: bool = False,
-        data_callback: Callable[[], npt.NDArray[np.uint8]] = None,
+        data_callback: Optional[Callable[[], npt.NDArray[np.uint8]]] = None,
     ) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero.

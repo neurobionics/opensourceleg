@@ -163,7 +163,7 @@ def test_set_file_name_str(test_logger: Logger):
 def test_set_file_name_none(test_logger: Logger):
     test_logger.set_file_name(None)
     assert all([
-        test_logger._user_file_name == None,
+        test_logger._user_file_name is None,
         test_logger._file_path == "",
         test_logger._csv_path == "",
     ])
@@ -299,7 +299,7 @@ def test_write_header(test_logger: Logger):
     test_logger._writer = csv.writer(test_logger._file)
     test_logger._write_header()
     test_logger.close()
-    assert test_logger._header_written == True
+    assert test_logger._header_written is True
 
     # Ensure expected output was written
     file = open(test_logger._csv_path)
@@ -373,10 +373,10 @@ def test_reset_header(test_logger: Logger):
     test_logger.track_variable(lambda: 2, "test")
     test_logger.update()
     test_logger.flush_buffer()
-    assert test_logger._header_written == True
+    assert test_logger._header_written is True
 
     test_logger.reset()
-    assert test_logger._header_written == False
+    assert test_logger._header_written is False
 
 
 # Test close
@@ -487,7 +487,6 @@ def test_file_path(test_logger: Logger):
 
     test_logger._generate_file_paths = Mock()
     test_logger._file_path = ""
-    filename = test_logger.file_path
     test_logger._generate_file_paths.assert_called_once()
 
     test_logger._generate_file_paths = original_generate

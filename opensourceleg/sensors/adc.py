@@ -1,5 +1,6 @@
 import math
 from time import sleep
+from typing import Optional
 
 import spidev
 
@@ -57,7 +58,7 @@ class ADS131M0x(ADCBase):
         max_speed_hz: int = 8192000,
         channel_gains: list[int] = [32, 128] * 3,
         voltage_reference: float = 1.2,
-        gain_error: list[int] = [],
+        gain_error: Optional[list[int]] = None,
     ):
         """Initializes ADS131M0x class.
 
@@ -75,6 +76,8 @@ class ADS131M0x(ADCBase):
 
         """
 
+        if gain_error is None:
+            gain_error = []
         if len(channel_gains) != num_channels:
             raise ValueError("Length of channel_gains does not equal number of channels")
         if gain_error != [] and len(gain_error) != num_channels:
@@ -193,9 +196,9 @@ class ADS131M0x(ADCBase):
         Arg:
          - state(bool): sets whether or not the ADC is streaming
         """
-        if state == True:
+        if state is True:
             self.write_register(self._CLOCK_REG, self._ENABLE_CHANNELS_CLOCK)
-        elif state == False:
+        elif state is False:
             self.write_register(self._CLOCK_REG, self._DISABLE_CHANNELS_CLOCK)
 
     def _set_device_state(self, state: int) -> None:

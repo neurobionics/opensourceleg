@@ -167,7 +167,7 @@ class Logger(logging.Logger):
             return
 
         data = []
-        for var_id, get_value in self._tracked_vars.items():
+        for _var_id, get_value in self._tracked_vars.items():
             value = get_value()
             data.append(str(value))
 
@@ -204,10 +204,7 @@ class Logger(logging.Logger):
         timestamp = now.strftime("%Y%m%d_%H%M%S")
         script_name = os.path.basename(__file__).split(".")[0]
 
-        if self._user_file_name:
-            base_name = self._user_file_name
-        else:
-            base_name = f"{script_name}_{timestamp}"
+        base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
 
         file_path = os.path.join(self._log_path, base_name)
         self._file_path = file_path + ".log"
@@ -308,7 +305,7 @@ if __name__ == "__main__":
     my_logger.track_variable(lambda: y, "y")
     LOGGER.track_variable(lambda: test.a, "A")
 
-    for i in range(1000):
+    for _i in range(1000):
         x += 0.1
         y = x**2
 

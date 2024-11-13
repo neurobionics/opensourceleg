@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -47,13 +47,15 @@ class ThermalModel:
     def __init__(
         self,
         ambient: float = 21,
-        params: dict[Any, Any] = {},
+        params: Optional[dict[Any, Any]] = None,
         temp_limit_windings: float = 115,
         soft_border_C_windings: float = 15,
         temp_limit_case: float = 80,
         soft_border_C_case: float = 5,
     ) -> None:
         # The following parameters result from Jack Schuchmann's test with no fans
+        if params is None:
+            params = {}
         self.C_w: float = 0.20 * 81.46202695970649
         self.R_WC = 1.0702867186480716
         self.C_c = 512.249065845453
@@ -220,10 +222,7 @@ class SaturatingRamp:
         Returns:
             value (float): Scalar between 0 and 1.
         """
-        if enable_ramp:
-            delta = self.delta_per_update
-        else:
-            delta = -1 * self.delta_per_update
+        delta = self.delta_per_update if enable_ramp else -1 * self.delta_per_update
         self.value += delta
 
         self.value = min(max(self.value, 0), 1)

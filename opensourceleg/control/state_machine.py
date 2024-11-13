@@ -77,10 +77,7 @@ class State:
         self._exit_callbacks: list[Callable[[Any], None]] = []
 
     def __eq__(self, __o) -> bool:
-        if __o.name == self._name:
-            return True
-        else:
-            return False
+        return __o.name == self._name
 
     def __ne__(self, __o) -> bool:
         return not self.__eq__(__o)
@@ -284,10 +281,7 @@ class Event:
         self._name = name
 
     def __eq__(self, __o) -> bool:
-        if __o.name == self._name:
-            return True
-        else:
-            return False
+        return __o.name == self._name
 
     def __ne__(self, __o) -> bool:
         return not self.__eq__(__o)  # TODO: Check this fix
@@ -310,7 +304,7 @@ class Transition:
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        callback: Optional[Callable[[Any], bool]] = None,
     ) -> None:
         self._event: Event = event
         self._source_state: State = source
@@ -350,7 +344,7 @@ class FromToTransition(Transition):
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        callback: Optional[Callable[[Any], bool]] = None,
     ) -> None:
         super().__init__(event=event, source=source, destination=destination, callback=callback)
 
@@ -454,7 +448,7 @@ class StateMachine:
         source: State,
         destination: State,
         event: Event,
-        callback: Callable[[Any], bool] = None,
+        callback: Optional[Callable[[Any], bool]] = None,
     ) -> Optional[Transition]:
         """
         Add a transition to the state machine.
@@ -518,10 +512,7 @@ class StateMachine:
         self._exited = True
 
     def is_on(self) -> bool:
-        if self._current_state and self._current_state != self._exit_state:
-            return True
-        else:
-            return False
+        return bool(self._current_state and self._current_state != self._exit_state)
 
     def spoof(self, spoof: bool) -> None:
         self._spoof = spoof

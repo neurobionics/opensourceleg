@@ -55,15 +55,15 @@ def test_motor_constants_init(non_zero_positive_values):
 )
 def test_motor_constants_init_values(zero_values, non_zero_negative_values):
     with pytest.raises(ValueError):
-        motor_constants = create_motor_constants(zero_values)
+        create_motor_constants(zero_values)
 
     with pytest.raises(ValueError):
-        motor_constants = create_motor_constants(non_zero_negative_values)
+        create_motor_constants(non_zero_negative_values)
 
 
 def test_motor_constants_init_types():
     with pytest.raises(TypeError):
-        motor_constants = MOTOR_CONSTANTS(1, 2)
+        MOTOR_CONSTANTS(1, 2)
 
 
 @pytest.mark.parametrize(
@@ -138,7 +138,7 @@ def test_control_gains_init_partial(default_value):
 @pytest.mark.parametrize("default_value", DEFAULT_VALUES)
 def test_control_gains_init_invalid(default_value):
     with pytest.raises(TypeError):
-        control_gains = ControlGains(kt=default_value)
+        ControlGains(kt=default_value)
 
     # Python3.9 does not support @dataclass(kw_only=True)
     # with pytest.raises(TypeError):
@@ -162,22 +162,22 @@ def test_control_mode_config_init_default():
         entry_callback=lambda _: None,
         exit_callback=lambda _: None,
     )
-    assert control_mode_config.has_gains == False
-    assert control_mode_config.max_gains == None
+    assert control_mode_config.has_gains is False
+    assert control_mode_config.max_gains is None
 
 
 def test_control_mode_config_init_invalid():
     with pytest.raises(TypeError):
-        control_mode_config = ControlModeConfig()
+        ControlModeConfig()
 
     with pytest.raises(TypeError):
-        control_mode_config = ControlModeConfig(
+        ControlModeConfig(
             control_mode=CONTROL_MODES.POSITION,
             gains=ControlGains(),
         )
 
     with pytest.raises(TypeError):
-        control_mode_config = ControlModeConfig(
+        ControlModeConfig(
             has_gains=True,
         )
 
@@ -206,13 +206,13 @@ def test_control_mode_config_init():
 def test_control_mode_configs_init_default():
     control_mode_configs = CONTROL_MODE_CONFIGS()
 
-    assert control_mode_configs.POSITION == None
-    assert control_mode_configs.CURRENT == None
-    assert control_mode_configs.VOLTAGE == None
-    assert control_mode_configs.IMPEDANCE == None
-    assert control_mode_configs.VELOCITY == None
-    assert control_mode_configs.TORQUE == None
-    assert control_mode_configs.IDLE == None
+    assert control_mode_configs.POSITION is None
+    assert control_mode_configs.CURRENT is None
+    assert control_mode_configs.VOLTAGE is None
+    assert control_mode_configs.IMPEDANCE is None
+    assert control_mode_configs.VELOCITY is None
+    assert control_mode_configs.TORQUE is None
+    assert control_mode_configs.IDLE is None
 
 
 def test_control_mode_configs_init():
@@ -235,14 +235,14 @@ def test_control_mode_configs_init():
     assert default_control_mode_config == control_mode_configs.CURRENT
     assert default_control_mode_config == control_mode_configs.VOLTAGE
     assert default_control_mode_config == control_mode_configs.IMPEDANCE
-    assert control_mode_configs.VELOCITY == None
-    assert control_mode_configs.TORQUE == None
-    assert control_mode_configs.IDLE == None
+    assert control_mode_configs.VELOCITY is None
+    assert control_mode_configs.TORQUE is None
+    assert control_mode_configs.IDLE is None
 
 
 def test_control_mode_methods():
     assert type(CONTROL_MODE_METHODS) == list
-    assert all([type(x) == str for x in CONTROL_MODE_METHODS])
+    assert all(type(x) == str for x in CONTROL_MODE_METHODS)
     assert len(CONTROL_MODE_METHODS) >= 12
 
 

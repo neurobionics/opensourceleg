@@ -136,7 +136,7 @@ class MoteusInterface:
         return "MoteusInterface"
 
     def _add2map(self, servo_id, bus_id) -> None:
-        if bus_id in self.bus_map.keys():
+        if bus_id in self.bus_map:
             self.bus_map[bus_id].append(servo_id)
         else:
             self.bus_map[bus_id] = [servo_id]

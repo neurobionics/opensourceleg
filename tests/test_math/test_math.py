@@ -5,22 +5,22 @@ from opensourceleg.math import EdgeDetector, SaturatingRamp, ThermalModel
 
 def test_edge_detector_init():
     edi = EdgeDetector(bool_in=False)
-    assert edi.cur_state == False
-    assert edi.rising_edge == False
-    assert edi.falling_edge == False
+    assert edi.cur_state is False
+    assert edi.rising_edge is False
+    assert edi.falling_edge is False
 
 
 def test_edge_detector_update():
     edu = EdgeDetector(bool_in=False)
     edu.update(bool_in=True)
-    assert edu.rising_edge == True
-    assert edu.falling_edge == False
-    assert edu.cur_state == True
+    assert edu.rising_edge is True
+    assert edu.falling_edge is False
+    assert edu.cur_state is True
     edu2 = EdgeDetector(bool_in=True)
     edu2.update(bool_in=False)
-    assert edu2.rising_edge == False
-    assert edu2.falling_edge == True
-    assert edu2.cur_state == False
+    assert edu2.rising_edge is False
+    assert edu2.falling_edge is True
+    assert edu2.cur_state is False
 
 
 def test_saturating_ramp_init():

@@ -15,12 +15,12 @@ def test_loopkiller_init():
 
     lk = LoopKiller()
     assert lk._fade_time == 0.0
-    assert lk._soft_kill_time == None
+    assert lk._soft_kill_time is None
     lk1 = LoopKiller(fade_time=1.0)
     assert lk1._fade_time == 1.0
-    assert lk1._soft_kill_time == None
-    assert lk1._kill_now == False
-    assert lk1._kill_soon == False
+    assert lk1._soft_kill_time is None
+    assert lk1._kill_now is False
+    assert lk1._kill_soon is False
 
 
 def test_loopkiller_handle_signal():
@@ -32,9 +32,9 @@ def test_loopkiller_handle_signal():
     """
 
     lkhs = LoopKiller()
-    assert lkhs.kill_now == False
+    assert lkhs.kill_now is False
     lkhs.handle_signal(signum=None, frame=None)
-    assert lkhs.kill_now == True
+    assert lkhs.kill_now is True
 
 
 @pytest.fixture
@@ -70,11 +70,11 @@ def test_loopkiller_kill_now_prop(patch_time_time2):
     lkknp = LoopKiller(fade_time=1.0)
     lkknp._kill_soon = True
     lkknp._soft_kill_time = 0.0
-    assert lkknp.kill_now == False
+    assert lkknp.kill_now is False
     lkknp._soft_kill_time = 0.5
-    assert lkknp.kill_now == False
-    assert lkknp.kill_now == True
-    assert lkknp.kill_now == True
+    assert lkknp.kill_now is False
+    assert lkknp.kill_now is True
+    assert lkknp.kill_now is True
 
 
 def test_loopkiller_kill_now_setter(patch_time_time2):
@@ -83,19 +83,19 @@ def test_loopkiller_kill_now_setter(patch_time_time2):
     lkkns._kill_soon = True
     lkkns._soft_kill_time = 0.0
     lkkns.kill_now = False
-    assert lkkns._kill_now == False
-    assert lkkns._kill_soon == False
-    assert lkkns._soft_kill_time == None
+    assert lkkns._kill_now is False
+    assert lkkns._kill_soon is False
+    assert lkkns._soft_kill_time is None
     lkkns.kill_now = True
-    assert lkkns._kill_soon == True
+    assert lkkns._kill_soon is True
     assert lkkns._soft_kill_time == 0.0
-    assert lkkns._kill_now == False
+    assert lkkns._kill_now is False
     lkkns.kill_now = True
-    assert lkkns._kill_now == True
+    assert lkkns._kill_now is True
     lkkns.kill_now = False
     lkkns._fade_time = 0.0
     lkkns.kill_now = True
-    assert lkkns._kill_now == True
+    assert lkkns._kill_now is True
 
 
 def test_softrealtimeloop_init(patch_time_time2):
@@ -103,12 +103,12 @@ def test_softrealtimeloop_init(patch_time_time2):
     assert srtl.t0 == 0.0
     assert srtl.t1 == 0.0
     assert isinstance(srtl.killer, LoopKiller)
-    assert srtl.ttarg == None
+    assert srtl.ttarg is None
     assert srtl.sum_err == 0.0
     assert srtl.sum_var == 0.0
     assert srtl.sleep_t_agg == 0.0
     assert srtl.n == 0
-    assert srtl.report == False
+    assert srtl.report is False
 
 
 @pytest.fixture
@@ -148,9 +148,9 @@ def test_softrealtimeloop_fade_prop(patch_time_time3):
 def test_softrealtimeloop_stop(patch_time_time2):
     srtls = SoftRealtimeLoop()
     srtls.killer._kill_soon = True
-    assert srtls.killer._kill_now == False
+    assert srtls.killer._kill_now is False
     srtls.stop()
-    assert srtls.killer.kill_now == True
+    assert srtls.killer.kill_now is True
 
 
 def test_softrealtimeloop_time(patch_time_time2):

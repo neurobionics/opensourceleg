@@ -1,6 +1,7 @@
 import os
 import time
 from ctypes import c_int
+from typing import Optional
 
 import numpy as np
 from flexsea.device import Device
@@ -230,7 +231,7 @@ class DephyActuator(Device, ActuatorBase):
     def home(
         self,
         homing_voltage: int = 2000,
-        homing_frequency: int = None,
+        homing_frequency: Optional[int] = None,
         homing_direction: int = -1,
         joint_direction: int = -1,
         joint_position_offset: float = 0.0,
