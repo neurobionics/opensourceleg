@@ -15,8 +15,8 @@ class LoopKiller:
     Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
 
     the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
-    A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
-    See the 'ifmain' for two examples.
+    A typical usage would set function_in_loop to be a method of an object, so that the object
+    could store program state. See the 'ifmain' for two examples.
 
     # This library will soon be hosted as a PIP module and added as a python dependency.
     # https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
@@ -88,8 +88,8 @@ class SoftRealtimeLoop:
     Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
 
     the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
-    A typical usage would set function_in_loop to be a method of an object, so that the object could store program state.
-    See the 'ifmain' for two examples.
+    A typical usage would set function_in_loop to be a method of an object, so that the object could store
+    program state. See the 'ifmain' for two examples.
 
     This library will soon be hosted as a PIP module and added as a python dependency.
     https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py

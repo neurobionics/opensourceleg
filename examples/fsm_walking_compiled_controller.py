@@ -189,7 +189,10 @@ with knee, ankle, loadcell:
 
         # Test print to ensure external library call works
         print(
-            f"Current time in state {outputs.current_state}: {outputs.time_in_current_state:.2f} seconds, Knee Eq {outputs.knee_impedance.eq_angle:.2f}, Ankle Eq {outputs.ankle_impedance.eq_angle:.2f}, Fz {loadcell.fz:.2f}",
+            f"Current time in state {outputs.current_state}: {outputs.time_in_current_state:.2f} seconds, \
+                Knee Eq {outputs.knee_impedance.eq_angle:.2f}, \
+                Ankle Eq {outputs.ankle_impedance.eq_angle:.2f}, \
+                Fz {loadcell.fz:.2f}",
             end="\r",
         )
 

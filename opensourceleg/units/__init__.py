@@ -1,4 +1,4 @@
-from opensourceleg.units.units import *
+from .units import *  # noqa: F403
 
 """
 Units module for opensourceleg library.

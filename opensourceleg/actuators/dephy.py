@@ -183,7 +183,8 @@ class DephyActuator(Device, ActuatorBase):
         except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -213,14 +214,16 @@ class DephyActuator(Device, ActuatorBase):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
+                    Stopping motor."
             )
             # self.stop()
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
@@ -252,8 +255,10 @@ class DephyActuator(Device, ActuatorBase):
             joint_direction (int): Direction to move the joint during homing. Default is -1.
             joint_position_offset (float): Offset in radians to add to the joint position. Default is 0.0.
             motor_position_offset (float): Offset in radians to add to the motor position. Default is 0.0.
-            current_threshold (int): Current threshold in mA to stop homing the joint or actuator. This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
-            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+            current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
+                This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
+            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
+                This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
 
         """
         is_homing = True
@@ -305,7 +310,8 @@ class DephyActuator(Device, ActuatorBase):
             self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
         else:
             LOGGER.debug(
-                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method to create one. The encoder map is used to estimate joint position more accurately."
+                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method \
+                    to create one. The encoder map is used to estimate joint position more accurately."
             )
 
     def make_encoder_map(self, overwrite=False) -> None:
@@ -345,7 +351,8 @@ class DephyActuator(Device, ActuatorBase):
         _output_position_array = []
 
         LOGGER.info(
-            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
+            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through \
+                its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
         )
 
         _start_time: float = time.time()
@@ -353,7 +360,8 @@ class DephyActuator(Device, ActuatorBase):
         try:
             while time.time() - _start_time < 10:
                 LOGGER.info(
-                    msg=f"[{self.__repr__()}] Mapping the {self.tag} joint encoder: {10 - time.time() + _start_time} seconds left."
+                    msg=f"[{self.__repr__()}] Mapping the {self.tag} \
+                        joint encoder: {10 - time.time() + _start_time} seconds left."
                 )
                 self.update()
                 _joint_encoder_array.append(self.joint_encoder_counts)
@@ -876,8 +884,8 @@ class DephyActuator(Device, ActuatorBase):
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
-        For a proof, see paper referenced in thermal model.
+        If you scale the torque command by this factor, the motor temperature will never
+        exceed max allowable temperature. For a proof, see paper referenced in thermal model.
         """
         return self._thermal_scale
 
@@ -1010,7 +1018,8 @@ class DephyLegacyActuator(DephyActuator):
         except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -1040,20 +1049,23 @@ class DephyLegacyActuator(DephyActuator):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
 
         if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
+                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; \
+                    Case temperature: {self.case_temperature}."
             )
             raise ThermalLimitException("Internal thermal limit tripped.")
 

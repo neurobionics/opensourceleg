@@ -1,5 +1,6 @@
 import math
 import os
+from typing import ClassVar, Optional
 
 import numpy as np
 from moteus import Command, Controller, Stream
@@ -73,7 +74,7 @@ class MoteusQueryResolution:
     aux1_gpio = mp.IGNORE
     aux2_gpio = mp.IGNORE
 
-    _extra = {
+    _extra: ClassVar = {
         MoteusRegister.COMMAND_POSITION: mp.F32,
         MoteusRegister.COMMAND_VELOCITY: mp.F32,
         MoteusRegister.COMMAND_FEEDFORWARD_TORQUE: mp.F32,
@@ -166,8 +167,11 @@ class MoteusActuator(ActuatorBase, Controller):
         gear_ratio: float = 1.0,
         frequency: int = 500,
         offline: bool = False,
-        query: MoteusQueryResolution = MoteusQueryResolution(),
+        query: Optional[MoteusQueryResolution] = None,
     ) -> None:
+        if query is None:
+            query = MoteusQueryResolution()
+
         self._servo_id = servo_id
         self._bus_id = bus_id
         super().__init__(
@@ -223,7 +227,8 @@ class MoteusActuator(ActuatorBase, Controller):
         except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -262,7 +267,8 @@ class MoteusActuator(ActuatorBase, Controller):
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                Stopping motor."
             )
             raise ThermalLimitException()
 
@@ -531,7 +537,8 @@ class MoteusActuator(ActuatorBase, Controller):
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        If you scale the torque command by this factor, the motor temperature will
+        never exceed max allowable temperature.
         For a proof, see paper referenced in thermal model.
         """
         return self._thermal_scale

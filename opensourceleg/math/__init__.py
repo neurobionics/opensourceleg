@@ -1,4 +1,4 @@
-from opensourceleg.math.math import *
+from .math import *  # noqa: F403
 
 """
 Math module for opensourceleg library.

@@ -9,7 +9,8 @@ This module provides classes for managing soft real-time in the opensourceleg li
 
 Key Classes:
 
--   `SoftRealtimeLoop` class is used to create a soft real-time loop that runs at a specified frequency. It also handles signal interruptions gracefully.
+-   `SoftRealtimeLoop` class is used to create a soft real-time loop that runs at a specified frequency.
+	It also handles signal interruptions gracefully.
 """
 
 __all__ = ["SoftRealtimeLoop"]

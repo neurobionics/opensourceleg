@@ -1,10 +1,21 @@
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
 
-from opensourceleg.actuators.base import *
-from opensourceleg.actuators.base import MOTOR_CONSTANTS
+from opensourceleg.actuators.base import (
+    CONTROL_MODE_CONFIGS,
+    CONTROL_MODE_METHODS,
+    CONTROL_MODES,
+    MOTOR_CONSTANTS,
+    ActuatorBase,
+    ControlGains,
+    ControlModeConfig,
+    MethodWithRequiredModes,
+    T,
+    requires,
+)
 
 DEFAULT_VALUES = [0, 1, 1000, -1000]
 
@@ -78,7 +89,7 @@ def test_motor_constants_properties(non_zero_positive_values):
 
 
 def test_control_modes_default_four():
-    {"POSITION", "CURRENT", "VOLTAGE", "IMPEDANCE"} <= {e.name for e in CONTROL_MODES}
+    assert {"POSITION", "CURRENT", "VOLTAGE", "IMPEDANCE"} <= {e.name for e in CONTROL_MODES}
 
 
 def test_control_modes_dephy_order():
@@ -241,8 +252,8 @@ def test_control_mode_configs_init():
 
 
 def test_control_mode_methods():
-    assert type(CONTROL_MODE_METHODS) == list
-    assert all(type(x) == str for x in CONTROL_MODE_METHODS)
+    assert type(CONTROL_MODE_METHODS) is list
+    assert all(type(x) is str for x in CONTROL_MODE_METHODS)
     assert len(CONTROL_MODE_METHODS) >= 12
 
 
@@ -264,7 +275,7 @@ def test_typevar_usage_invalid():
 
 def test_method_with_required_modes():
     class TestClass(MethodWithRequiredModes):
-        _required_modes = {CONTROL_MODES.POSITION, CONTROL_MODES.CURRENT}
+        _required_modes: ClassVar = {CONTROL_MODES.POSITION, CONTROL_MODES.CURRENT}
 
     test_class_instance = TestClass()
 
@@ -547,12 +558,3 @@ def test_motor_constants(mock_actuator: MockActuator):
     assert mock_actuator.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B == 0.1
     assert mock_actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE == 100.0
     assert mock_actuator.MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE == 150.0
-
-
-def test_motor_constants_properties(mock_actuator: MockActuator):
-    assert pytest.approx(mock_actuator.MOTOR_CONSTANTS.RAD_PER_COUNT, 0.00001) == 2 * 3.14159 / 1000
-    assert mock_actuator.MOTOR_CONSTANTS.NM_PER_MILLIAMP == 0.0001
-
-
-def test_hello_world():
-    assert len("Hello World") == 11

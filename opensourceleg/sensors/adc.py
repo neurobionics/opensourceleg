@@ -1,6 +1,6 @@
 import math
 from time import sleep
-from typing import Optional
+from typing import ClassVar, Optional
 
 import spidev
 
@@ -19,11 +19,11 @@ class ADS131M0x(ADCBase):
     _RESOLUTION = 24
     _SPI_MODE = 1
 
-    _BLANK_WORD = [0x00, 0x00, 0x00]
+    _BLANK_WORD: ClassVar = [0x00, 0x00, 0x00]
     # SPI Commands
-    _RESET_WORD = [0x00, 0x11, 0x00]
-    _STANDBY_WORD = [0x00, 0x22, 0x00]
-    _WAKEUP_WORD = [0x00, 0x33, 0x00]
+    _RESET_WORD: ClassVar = [0x00, 0x11, 0x00]
+    _STANDBY_WORD: ClassVar = [0x00, 0x22, 0x00]
+    _WAKEUP_WORD: ClassVar = [0x00, 0x33, 0x00]
     _RREG_PREFIX = 0b101
     _WREG_PREFIX = 0b011
 
@@ -42,11 +42,11 @@ class ADS131M0x(ADCBase):
     _MODE_CFG = 0x0110
 
     # Channel specific setting register addresses
-    _OCAL_MSB_ADDRS = [0x0A, 0x0F, 0x14, 0x19, 0x1E, 0x23, 0x28, 0x2D]
-    _OCAL_LSB_ADDRS = [0x0B, 0x10, 0x15, 0x1A, 0x1F, 0x24, 0x29, 0x2E]
-    _GCAL_MSB_ADDRS = [0x0C, 0x11, 0x16, 0x1B, 0x20, 0x25, 0x2A, 0x2F]
-    _GCAL_LSB_ADDRS = [0x0D, 0x12, 0x17, 0x1C, 0x21, 0x26, 0x2B, 0x30]
-    _CHANNEL_CFG_ADDRS = [0x09, 0x0E, 0x13, 0x18, 0x1D, 0x22, 0x27, 0x2C]
+    _OCAL_MSB_ADDRS: ClassVar = [0x0A, 0x0F, 0x14, 0x19, 0x1E, 0x23, 0x28, 0x2D]
+    _OCAL_LSB_ADDRS: ClassVar = [0x0B, 0x10, 0x15, 0x1A, 0x1F, 0x24, 0x29, 0x2E]
+    _GCAL_MSB_ADDRS: ClassVar = [0x0C, 0x11, 0x16, 0x1B, 0x20, 0x25, 0x2A, 0x2F]
+    _GCAL_LSB_ADDRS: ClassVar = [0x0D, 0x12, 0x17, 0x1C, 0x21, 0x26, 0x2B, 0x30]
+    _CHANNEL_CFG_ADDRS: ClassVar = [0x09, 0x0E, 0x13, 0x18, 0x1D, 0x22, 0x27, 0x2C]
 
     _GCAL_STEP_SIZE = 1.19e-7
 
@@ -69,10 +69,12 @@ class ADS131M0x(ADCBase):
         - max_speed_hz(int): Maximum clock frequency of the SPI communication. Default: 8192000
         - channel_gains(List[int]): Gains of the programmable gain amplifier for all channels. Default: [32,128] * 3
         - voltage_reference(float): Reference voltage used by the ADC. Default: 1.2
-        - gain_error(List[int]): User-calculated integers used for correcting the gain of each channel for additional precision. Default: []
+        - gain_error(List[int]): User-calculated integers used for correcting the gain of each channel for
+            additional precision. Default: []
 
         Raises:
-           ValueError: If length of channel_gains is not equal to number of channels, or if gain is not a power of 2 between 1 and 128.
+           ValueError: If length of channel_gains is not equal to number of channels, or if gain is not a power of 2
+            between 1 and 128.
 
         """
 
@@ -179,15 +181,15 @@ class ADS131M0x(ADCBase):
     def data(self):
         return self._data
 
-    def _spi_message(self, bytes: list[int]) -> list[int]:
+    def _spi_message(self, message: list[int]) -> list[int]:
         """Send SPI message to ADS131M0x.
 
         Args:
-         - bytes(List[int]): message to be sent to the ADS131M0x separated into bytes.
+         - message(List[int]): message to be sent to the ADS131M0x separated into message.
         Returns:
             The response to the message sent, including the entire frame following the response.
         """
-        self._spi.xfer2(bytes)
+        self._spi.xfer2(message)
         return (list[int])(self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame))
 
     def _channel_enable(self, state: bool) -> None:

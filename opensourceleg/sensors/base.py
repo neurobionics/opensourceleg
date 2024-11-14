@@ -5,7 +5,8 @@ from functools import wraps
 class SensorNotStreamingException(Exception):
     def __init__(self, sensor_name: str = "Sensor") -> None:
         super().__init__(
-            f"{sensor_name} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+            f"{sensor_name} is not streaming, please ensure that the connections are intact, "
+            f"power is on, and the start method is called."
         )
 
 
@@ -20,9 +21,6 @@ def check_sensor_stream(func):
 
 
 class SensorBase(ABC):
-    def __init__(self) -> None:
-        pass
-
     def __repr__(self) -> str:
         return "SensorBase"
 

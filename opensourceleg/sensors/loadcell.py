@@ -138,7 +138,8 @@ class SRILoadcell(LoadcellBase):
 
         else:
             LOGGER.info(
-                f"[{self.__repr__()}] Loadcell has already been zeroed. To recalibrate, set reset=True in the calibrate method or call reset() first."
+                f"[{self.__repr__()}] Loadcell has already been zeroed. "
+                "To recalibrate, set reset=True in the calibrate method or call reset() first."
             )
 
     def stop(self) -> None:
@@ -155,7 +156,7 @@ class SRILoadcell(LoadcellBase):
             self.failed_reads += 1
 
             if self.failed_reads >= 5:
-                raise Exception("Load cell unresponsive.")
+                raise LoadcellNotRespondingException("Load cell unresponsive.") from None
 
         return self._unpack_compressed_strain(data)
 

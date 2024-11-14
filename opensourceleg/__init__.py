@@ -1,6 +1,8 @@
-"""An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses."""
+"""
+An open-source software library for numerical computation, data acquisition,
+and control of lower-limb robotic prostheses.
+"""
 
-import sys
 from importlib import metadata as importlib_metadata
 
 

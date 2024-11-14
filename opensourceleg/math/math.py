@@ -105,7 +105,8 @@ class ThermalModel:
 
     def update_and_get_scale(self, dt, motor_current: float = 0, FOS: float = 1.0):
         """
-        Updates the temperature of the winding and the case based on the current and the ambient temperature and returns the scale factor for the torque.
+        Updates the temperature of the winding and the case based on the current and
+        the ambient temperature and returns the scale factor for the torque.
 
         Args:
             dt (float): Time step in seconds.

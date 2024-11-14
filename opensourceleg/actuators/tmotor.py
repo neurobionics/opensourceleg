@@ -192,9 +192,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def home(self):
         pass
 
-    # this method is called by the user to synchronize the current state used by the controller
-    # with the most recent message recieved
-    def update(self):
+    def update(self):  # noqa: C901
         """
         This method is called by the user to synchronize the current state used by the controller
         with the most recent message recieved, as well as to send the current command.
@@ -213,11 +211,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         # print(self._command_sent)
         now = time.time()
         if (now - self._last_command_time) < 0.25 and ((now - self._last_update_time) > 0.1):
-            # print("State update requested but no data recieved from motor. Delay longer after zeroing, decrease frequency, or check connection.")
             warnings.warn(
-                "State update requested but no data from motor. Delay longer after zeroing, decrease frequency, or check connection. "
+                "State update requested but no data from motor. Delay longer after zeroing, \
+                decrease frequency, or check connection. "
                 + self.device_info_string(),
                 RuntimeWarning,
+                stacklevel=2,
             )
         else:
             self._command_sent = False
@@ -251,8 +250,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         elif (thresh_pos <= old_pos and old_pos <= P_max) and (-P_max <= new_pos and new_pos <= -thresh_pos):
             self._times_past_position_limit += 1
 
-        # current is basically the same as position, but if you instantly command a switch it can actually change fast enough
-        # to throw this off, so that is accounted for too. We just put a hard limit on the current to solve current jitter problems.
+        # current is basically the same as position, but if you instantly
+        # command a switch it can actually change fast enough
+        # to throw this off, so that is accounted for too. We just put a hard limit on the current
+        # to solve current jitter problems.
         if (thresh_curr <= new_curr and new_curr <= I_max) and (-I_max <= old_curr and old_curr <= -thresh_curr):
             # self._old_current_zone = -1
             # if (thresh_curr <= curr_command and curr_command <= I_max):
@@ -294,11 +295,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
 
         # send current motor command
         self._send_command()
-
-        # # writing to log file
-        # if self.csv_file_name is not None:
-        #     self.csv_writer.writerow([self._last_update_time - self._start_time] + [self.LOG_FUNCTIONS[var]() for var in self.log_vars])
-
         self._updated = False
 
     # sends a command to the motor depending on whats controlm mode the motor is in
@@ -311,8 +307,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         This allows control based on actual q-axis current, rather than estimated torque, which
         doesn't account for friction losses.
         """
-        # if self._control_state == _TMotorManState.FULL_STATE:
-        #     self._canman.MIT_controller(self.ID,self.type, self._command.position, self._command.velocity, self._command.kp, self._command.kd, self.qaxis_current_to_TMotor_current(self._command.current))
         if self.mode == CONTROL_MODES.IMPEDANCE:
             self._canman.MIT_controller(
                 self.ID,
@@ -426,8 +420,18 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             B: The damping in Nm/(rad/s)
             ff: A dummy argument for backward compatibility with the dephy library.
         """
-        assert isfinite(K) and MIT_Params[self.type]["Kp_min"] <= K and MIT_Params[self.type]["Kp_max"] >= K
-        assert isfinite(B) and MIT_Params[self.type]["Kd_min"] <= B and MIT_Params[self.type]["Kd_max"] >= B
+        if not (isfinite(K) and MIT_Params[self.type]["Kp_min"] <= K and MIT_Params[self.type]["Kp_max"] >= K):
+            raise ValueError(
+                f"K must be finite and between \
+                {MIT_Params[self.type]['Kp_min']} and {MIT_Params[self.type]['Kp_max']}"
+            )
+
+        if not (isfinite(B) and MIT_Params[self.type]["Kd_min"] <= B and MIT_Params[self.type]["Kd_max"] >= B):
+            raise ValueError(
+                f"B must be finite and between \
+                {MIT_Params[self.type]['Kd_min']} and {MIT_Params[self.type]['Kd_max']}"
+            )
+
         self._command.kp = K
         self._command.kd = B
         self._command.velocity = 0.0
@@ -470,9 +474,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Raises:
             RuntimeError: If the position command is outside the range of the motor.
         """
-        # position commands must be within a certain range :/
-        # pos = (np.abs(pos) % MIT_Params[self.type]["P_max"])*np.sign(pos) # this doesn't work because it will unwind itself!
-        # CANNOT Control using impedance mode for angles greater than 12.5 rad!!
         if np.abs(value) >= MIT_Params[self.type]["P_max"]:
             raise RuntimeError(
                 "Cannot control using impedance mode for angles with magnitude greater than "
@@ -480,8 +481,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 + "rad!"
             )
 
-        # if self._control_state not in [_TMotorManState.IMPEDANCE, _TMotorManState.FULL_STATE]:
-        #     raise RuntimeError("Attempted to send position command without gains for device " + self.device_info_string())
         self._command.position = value
 
     def set_output_velocity(self, value):
@@ -503,8 +502,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 + "rad/s!"
             )
 
-        # if self._control_state not in [_TMotorManState.SPEED, _TMotorManState.FULL_STATE]:
-        #     raise RuntimeError("Attempted to send speed command without gains for device " + self.device_info_string())
         self._command.velocity = value
 
     # used for either current MIT mode to set current
@@ -518,8 +515,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Args:
             value: the desired current in amps.
         """
-        # if self._control_state not in [_TMotorManState.CURRENT, _TMotorManState.FULL_STATE]:
-        #     raise RuntimeError("Attempted to send current command before entering current mode for device " + self.device_info_string())
         self._command.current = value
 
     # used for either current or MIT Mode to set current, based on desired torque
@@ -636,7 +631,8 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         if not self._entered:
             raise RuntimeError(
-                "Tried to check_can_connection before entering motor control! Enter control using the __enter__ method, or instantiating the TMotorManager in a with block."
+                "Tried to check_can_connection before entering motor control! \
+                Enter control using the __enter__ method, or instantiating the TMotorManager in a with block."
             )
         Listener = can.BufferedReader()
         self._canman.notifier.add_listener(Listener)

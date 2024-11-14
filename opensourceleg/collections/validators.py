@@ -5,12 +5,12 @@ class Validator(ABC):
     def __set_name__(self, owner, name):
         self.private_name = f"_{name}"
 
-    def __get__(self, object, objtype=None):
-        return getattr(object, self.private_name)
+    def __get__(self, instance, objtype=None):
+        return getattr(instance, self.private_name)
 
-    def __set__(self, object, value):
+    def __set__(self, instance, value):
         self.validate(value)
-        setattr(object, self.private_name, value)
+        setattr(instance, self.private_name, value)
 
     @abstractmethod
     def validate(self, value):
@@ -24,7 +24,7 @@ class Number(Validator):
 
     def validate(self, value):
         if not isinstance(value, (int, float)):
-            raise ValueError("Value must be an int or float")
+            raise TypeError("Value must be an int or float")
 
         if self.min_value is not None and value < self.min_value:
             raise ValueError(f"Value must be at least {self.min_value}")

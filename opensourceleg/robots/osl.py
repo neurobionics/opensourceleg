@@ -59,7 +59,8 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
             return self.sensors["joint_encoder_knee"]
         except KeyError:
             LOGGER.error(
-                "Knee joint encoder sensor not found. Please check for `joint_encoder_knee` key in the sensors dictionary."
+                "Knee joint encoder sensor not found."
+                "Please check for `joint_encoder_knee` key in the sensors dictionary."
             )
             exit(1)
 
@@ -69,7 +70,8 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
             return self.sensors["joint_encoder_ankle"]
         except KeyError:
             LOGGER.error(
-                "Ankle joint encoder sensor not found. Please check for `joint_encoder_ankle` key in the sensors dictionary."
+                "Ankle joint encoder sensor not found."
+                "Please check for `joint_encoder_ankle` key in the sensors dictionary."
             )
             exit(1)
 

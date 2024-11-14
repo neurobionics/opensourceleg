@@ -4,6 +4,8 @@
 import time
 from typing import Any, Callable, Optional
 
+from opensourceleg.logging.logger import LOGGER
+
 """
 The state_machine module provides classes for implementing a finite state machine (FSM).
 It includes the State, Idle, Event, Transition, FromToTransition, and StateMachine classes.
@@ -462,7 +464,8 @@ class StateMachine:
         event : Event
             The event that triggers the transition.
         callback : Callable[[Any], bool], optional
-            A callback function that returns a boolean value, which determines whether the transition is valid, by default None
+            A callback function that returns a boolean value,
+            which determines whether the transition is valid, by default None
         """
         transition = None
 
@@ -492,8 +495,10 @@ class StateMachine:
                 break
 
         if not validity:
-            assert self._osl is not None
-            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
+            if self._osl is None:
+                raise ValueError("OSL object not set.")
+
+            LOGGER.debug(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any = None) -> None:
         if not self._initial_state:

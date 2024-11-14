@@ -18,17 +18,20 @@ def is_changing(
     proxy_attribute_name: Optional[str] = None,
 ):
     """
-    Creates a decorator to check if a property's value is changing. If the standard deviation of the last 'max_points' values is less than 'threshold', the decorator will raise an error or return a proxy attribute.
+    Creates a decorator to check if a property's value is changing.
+    If the standard deviation of the last 'max_points' values is less than 'threshold',
+    the decorator will raise an error or return a proxy attribute.
 
     Args:
-        attribute_name (str): Name of the attribute.
-        max_points (int): Number of points to consider. Defaults to 10.
-        threshold (float): Threshold for the standard deviation. Defaults to 1e-6.
-        proxy_attribute_name (str): Name of the proxy attribute to return if the property is not changing. Defaults to None.
+        attribute_name: Name of the attribute.
+        max_points: Number of points to consider. Defaults to 10.
+        threshold: Threshold for the standard deviation. Defaults to 1e-6.
+        proxy_attribute_name: Name of the proxy attribute to return if the property is not changing. Defaults to None.
 
     Returns:
         Callable: Decorator function.
     """
+
     history_key = f"_{attribute_name}_history"
     proxy_key = f"_{attribute_name}_proxy"
 
@@ -142,9 +145,9 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
     Creates a decorator to check if a property's value is within a given range.
 
     Args:
-        min_value (float): Minimum value of the range.
-        max_value (float): Maximum value of the range.
-        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        min_value: Minimum value of the range.
+        max_value: Maximum value of the range.
+        clamp: If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
 
     Raises:
         ValueError: If the maximum value is less than or equal to the minimum value.
@@ -176,9 +179,9 @@ def is_greater_than(min_value: float, clamp: bool = False, equality: bool = Fals
     choice to implement is_greater_than_or_equal_to with equality bool
 
     Args:
-        min_value (float): Minimum value to check against.
-        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
-        equality (bool): If True, the decorator will check for is greater than or equal to, instead of is greater than.
+        min_value: Minimum value to check against.
+        clamp: If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        equality: If True, the decorator will check for is greater than or equal to, instead of is greater than.
 
     Returns:
         Callable: Decorator function.
@@ -210,9 +213,9 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
     choice to implement is_less_than_or_equal_to with equality bool
 
     Args:
-        max_value (float): Maximum value to check against.
-        clamp (bool): If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
-        equality (bool): If True, the decorator will check for is less than or equal to, instead of is less than.
+        max_value: Maximum value to check against.
+        clamp: If True, the decorator will return the clamped value instead of raising an error. Defaults to False.
+        equality: If True, the decorator will check for is less than or equal to, instead of is less than.
 
     Returns:
         Callable: Decorator function.
@@ -240,7 +243,8 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
 
 def custom_criteria(criteria: Callable):
     """
-    Creates a decorator to check if a property's value meets a custom criteria. The criteria is a function that takes the property's value as an argument and returns a boolean.
+    Creates a decorator to check if a property's value meets a custom criteria. The criteria is a
+    function that takes the property's value as an argument and returns a boolean.
 
     Args:
         criteria (Callable): Custom criteria function.
@@ -279,7 +283,12 @@ class SafetyDecorators:
 
 class SafetyManager:
     """
-    The SafetyManager class enables the addition of safety decorators to an object's properties, specifically to their getters. When the 'start' method is invoked, these decorators are applied to the properties of the objects stored in the 'safe_objects' dictionary. The original objects are then replaced with subclasses that incorporate the decorated properties. Invoking the 'update' method accesses the properties of the objects in the 'safe_objects' dictionary, thereby triggering the decorators.
+    The SafetyManager class enables the addition of safety decorators to an object's properties,
+    specifically to their getters. When the 'start' method is invoked, these decorators are applied
+    to the properties of the objects stored in the 'safe_objects' dictionary. The original objects
+    are then replaced with subclasses that incorporate the decorated properties.
+    Invoking the 'update' method accesses the properties of the objects in the 'safe_objects' dictionary,
+    thereby triggering the decorators.
     """
 
     def __init__(self):

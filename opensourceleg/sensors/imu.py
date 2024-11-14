@@ -8,7 +8,9 @@ try:
     import mscl
 except ImportError:
     LOGGER.error(
-        "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+        "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path"
+        "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master"
+        "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
     )
 
 try:
