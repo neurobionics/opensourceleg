@@ -3,7 +3,19 @@ from unittest.mock import patch
 
 import pytest
 
-from opensourceleg.safety.safety import *
+from opensourceleg.safety.safety import (
+    SafetyDecorators,
+    SafetyManager,
+    ThermalLimitException,
+    custom_criteria,
+    is_changing,
+    is_greater_than,
+    is_less_than,
+    is_negative,
+    is_positive,
+    is_within_range,
+    is_zero,
+)
 
 
 # Created class for testing purposes
@@ -60,13 +72,12 @@ def test_is_changing_four_points_not_less_than_threshold():
     max_points = 4
     instance = Sample()
 
+    def test_changing_point(instance, x):
+        return x
+
     for x in range(6, 10):
-
-        @is_changing(att, max_points)
-        def test_changing_point(instance):
-            return x
-
-        assert test_changing_point(instance) == x
+        wrapped_func = is_changing(att, max_points)(test_changing_point)
+        assert wrapped_func(instance, x) == x
 
 
 def test_is_changing_four_points_less_than_threshold():
@@ -76,13 +87,13 @@ def test_is_changing_four_points_less_than_threshold():
     max_points = 4
     test_threshold = 2
     instance = Sample()
+
+    def test_changing_point(instance, x):
+        return x
+
     for x in range(6, 9):
-
-        @is_changing(att, max_points, test_threshold)
-        def test_changing_point(instance):
-            return x
-
-        assert test_changing_point(instance) == x
+        wrapped_func = is_changing(att, max_points, test_threshold)(test_changing_point)
+        assert wrapped_func(instance, x) == x
 
     @is_changing(att, max_points, test_threshold)
     def test_changing_point1(instance):
@@ -101,13 +112,14 @@ def test_is_changing_four_points_less_than_threshold_with_proxy_att_name():
     test_threshold = 2
     proxy_att_name = "test_proxy_att_name"
     instance = Sample()
+
+    @is_changing(att, max_points, test_threshold, proxy_att_name)
+    def test_changing_point(instance):
+        return x
+
     for x in range(6, 9):
-
-        @is_changing(att, max_points, test_threshold, proxy_att_name)
-        def test_changing_point(instance):
-            return x
-
-        assert test_changing_point(instance) == x
+        wrapped_func = is_changing(att, max_points, test_threshold, proxy_att_name)(test_changing_point)
+        assert wrapped_func(instance) == x
 
     @is_changing(att, max_points, test_threshold, proxy_att_name)
     def test_changing_point1(instance):
@@ -294,10 +306,10 @@ def test_is_zero_parameter():
 # Test def is_within_range & decorator
 def test_is_within_range_def_in():
     # Test clamp default = False, with property value = 2 in range
-    min = 1
-    max = 4
+    value_min = 1
+    value_max = 4
 
-    @is_within_range(min, max)
+    @is_within_range(value_min, value_max)
     def test_within_range_with_default_clamp(instance: object):
         return 2
 
@@ -306,52 +318,52 @@ def test_is_within_range_def_in():
 
 def test_is_within_range_def_out():
     # Test clamp default = False, with property value = 5 out of range
-    min = 1
-    max = 4
+    value_min = 1
+    value_max = 4
 
-    @is_within_range(min, max)
+    @is_within_range(value_min, value_max)
     def test_out_of_range_with_default_clamp(instance: object):
         return 5
 
-    with pytest.raises(ValueError, match=f"Value must be within {min} and {max}"):
+    with pytest.raises(ValueError, match=f"Value must be within {value_min} and {value_max}"):
         test_out_of_range_with_default_clamp({})
 
 
 def test_is_within_range_false_out():
     # Test clamp explicitly set to False, with property value = 0 out of range
-    min = 1
-    max = 4
+    value_min = 1
+    value_max = 4
 
-    @is_within_range(min, max, False)
+    @is_within_range(value_min, value_max, False)
     def test_out_of_range_with_false_clamp(instance: object):
         return 0
 
-    with pytest.raises(ValueError, match=f"Value must be within {min} and {max}"):
+    with pytest.raises(ValueError, match=f"Value must be within {value_min} and {value_max}"):
         test_out_of_range_with_false_clamp({})
 
 
 def test_is_within_range_true_smaller():
-    # Test clamp explicitly set to True, with property value = -2 lower than min
-    min = 1
-    max = 4
+    # Test clamp explicitly set to True, with property value = -2 lower than value_min
+    value_min = 1
+    value_max = 4
 
-    @is_within_range(min, max, True)
+    @is_within_range(value_min, value_max, True)
     def test_lower_with_true_clamp(instance: object):
         return -2
 
-    assert test_lower_with_true_clamp({}) == min
+    assert test_lower_with_true_clamp({}) == value_min
 
 
 def test_is_within_range_true_larger():
-    # Test clamp explicitly set to True, with property value = 6 higher than max
-    min = 1
-    max = 4
+    # Test clamp explicitly set to True, with property value = 6 higher than value_max
+    value_min = 1
+    value_max = 4
 
-    @is_within_range(min, max, True)
+    @is_within_range(value_min, value_max, True)
     def test_higher_with_true_clamp(instance: object):
         return 5
 
-    assert test_higher_with_true_clamp({}) == max
+    assert test_higher_with_true_clamp({}) == value_max
 
 
 def test_is_within_range_parameter():
@@ -368,10 +380,10 @@ def test_is_within_range_parameter():
 def test_is_within_range_parameter2():
     # Test without parameter instance in func def
     with pytest.raises(TypeError):
-        min = 1
-        max = 4
+        value_min = 1
+        value_max = 4
 
-        @is_within_range(min, max)
+        @is_within_range(value_min, value_max)
         def test_for_type_error():
             return 0
 
@@ -380,11 +392,11 @@ def test_is_within_range_parameter2():
 
 def test_is_within_range_max_less_min():
     # Test maximum value greater than minimum value for range
-    min = 4
-    max = 1
+    value_min = 4
+    value_max = 1
     with pytest.raises(ValueError, match="Maximum value must be greater than minimum value of range"):
 
-        @is_within_range(min, max)
+        @is_within_range(value_min, value_max)
         def test_for_min_greater_than_max(instance: object):
             return 0
 
@@ -393,10 +405,10 @@ def test_is_within_range_max_less_min():
 
 # Test def is_greater_than & decorator
 def test_is_greater_def_in():
-    # Test clamp default = False, with value greater than min
-    min = 2
+    # Test clamp default = False, with value greater than value_min
+    value_min = 2
 
-    @is_greater_than(min)
+    @is_greater_than(value_min)
     def test_greater_with_default_clamp(instance: object):
         return 4
 
@@ -404,72 +416,72 @@ def test_is_greater_def_in():
 
 
 def test_is_greater_def_out():
-    # Test clamp default = False, with value less than min
-    min = 2
+    # Test clamp default = False, with value less than value_min
+    value_min = 2
 
-    @is_greater_than(min)
+    @is_greater_than(value_min)
     def test_less_with_default_clamp(instance: object):
         return 1
 
-    with pytest.raises(ValueError, match=f"Value must be greater than {min}"):
+    with pytest.raises(ValueError, match=f"Value must be greater than {value_min}"):
         test_less_with_default_clamp({})
 
 
 def test_is_greater_false_out():
-    # Test clamp explicitly set to False, with value less than min
-    min = 2
+    # Test clamp explicitly set to False, with value less than value_min
+    value_min = 2
 
-    @is_greater_than(min, False)
+    @is_greater_than(value_min, False)
     def test_less_with_false_clamp(instance: object):
         return 1
 
-    with pytest.raises(ValueError, match=f"Value must be greater than {min}"):
+    with pytest.raises(ValueError, match=f"Value must be greater than {value_min}"):
         test_less_with_false_clamp({})
 
 
 def test_is_greater_true_out():
-    # Test clamp explicitly set to True, with value less than min
-    min = 2
+    # Test clamp explicitly set to True, with value less than value_min
+    value_min = 2
 
-    @is_greater_than(min, True)
+    @is_greater_than(value_min, True)
     def test_less_with_true_clamp(instance: object):
         return -2
 
-    assert test_less_with_true_clamp({}) == min
+    assert test_less_with_true_clamp({}) == value_min
 
 
 def test_is_greater_equality_false_equal():
-    # Test clamp explicitly set to False, with value equal to min and equality set to True
-    min = 2
+    # Test clamp explicitly set to False, with value equal to value_min and equality set to True
+    value_min = 2
 
-    @is_greater_than(min, False, True)
+    @is_greater_than(value_min, False, True)
     def test_equal_with_false_clamp(instance: object):
         return 2
 
-    assert test_equal_with_false_clamp({}) == min
+    assert test_equal_with_false_clamp({}) == value_min
 
 
 def test_is_greater_equality_false_out():
-    # Test clamp explicitly set to False, with value less than min and equality set to True
-    min = 2
+    # Test clamp explicitly set to False, with value less than value_min and equality set to True
+    value_min = 2
 
-    @is_greater_than(min, False, True)
+    @is_greater_than(value_min, False, True)
     def test_less_with_false_clamp(instance: object):
         return 1
 
-    with pytest.raises(ValueError, match=f"Value must be greater than or equal to {min}"):
+    with pytest.raises(ValueError, match=f"Value must be greater than or equal to {value_min}"):
         test_less_with_false_clamp({})
 
 
 def test_is_greater_equality_true_out():
-    # Test clamp explicitly set to True, with value less than min and equality set to True
-    min = 2
+    # Test clamp explicitly set to True, with value less than value_min and equality set to True
+    value_min = 2
 
-    @is_greater_than(min, True, True)
+    @is_greater_than(value_min, True, True)
     def test_less_with_true_clamp(instance: object):
         return 1
 
-    assert test_less_with_true_clamp({}) == min
+    assert test_less_with_true_clamp({}) == value_min
 
 
 def test_is_greater_parameter():
@@ -486,9 +498,9 @@ def test_is_greater_parameter():
 def test_is_greater_parameter2():
     # Test without parameter instance in func def
     with pytest.raises(TypeError):
-        min = 2
+        value_min = 2
 
-        @is_greater_than(min)
+        @is_greater_than(value_min)
         def test_for_type_error():
             return 0
 
@@ -497,10 +509,10 @@ def test_is_greater_parameter2():
 
 # Test def is_less_than & decorator
 def test_is_less_def_in():
-    # Test clamp default = False, with value less than max
-    max = 4
+    # Test clamp default = False, with value less than value_max
+    value_max = 4
 
-    @is_less_than(max)
+    @is_less_than(value_max)
     def test_less_with_default_clamp(instance: object):
         return 2
 
@@ -508,72 +520,72 @@ def test_is_less_def_in():
 
 
 def test_is_less_def_out():
-    # Test clamp default = False, with value greater than max
-    max = 2
+    # Test clamp default = False, with value greater than value_max
+    value_max = 2
 
-    @is_less_than(max)
+    @is_less_than(value_max)
     def test_greater_with_default_clamp(instance: object):
         return 4
 
-    with pytest.raises(ValueError, match=f"Value must be less than {max}"):
+    with pytest.raises(ValueError, match=f"Value must be less than {value_max}"):
         test_greater_with_default_clamp({})
 
 
 def test_is_less_false_out():
-    # Test clamp explicitly set to False, with value greater than max
-    max = 2
+    # Test clamp explicitly set to False, with value greater than value_max
+    value_max = 2
 
-    @is_less_than(max, False)
+    @is_less_than(value_max, False)
     def test_greater_with_false_clamp(instance: object):
         return 4
 
-    with pytest.raises(ValueError, match=f"Value must be less than {max}"):
+    with pytest.raises(ValueError, match=f"Value must be less than {value_max}"):
         test_greater_with_false_clamp({})
 
 
 def test_is_less_true_out():
-    # Test clamp explicitly set to True, with value greater than max
-    max = 2
+    # Test clamp explicitly set to True, with value greater than value_max
+    value_max = 2
 
-    @is_less_than(max, True)
+    @is_less_than(value_max, True)
     def test_greater_with_true_clamp(instance: object):
         return 5
 
-    assert test_greater_with_true_clamp({}) == max
+    assert test_greater_with_true_clamp({}) == value_max
 
 
 def test_is_less_equality_false_equal():
-    # Test clamp explicitly set to False, with value equal to max and equality set to True
-    max = 2
+    # Test clamp explicitly set to False, with value equal to value_max and equality set to True
+    value_max = 2
 
-    @is_less_than(max, False, True)
+    @is_less_than(value_max, False, True)
     def test_equal_with_false_clamp(instance: object):
         return 2
 
-    assert test_equal_with_false_clamp({}) == max
+    assert test_equal_with_false_clamp({}) == value_max
 
 
 def test_is_less_equality_false_out():
-    # Test clamp explicitly set to False, with value greater than max and equality set to True
-    max = 2
+    # Test clamp explicitly set to False, with value greater than value_max and equality set to True
+    value_max = 2
 
-    @is_less_than(max, False, True)
+    @is_less_than(value_max, False, True)
     def test_less_with_false_clamp(instance: object):
         return 3
 
-    with pytest.raises(ValueError, match=f"Value must be less than or equal to {max}"):
+    with pytest.raises(ValueError, match=f"Value must be less than or equal to {value_max}"):
         test_less_with_false_clamp({})
 
 
 def test_is_less_equality_true_out():
-    # Test clamp explicitly set to True, with value greater than max and equality set to True
-    max = 2
+    # Test clamp explicitly set to True, with value greater than value_max and equality set to True
+    value_max = 2
 
-    @is_less_than(max, True, True)
+    @is_less_than(value_max, True, True)
     def test_less_with_true_clamp(instance: object):
         return 3
 
-    assert test_less_with_true_clamp({}) == max
+    assert test_less_with_true_clamp({}) == value_max
 
 
 def test_is_less_parameter():
@@ -590,9 +602,9 @@ def test_is_less_parameter():
 def test_is_less_parameter2():
     # Test without parameter instance in func def
     with pytest.raises(TypeError):
-        max = 2
+        value_max = 2
 
-        @is_less_than(max)
+        @is_less_than(value_max)
         def test_for_type_error():
             return 0
 
@@ -665,7 +677,7 @@ def test_safetys_init_default():
 # Test init
 def test_safety_manager_init():
     test_manager = SafetyManager()
-    assert type(test_manager._safe_objects) == dict
+    assert isinstance(test_manager._safe_objects, dict)
     assert test_manager._safe_objects == {}
 
 

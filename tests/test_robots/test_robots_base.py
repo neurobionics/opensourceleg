@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.robots.base import *
+from opensourceleg.robots.base import RobotBase
 from tests.test_actuators.test_actuators_base import MOTOR_CONSTANTS, MockActuator
 from tests.test_sensors.test_sensors_base import MockSensor
 
@@ -64,8 +64,8 @@ def test_robot_base_init():
         sample_robot.tag == tag_name,
         sample_robot.actuators == test_actuators,
         sample_robot.sensors == test_sensors,
-        type(sample_robot.actuators) == dict,
-        type(sample_robot.sensors) == dict,
+        type(sample_robot.actuators) is dict,
+        type(sample_robot.sensors) is dict,
     ])
 
 
@@ -88,7 +88,8 @@ def test_robot_base_exit(mock_robot: MockRobot):
 
 # Test start
 def test_robot_base_start(mock_robot: MockRobot):
-    # "pass" is implementation for start function in both Actuator and Sensor base classes so just testing if called for that part of function
+    # "pass" is implementation for start function in both Actuator and Sensor base classes
+    # so just testing if called for that part of function
     MockActuator.start = Mock()
     MockSensor.start = Mock()
 
@@ -109,7 +110,8 @@ def test_robot_base_start(mock_robot: MockRobot):
 
 # Test stop
 def test_robot_base_stop(mock_robot: MockRobot):
-    # "pass" is implementation for stop function in both Actuator and Sensor base classes so just testing if called for that part of function
+    # "pass" is implementation for stop function in both Actuator and Sensor base classes
+    # so just testing if called for that part of function
     MockActuator.stop = Mock()
     MockSensor.stop = Mock()
 

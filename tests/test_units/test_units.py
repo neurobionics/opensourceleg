@@ -3,7 +3,21 @@
 import numpy as np
 import pytest
 
-from opensourceleg.units import *
+from opensourceleg.units import (
+    Acceleration,
+    Current,
+    Damping,
+    Force,
+    Length,
+    Mass,
+    Position,
+    Stiffness,
+    Torque,
+    Velocity,
+    Voltage,
+    convert_from_default,
+    convert_to_default,
+)
 
 # Values to iterate over for testing
 VALUES = np.append(np.array([0, 1, -1, 1000, -1000]), np.random.random(5))

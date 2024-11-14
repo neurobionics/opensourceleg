@@ -1,13 +1,16 @@
+import csv
+import logging
+from collections import deque
 from unittest.mock import Mock
 
 import pytest
 
-from opensourceleg.logging.logger import *
+from opensourceleg.logging.logger import LOGGER, Logger, LogLevel
 
 
 # Test LogLevel class
 def test_log_level_default():
-    {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"} <= {e.name for e in LogLevel}
+    assert {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"} <= {e.name for e in LogLevel}
 
 
 def test_log_level_value_logging():

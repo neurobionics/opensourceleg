@@ -1,8 +1,8 @@
 import pytest
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import *
-from opensourceleg.sensors.imu import *
+from opensourceleg.sensors.base import SensorNotStreamingException
+from opensourceleg.sensors.imu import LordMicrostrainIMU
 
 
 # Patched classes from mscl module
@@ -139,7 +139,7 @@ def test_init_default(sample_imu: MockLordMicrostrainIMU):
         sample_imu._is_streaming is False,
         sample_imu._connection is None,
         sample_imu._data == {},
-        type(sample_imu._data) == dict,
+        isinstance(sample_imu._data, dict),
     ])
 
 
@@ -160,7 +160,7 @@ def test_configure_mip_channels(sample_imu: MockLordMicrostrainIMU):
     channels = sample_imu._configure_mip_channels()
     assert len(channels) == 4
     for i in range(0, 4):
-        assert all([channels[i].miptype in MockTypes, type(channels[i]) == MockMipChannel])
+        assert all([channels[i].miptype in MockTypes, isinstance(channels[i], MockMipChannel)])
 
 
 # Test start
@@ -174,8 +174,8 @@ def test_start(sample_imu: MockLordMicrostrainIMU):
     sample_imu.start()
 
     assert all([
-        type(sample_imu._connection) == MockConnection,
-        type(sample_imu._node) == MockNode,
+        isinstance(sample_imu._connection, MockConnection),
+        isinstance(sample_imu._node, MockNode),
         sample_imu._is_streaming is True,
         sample_imu._node.type == "mocktype",
         sample_imu._node.datastream == "mocktype",
@@ -186,9 +186,9 @@ def test_start(sample_imu: MockLordMicrostrainIMU):
 def test_stop_not_started(sample_imu: MockLordMicrostrainIMU):
     with pytest.raises(SensorNotStreamingException) as e:
         sample_imu.stop()
-    assert (
-        str(e.value)
-        == f"{sample_imu.__repr__()} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+    assert str(e.value) == (
+        f"{sample_imu.__repr__()} is not streaming, please ensure that the connections "
+        "are intact, power is on, and the start method is called."
     )
 
 
@@ -205,9 +205,9 @@ def test_stop(sample_imu: MockLordMicrostrainIMU):
 def test_ping_not_started(sample_imu: MockLordMicrostrainIMU):
     with pytest.raises(SensorNotStreamingException) as e:
         sample_imu.ping()
-    assert (
-        str(e.value)
-        == f"{sample_imu.__repr__()} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+    assert str(e.value) == (
+        f"{sample_imu.__repr__()} is not streaming, please ensure that the connections "
+        "are intact, power is on, and the start method is called."
     )
 
 
@@ -248,12 +248,12 @@ def test_update(sample_imu: MockLordMicrostrainIMU):
     sample_imu.start()
     assert sample_imu._data == {}
     sample_imu.update(500, 2, False)
-    assert sample_imu._data == {"mockdata": 10, "mockdata": 20}
+    assert sample_imu._data == {"mockdata": [10, 20]}
 
     return_val = sample_imu.update(400, 3, True)
     assert len(return_val) == 3
     for i in range(0, 3):
-        assert type(return_val[i]) == MockDataPockets
+        assert isinstance(return_val[i], MockDataPockets)
 
 
 # Test LordMicrostrainIMU repr

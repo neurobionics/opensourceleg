@@ -56,7 +56,7 @@ test_model_specified = ThermalModel(
         (test_model_default, "R_WC", 1.0702867186480716),
         (test_model_default, "C_c", 512.249065845453),
         (test_model_default, "R_CA", 1.9406620046327363),
-        (test_model_default, "α", 0.393 * 1 / 100),
+        (test_model_default, "α", 0.393 * 1 / 100),  # noqa: RUF001
         (test_model_default, "R_T_0", 65),
         (test_model_default, "T_w", 21),
         (test_model_default, "T_c", 21),
@@ -71,7 +71,7 @@ test_model_specified = ThermalModel(
         (test_model_specified, "R_WC", 1.0702867186480716),
         (test_model_specified, "C_c", 512.249065845453),
         (test_model_specified, "R_CA", 1.9406620046327363),
-        (test_model_specified, "α", 0.393 * 1 / 100),
+        (test_model_specified, "α", 0.393 * 1 / 100),  # noqa: RUF001
         (test_model_specified, "R_T_0", 65),
         (test_model_specified, "T_w", 10),
         (test_model_specified, "T_c", 10),
@@ -97,7 +97,8 @@ def test_update():
     """
     Tests the ThermalModel update method\n
     Calls the update method with no arguments and asserts the class variables are equal to the expected values.
-    Then calls the update method with a motor_current argument and asserts the class variables are equal to the expected values.
+    Then calls the update method with a motor_current argument and asserts the class variables
+    are equal to the expected values.
     This is repeated once more to test the update method with a motor_current argument.
     """
 

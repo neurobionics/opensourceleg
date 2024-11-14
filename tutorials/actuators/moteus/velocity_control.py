@@ -54,7 +54,8 @@ async def main():
             LOGGER.info(
                 "".join(
                     f"Motor Velocity: {mc1.motor_velocity}\t"
-                    + f"Motor Velocity Command: {mc1._data[0].values[Register.COMMAND_VELOCITY] * 2 * np.pi / mc1.gear_ratio}\t"
+                    + "Motor Velocity Command: "
+                    + f"{mc1._data[0].values[Register.COMMAND_VELOCITY] * 2 * np.pi / mc1.gear_ratio}\t"
                 )
             )
             velocity_data = pd.concat(

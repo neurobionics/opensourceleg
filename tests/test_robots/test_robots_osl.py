@@ -50,7 +50,7 @@ def test_knee(sample_osl: OpenSourceLeg):
 
     with pytest.raises(SystemExit) as e:
         sample_osl.knee()
-    assert e.type == SystemExit
+    assert e.type is SystemExit
 
     with open(LOGGER.file_path) as f:
         output = f.read()
@@ -86,7 +86,7 @@ def test_ankle(sample_osl: OpenSourceLeg):
 
     with pytest.raises(SystemExit) as e:
         sample_osl.ankle()
-    assert e.type == SystemExit
+    assert e.type is SystemExit
 
     with open(LOGGER.file_path) as f:
         output = f.read()
@@ -122,7 +122,7 @@ def test_loadcell(sample_osl: OpenSourceLeg):
 
     with pytest.raises(SystemExit) as e:
         sample_osl.loadcell()
-    assert e.type == SystemExit
+    assert e.type is SystemExit
 
     with open(LOGGER.file_path) as f:
         output = f.read()
@@ -139,7 +139,10 @@ def test_loadcell(sample_osl: OpenSourceLeg):
 # Test joint encoder knee
 def test_joint_encoder_knee(sample_osl: OpenSourceLeg):
     # Test error case
-    expected_error = "ERROR: Knee joint encoder sensor not found. Please check for `joint_encoder_knee` key in the sensors dictionary.\n"
+    expected_error = (
+        "ERROR: Knee joint encoder sensor not found. "
+        "Please check for `joint_encoder_knee` key in the sensors dictionary.\n"
+    )
 
     with open(LOGGER.file_path) as f:
         output = f.read()
@@ -147,7 +150,7 @@ def test_joint_encoder_knee(sample_osl: OpenSourceLeg):
 
     with pytest.raises(SystemExit) as e:
         sample_osl.joint_encoder_knee()
-    assert e.type == SystemExit
+    assert e.type is SystemExit
 
     with open(LOGGER.file_path) as f:
         output = f.read()
@@ -164,7 +167,10 @@ def test_joint_encoder_knee(sample_osl: OpenSourceLeg):
 # Test joint encoder ankle
 def test_joint_encoder_ankle(sample_osl: OpenSourceLeg):
     # Test error case
-    expected_error = "ERROR: Ankle joint encoder sensor not found. Please check for `joint_encoder_ankle` key in the sensors dictionary.\n"
+    expected_error = (
+        "ERROR: Ankle joint encoder sensor not found. "
+        "Please check for `joint_encoder_ankle` key in the sensors dictionary.\n"
+    )
 
     with open(LOGGER.file_path) as f:
         output = f.read()
@@ -172,7 +178,7 @@ def test_joint_encoder_ankle(sample_osl: OpenSourceLeg):
 
     with pytest.raises(SystemExit) as e:
         sample_osl.joint_encoder_ankle()
-    assert e.type == SystemExit
+    assert e.type is SystemExit
 
     with open(LOGGER.file_path) as f:
         output = f.read()

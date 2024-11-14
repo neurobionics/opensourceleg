@@ -52,7 +52,7 @@ def test_SRILoadcell_init():
 
 def test_SRILoadcell_reset():
     SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
-    SRI._calibration_offset == np.ones(shape=(1, 6), dtype=np.double)
+    SRI._calibration_offset = np.ones(shape=(1, 6), dtype=np.double)
     SRI.reset()
     assert np.array_equal(SRI._calibration_offset, np.zeros(shape=(1, 6), dtype=np.double))
 

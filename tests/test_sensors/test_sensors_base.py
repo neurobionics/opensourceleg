@@ -2,7 +2,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from opensourceleg.sensors.base import *
+from opensourceleg.sensors.base import (
+    EncoderBase,
+    IMUBase,
+    LoadcellBase,
+    SensorBase,
+    SensorNotStreamingException,
+    check_sensor_stream,
+)
 
 
 # Test SensorNotStreamingException init
@@ -10,16 +17,16 @@ def test_actuator_stream_exception():
     test_str = "test"
     with pytest.raises(SensorNotStreamingException) as e:
         raise SensorNotStreamingException(test_str)
-    assert (
-        str(e.value)
-        == f"{test_str} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+    assert str(e.value) == (
+        f"{test_str} is not streaming, please ensure that the connections are "
+        "intact, power is on, and the start method is called."
     )
 
     with pytest.raises(SensorNotStreamingException) as e:
         raise SensorNotStreamingException()
-    assert (
-        str(e.value)
-        == "Sensor is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+    assert str(e.value) == (
+        "Sensor is not streaming, please ensure that the connections are intact, "
+        "power is on, and the start method is called."
     )
 
 
@@ -61,9 +68,9 @@ def mock_sensor():
 def test_check_sensor_stream(mock_sensor: MockSensor):
     with pytest.raises(SensorNotStreamingException) as e:
         mock_sensor.test_sensor_stream()
-    assert (
-        str(e.value)
-        == f"{mock_sensor.__repr__()} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+    assert str(e.value) == (
+        f"{mock_sensor.__repr__()} is not streaming, please ensure that the "
+        "connections are intact, power is on, and the start method is called."
     )
 
     mock_sensor.set_is_streaming()
