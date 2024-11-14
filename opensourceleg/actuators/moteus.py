@@ -274,7 +274,7 @@ class MoteusActuator(ActuatorBase, Controller):
 
         self._command = self.make_query()
 
-    def home(self):
+    def home(self) -> None:
         # TODO: implement homing
         LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
 
@@ -309,7 +309,7 @@ class MoteusActuator(ActuatorBase, Controller):
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         LOGGER.info("Current Mode Not Implemented")
 
     def set_motor_velocity(self, value: float) -> None:

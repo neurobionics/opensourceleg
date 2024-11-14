@@ -314,7 +314,7 @@ class DephyActuator(Device, ActuatorBase):
                     to create one. The encoder map is used to estimate joint position more accurately."
             )
 
-    def make_encoder_map(self, overwrite=False) -> None:
+    def make_encoder_map(self, overwrite: bool = False) -> None:
         """
         This method makes a lookup table to calculate the position measured by the joint encoder.
         This is necessary because the magnetic output encoders are nonlinear.
@@ -332,11 +332,11 @@ class DephyActuator(Device, ActuatorBase):
 
         if not self.is_homed:
             LOGGER.warning(msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map.")
-            return
+            return None
 
         if os.path.exists(f"./{self.tag}_encoder_map.npy") and not overwrite:
             LOGGER.info(msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation.")
-            return
+            return None
 
         self.set_control_mode(mode=CONTROL_MODES.CURRENT)
         self.set_current_gains()
@@ -370,7 +370,7 @@ class DephyActuator(Device, ActuatorBase):
 
         except KeyboardInterrupt:
             LOGGER.warning(msg="Encoder map interrupted.")
-            return
+            return None
 
         LOGGER.info(msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint.")
 
@@ -418,7 +418,7 @@ class DephyActuator(Device, ActuatorBase):
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         """
         Sets the motor current in mA.
 
@@ -601,12 +601,12 @@ class DephyActuator(Device, ActuatorBase):
             ff=ff,
         )
 
-    def set_encoder_map(self, encoder_map) -> None:
+    def set_encoder_map(self, encoder_map: np.polynomial.polynomial.Polynomial) -> None:
         """Sets the joint encoder map"""
-        self._encoder_map = encoder_map
+        self._encoder_map: np.polynomial.polynomial.Polynomial = encoder_map
 
     @property
-    def encoder_map(self):
+    def encoder_map(self) -> Optional[np.polynomial.polynomial.Polynomial]:
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
         if getattr(self, "_encoder_map", None) is not None:
             return self._encoder_map
@@ -777,7 +777,7 @@ class DephyActuator(Device, ActuatorBase):
             return 0.0
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
@@ -1072,7 +1072,7 @@ class DephyLegacyActuator(DephyActuator):
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         """
         Sets the motor current in mA.
 
@@ -1297,7 +1297,7 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
@@ -1387,19 +1387,19 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def is_streaming(self):
+    def is_streaming(self) -> bool:
         return self._is_streaming
 
     @is_streaming.setter
-    def is_streaming(self, value: bool):
+    def is_streaming(self, value: bool) -> None:
         self._is_streaming = value
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
         return self._is_open
 
     @is_open.setter
-    def is_open(self, value: bool):
+    def is_open(self, value: bool) -> None:
         self._is_open = value
 
     @property

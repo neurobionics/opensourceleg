@@ -6,7 +6,7 @@ import numpy as np
 
 
 class ThermalLimitException(Exception):
-    def __init__(self, message="Software thermal limit exceeded. Exiting."):
+    def __init__(self, message="Software thermal limit exceeded. Exiting.") -> None:
         self.message = message
         super().__init__(self.message)
 
@@ -16,7 +16,7 @@ def is_changing(
     max_points: int = 10,
     threshold: float = 1e-6,
     proxy_attribute_name: Optional[str] = None,
-):
+) -> Callable:
     """
     Creates a decorator to check if a property's value is changing.
     If the standard deviation of the last 'max_points' values is less than 'threshold',
@@ -65,7 +65,7 @@ def is_changing(
     return decorator
 
 
-def is_negative(clamp: bool = False):
+def is_negative(clamp: bool = False) -> Callable:
     """
     Creates a decorator to check if a property's value is negative.
 

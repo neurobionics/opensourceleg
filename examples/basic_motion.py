@@ -11,6 +11,7 @@ October 26, 2023
 
 import numpy as np
 
+from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.time import SoftRealtimeLoop
 from opensourceleg.units import units
@@ -53,8 +54,8 @@ with knee, ankle:
 
     input("Homing complete: Press enter to continue")
 
-    knee.set_control_mode(knee.CONTROL_MODES.POSITION)
-    ankle.set_control_mode(ankle.CONTROL_MODES.POSITION)
+    knee.set_control_mode(CONTROL_MODES.POSITION)
+    ankle.set_control_mode(CONTROL_MODES.POSITION)
     knee.set_position_gains(kp=5)
     ankle.set_position_gains(kp=5)
 
@@ -62,8 +63,8 @@ with knee, ankle:
         knee.update()
         ankle.update()
 
-        knee_setpoint = units.convert_to_default(knee_traj(t), units.position.deg)
-        ankle_setpoint = units.convert_to_default(ankle_traj(t), units.position.deg)
+        knee_setpoint = units.convert_to_default(knee_traj(t), units.Position.deg)
+        ankle_setpoint = units.convert_to_default(ankle_traj(t), units.Position.deg)
 
         knee.set_output_position(knee_setpoint)
         ankle.set_output_position(ankle_setpoint)

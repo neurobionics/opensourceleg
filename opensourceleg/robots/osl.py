@@ -13,20 +13,20 @@ from opensourceleg.sensors.loadcell import SRILoadcell
 
 
 class OpenSourceLeg(RobotBase[TActuator, TSensor]):
-    def start(self):
+    def start(self) -> None:
         super().start()
 
-    def stop(self):
+    def stop(self) -> None:
         super().stop()
 
-    def update(self):
+    def update(self) -> None:
         super().update()
 
-    def home(self):
+    def home(self) -> None:
         for actuator in self.actuators.values():
             actuator.home()
 
-    def make_encoder_maps(self):
+    def make_encoder_maps(self) -> None:
         pass
 
     @property

@@ -33,63 +33,63 @@ __all__ = [
 
 
 class Force(float, Enum):
-    N: 1.0
-    lbf: 4.4482216152605
-    kgf: 9.80665
+    N = 1.0
+    lbf = 4.4482216152605
+    kgf = 9.80665
 
 
 class Torque(float, Enum):
-    N_m: 1.0
-    lbf_inch: 0.1129848290276167
-    kgf_cm: 0.0980665
+    N_m = 1.0
+    lbf_inch = 0.1129848290276167
+    kgf_cm = 0.0980665
 
 
 class Stiffness(float, Enum):
-    N_m_per_rad: 1.0
-    N_m_per_deg: 0.017453292519943295
+    N_m_per_rad = 1.0
+    N_m_per_deg = 0.017453292519943295
 
 
 class Damping(float, Enum):
-    N_m_per_rad_per_s: 1.0
-    N_m_per_deg_per_s: 0.017453292519943295
+    N_m_per_rad_per_s = 1.0
+    N_m_per_deg_per_s = 0.017453292519943295
 
 
 class Length(float, Enum):
-    m: 1.0
-    cm: 0.01
-    inch: 0.0254
+    m = 1.0
+    cm = 0.01
+    inch = 0.0254
 
 
 class Position(float, Enum):
-    rad: 1.0
-    deg: 0.017453292519943295
+    rad = 1.0
+    deg = 0.017453292519943295
 
 
 class Mass(float, Enum):
-    kg: 1.0
-    g: 0.001
-    lb: 0.45359237
+    kg = 1.0
+    g = 0.001
+    lb = 0.45359237
 
 
 class Velocity(float, Enum):
-    rad_per_s: 1.0
-    deg_per_s: 0.017453292519943295
-    rpm: 0.10471975511965977
+    rad_per_s = 1.0
+    deg_per_s = 0.017453292519943295
+    rpm = 0.10471975511965977
 
 
 class Acceleration(float, Enum):
-    rad_per_s2: 1.0
-    deg_per_s2: 0.017453292519943295
+    rad_per_s2 = 1.0
+    deg_per_s2 = 0.017453292519943295
 
 
 class Current(float, Enum):
-    mA: 1
-    A: 1000
+    mA = 1
+    A = 1000
 
 
 class Voltage(float, Enum):
-    mV: 1
-    V: 1000
+    mV = 1
+    V = 1000
 
 
 def convert_to_default(value: float, from_unit: float) -> float:
