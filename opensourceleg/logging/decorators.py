@@ -1,29 +1,30 @@
 from functools import wraps
+from typing import Callable
 
 from opensourceleg.logging import LOGGER
 
 
-def deprecated(func):
+def deprecated(func: Callable) -> Callable:
     """
     Decorator to mark a function as deprecated.
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> Callable:
         LOGGER.warning(f"Function `{func.__name__}` is deprecated.")
         return func(*args, **kwargs)
 
     return wrapper
 
 
-def deprecated_with_suggestion(alternative_func):
+def deprecated_with_suggestion(alternative_func: Callable) -> Callable:
     """
     Decorator to provide an alternative function for a deprecated function.
     """
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Callable:
             LOGGER.warning(
                 f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead."
             )
@@ -34,15 +35,15 @@ def deprecated_with_suggestion(alternative_func):
     return decorator
 
 
-def deprecated_with_routing(alternative_func):
+def deprecated_with_routing(alternative_func: Callable) -> Callable:
     """
     Decorator to provide an alternative function for a deprecated function. The alternative function will be called
     instead of the deprecated function.
     """
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Callable:
             LOGGER.warning(
                 f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead,"
                 "which will be called automatically now."

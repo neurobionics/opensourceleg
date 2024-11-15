@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import wraps
+from typing import Any, Callable
 
 
 class SensorNotStreamingException(Exception):
@@ -10,10 +11,11 @@ class SensorNotStreamingException(Exception):
         )
 
 
-def check_sensor_stream(func):
+def check_sensor_stream(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if not self.is_streaming:
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+        # TODO: This could be a generic type that points to actuator, sensor, etc.
+        if self.is_streaming:
             raise SensorNotStreamingException(sensor_name=self.__repr__())
         return func(self, *args, **kwargs)
 
@@ -26,7 +28,7 @@ class SensorBase(ABC):
 
     @property
     @abstractmethod
-    def data(self):
+    def data(self) -> Any:
         pass
 
     @abstractmethod
@@ -41,7 +43,7 @@ class SensorBase(ABC):
     def update(self) -> None:
         pass
 
-    def __enter__(self):
+    def __enter__(self) -> "SensorBase":
         self.start()
         return self
 

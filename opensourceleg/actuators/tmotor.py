@@ -345,7 +345,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
 
     # getters for motor state
     @property
-    def case_temperature(self):
+    def case_temperature(self) -> float:
         """
         Returns:
         The most recently updated motor temperature in degrees C.
@@ -364,7 +364,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             return 0.0
 
     @property
-    def motor_current(self):
+    def motor_current(self) -> float:
         """
         Returns:
         The most recently updated qaxis current in amps
@@ -372,12 +372,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.current
 
     @property
-    def motor_voltage(self):
+    def motor_voltage(self) -> float:
         # Not implemented
         return 0.0
 
     @property
-    def output_position(self):
+    def output_position(self) -> float:
         """
         Returns:
         The most recently updated output angle in radians
@@ -385,7 +385,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.position
 
     @property
-    def output_velocity(self):
+    def output_velocity(self) -> float:
         """
         Returns:
             The most recently updated output velocity in radians per second
@@ -393,7 +393,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.velocity
 
     @property
-    def output_acceleration(self):
+    def output_acceleration(self) -> float:
         """
         Returns:
             The most recently updated output acceleration in radians per second per second
@@ -401,7 +401,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.acceleration
 
     @property
-    def output_torque(self):
+    def output_torque(self) -> float:
         """
         Returns:
             the most recently updated output torque in Nm
@@ -409,7 +409,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self.motor_current * MIT_Params[self.type]["Kt_actual"] * MIT_Params[self.type]["GEAR_RATIO"]
 
     # uses plain impedance mode, will send 0.0 for current command.
-    def set_impedance_gains(self, kp=0, ki=0, K=0.08922, B=0.0038070, ff=0):
+    def set_impedance_gains(self, kp=0, ki=0, K=0.08922, B=0.0038070, ff=0) -> None:
         """
         Uses plain impedance mode, will send 0.0 for current command in addition to position request.
 
@@ -436,7 +436,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.kd = B
         self._command.velocity = 0.0
 
-    def set_current_gains(self, kp=40, ki=400, ff=128, spoof=False):
+    def set_current_gains(self, kp=40, ki=400, ff=128, spoof=False) -> None:
         """
         Uses plain current mode, will send 0.0 for position gains in addition to requested current.
 
@@ -448,7 +448,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         pass
 
-    def set_velocity_gains(self, kd=1.0):
+    def set_velocity_gains(self, kd=1.0) -> None:
         """
         Uses plain speed mode, will send 0.0 for position gain and for feed forward current.
 
@@ -457,12 +457,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self._command.kd = kd
 
-    def set_position_gains(self):
+    def set_position_gains(self) -> None:
         # Not implemented
         pass
 
     # used for either impedance or MIT mode to set output angle
-    def set_output_position(self, value):
+    def set_output_position(self, value: float) -> None:
         """
         Used for either impedance or full state feedback mode to set output angle command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -483,7 +483,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
 
         self._command.position = value
 
-    def set_output_velocity(self, value):
+    def set_output_velocity(self, value: float) -> None:
         """
         Used for either speed or full state feedback mode to set output velocity command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -506,7 +506,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
 
     # used for either current MIT mode to set current
 
-    def set_motor_current(self, value):
+    def set_motor_current(self, value: float) -> None:
         """
         Used for either current or full state feedback mode to set current command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -518,7 +518,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.current = value
 
     # used for either current or MIT Mode to set current, based on desired torque
-    def set_joint_torque(self, value):
+    def set_joint_torque(self, value: float) -> None:
         """
         Used for either current or MIT Mode to set current, based on desired torque.
         If a more complicated torque model is available for the motor, that will be used.
@@ -530,7 +530,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self.set_motor_current(value / MIT_Params[self.type]["Kt_actual"] / MIT_Params[self.type]["GEAR_RATIO"])
 
     # motor-side functions to account for the gear ratio
-    def set_motor_torque(self, value):
+    def set_motor_torque(self, value: float) -> None:
         """
         Version of set_output_torque that accounts for gear ratio to control motor-side torque
 
@@ -539,7 +539,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self.set_output_torque(value * MIT_Params[self.type]["Kt_actual"])
 
-    def set_motor_position(self, value):
+    def set_motor_position(self, value: float) -> None:
         """
         Wrapper for set_output_angle that accounts for gear ratio to control motor-side angle
 
@@ -548,7 +548,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self.set_output_position(value / (MIT_Params[self.type]["GEAR_RATIO"]))
 
-    def set_motor_velocity(self, value):
+    def set_motor_velocity(self, value: float) -> None:
         """
         Wrapper for set_output_velocity that accounts for gear ratio to control motor-side velocity
 
@@ -557,12 +557,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self.set_output_velocity(value / (MIT_Params[self.type]["GEAR_RATIO"]))
 
-    def set_motor_voltage(self, value):
+    def set_motor_voltage(self, value: float) -> float:
         # Not implemented
         pass
 
     @property
-    def motor_position(self):
+    def motor_position(self) -> float:
         """
         Wrapper for get_output_angle that accounts for gear ratio to get motor-side angle
 
@@ -572,7 +572,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.position * MIT_Params[self.type]["GEAR_RATIO"]
 
     @property
-    def motor_velocity(self):
+    def motor_velocity(self) -> float:
         """
         Wrapper for get_output_velocity that accounts for gear ratio to get motor-side velocity
 
@@ -582,7 +582,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.velocity * MIT_Params[self.type]["GEAR_RATIO"]
 
     @property
-    def motor_acceleration(self):
+    def motor_acceleration(self) -> float:
         """
         Wrapper for get_output_acceleration that accounts for gear ratio to get motor-side acceleration
 
@@ -592,7 +592,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self._motor_state.acceleration * MIT_Params[self.type]["GEAR_RATIO"]
 
     @property
-    def motor_torque(self):
+    def motor_torque(self) -> float:
         """
         Wrapper for get_output_torque that accounts for gear ratio to get motor-side torque
 
@@ -602,7 +602,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return self.output_torque * MIT_Params[self.type]["GEAR_RATIO"]
 
     # Pretty stuff
-    def __str__(self):
+    def __str__(self) -> str:
         """Prints the motor's device info and current"""
         return (
             self.device_info_string()

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -103,7 +103,7 @@ class ThermalModel:
         self.T_w += dt * dTw_dt
         self.T_c += dt * dTc_dt
 
-    def update_and_get_scale(self, dt, motor_current: float = 0, FOS: float = 1.0):
+    def update_and_get_scale(self, dt: float, motor_current: float = 0, FOS: float = 1.0) -> float:
         """
         Updates the temperature of the winding and the case based on the current and
         the ambient temperature and returns the scale factor for the torque.
@@ -164,15 +164,15 @@ class EdgeDetector:
     https://github.com/tkevinbest
     """
 
-    def __init__(self, bool_in):
-        self.cur_state = bool_in
-        self.rising_edge = False
-        self.falling_edge = False
+    def __init__(self, bool_in: bool) -> None:
+        self.cur_state: bool = bool_in
+        self.rising_edge: bool = False
+        self.falling_edge: bool = False
 
     def __repr__(self) -> str:
         return "EdgeDetector"
 
-    def update(self, bool_in):
+    def update(self, bool_in: bool) -> None:
         self.rising_edge = bool_in and not self.cur_state
         self.falling_edge = not bool_in and self.cur_state
         self.cur_state = bool_in
@@ -196,7 +196,7 @@ class SaturatingRamp:
     https://github.com/tkevinbest
     """
 
-    def __init__(self, loop_frequency=100, ramp_time=1.0) -> None:
+    def __init__(self, loop_frequency: float = 100, ramp_time: float = 1.0) -> None:
         """
         Args:
             loop_frequency (int, optional): Rate in Hz (default 100 Hz). Defaults to 100.
@@ -208,7 +208,7 @@ class SaturatingRamp:
     def __repr__(self) -> str:
         return "SaturatingRamp"
 
-    def update(self, enable_ramp=False):
+    def update(self, enable_ramp: bool = False) -> float:
         """
         Updates the ramp value and returns it as a float.
         If enable_ramp is true, ramp value increases
@@ -230,7 +230,9 @@ class SaturatingRamp:
         return self.value
 
 
-def clamp_within_vector_range(input_value, input_vector):
+def clamp_within_vector_range(
+    input_value: Union[float, int], input_vector: list[Union[float, int]]
+) -> Union[float, int]:
     """
     This function ensures that input_value remains within the range spanned by the input_vector.
     If the input_value falls outside the vector's bounds, it'll return the appropriate max or min value from the vector.

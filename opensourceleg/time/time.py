@@ -1,6 +1,7 @@
 import signal
 import time
 from math import sqrt
+from typing import Any, Callable, Optional
 
 PRECISION_OF_SLEEP = 0.0001
 
@@ -26,20 +27,20 @@ class LoopKiller:
 
     """
 
-    def __init__(self, fade_time=0.0):
+    def __init__(self, fade_time: float = 0.0):
         signal.signal(signal.SIGTERM, self.handle_signal)
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGHUP, self.handle_signal)
-        self._fade_time = fade_time
-        self._soft_kill_time = None
+        self._fade_time: float = fade_time
+        self._soft_kill_time: float = 0.0
 
     def __repr__(self) -> str:
         return "LoopKiller"
 
-    def handle_signal(self, signum, frame):
+    def handle_signal(self, signum: Any, frame: Any) -> None:
         self.kill_now = True
 
-    def get_fade(self):
+    def get_fade(self) -> float:
         # interpolates from 1 to zero with soft fade out
         if self._kill_soon:
             t = time.monotonic() - self._soft_kill_time
@@ -52,7 +53,7 @@ class LoopKiller:
     _kill_soon = False
 
     @property
-    def kill_now(self):
+    def kill_now(self) -> bool:
         if self._kill_now:
             return True
         if self._kill_soon:
@@ -62,7 +63,7 @@ class LoopKiller:
         return self._kill_now
 
     @kill_now.setter
-    def kill_now(self, val):
+    def kill_now(self, val: bool) -> None:
         if val:
             if self._kill_soon:  # if you kill twice, then it becomes immediate
                 self._kill_now = True
@@ -75,7 +76,7 @@ class LoopKiller:
         else:
             self._kill_now = False
             self._kill_soon = False
-            self._soft_kill_time = None
+            self._soft_kill_time = 0.0
 
 
 class SoftRealtimeLoop:
@@ -99,21 +100,22 @@ class SoftRealtimeLoop:
 
     """
 
-    def __init__(self, dt=0.001, report=False, fade=0.0):
-        self.t0 = self.t1 = time.monotonic()
-        self.killer = LoopKiller(fade_time=fade)
-        self.dt = dt
-        self.ttarg = None
-        self.sum_err = 0.0
-        self.sum_var = 0.0
-        self.sleep_t_agg = 0.0
-        self.n = 0
-        self.report = report
+    def __init__(self, dt: float = 0.001, report: bool = False, fade: float = 0.0):
+        self.t0: float = time.monotonic()
+        self.t1: float = self.t0
+        self.killer: LoopKiller = LoopKiller(fade_time=fade)
+        self.dt: float = dt
+        self.ttarg: Any = None
+        self.sum_err: float = 0.0
+        self.sum_var: float = 0.0
+        self.sleep_t_agg: float = 0.0
+        self.n: int = 0
+        self.report: bool = report
 
     def __repr__(self) -> str:
         return "SoftRealtimeLoop"
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.report:
             print("In %d cycles at %.2f Hz:" % (self.n, 1.0 / self.dt))
             print("\tavg error: %.3f milliseconds" % (1e3 * self.sum_err / self.n))
@@ -124,10 +126,10 @@ class SoftRealtimeLoop:
             print("\tpercent of time sleeping: %.1f %%" % (self.sleep_t_agg / self.time() * 100.0))
 
     @property
-    def fade(self):
+    def fade(self) -> float:
         return self.killer.get_fade()
 
-    def run(self, function_in_loop, dt=None):
+    def run(self, function_in_loop: Callable, dt: Optional[float] = None) -> None:
         if dt is None:
             dt = self.dt
         self.t0 = self.t1 = time.monotonic() + dt
@@ -140,20 +142,20 @@ class SoftRealtimeLoop:
                     self.stop()
             self.t1 += dt
 
-    def stop(self):
+    def stop(self) -> None:
         self.killer.kill_now = True
 
-    def time(self):
+    def time(self) -> float:
         return time.monotonic() - self.t0
 
-    def time_since(self):
+    def time_since(self) -> float:
         return time.monotonic() - self.t1
 
-    def __iter__(self):
+    def __iter__(self) -> "SoftRealtimeLoop":
         self.t0 = self.t1 = time.monotonic() + self.dt
         return self
 
-    def __next__(self):
+    def __next__(self) -> float:
         if self.killer.kill_now:
             raise StopIteration
 
