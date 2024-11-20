@@ -119,7 +119,7 @@ DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
 )
 
 
-class DephyActuator(Device, ActuatorBase):
+class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def __init__(
         self,
         tag: str = "DephyActuator",

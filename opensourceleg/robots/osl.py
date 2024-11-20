@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
-from opensourceleg.actuators.dephy import DephyLegacyActuator
+from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyLegacyActuator
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
@@ -103,7 +103,12 @@ if __name__ == "__main__":
         osl.update()
 
         osl.knee.set_control_mode(CONTROL_MODES.POSITION)
-        osl.knee.set_position_gains()
+        osl.knee.set_position_gains(
+            kp=DEFAULT_POSITION_GAINS.kp,
+            ki=DEFAULT_POSITION_GAINS.ki,
+            kd=DEFAULT_POSITION_GAINS.kd,
+            ff=DEFAULT_POSITION_GAINS.ff,
+        )
         osl.knee.set_output_position(osl.knee.output_position + np.deg2rad(10))
         # osl.loadcell.calibrate()
 

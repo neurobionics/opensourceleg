@@ -350,7 +350,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
         The most recently updated motor temperature in degrees C.
         """
-        return self._motor_state.temperature
+        return float(self._motor_state.temperature)
 
     @property
     def winding_temperature(self) -> float:
@@ -369,7 +369,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
         The most recently updated qaxis current in amps
         """
-        return self._motor_state.current
+        return float(self._motor_state.current)
 
     @property
     def motor_voltage(self) -> float:
@@ -382,7 +382,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
         The most recently updated output angle in radians
         """
-        return self._motor_state.position
+        return float(self._motor_state.position)
 
     @property
     def output_velocity(self) -> float:
@@ -390,7 +390,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             The most recently updated output velocity in radians per second
         """
-        return self._motor_state.velocity
+        return float(self._motor_state.velocity)
 
     @property
     def output_acceleration(self) -> float:
@@ -398,7 +398,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             The most recently updated output acceleration in radians per second per second
         """
-        return self._motor_state.acceleration
+        return float(self._motor_state.acceleration)
 
     @property
     def output_torque(self) -> float:
@@ -406,7 +406,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             the most recently updated output torque in Nm
         """
-        return self.motor_current * MIT_Params[self.type]["Kt_actual"] * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self.motor_current * MIT_Params[self.type]["Kt_actual"] * MIT_Params[self.type]["GEAR_RATIO"])
 
     # uses plain impedance mode, will send 0.0 for current command.
     def set_impedance_gains(self, kp=0, ki=0, K=0.08922, B=0.0038070, ff=0) -> None:
@@ -569,7 +569,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             The most recently updated motor-side angle in rad.
         """
-        return self._motor_state.position * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self._motor_state.position * MIT_Params[self.type]["GEAR_RATIO"])
 
     @property
     def motor_velocity(self) -> float:
@@ -579,7 +579,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             The most recently updated motor-side velocity in rad/s.
         """
-        return self._motor_state.velocity * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self._motor_state.velocity * MIT_Params[self.type]["GEAR_RATIO"])
 
     @property
     def motor_acceleration(self) -> float:
@@ -589,7 +589,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             The most recently updated motor-side acceleration in rad/s/s.
         """
-        return self._motor_state.acceleration * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self._motor_state.acceleration * MIT_Params[self.type]["GEAR_RATIO"])
 
     @property
     def motor_torque(self) -> float:
@@ -599,7 +599,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Returns:
             The most recently updated motor-side torque in Nm.
         """
-        return self.output_torque * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self.output_torque * MIT_Params[self.type]["GEAR_RATIO"])
 
     # Pretty stuff
     def __str__(self) -> str:

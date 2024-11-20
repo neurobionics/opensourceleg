@@ -1,5 +1,5 @@
 import ctypes
-from typing import Any
+from typing import Any, Callable, Optional
 
 import numpy.ctypeslib as ctl
 
@@ -39,17 +39,16 @@ class CompiledController:
 
     def __init__(
         self,
-        library_name,
-        library_path,
-        main_function_name,
-        initialization_function_name=None,
-        cleanup_function_name=None,
+        library_name: str,
+        library_path: str,
+        main_function_name: str,
+        initialization_function_name: Optional[str] = None,
+        cleanup_function_name: Optional[str] = None,
     ) -> None:
-        self.cleanup_func = None
-        self.lib = ctl.load_library(library_name, library_path)
-        self.cleanup_func = self._load_function(cleanup_function_name)
-        self.main_function = self._load_function(main_function_name)
-        self.init_function = self._load_function(initialization_function_name)
+        self.lib: Any = ctl.load_library(library_name, library_path)
+        self.cleanup_func: Callable = self._load_function(cleanup_function_name)
+        self.main_function: Callable = self._load_function(main_function_name)
+        self.init_function: Callable = self._load_function(initialization_function_name)
         # Note if requested function name is None, returned handle is also none
 
         if self.init_function is not None:
@@ -71,14 +70,14 @@ class CompiledController:
         self._output_type = None
         self.outputs = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.cleanup_func is not None:
             self.cleanup_func()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "CompiledController"
 
-    def _load_function(self, function_name):
+    def _load_function(self, function_name: Optional[str]) -> Any:
         if function_name is None:
             return None
         else:
@@ -102,6 +101,10 @@ class CompiledController:
                 All types can be accessed as CompiledController.types.(type_name)
         """
         self._input_type = self.define_type("inputs", input_list)
+
+        if self._input_type is None:
+            raise ValueError("Input type not defined properly. Check define_type() method.")
+
         self.inputs = self._input_type()
 
     def define_outputs(self, output_list: list[Any]) -> None:
@@ -118,9 +121,13 @@ class CompiledController:
                 All types can be accessed as CompiledController.types.(type_name)
         """
         self._output_type = self.define_type("outputs", output_list)
+
+        if self._output_type is None:
+            raise ValueError("Output type not defined properly. Check define_type() method.")
+
         self.outputs = self._output_type()
 
-    def define_type(self, type_name: str, parameter_list: list[Any]):
+    def define_type(self, type_name: str, parameter_list: list[Any]) -> Any:
         """
         This method defines a new type to be used in the compiled controller.
         After calling this method, the datatype with name type_name will be
@@ -153,7 +160,7 @@ class CompiledController:
         setattr(self.types, type_name, CustomStructure)
         return getattr(self.types, type_name)
 
-    def run(self):
+    def run(self) -> Any:
         """
         This method calls the main controller function of the library.
         Under the hood, it calls library_name.main_function_name(*inputs, *outputs),

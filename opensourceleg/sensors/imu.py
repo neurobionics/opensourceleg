@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
@@ -47,7 +49,7 @@ class LordMicrostrainIMU(IMUBase):
         port: str = "/dev/ttyUSB0",
         baud_rate: int = 921600,
         frequency: int = 200,
-    ):
+    ) -> None:
         self._port = port
         self._baud_rate = baud_rate
         self._frequency = frequency
@@ -55,7 +57,7 @@ class LordMicrostrainIMU(IMUBase):
         self._connection = None
         self._data: dict[str, float] = {}
 
-    def _configure_mip_channels(self):
+    def _configure_mip_channels(self) -> Any:
         channels = mscl.MipChannels()
         channels.append(
             mscl.MipChannel(
@@ -84,7 +86,7 @@ class LordMicrostrainIMU(IMUBase):
 
         return channels
 
-    def start(self):
+    def start(self) -> None:
         self._connection = mscl.Connection.Serial(self.port, self.baud_rate)
         self._node = mscl.InertialNode(self._connection)
         self._node.setActiveChannelFields(mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels())
@@ -92,12 +94,12 @@ class LordMicrostrainIMU(IMUBase):
         self._is_streaming = True
 
     @check_sensor_stream
-    def stop(self):
+    def stop(self) -> None:
         self._node.setToIdle()
         self._is_streaming = False
 
     @check_sensor_stream
-    def ping(self):
+    def ping(self) -> None:
         response = self._node.ping()
 
         if response.success():
@@ -105,7 +107,7 @@ class LordMicrostrainIMU(IMUBase):
         else:
             LOGGER.error(f"Failed to ping the IMU at {self.port}")
 
-    def update(self, timeout: int = 500, max_packets: int = 1, return_packets: bool = False):
+    def update(self, timeout: int = 500, max_packets: int = 1, return_packets: bool = False) -> Union[None, Any]:
         """
         Get IMU data from the Lord Microstrain IMU
         """
@@ -115,6 +117,8 @@ class LordMicrostrainIMU(IMUBase):
 
         if return_packets:
             return data_packets
+        else:
+            return None
 
     def __repr__(self) -> str:
         return "IMULordMicrostrain"
@@ -227,7 +231,7 @@ class BNO055(IMUBase):
     def __init__(
         self,
         addr: int = 40,
-    ):
+    ) -> None:
         self._address: int = addr
         self._gyro_data: list[float] = [0.0, 0.0, 0.0]
         self._acc_data: list[float] = [0.0, 0.0, 0.0]
@@ -236,7 +240,7 @@ class BNO055(IMUBase):
     def __repr__(self) -> str:
         return "BNO055_IMU"
 
-    def start(self):
+    def start(self) -> None:
         i2c = busio.I2C(board.SCL, board.SDA)
         try:
             self._adafruit_imu = adafruit_bno055.BNO055_I2C(i2c, address=self._address)
@@ -246,15 +250,14 @@ class BNO055(IMUBase):
         self.configure_IMU_settings()
         self._is_streaming = True
 
-    def stop(self):
+    def stop(self) -> None:
         self._is_streaming = False
-        pass
 
-    def update(self):
+    def update(self) -> None:
         self._acc_data = self._adafruit_imu.acceleration
         self._gyro_data = self._adafruit_imu.gyro
 
-    def configure_IMU_settings(self):
+    def configure_IMU_settings(self) -> None:
         """
         Configure the IMU mode and different range/bandwidth settings.
         Hard coding settings for now.

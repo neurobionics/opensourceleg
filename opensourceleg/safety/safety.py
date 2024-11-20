@@ -1,12 +1,12 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 
 
 class ThermalLimitException(Exception):
-    def __init__(self, message="Software thermal limit exceeded. Exiting.") -> None:
+    def __init__(self, message: str = "Software thermal limit exceeded. Exiting.") -> None:
         self.message = message
         super().__init__(self.message)
 
@@ -35,15 +35,12 @@ def is_changing(
     history_key = f"_{attribute_name}_history"
     proxy_key = f"_{attribute_name}_proxy"
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             instance.__dict__.setdefault(history_key, deque(maxlen=max_points))
 
-            try:
-                if instance.__dict__[proxy_key] is True:
-                    return getattr(instance, proxy_attribute_name)
-            except KeyError:
-                pass
+            if proxy_attribute_name is not None and getattr(instance, proxy_key):
+                return getattr(instance, proxy_attribute_name)
 
             value = func(instance, *args, **kwargs)
             history = getattr(instance, history_key)
@@ -76,8 +73,8 @@ def is_negative(clamp: bool = False) -> Callable:
         Callable: Decorator function.
     """
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if value >= 0:
                 if clamp:
@@ -90,7 +87,7 @@ def is_negative(clamp: bool = False) -> Callable:
     return decorator
 
 
-def is_positive(clamp: bool = False):
+def is_positive(clamp: bool = False) -> Callable:
     """
     Creates a decorator to check if a property's value is positive.
 
@@ -101,8 +98,8 @@ def is_positive(clamp: bool = False):
         Callable: Decorator function.
     """
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if value <= 0:
                 if clamp:
@@ -115,7 +112,7 @@ def is_positive(clamp: bool = False):
     return decorator
 
 
-def is_zero(clamp: bool = False):
+def is_zero(clamp: bool = False) -> Callable:
     """
     Creates a decorator to check if a property's value is zero.
 
@@ -126,8 +123,8 @@ def is_zero(clamp: bool = False):
         Callable: Decorator function.
     """
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if value != 0:
                 if clamp:
@@ -140,7 +137,7 @@ def is_zero(clamp: bool = False):
     return decorator
 
 
-def is_within_range(min_value: float, max_value: float, clamp: bool = False):
+def is_within_range(min_value: float, max_value: float, clamp: bool = False) -> Callable:
     """
     Creates a decorator to check if a property's value is within a given range.
 
@@ -159,8 +156,8 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
     if max_value <= min_value:
         raise ValueError("Maximum value must be greater than minimum value of range")
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if value < min_value or value > max_value:
                 if clamp:
@@ -173,7 +170,7 @@ def is_within_range(min_value: float, max_value: float, clamp: bool = False):
     return decorator
 
 
-def is_greater_than(min_value: float, clamp: bool = False, equality: bool = False):
+def is_greater_than(min_value: float, clamp: bool = False, equality: bool = False) -> Callable:
     """
     Creates a decorator to check if a property's value is greater than a given value. Gives user
     choice to implement is_greater_than_or_equal_to with equality bool
@@ -187,8 +184,8 @@ def is_greater_than(min_value: float, clamp: bool = False, equality: bool = Fals
         Callable: Decorator function.
     """
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if equality:
                 if value < min_value:
@@ -207,7 +204,7 @@ def is_greater_than(min_value: float, clamp: bool = False, equality: bool = Fals
     return decorator
 
 
-def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
+def is_less_than(max_value: float, clamp: bool = False, equality: bool = False) -> Callable:
     """
     Creates a decorator to check if a property's value is less than a given value. Gives user
     choice to implement is_less_than_or_equal_to with equality bool
@@ -221,8 +218,8 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
         Callable: Decorator function.
     """
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if equality:
                 if value > max_value:
@@ -241,7 +238,7 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False):
     return decorator
 
 
-def custom_criteria(criteria: Callable):
+def custom_criteria(criteria: Callable) -> Callable:
     """
     Creates a decorator to check if a property's value meets a custom criteria. The criteria is a
     function that takes the property's value as an argument and returns a boolean.
@@ -253,8 +250,8 @@ def custom_criteria(criteria: Callable):
         Callable: Decorator function.
     """
 
-    def decorator(func):
-        def wrapper(instance, *args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(instance: object, *args: Any, **kwargs: Any) -> Any:
             value = func(instance, *args, **kwargs)
             if not criteria(value):
                 raise ValueError("Value does not meet custom criteria")
@@ -291,10 +288,10 @@ class SafetyManager:
     thereby triggering the decorators.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._safe_objects: dict[object, dict[str, list[Callable]]] = {}
 
-    def add_safety(self, instance: object, attribute: str, decorator: Callable):
+    def add_safety(self, instance: object, attribute: str, decorator: Callable) -> None:
         """
         Adds a safety decorator to the given object's attribute. The decorator will be applied to the property's getter.
 
@@ -323,7 +320,7 @@ class SafetyManager:
         else:
             self._safe_objects[instance] = {attribute: [decorator]}
 
-    def start(self):
+    def start(self) -> None:
         """
         Applies all decorators to the properties of the objects in the safe_objects dictionary.
         """
@@ -343,7 +340,7 @@ class SafetyManager:
 
             container.__class__ = container_subclass
 
-    def update(self):
+    def update(self) -> None:
         """
         Accesses the properties of the objects in the safe_objects dictionary, thereby triggering the decorators.
         """
@@ -352,31 +349,31 @@ class SafetyManager:
                 getattr(container, attribute_name)
 
     @property
-    def safe_objects(self):
+    def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
 
 
 if __name__ == "__main__":
 
     class Sensor:
-        def __init__(self, value):
-            self._value = value
-            self._a = 10
+        def __init__(self, value: float) -> None:
+            self._value: float = value
+            self._a: float = 10
 
         @property
-        def value(self):
+        def value(self) -> float:
             return self._value
 
         @value.setter
-        def value(self, value):
+        def value(self, value: float) -> None:
             self._value = value
 
         @property
-        def a(self):
+        def a(self) -> float:
             return self._a
 
         @a.setter
-        def a(self, value):
+        def a(self, value: float) -> None:
             self._a = value
 
     sensor = Sensor(100)

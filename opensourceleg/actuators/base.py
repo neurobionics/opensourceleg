@@ -30,7 +30,7 @@ class MOTOR_CONSTANTS:
     MAX_CASE_TEMPERATURE: float
     MAX_WINDING_TEMPERATURE: float
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if any(x <= 0 for x in self.__dict__.values()):
             raise ValueError("All values in MOTOR_CONSTANTS must be non-zero and positive.")
 
@@ -107,13 +107,13 @@ class MethodWithRequiredModes(Protocol):
     _required_modes: set[CONTROL_MODES]
 
 
-def requires(*modes: CONTROL_MODES):
+def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
     def decorator(func: T) -> T:
         if not all(isinstance(mode, CONTROL_MODES) for mode in modes):
             raise TypeError("All arguments to 'requires' must be of type CONTROL_MODES")
 
         if not hasattr(func, "_required_modes"):
-            func._required_modes = set(modes)
+            func._required_modes = set(modes)  # type: ignore[attr-defined]
         else:
             func._required_modes.update(modes)
 
@@ -130,8 +130,8 @@ class ActuatorBase(ABC):
         motor_constants: MOTOR_CONSTANTS,
         frequency: int = 1000,
         offline: bool = False,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         self._MOTOR_CONSTANTS: MOTOR_CONSTANTS = motor_constants
         self._gear_ratio: float = gear_ratio
@@ -158,18 +158,18 @@ class ActuatorBase(ABC):
         self._set_original_methods()
         self._set_mutated_methods()
 
-    def __enter__(self):
+    def __enter__(self) -> "ActuatorBase":
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, exc_type: Any, exc_value: Any, exc_traceback: Any) -> None:
         self.stop()
 
-    def _restricted_method(self, method_name: str, *args, **kwargs):
+    def _restricted_method(self, method_name: str, *args: Any, **kwargs: Any) -> None:
         LOGGER.error(f"{method_name}() is not available in {self._mode.name} mode.")
         return None
 
-    def _set_original_methods(self):
+    def _set_original_methods(self) -> None:
         for method_name in CONTROL_MODE_METHODS:
             try:
                 method = getattr(self, method_name)
@@ -178,7 +178,7 @@ class ActuatorBase(ABC):
             except AttributeError:
                 LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.tag}.")
 
-    def _set_mutated_methods(self):
+    def _set_mutated_methods(self) -> None:
         for method_name, method in self._original_methods.items():
             if self._mode in method._required_modes:
                 setattr(self, method_name, method)

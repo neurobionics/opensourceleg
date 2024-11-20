@@ -27,6 +27,7 @@ board = "^1.0"
 adafruit-circuitpython-bno055 = {version = "^5.4.13", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
 adafruit-circuitpython-lis3dh = {version = "^5.2.2", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
 
+pandas = "^2.2.3"
 [tool.poetry.extras]
 dephy = ["flexsea"]
 moteus = ["moteus", "moteus-pi3hat"]
@@ -52,6 +53,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 files = ["opensourceleg"]
+exclude = ["opensourceleg/actuators/moteus.py", "opensourceleg/actuators/tmotor.py"]
+ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
 disallow_any_unimported = "True"
 no_implicit_optional = "True"

@@ -47,7 +47,7 @@ class SensorBase(ABC):
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         self.stop()
 
     @property

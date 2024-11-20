@@ -46,7 +46,7 @@ class LogLevel(Enum):
 class Logger(logging.Logger):
     _instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> "Logger":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -75,7 +75,7 @@ class Logger(logging.Logger):
             self._file_path: str = ""
             self._csv_path: str = ""
             self._file: Optional[Any] = None
-            self._writer = None
+            self._writer: Any = None
             self._is_logging = False
             self._header_written = False
 
@@ -120,16 +120,16 @@ class Logger(logging.Logger):
         self._file_handler.setFormatter(fmt=self._std_formatter)
         self.addHandler(hdlr=self._file_handler)
 
-    def _ensure_file_handler(self):
+    def _ensure_file_handler(self) -> None:
         if not hasattr(self, "_file_handler"):
             self._setup_file_handler()
 
-    def track_variable(self, var_func: Callable[[], Any], name: str):
+    def track_variable(self, var_func: Callable[[], Any], name: str) -> None:
         var_id = id(var_func)
         self._tracked_vars[var_id] = var_func
         self._var_names[var_id] = name
 
-    def untrack_variable(self, var_func: Callable[[], Any]):
+    def untrack_variable(self, var_func: Callable[[], Any]) -> None:
         var_id = id(var_func)
         self._tracked_vars.pop(var_id, None)
         self._var_names.pop(var_id, None)
@@ -176,7 +176,7 @@ class Logger(logging.Logger):
         if len(self._buffer) >= self._buffer_size:
             self.flush_buffer()
 
-    def flush_buffer(self):
+    def flush_buffer(self) -> None:
         if not self._buffer:
             return
 
@@ -213,11 +213,11 @@ class Logger(logging.Logger):
     def __enter__(self) -> "Logger":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.flush_buffer()
         self.close()
 
-    def reset(self):
+    def reset(self) -> None:
         self._buffer.clear()
         self._tracked_vars.clear()
         self._var_names.clear()
@@ -232,27 +232,27 @@ class Logger(logging.Logger):
             self._file = None
             self._writer = None
 
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().debug(msg, *args, **kwargs)
 
-    def info(self, msg, *args, **kwargs):
+    def info(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().info(msg, *args, **kwargs)
 
-    def warning(self, msg, *args, **kwargs):
+    def warning(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().warning(msg, *args, **kwargs)
 
-    def error(self, msg, *args, **kwargs):
+    def error(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().error(msg, *args, **kwargs)
 
-    def critical(self, msg, *args, **kwargs):
+    def critical(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().critical(msg, *args, **kwargs)
 
-    def log(self, level, msg, *args, **kwargs):
+    def log(self, level: int, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().log(level, msg, *args, **kwargs)
 
@@ -289,10 +289,10 @@ LOGGER = Logger()
 if __name__ == "__main__":
 
     class Test:
-        def __init__(self):
-            self.a = 0
+        def __init__(self) -> None:
+            self.a: float = 0.0
 
-        def update(self):
+        def update(self) -> None:
             self.a += 0.2
 
     my_logger = Logger(buffer_size=5000, file_name="my_log")

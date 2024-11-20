@@ -151,7 +151,7 @@ class ThermalModel:
         if scale >= 1.0:
             return 1.0
 
-        return np.sqrt(scale)  # this is how much the torque should be scaled
+        return float(np.sqrt(scale))  # this is how much the torque should be scaled
 
 
 class EdgeDetector:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from opensourceleg.actuators.base import ActuatorBase
 from opensourceleg.logging import LOGGER
@@ -15,20 +15,20 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         tag: str,
         actuators: dict[str, TActuator],
         sensors: dict[str, TSensor],
-    ):
+    ) -> None:
         self._tag = tag
         self.actuators: dict[str, TActuator] = actuators
         self.sensors: dict[str, TSensor] = sensors
 
-    def __enter__(self):
+    def __enter__(self) -> "RobotBase":
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.stop()
 
     @abstractmethod
-    def start(self):
+    def start(self) -> None:
         for actuator in self.actuators.values():
             LOGGER.debug(f"Calling start method of {actuator.tag}")
             actuator.start()
@@ -38,7 +38,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             sensor.start()
 
     @abstractmethod
-    def stop(self):
+    def stop(self) -> None:
         for actuator in self.actuators.values():
             LOGGER.debug(f"Calling stop method of {actuator.tag}")
             actuator.stop()
@@ -48,7 +48,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             sensor.stop()
 
     @abstractmethod
-    def update(self):
+    def update(self) -> None:
         for actuator in self.actuators.values():
             actuator.update()
 
@@ -56,7 +56,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             sensor.update()
 
     @property
-    def tag(self):
+    def tag(self) -> str:
         return self._tag
 
     # You can pipe values from the actuators to custom @property methods

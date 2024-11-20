@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -78,13 +78,13 @@ class SRILoadcell(LoadcellBase):
         time.sleep(1)
         self._is_streaming = True
 
-    def reset(self):
+    def reset(self) -> None:
         self._calibration_offset = self._zero_calibration_offset
         self._is_calibrated = False
 
     def update(
         self,
-        calibration_offset: npt.NDArray[np.double] = None,
+        calibration_offset: Optional[npt.NDArray[np.double]] = None,
         data_callback: Optional[Callable[..., npt.NDArray[np.uint8]]] = None,
     ) -> None:
         """
@@ -147,7 +147,7 @@ class SRILoadcell(LoadcellBase):
         if hasattr(self, "_smbus"):
             self._smbus.close()
 
-    def _read_compressed_strain(self):
+    def _read_compressed_strain(self) -> Any:
         """Used for more recent versions of strain amp firmware"""
         try:
             data = self._smbus.read_i2c_block_data(self._i2c_address, MEMORY_CHANNELS.CH1_H, 10)
@@ -158,10 +158,10 @@ class SRILoadcell(LoadcellBase):
             if self.failed_reads >= 5:
                 raise LoadcellNotRespondingException("Load cell unresponsive.") from None
 
-        return self._unpack_compressed_strain(data)
+        return self._unpack_compressed_strain(np.array(object=data, dtype=np.uint8))
 
     @staticmethod
-    def _unpack_uncompressed_strain(data):
+    def _unpack_uncompressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         ch1 = (data[0] << 8) | data[1]
         ch2 = (data[2] << 8) | data[3]
@@ -172,7 +172,7 @@ class SRILoadcell(LoadcellBase):
         return np.array(object=[ch1, ch2, ch3, ch4, ch5, ch6])
 
     @staticmethod
-    def _unpack_compressed_strain(data):
+    def _unpack_compressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
         """Used for more recent versions of strainamp firmware"""
         return np.array(
             object=[
@@ -203,7 +203,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[0])
 
     @property
-    def fy(self):
+    def fy(self) -> float:
         """
         Latest force in the y (anterior/posterior) direction in Newtons.
         If using the standard OSL setup, this is positive in the posterior direction.
@@ -211,7 +211,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[1])
 
     @property
-    def fz(self):
+    def fz(self) -> float:
         """
         Latest force in the z (vertical) direction in Newtons.
         If using the standard OSL setup, this should be positive downwards.
@@ -220,7 +220,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[2])
 
     @property
-    def mx(self):
+    def mx(self) -> float:
         """
         Latest moment about the x (medial/lateral) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the user's right.
@@ -228,7 +228,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[3])
 
     @property
-    def my(self):
+    def my(self) -> float:
         """
         Latest moment about the y (anterior/posterior) axis in Nm.
         If using the standard OSL setup, this axis is positive in the posterior direction.
@@ -236,7 +236,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[4])
 
     @property
-    def mz(self):
+    def mz(self) -> float:
         """
         Latest moment about the z (vertical) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the ground.
@@ -244,7 +244,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[5])
 
     @property
-    def data(self):
+    def data(self) -> Any:
         """
         Returns a vector of the latest loadcell data.
         [Fx, Fy, Fz, Mx, My, Mz]

@@ -1,6 +1,6 @@
 import math
 from time import sleep
-from typing import ClassVar, Optional
+from typing import Any, ClassVar, Optional
 
 import spidev
 
@@ -178,7 +178,7 @@ class ADS131M0x(ADCBase):
         return self._gains
 
     @property
-    def data(self):
+    def data(self) -> Any:
         return self._data
 
     def _spi_message(self, message: list[int]) -> list[int]:
