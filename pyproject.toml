@@ -15,7 +15,7 @@ python = ">=3.9,<4.0"
 numpy = "^1.24.3"
 flexsea = [
     {version = "^12.0.3", python = ">=3.11"},
-    {version = "==8.0.1", python = "<3.10"}
+    {version = "==8.0.1", python = "<=3.10"}
 ]
 smbus2 = ">=0.4.2"
 grpcio = "^1.65.5"

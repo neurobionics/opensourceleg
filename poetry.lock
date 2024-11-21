@@ -3010,4 +3010,4 @@ moteus = ["moteus", "moteus-pi3hat"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "e7ed686c052b48a4e000a9c11582434057dd15092c62f2f3256e7d8aa0388621"
+content-hash = "9351db36ceedc0ec56895f9ec85bf1ced6443878d4f1bef0aa26ab9a6e354794"

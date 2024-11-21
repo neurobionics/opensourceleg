@@ -62,7 +62,3 @@ The _opensourceleg_ library is licensed under the terms of the [LGPL-v2.1 licens
 - You can distribute modified versions of the _opensourceleg_ library.
 
 The GPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
-
-## Contributing
-
-Contributions are welcome, and they are greatly appreciated! For more details, read our [contribution guidelines](CONTRIBUTING.md).
