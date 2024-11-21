@@ -45,7 +45,7 @@ def deprecated_with_routing(alternative_func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             LOGGER.warning(
-                f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead,"
+                f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead, "
                 "which will be called automatically now."
             )
             return alternative_func(*args, **kwargs)

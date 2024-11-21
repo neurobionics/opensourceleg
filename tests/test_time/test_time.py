@@ -15,10 +15,10 @@ def test_loopkiller_init():
 
     lk = LoopKiller()
     assert lk._fade_time == 0.0
-    assert lk._soft_kill_time is None
+    assert lk._soft_kill_time == 0.0
     lk1 = LoopKiller(fade_time=1.0)
     assert lk1._fade_time == 1.0
-    assert lk1._soft_kill_time is None
+    assert lk1._soft_kill_time == 0.0
     assert lk1._kill_now is False
     assert lk1._kill_soon is False
 
@@ -85,7 +85,7 @@ def test_loopkiller_kill_now_setter(patch_time_time2):
     lkkns.kill_now = False
     assert lkkns._kill_now is False
     assert lkkns._kill_soon is False
-    assert lkkns._soft_kill_time is None
+    assert lkkns._soft_kill_time == 0.0
     lkkns.kill_now = True
     assert lkkns._kill_soon is True
     assert lkkns._soft_kill_time == 0.0

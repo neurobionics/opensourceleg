@@ -35,7 +35,7 @@ from logging.handlers import RotatingFileHandler
 from typing import Any, Callable, Optional, Union
 
 
-class LogLevel(Enum):
+class LogLevel(int, Enum):
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
@@ -72,8 +72,8 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self._user_file_name = file_name
 
-            self._file_path: str = ""
-            self._csv_path: str = ""
+            self._file_path: Optional[str] = None
+            self._csv_path: Optional[str] = None
             self._file: Optional[Any] = None
             self._writer: Any = None
             self._is_logging = False
@@ -87,6 +87,7 @@ class Logger(logging.Logger):
             self._setup_logging()
             self._initialized: bool = True
         else:
+            self._log_path = log_path
             self.set_file_name(file_name)
             self.set_file_level(file_level)
             self.set_stream_level(stream_level)
@@ -95,28 +96,26 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self.set_buffer_size(buffer_size)
 
-            self._log_path = log_path
-
     def _setup_logging(self) -> None:
-        self.setLevel(level=self._file_level.value)
+        self.setLevel(level=self._file_level)
         self._std_formatter = logging.Formatter(self._log_format)
 
         self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(level=self._stream_level.value)
+        self._stream_handler.setLevel(level=self._stream_level)
         self._stream_handler.setFormatter(fmt=self._std_formatter)
         self.addHandler(hdlr=self._stream_handler)
 
     def _setup_file_handler(self) -> None:
-        if self._file_path == "":
+        if not self._file_path:
             self._generate_file_paths()
 
         self._file_handler = RotatingFileHandler(
             filename=self._file_path,
-            mode="a",
+            mode="w",
             maxBytes=self._file_max_bytes,
             backupCount=self._file_backup_count,
         )
-        self._file_handler.setLevel(level=self._file_level.value)
+        self._file_handler.setLevel(level=self._file_level)
         self._file_handler.setFormatter(fmt=self._std_formatter)
         self.addHandler(hdlr=self._file_handler)
 
@@ -139,17 +138,16 @@ class Logger(logging.Logger):
 
     def set_file_name(self, file_name: Union[str, None]) -> None:
         self._user_file_name = file_name
-        self._file_path = ""
-        self._csv_path = ""
+        self._generate_file_paths()
 
     def set_file_level(self, level: LogLevel) -> None:
         self._file_level = level
         if hasattr(self, "_file_handler"):
-            self._file_handler.setLevel(level=level.value)
+            self._file_handler.setLevel(level=level)
 
     def set_stream_level(self, level: LogLevel) -> None:
         self._stream_level = level
-        self._stream_handler.setLevel(level=level.value)
+        self._stream_handler.setLevel(level=level)
 
     def set_format(self, log_format: str) -> None:
         self._log_format = log_format
@@ -183,7 +181,7 @@ class Logger(logging.Logger):
         self._ensure_file_handler()
 
         if self._file is None:
-            self._file = open(self._csv_path, "a", newline="")
+            self._file = open(self._csv_path, "w", newline="")
             self._writer = csv.writer(self._file)
 
         if not self._header_written:
@@ -206,15 +204,21 @@ class Logger(logging.Logger):
 
         base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
 
+        if not os.path.exists(self._log_path):
+            os.makedirs(self._log_path)
+
         file_path = os.path.join(self._log_path, base_name)
+
         self._file_path = file_path + ".log"
         self._csv_path = file_path + ".csv"
+
+        # Log the generated file paths for debugging
+        self.debug(f"Generated file paths: log file - {self._file_path}, csv file - {self._csv_path}")
 
     def __enter__(self) -> "Logger":
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        self.flush_buffer()
         self.close()
 
     def reset(self) -> None:
@@ -227,6 +231,8 @@ class Logger(logging.Logger):
             del self._file_handler
 
     def close(self) -> None:
+        self.flush_buffer()
+
         if self._file:
             self._file.close()
             self._file = None
@@ -258,7 +264,7 @@ class Logger(logging.Logger):
 
     @property
     def file_path(self) -> str:
-        if self._file_path == "":
+        if not self._file_path:
             self._generate_file_paths()
         return self._file_path
 
@@ -295,7 +301,7 @@ if __name__ == "__main__":
         def update(self) -> None:
             self.a += 0.2
 
-    my_logger = Logger(buffer_size=5000, file_name="my_log")
+    my_logger = Logger(buffer_size=5000, file_name="test_logger", log_path="./logs")
     x = 0.0
     y = 0.0
 
@@ -303,7 +309,8 @@ if __name__ == "__main__":
 
     my_logger.track_variable(lambda: x, "x")
     my_logger.track_variable(lambda: y, "y")
-    LOGGER.track_variable(lambda: test.a, "A")
+    my_logger.track_variable(lambda: test.a, "A")
+    my_logger.info("Starting logging...")
 
     for _i in range(1000):
         x += 0.1

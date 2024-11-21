@@ -35,7 +35,7 @@ class ActuatorIsNoneException(Exception):
 
     def __init__(self, mode: str) -> None:
         super().__init__(
-            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during"
+            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during "
             "initialization or set the actuator instance using set_actuator method."
         )
 
@@ -89,6 +89,6 @@ class ActuatorKeyException(Exception):
 
     def __init__(self, tag: str, key: str) -> None:
         super().__init__(
-            f"{tag} does not have {key} key in the actuators dictionary."
+            f"{tag} does not have {key} key in the actuators dictionary. "
             f"Please check the actuators dictionary for the `{key}` key."
         )

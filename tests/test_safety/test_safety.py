@@ -739,7 +739,7 @@ def test_start():
 
     test_manager.start()
     with pytest.raises(ValueError, match="Value must be negative"):
-        pass
+        _ = samp.test
 
 
 # Test update & safe objects
