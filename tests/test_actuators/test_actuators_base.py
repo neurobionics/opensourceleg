@@ -413,6 +413,21 @@ class MockActuator(ActuatorBase):
     def set_motor_torque(self, value):
         pass
 
+    def set_output_torque(self, value):
+        pass
+
+    def set_current(self, value):
+        pass
+
+    def set_voltage(self, value):
+        pass
+
+    def set_motor_impedance(self, value):
+        pass
+
+    def set_output_impedance(self, value):
+        pass
+
     def set_joint_torque(self, value):
         pass
 
