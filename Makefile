@@ -51,7 +51,7 @@ docs: ## Build and serve the documentation
 
 .PHONY: docs-deploy
 docs-deploy: ## Deploy the documentation to GitHub pages
-	@poetry run mkdocs gh-deploy
+	@poetry run mkdocs gh-deploy --force
 
 .PHONY: help
 help:
