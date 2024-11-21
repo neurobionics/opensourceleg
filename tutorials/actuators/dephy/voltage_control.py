@@ -1,4 +1,4 @@
-﻿# import time
+# import time
 # import sys
 # from opensourceleg.actuators.base import CONTROL_MODES
 # import opensourceleg.actuators.dephy as Dephy
@@ -45,21 +45,17 @@ def main():
         port="/dev/ttyACM0",
         gear_ratio=1.0,
     )
-    voltage_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Voltage": [],
-            "Command_Voltage": [],
-        }
-    )
+    voltage_data = pd.DataFrame({
+        "Time": [],
+        "Output_Voltage": [],
+        "Command_Voltage": [],
+    })
     clock = SoftRealtimeLoop(dt=DT)
     with actpack:
-
         try:
             actpack.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
             for t in clock:
-
                 if t > TIME_TO_STEP:
                     command_voltage = 3000
                     actpack.set_motor_voltage(value=command_voltage)  # in mV
@@ -79,13 +75,11 @@ def main():
                 voltage_data = pd.concat(
                     [
                         voltage_data,
-                        pd.DataFrame(
-                            {
-                                "Time": [t],
-                                "Output_Voltage": [actpack.motor_voltage],
-                                "Command_Voltage": [command_voltage],
-                            }
-                        ),
+                        pd.DataFrame({
+                            "Time": [t],
+                            "Output_Voltage": [actpack.motor_voltage],
+                            "Command_Voltage": [command_voltage],
+                        }),
                     ],
                     ignore_index=True,
                 )

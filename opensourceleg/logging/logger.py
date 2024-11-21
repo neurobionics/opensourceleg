@@ -24,8 +24,6 @@ Usage Guide:
 
 """
 
-from typing import Any, Callable, Dict, List, Optional, Union
-
 import csv
 import logging
 import os
@@ -34,9 +32,10 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
+from typing import Any, Callable, Optional, Union
 
 
-class LogLevel(Enum):
+class LogLevel(int, Enum):
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
@@ -47,7 +46,7 @@ class LogLevel(Enum):
 class Logger(logging.Logger):
     _instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> "Logger":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -73,10 +72,10 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self._user_file_name = file_name
 
-            self._file_path: str = ""
-            self._csv_path: str = ""
+            self._file_path: Optional[str] = None
+            self._csv_path: Optional[str] = None
             self._file: Optional[Any] = None
-            self._writer = None
+            self._writer: Any = None
             self._is_logging = False
             self._header_written = False
 
@@ -88,6 +87,7 @@ class Logger(logging.Logger):
             self._setup_logging()
             self._initialized: bool = True
         else:
+            self._log_path = log_path
             self.set_file_name(file_name)
             self.set_file_level(file_level)
             self.set_stream_level(stream_level)
@@ -96,41 +96,39 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self.set_buffer_size(buffer_size)
 
-            self._log_path = log_path
-
     def _setup_logging(self) -> None:
-        self.setLevel(level=self._file_level.value)
+        self.setLevel(level=self._file_level)
         self._std_formatter = logging.Formatter(self._log_format)
 
         self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(level=self._stream_level.value)
+        self._stream_handler.setLevel(level=self._stream_level)
         self._stream_handler.setFormatter(fmt=self._std_formatter)
         self.addHandler(hdlr=self._stream_handler)
 
     def _setup_file_handler(self) -> None:
-        if self._file_path == "":
+        if not self._file_path:
             self._generate_file_paths()
 
         self._file_handler = RotatingFileHandler(
-            filename=self._file_path,
-            mode="a",
+            filename=self._file_path if self._file_path else "",
+            mode="w",
             maxBytes=self._file_max_bytes,
             backupCount=self._file_backup_count,
         )
-        self._file_handler.setLevel(level=self._file_level.value)
+        self._file_handler.setLevel(level=self._file_level)
         self._file_handler.setFormatter(fmt=self._std_formatter)
         self.addHandler(hdlr=self._file_handler)
 
-    def _ensure_file_handler(self):
+    def _ensure_file_handler(self) -> None:
         if not hasattr(self, "_file_handler"):
             self._setup_file_handler()
 
-    def track_variable(self, var_func: Callable[[], Any], name: str):
+    def track_variable(self, var_func: Callable[[], Any], name: str) -> None:
         var_id = id(var_func)
         self._tracked_vars[var_id] = var_func
         self._var_names[var_id] = name
 
-    def untrack_variable(self, var_func: Callable[[], Any]):
+    def untrack_variable(self, var_func: Callable[[], Any]) -> None:
         var_id = id(var_func)
         self._tracked_vars.pop(var_id, None)
         self._var_names.pop(var_id, None)
@@ -138,19 +136,22 @@ class Logger(logging.Logger):
     def __repr__(self) -> str:
         return f"Logger(file_path={self._file_path})"
 
+    def set_log_path(self, log_path: str) -> None:
+        self._log_path = log_path
+        self._generate_file_paths()
+
     def set_file_name(self, file_name: Union[str, None]) -> None:
         self._user_file_name = file_name
-        self._file_path = ""
-        self._csv_path = ""
+        self._generate_file_paths()
 
     def set_file_level(self, level: LogLevel) -> None:
         self._file_level = level
         if hasattr(self, "_file_handler"):
-            self._file_handler.setLevel(level=level.value)
+            self._file_handler.setLevel(level=level)
 
     def set_stream_level(self, level: LogLevel) -> None:
         self._stream_level = level
-        self._stream_handler.setLevel(level=level.value)
+        self._stream_handler.setLevel(level=level)
 
     def set_format(self, log_format: str) -> None:
         self._log_format = log_format
@@ -168,7 +169,7 @@ class Logger(logging.Logger):
             return
 
         data = []
-        for var_id, get_value in self._tracked_vars.items():
+        for _var_id, get_value in self._tracked_vars.items():
             value = get_value()
             data.append(str(value))
 
@@ -177,14 +178,18 @@ class Logger(logging.Logger):
         if len(self._buffer) >= self._buffer_size:
             self.flush_buffer()
 
-    def flush_buffer(self):
+    def flush_buffer(self) -> None:
         if not self._buffer:
             return
 
         self._ensure_file_handler()
 
         if self._file is None:
-            self._file = open(self._csv_path, "a", newline="")
+            self._file = open(
+                self._csv_path if self._csv_path else "",
+                mode="w",
+                newline="",
+            )
             self._writer = csv.writer(self._file)
 
         if not self._header_written:
@@ -197,7 +202,7 @@ class Logger(logging.Logger):
     def _write_header(self) -> None:
         header = list(self._var_names.values())
 
-        self._writer.writerow(header)  # type: ignore
+        self._writer.writerow(header)
         self._header_written = True
 
     def _generate_file_paths(self) -> None:
@@ -205,66 +210,79 @@ class Logger(logging.Logger):
         timestamp = now.strftime("%Y%m%d_%H%M%S")
         script_name = os.path.basename(__file__).split(".")[0]
 
-        if self._user_file_name:
-            base_name = self._user_file_name
-        else:
-            base_name = f"{script_name}_{timestamp}"
+        base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
+
+        if not os.path.exists(self._log_path):
+            os.makedirs(self._log_path)
 
         file_path = os.path.join(self._log_path, base_name)
+
         self._file_path = file_path + ".log"
         self._csv_path = file_path + ".csv"
 
     def __enter__(self) -> "Logger":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self.flush_buffer()
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
 
-    def reset(self):
-        self._buffer.clear()
+    def reset(self) -> None:
+        self.close()
+        self._setup_logging()
+
         self._tracked_vars.clear()
         self._var_names.clear()
         self._header_written = False
+
         if hasattr(self, "_file_handler"):
             self._file_handler.close()
             del self._file_handler
 
+        # re-initialize the logger
+
     def close(self) -> None:
+        self.flush_buffer()
+
         if self._file:
             self._file.close()
             self._file = None
             self._writer = None
 
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().debug(msg, *args, **kwargs)
 
-    def info(self, msg, *args, **kwargs):
+    def info(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().info(msg, *args, **kwargs)
 
-    def warning(self, msg, *args, **kwargs):
+    def warning(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().warning(msg, *args, **kwargs)
 
-    def error(self, msg, *args, **kwargs):
+    def error(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().error(msg, *args, **kwargs)
 
-    def critical(self, msg, *args, **kwargs):
+    def critical(self, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().critical(msg, *args, **kwargs)
 
-    def log(self, level, msg, *args, **kwargs):
+    def log(self, level: int, msg: object, *args: object, **kwargs: Any) -> None:
         self._ensure_file_handler()
         super().log(level, msg, *args, **kwargs)
 
     @property
-    def file_path(self) -> str:
-        if self._file_path == "":
-            self._generate_file_paths()
+    def file_path(self) -> Optional[str]:
         return self._file_path
+
+    @property
+    def csv_path(self) -> Optional[str]:
+        return self._csv_path
+
+    @property
+    def log_path(self) -> str:
+        return self._log_path
 
     @property
     def buffer_size(self) -> int:
@@ -288,18 +306,19 @@ class Logger(logging.Logger):
 
 
 # Initialize a global logger instance to be used throughout the library
+SCRIPT_DIR = os.path.dirname(__file__)
 LOGGER = Logger()
 
 if __name__ == "__main__":
 
     class Test:
-        def __init__(self):
-            self.a = 0
+        def __init__(self) -> None:
+            self.a: float = 0.0
 
-        def update(self):
+        def update(self) -> None:
             self.a += 0.2
 
-    my_logger = Logger(buffer_size=5000, file_name="my_log")
+    my_logger = Logger(buffer_size=1, file_name="test_logger", log_path="./logs")
     x = 0.0
     y = 0.0
 
@@ -307,9 +326,10 @@ if __name__ == "__main__":
 
     my_logger.track_variable(lambda: x, "x")
     my_logger.track_variable(lambda: y, "y")
-    LOGGER.track_variable(lambda: test.a, "A")
+    my_logger.track_variable(lambda: test.a, "A")
+    my_logger.info("Starting logging...")
 
-    for i in range(1000):
+    for _i in range(1000):
         x += 0.1
         y = x**2
 

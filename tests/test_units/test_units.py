@@ -1,11 +1,23 @@
 # Global Units Dictionary
-import enum
-from dataclasses import dataclass
 
 import numpy as np
 import pytest
 
-from opensourceleg.units import *
+from opensourceleg.units import (
+    Acceleration,
+    Current,
+    Damping,
+    Force,
+    Length,
+    Mass,
+    Position,
+    Stiffness,
+    Torque,
+    Velocity,
+    Voltage,
+    convert_from_default,
+    convert_to_default,
+)
 
 # Values to iterate over for testing
 VALUES = np.append(np.array([0, 1, -1, 1000, -1000]), np.random.random(5))
@@ -14,37 +26,33 @@ VALUES = np.append(np.array([0, 1, -1, 1000, -1000]), np.random.random(5))
 def test_convert_to_from_default():
     # Testing behaviour when invalid input type is passed to convert_to_default & convert_from_default
     with pytest.raises(TypeError):
-        convert_to_default("TEST", force.kgf)
+        convert_to_default("TEST", Force.kgf)
     with pytest.raises(TypeError):
-        convert_to_default("T", force.kgf)
+        convert_to_default("T", Force.kgf)
     with pytest.raises(TypeError):
-        convert_from_default("TEST", force.N)
+        convert_from_default("TEST", Force.N)
     with pytest.raises(TypeError):
-        convert_from_default("T", force.N)
+        convert_from_default("T", Force.N)
 
     # Testing behaviour on all possible unit conversions to default & from default
     categories = [
-        force,
-        torque,
-        stiffness,
-        damping,
-        length,
-        position,
-        mass,
-        velocity,
-        acceleration,
-        time,
-        current,
-        voltage,
+        Force,
+        Torque,
+        Stiffness,
+        Damping,
+        Length,
+        Position,
+        Mass,
+        Velocity,
+        Acceleration,
+        Current,
+        Voltage,
     ]
     units = []
     # Add all units to array
     for c in categories:
-        for unit in dir(c):
-            if not unit.startswith("__"):
-                value = getattr(c, unit)
-                print(value)
-                units.append(value)
+        for unit in c:
+            units.append(unit)
 
     # Iterate over all possible units and test converting to/from default
     for unit in units:
@@ -54,99 +62,60 @@ def test_convert_to_from_default():
 
 
 def test_force():
-
-    assert force.N == 1.0
-    assert force.lbf == 4.4482216152605
-    assert force.kgf == 9.80665
-    # assert repr(force) == "force"
+    assert Force.N == 1.0
+    assert Force.lbf == 4.4482216152605
+    assert Force.kgf == 9.80665
 
 
 def test_torque():
-
-    assert torque.N_m == 1.0
-    assert torque.lbf_inch == 0.1129848290276167
-    assert torque.kgf_cm == 0.0980665
-    # assert repr(torque) == "torque"
+    assert Torque.N_m == 1.0
+    assert Torque.lbf_inch == 0.1129848290276167
+    assert Torque.kgf_cm == 0.0980665
 
 
 def test_stiffness():
-
-    assert stiffness.N_m_per_rad == 1.0
-    assert stiffness.N_m_per_deg == 0.017453292519943295
-
-    # assert repr(stiffness) == "stiffness"
+    assert Stiffness.N_m_per_rad == 1.0
+    assert Stiffness.N_m_per_deg == 0.017453292519943295
 
 
 def test_damping():
-
-    assert damping.N_m_per_rad_per_s == 1.0
-    assert damping.N_m_per_deg_per_s == 0.017453292519943295
-
-    # assert repr(damping) == "damping"
+    assert Damping.N_m_per_rad_per_s == 1.0
+    assert Damping.N_m_per_deg_per_s == 0.017453292519943295
 
 
 def test_length():
-
-    assert length.m == 1.0
-    assert length.cm == 0.01
-    assert length.inch == 0.0254
-
-    # assert repr(length) == "length"
+    assert Length.m == 1.0
+    assert Length.cm == 0.01
+    assert Length.inch == 0.0254
 
 
 def test_position():
-
-    assert position.rad == 1.0
-    assert position.deg == 0.017453292519943295
-
-    # assert repr(position) == "position"
+    assert Position.rad == 1.0
+    assert Position.deg == 0.017453292519943295
 
 
 def test_mass():
-
-    assert mass.kg == 1.0
-    assert mass.g == 0.001
-    assert mass.lb == 0.45359237
-
-    # assert repr(mass) == "mass"
+    assert Mass.kg == 1.0
+    assert Mass.g == 0.001
+    assert Mass.lb == 0.45359237
 
 
 def test_velocity():
-
-    assert velocity.rad_per_s == 1.0
-    assert velocity.deg_per_s == 0.017453292519943295
-    assert velocity.rpm == 0.10471975511965977
-
-    # assert repr(velocity) == "velocity"
+    assert Velocity.rad_per_s == 1.0
+    assert Velocity.deg_per_s == 0.017453292519943295
+    assert Velocity.rpm == 0.10471975511965977
 
 
 def test_acceleration():
-
-    assert acceleration.rad_per_s2 == 1.0
-    assert acceleration.deg_per_s2 == 0.017453292519943295
-
-    # assert repr(acceleration) == "acceleration"
-
-
-def test_time():
-
-    assert time.s == 1.0
-    assert time.ms == 0.001
-
-    # assert repr(time) == "time"
+    assert Acceleration.rad_per_s2 == 1.0
+    assert Acceleration.deg_per_s2 == 0.017453292519943295
 
 
 def test_current():
-
-    assert current.mA == 1
-    assert current.A == 1000
-
-    # assert repr(current) == "current"
+    assert Current.mA == 1
+    assert Current.A == 1000
 
 
 def test_voltage():
-
-    assert voltage.mV == 1
-    assert voltage.V == 1000
-
-    # assert repr(voltage) == "voltage"
+    assert Voltage.mV == 1
+    assert Voltage.V == 1000

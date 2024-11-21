@@ -1,4 +1,3 @@
-﻿import sys
 import time
 
 import opensourceleg.actuators.dephy as Dephy

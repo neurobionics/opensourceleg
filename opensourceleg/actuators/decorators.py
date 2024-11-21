@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Any, Callable
 
 from opensourceleg.actuators.base import ActuatorBase
 from opensourceleg.logging.exceptions import (
@@ -7,9 +8,9 @@ from opensourceleg.logging.exceptions import (
 )
 
 
-def check_actuator_connection(func):
+def check_actuator_connection(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(self: ActuatorBase, *args, **kwargs):
+    def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if self.is_offline:
             raise ActuatorConnectionException(tag=self.tag)
 
@@ -18,9 +19,9 @@ def check_actuator_connection(func):
     return wrapper
 
 
-def check_actuator_open(func):
+def check_actuator_open(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(self: ActuatorBase, *args, **kwargs):
+    def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if not self.is_open:
             raise ActuatorConnectionException(tag=self.tag)
 
@@ -29,9 +30,9 @@ def check_actuator_open(func):
     return wrapper
 
 
-def check_actuator_stream(func):
+def check_actuator_stream(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(self: ActuatorBase, *args, **kwargs):
+    def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if not self.is_streaming:
             raise ActuatorStreamException(tag=self.tag)
 
