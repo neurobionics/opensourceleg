@@ -15,7 +15,7 @@ def check_sensor_stream(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         # TODO: This could be a generic type that points to actuator, sensor, etc.
-        if self.is_streaming:
+        if not self.is_streaming:
             raise SensorNotStreamingException(sensor_name=self.__repr__())
         return func(self, *args, **kwargs)
 

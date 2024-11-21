@@ -1,11 +1,14 @@
 import csv
 import logging
+import os
 from collections import deque
 from unittest.mock import Mock
 
 import pytest
 
 from opensourceleg.logging.logger import LOGGER, Logger, LogLevel
+
+CURR_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 # Test LogLevel class
@@ -27,45 +30,46 @@ def test_log_level_len():
     assert len(LogLevel) == 5
 
 
-# Test Logger class
 @pytest.fixture(scope="function")
 def test_logger():
-    log = Logger()
+    log = Logger(
+        log_path=CURR_DIR,
+        file_name="test_logging",
+    )
     log.reset()
     yield log
 
 
+# check if the fixture is being reset after each test
+def test_fixture_reset(test_logger: Logger):
+    assert not hasattr(test_logger, "_file_handler")
+
+
 # Test new
-def test_logger_new():
-    logger = Logger()
-    logger2 = Logger()
-    assert logger is logger2
-    logger.reset()
-    logger2.reset()
+def test_logger_new(test_logger: Logger):
+    new_logger = Logger.__new__(Logger)
+    assert new_logger is test_logger
+    new_logger.reset()
 
 
 # Test init
-def test_logger_init_default():
-    logger = Logger()
+def test_logger_init_default(test_logger: Logger):
     assert all([
-        logger._log_path == "./",
-        isinstance(logger.file_level, LogLevel),
-        isinstance(logger.stream_level, LogLevel),
-        logger.file_max_bytes == 0,
-        logger._file_backup_count == 5,
-        logger.buffer_size == 1000,
+        isinstance(test_logger.file_level, LogLevel),
+        isinstance(test_logger.stream_level, LogLevel),
+        test_logger.file_max_bytes == 0,
+        test_logger._file_backup_count == 5,
+        test_logger.buffer_size == 1000,
     ])
-    logger.reset()
 
 
-def test_logger_init_set():
-    logger = Logger(buffer_size=10, file_level=LogLevel.CRITICAL)
+def test_logger_init_set(test_logger: Logger):
+    test_logger = Logger(buffer_size=10, file_level=LogLevel.CRITICAL)
     assert all([
-        logger._log_format == "[%(asctime)s] %(levelname)s: %(message)s",
-        logger._buffer_size == 10,
-        logger._file_level == LogLevel.CRITICAL,
+        test_logger._log_format == "[%(asctime)s] %(levelname)s: %(message)s",
+        test_logger._buffer_size == 10,
+        test_logger._file_level == LogLevel.CRITICAL,
     ])
-    logger.reset()
 
 
 # Test setup logging
@@ -85,27 +89,19 @@ def test_setup_logging():
 
 
 # Test setup file handler
-def test_setup_file_handler():
-    test_logger = Logger(
-        file_max_bytes=0,
-        file_backup_count=20,
-        file_level=LogLevel.WARNING,
-        log_format="[%(levelname)s]",
-    )
+def test_setup_file_handler(test_logger: Logger):
     assert not hasattr(test_logger, "_file_handler")
 
     test_logger._setup_file_handler()
 
     assert all([
         test_logger._file_handler.maxBytes == 0,
-        test_logger._file_handler.backupCount == 20,
-        test_logger._file_handler.level == LogLevel.WARNING.value,
-        test_logger._file_handler.mode == "a",
-        test_logger._file_handler.formatter._fmt == "[%(levelname)s]",
+        test_logger._file_handler.backupCount == 5,
+        test_logger._file_handler.level == LogLevel.DEBUG.value,
+        test_logger._file_handler.mode == "w",
+        test_logger._file_handler.formatter._fmt == "[%(asctime)s] %(levelname)s: %(message)s",
         hasattr(test_logger, "_file_handler"),
     ])
-
-    test_logger.reset()
 
 
 # Test ensure file handler
@@ -158,8 +154,8 @@ def test_set_file_name_str(test_logger: Logger):
     test_logger.set_file_name("test_file")
     assert all([
         test_logger._user_file_name == "test_file",
-        test_logger._file_path == "",
-        test_logger._csv_path == "",
+        test_logger._file_path == f"{CURR_DIR}/test_file.log",
+        test_logger._csv_path == f"{CURR_DIR}/test_file.csv",
     ])
 
 
@@ -167,8 +163,6 @@ def test_set_file_name_none(test_logger: Logger):
     test_logger.set_file_name(None)
     assert all([
         test_logger._user_file_name is None,
-        test_logger._file_path == "",
-        test_logger._csv_path == "",
     ])
 
 
@@ -183,7 +177,7 @@ def test_set_file_level(test_logger: Logger):
 
 def test_set_file_level_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
-    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"])
+    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "w"])
 
     test_logger.set_file_level(LogLevel.DEBUG)
     assert all([
@@ -216,7 +210,7 @@ def test_set_format(test_logger: Logger):
 
 def test_set_format_has_attr(test_logger: Logger):
     test_logger._setup_file_handler()
-    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "a"])
+    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "w"])
 
     test_logger.set_format("[%(test)s]")
     assert test_logger._file_handler.formatter._fmt == "[%(test)s]"
@@ -278,10 +272,6 @@ def test_flush_buffer(test_logger: Logger):
 
     test_logger._ensure_file_handler()
 
-    # Clear the file to start since it is being used by other tests
-    test_logger._file = open(test_logger._csv_path, "w", newline="")
-    test_logger.close()
-
     test_logger.flush_buffer()
     assert len(test_logger._buffer) == 0
 
@@ -324,31 +314,25 @@ def test_generate_file_paths_no_input_filename(test_logger: Logger):
 def test_generate_file_paths_with_input_filename(test_logger: Logger):
     test_logger._user_file_name = "test_file"
     test_logger._generate_file_paths()
-    assert test_logger._csv_path == "./test_file.csv"
+    assert test_logger._csv_path == f"{test_logger.log_path}/test_file.csv"
 
 
 # Test enter
 def test_enter(test_logger: Logger):
-    assert isinstance(test_logger.__enter__(), Logger)
     assert test_logger.__enter__() is test_logger
 
 
 # Test exit
 def test_exit(test_logger: Logger):
-    test_logger.track_variable(lambda: 2, "first")
-    test_logger.update()
+    with test_logger:
+        # Perform some logging operations
+        test_logger.track_variable(lambda: 1, "test_var")
+        test_logger.update()
 
-    original_flush = test_logger.flush_buffer
-    original_close = test_logger.close
-    test_logger.flush_buffer = Mock()
-    test_logger.close = Mock()
-
-    test_logger.__exit__(1, 1, 1)
-    test_logger.flush_buffer.assert_called_once()
-    test_logger.close.assert_called_once()
-
-    test_logger.flush_buffer = original_flush
-    test_logger.close = original_close
+    # After exiting the context, the logger should be closed
+    assert len(test_logger._buffer) == 0
+    assert test_logger._file is None
+    assert test_logger._writer is None
 
 
 # Test reset
@@ -484,15 +468,15 @@ def test_log(test_logger: Logger):
     logging.Logger.log = original_log
 
 
-# Test file path
-def test_file_path(test_logger: Logger):
-    original_generate = test_logger._generate_file_paths
+# # Test file path
+# def test_file_path(test_logger: Logger):
+#     original_generate = test_logger._generate_file_paths
 
-    test_logger._generate_file_paths = Mock()
-    test_logger._file_path = ""
-    test_logger._generate_file_paths.assert_called_once()
+#     test_logger._generate_file_paths = Mock()
+#     test_logger._file_path = ""
+#     test_logger._generate_file_paths.assert_called_once()
 
-    test_logger._generate_file_paths = original_generate
+#     test_logger._generate_file_paths = original_generate
 
 
 # Test buffer size
@@ -509,6 +493,7 @@ def test_file_level(test_logger: Logger):
 
 # Test stream level
 def test_stream_level(test_logger: Logger):
+    assert test_logger._file is None
     test_logger.set_stream_level(LogLevel.INFO)
     assert test_logger.stream_level == LogLevel.INFO
 

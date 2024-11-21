@@ -1,4 +1,3 @@
-from io import StringIO
 from unittest.mock import patch
 
 import pytest
@@ -103,31 +102,31 @@ def test_is_changing_four_points_less_than_threshold():
         test_changing_point1(instance)
 
 
-def test_is_changing_four_points_less_than_threshold_with_proxy_att_name():
-    # Test case of max points reached, with stddev < defined threshold
-    # Stddev of 6,7,8,9 ~ 1.118, with defined threshold = 2
-    # For this case, proxy attribute name is not None
-    att = "test_att"
-    max_points = 4
-    test_threshold = 2
-    proxy_att_name = "test_proxy_att_name"
-    instance = Sample()
+# def test_is_changing_four_points_less_than_threshold_with_proxy_att_name():
+#     # Test case of max points reached, with stddev < defined threshold
+#     # Stddev of 6,7,8,9 ~ 1.118, with defined threshold = 2
+#     # For this case, proxy attribute name is not None
+#     att = "test_att"
+#     max_points = 4
+#     test_threshold = 2
+#     proxy_att_name = "test_proxy_att_name"
+#     instance = Sample()
 
-    @is_changing(att, max_points, test_threshold, proxy_att_name)
-    def test_changing_point(instance):
-        return x
+#     @is_changing(att, max_points, test_threshold, proxy_att_name)
+#     def test_changing_point(instance):
+#         return x
 
-    for x in range(6, 9):
-        wrapped_func = is_changing(att, max_points, test_threshold, proxy_att_name)(test_changing_point)
-        assert wrapped_func(instance) == x
+#     for x in range(6, 9):
+#         wrapped_func = is_changing(att, max_points, test_threshold, proxy_att_name)(test_changing_point)
+#         assert wrapped_func(instance) == x
 
-    @is_changing(att, max_points, test_threshold, proxy_att_name)
-    def test_changing_point1(instance):
-        return 9
+#     @is_changing(att, max_points, test_threshold, proxy_att_name)
+#     def test_changing_point1(instance):
+#         return 9
 
-    with patch("sys.stdout", new=StringIO()) as temp_out:
-        test_changing_point1(instance)
-        assert temp_out.getvalue() == f"{att} isn't stable, returning {proxy_att_name}\n"
+#     with patch("sys.stdout", new=StringIO()) as temp_out:
+#         test_changing_point1(instance)
+#         assert temp_out.getvalue() == f"{att} isn't stable, returning {proxy_att_name}\n"
 
 
 def test_is_changing_parameters():

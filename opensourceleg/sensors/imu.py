@@ -9,7 +9,7 @@ try:
     sys.path.append("/usr/share/python3-mscl")
     import mscl
 except ImportError:
-    LOGGER.error(
+    print(
         "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path"
         "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master"
         "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
@@ -18,17 +18,17 @@ except ImportError:
 try:
     import adafruit_bno055
 except ImportError:
-    LOGGER.error("Failed to import adafruit_bno055")
+    print("Failed to import adafruit_bno055")
 
 try:
     import board
 except ImportError:
-    LOGGER.error("Failed to import board")
+    print("Failed to import board")
 
 try:
     import busio
 except ImportError:
-    LOGGER.error("Failed to import busio")
+    print("Failed to import busio")
 
 
 class LordMicrostrainIMU(IMUBase):

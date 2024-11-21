@@ -136,6 +136,10 @@ class Logger(logging.Logger):
     def __repr__(self) -> str:
         return f"Logger(file_path={self._file_path})"
 
+    def set_log_path(self, log_path: str) -> None:
+        self._log_path = log_path
+        self._generate_file_paths()
+
     def set_file_name(self, file_name: Union[str, None]) -> None:
         self._user_file_name = file_name
         self._generate_file_paths()
@@ -212,9 +216,6 @@ class Logger(logging.Logger):
         self._file_path = file_path + ".log"
         self._csv_path = file_path + ".csv"
 
-        # Log the generated file paths for debugging
-        self.debug(f"Generated file paths: log file - {self._file_path}, csv file - {self._csv_path}")
-
     def __enter__(self) -> "Logger":
         return self
 
@@ -222,13 +223,18 @@ class Logger(logging.Logger):
         self.close()
 
     def reset(self) -> None:
-        self._buffer.clear()
+        self.close()
+        self._setup_logging()
+
         self._tracked_vars.clear()
         self._var_names.clear()
         self._header_written = False
+
         if hasattr(self, "_file_handler"):
             self._file_handler.close()
             del self._file_handler
+
+        # re-initialize the logger
 
     def close(self) -> None:
         self.flush_buffer()
@@ -269,6 +275,16 @@ class Logger(logging.Logger):
         return self._file_path
 
     @property
+    def csv_path(self) -> str:
+        if not self._csv_path:
+            self._generate_file_paths()
+        return self._csv_path
+
+    @property
+    def log_path(self) -> str:
+        return self._log_path
+
+    @property
     def buffer_size(self) -> int:
         return self._buffer_size
 
@@ -290,6 +306,7 @@ class Logger(logging.Logger):
 
 
 # Initialize a global logger instance to be used throughout the library
+SCRIPT_DIR = os.path.dirname(__file__)
 LOGGER = Logger()
 
 if __name__ == "__main__":
@@ -301,7 +318,7 @@ if __name__ == "__main__":
         def update(self) -> None:
             self.a += 0.2
 
-    my_logger = Logger(buffer_size=5000, file_name="test_logger", log_path="./logs")
+    my_logger = Logger(buffer_size=1, file_name="test_logger", log_path="./logs")
     x = 0.0
     y = 0.0
 

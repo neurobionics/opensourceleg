@@ -8,7 +8,6 @@ from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyLegacyAct
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
-from opensourceleg.sensors.imu import LordMicrostrainIMU
 from opensourceleg.sensors.loadcell import SRILoadcell
 
 
@@ -94,7 +93,6 @@ if __name__ == "__main__":
             "knee": DephyLegacyActuator("knee", offline=False, frequency=frequency, gear_ratio=9 * (83 / 18)),
         },
         sensors={
-            "imu": LordMicrostrainIMU(frequency=frequency, port="/dev/ttyS0"),
             "loadcell": SRILoadcell(calibration_matrix=LOADCELL_MATRIX),
         },
     )

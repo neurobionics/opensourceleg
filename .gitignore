@@ -167,3 +167,4 @@ cython_debug/
 #.idea/
 
 *.csv
+*.log.*

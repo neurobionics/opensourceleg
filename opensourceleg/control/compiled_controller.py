@@ -71,7 +71,7 @@ class CompiledController:
         self.outputs = None
 
     def __del__(self) -> None:
-        if self.cleanup_func is not None:
+        if hasattr(self, "cleanup_func") and self.cleanup_func is not None:
             self.cleanup_func()
 
     def __repr__(self) -> str:

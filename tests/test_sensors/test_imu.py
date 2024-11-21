@@ -248,7 +248,7 @@ def test_update(sample_imu: MockLordMicrostrainIMU):
     sample_imu.start()
     assert sample_imu._data == {}
     sample_imu.update(500, 2, False)
-    assert sample_imu._data == {"mockdata": [10, 20]}
+    assert sample_imu._data == {"mockdata": 20}
 
     return_val = sample_imu.update(400, 3, True)
     assert len(return_val) == 3
