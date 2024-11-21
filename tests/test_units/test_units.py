@@ -51,11 +51,8 @@ def test_convert_to_from_default():
     units = []
     # Add all units to array
     for c in categories:
-        for unit in dir(c):
-            if not unit.startswith("__"):
-                value = getattr(c, unit)
-                print(value)
-                units.append(value)
+        for unit in c:
+            units.append(unit)
 
     # Iterate over all possible units and test converting to/from default
     for unit in units:
