@@ -110,7 +110,7 @@ class Logger(logging.Logger):
             self._generate_file_paths()
 
         self._file_handler = RotatingFileHandler(
-            filename=self._file_path,
+            filename=self._file_path if self._file_path else "",
             mode="w",
             maxBytes=self._file_max_bytes,
             backupCount=self._file_backup_count,
@@ -185,7 +185,11 @@ class Logger(logging.Logger):
         self._ensure_file_handler()
 
         if self._file is None:
-            self._file = open(self._csv_path, "w", newline="")
+            self._file = open(
+                self._csv_path if self._csv_path else "",
+                mode="w",
+                newline="",
+            )
             self._writer = csv.writer(self._file)
 
         if not self._header_written:
@@ -269,15 +273,11 @@ class Logger(logging.Logger):
         super().log(level, msg, *args, **kwargs)
 
     @property
-    def file_path(self) -> str:
-        if not self._file_path:
-            self._generate_file_paths()
+    def file_path(self) -> Optional[str]:
         return self._file_path
 
     @property
-    def csv_path(self) -> str:
-        if not self._csv_path:
-            self._generate_file_paths()
+    def csv_path(self) -> Optional[str]:
         return self._csv_path
 
     @property
