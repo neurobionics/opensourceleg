@@ -14,7 +14,7 @@ with osl:
 
     osl.knee.set_mode(osl.knee.control_modes.impedance)
     osl.knee.set_joint_impedance(K=stiffness, B=damping)
-    osl.knee.set_motor_position(osl.knee.motor_position + equilibrium_angle)
+    osl.knee.set_output_position(osl.knee.output_position + equilibrium_angle)
 
     for t in osl.clock:
         osl.log.info(osl.knee.motor_position)

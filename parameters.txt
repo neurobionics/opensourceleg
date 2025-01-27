@@ -1,0 +1,4 @@
+Knee Theta ESwing: 30 -> 40
+Knee Stiffness ESwing: 40 -> 70
+Knee Stiffness LSwing 30 -> 60
+Knee Stiffness LStance 100 -> 200

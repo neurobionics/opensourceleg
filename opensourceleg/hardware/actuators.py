@@ -13,6 +13,7 @@ from flexsea.device import Device
 from ..tools.logger import Logger
 from ..tools.safety import ThermalLimitExceeded
 from .thermal import ThermalModel
+from .AS5048B_encoder import AS5048B_Encoder
 
 """
 Module Overview:
@@ -438,6 +439,25 @@ class DephyActpack(Device):
 
         self._encoder_map = None
 
+        if self._name == "knee":
+            self._joint_encoder = AS5048B_Encoder(
+                name=self._name,
+                basepath="/",
+                bus="/dev/i2c-1",
+                A1_adr_pin=True,
+                A2_adr_pin=False,
+                zero_position=0,
+            )
+        else:
+            self._joint_encoder = AS5048B_Encoder(
+                name=self._name,
+                basepath="/",
+                bus="/dev/i2c-1",
+                A1_adr_pin=False,
+                A2_adr_pin=True,
+                zero_position=0,
+            )
+
         self._motor_zero_position = 0.0
         self._joint_zero_position = 0.0
 
@@ -471,12 +491,14 @@ class DephyActpack(Device):
                 log_level=self._debug_level,
                 log_enabled=self._dephy_log,
             )
+            self._joint_encoder._start()
         except OSError as e:
             print("\n")
-            self._log.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
-            )
-            os._exit(status=1)
+            print(e)
+            # self._log.error(
+            #     msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+            # )
+            # os._exit(status=1)
 
         time.sleep(0.1)
         self._data = self.read()
@@ -498,6 +520,7 @@ class DephyActpack(Device):
         """
         if self.is_streaming:
             self._data = self.read()
+            self._joint_encoder._update()
             self._thermal_model.T_c = self.case_temperature
             self._thermal_scale = self._thermal_model.update_and_get_scale(
                 dt=(1 / self._frequency),
@@ -851,12 +874,14 @@ class DephyActpack(Device):
                 return float(self.encoder_map(self._data.ank_ang))
             else:
                 return (
-                    float(self._data.ank_ang * RAD_PER_COUNT)
+                    float(self._joint_encoder.position)
                     - self.joint_zero_position
                     - self.joint_offset
                 ) * self.joint_direction
         else:
             return 0.0
+        
+
 
     @property
     def joint_velocity(self) -> float:
@@ -1129,6 +1154,25 @@ class MockDephyActpack(DephyActpack):
 
         self._max_case_temperature = MAX_CASE_TEMPERATURE
         self._max_winding_temperature = MAX_WINDING_TEMPERATURE
+
+        if self._name == "knee":
+            self._joint_encoder = AS5048B_Encoder(
+                name=self._name,
+                basepath="/",
+                bus="/dev/i2c-1",
+                A1_adr_pin=True,
+                A2_adr_pin=False,
+                zero_position=0,
+            )
+        else:
+            self._joint_encoder = AS5048B_Encoder(
+                name=self._name,
+                basepath="/",
+                bus="/dev/i2c-1",
+                A1_adr_pin=False,
+                A2_adr_pin=True,
+                zero_position=0,
+            )
 
     # Overrides the open method to function without a device
     def open(self, freq, log_level, log_enabled):

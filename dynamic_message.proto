@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package dynamic;
+
+service DynamicService {
+  rpc SendData (Data) returns (Empty) {}
+  rpc ReceiveData (Empty) returns (stream Data) {}
+  rpc CallFunction (Function) returns (Empty) {}
+}
+
+message Data {
+  map<string, float> values = 1;
+}
+
+message Function {
+  string name = 1;
+}
+
+message Empty {}
