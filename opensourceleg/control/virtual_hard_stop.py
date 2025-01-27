@@ -33,6 +33,10 @@ class VirtualHardStop:
     @property
     def is_active(self):
         return self._is_active
+    
+    @property
+    def torque(self):
+        return self.calculate_hard_stop_torque()
 
     def calculate_hard_stop_torque(self):
         """
