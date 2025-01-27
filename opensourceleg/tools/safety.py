@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 
 
-class ThermalLimitExceeded(Exception):
+class ThermalLimitException(Exception):
     def __init__(self, message="Software thermal limit exceeded. Exiting."):
         self.message = message
         super().__init__(self.message)

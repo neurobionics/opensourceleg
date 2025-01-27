@@ -11,7 +11,7 @@ import numpy as np
 from flexsea.device import Device
 
 from ..tools.logger import Logger
-from ..tools.safety import ThermalLimitExceeded
+from ..tools.safety import ThermalLimitException
 from .thermal import ThermalModel
 from .AS5048B_encoder import AS5048B_Encoder
 
@@ -527,17 +527,17 @@ class DephyActpack(Device):
                 motor_current=self.motor_current,
             )
 
-            if self.case_temperature > self.max_case_temperature:
+            if self.case_temperature >= self.max_case_temperature:
                 self._log.error(
                     msg=f"[{str.upper(self._name)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
                 )
-                raise ThermalLimitExceeded()
+                raise ThermalLimitException()
 
-            if self.winding_temperature > self.max_winding_temperature:
+            if self.winding_temperature >= self.max_winding_temperature:
                 self._log.error(
                     msg=f"[{str.upper(self._name)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
                 )
-                raise ThermalLimitExceeded()
+                raise ThermalLimitException()
 
             # Check for thermal fault, bit 2 of the execute status byte
             if self._data.status_ex & 0b00000010 == 0b00000010:
@@ -887,7 +887,7 @@ class DephyActpack(Device):
     def joint_velocity(self) -> float:
         """Measured velocity from the joint encoder in rad/s."""
         if self._data is not None:
-            return float(self._data.ank_vel * RAD_PER_COUNT)
+            return float(self._data.ank_vel * RAD_PER_DEG) * self.joint_direction
         else:
             return 0.0
 

@@ -358,7 +358,7 @@ def test_properties_nonzero(dephyactpack_patched: DephyActpack):
     assert mock_dap1.motor_velocity == 10 * np.pi / 180
     assert mock_dap1.motor_acceleration == 20
     assert mock_dap1.joint_position == 20 * 2 * np.pi / 16384
-    assert mock_dap1.joint_velocity == 10 * 2 * np.pi / 16384
+    assert mock_dap1.joint_velocity == 10 * np.pi / 180
     assert mock_dap1.case_temperature == 20
     assert mock_dap1.winding_temperature == 21
     assert mock_dap1.genvars.shape == (6,)
