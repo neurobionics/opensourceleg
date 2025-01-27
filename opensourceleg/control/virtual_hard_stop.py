@@ -28,6 +28,11 @@ class VirtualHardStop:
         self.start_position  = start_position_rad
         self.stiffness = stiffness
         self.damping = damping
+        self._is_active = False
+
+    @property
+    def is_active(self):
+        return self._is_active
 
     def calculate_hard_stop_torque(self):
         """
@@ -37,7 +42,7 @@ class VirtualHardStop:
         float: The calculated torque to slow the joint
         """
         current_pos = self.joint.output_position
-        delta_theta = current_pos - self.start_position
+        delta_theta = (10*(current_pos - self.start_position))**3
         current_vel = self.joint.output_velocity
 
         # Check the direction of the hard stop and calculate torque accordingly
@@ -45,13 +50,15 @@ class VirtualHardStop:
             if current_pos > self.start_position:
                 torque = -self.stiffness * delta_theta - self.damping * current_vel
             else:
-                return 0
+                torque = 0.0
         else:
             if current_pos < self.start_position:
                 torque = -self.stiffness * delta_theta - self.damping * current_vel
             else:
-                return 0
-
+                torque = 0.0
+            
+        self._is_active = torque!=0.0
+ 
         return torque
     
     def calculate_eq_angle_bias(self, joint_K):
