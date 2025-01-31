@@ -1,19 +1,20 @@
-﻿from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod
 from functools import wraps
-
-import numpy as np
+from typing import Any, Callable
 
 
 class SensorNotStreamingException(Exception):
     def __init__(self, sensor_name: str = "Sensor") -> None:
         super().__init__(
-            f"{sensor_name} is not streaming, please ensure that the connections are intact, power is on, and the start method is called."
+            f"{sensor_name} is not streaming, please ensure that the connections are intact, "
+            f"power is on, and the start method is called."
         )
 
 
-def check_sensor_stream(func):
+def check_sensor_stream(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+        # TODO: This could be a generic type that points to actuator, sensor, etc.
         if not self.is_streaming:
             raise SensorNotStreamingException(sensor_name=self.__repr__())
         return func(self, *args, **kwargs)
@@ -22,15 +23,12 @@ def check_sensor_stream(func):
 
 
 class SensorBase(ABC):
-    def __init__(self) -> None:
-        pass
-
     def __repr__(self) -> str:
-        return f"SensorBase"
+        return "SensorBase"
 
     @property
     @abstractmethod
-    def data(self):
+    def data(self) -> Any:
         pass
 
     @abstractmethod
@@ -45,11 +43,11 @@ class SensorBase(ABC):
     def update(self) -> None:
         pass
 
-    def __enter__(self):
+    def __enter__(self) -> "SensorBase":
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         self.stop()
 
     @property
@@ -63,7 +61,7 @@ class ADCBase(SensorBase, ABC):
         super().__init__()
 
     def __repr__(self) -> str:
-        return f"ADCBase"
+        return "ADCBase"
 
     def reset(self) -> None:
         pass
@@ -77,7 +75,7 @@ class EncoderBase(SensorBase, ABC):
         super().__init__()
 
     def __repr__(self) -> str:
-        return f"EncoderBase"
+        return "EncoderBase"
 
     @property
     @abstractmethod
@@ -95,7 +93,7 @@ class LoadcellBase(SensorBase, ABC):
         pass
 
     def __repr__(self) -> str:
-        return f"LoadcellBase"
+        return "LoadcellBase"
 
     @abstractmethod
     def calibrate(self) -> None:
@@ -146,7 +144,7 @@ class IMUBase(SensorBase, ABC):
         pass
 
     def __repr__(self) -> str:
-        return f"IMU"
+        return "IMU"
 
     @property
     @abstractmethod

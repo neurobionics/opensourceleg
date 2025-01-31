@@ -1,8 +1,6 @@
-from typing import Any, Callable, Union
-
 import time
-from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -49,19 +47,13 @@ class SRILoadcell(LoadcellBase):
         """
         # Check that parameters are set correctly:
         if calibration_matrix.shape != (6, 6):
-            LOGGER.info(
-                f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double."
-            )
+            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
             raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
         if amp_gain <= 0:
-            LOGGER.info(
-                f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0."
-            )
+            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
             raise ValueError("amp_gain must be a floating point value greater than 0.")
         if exc <= 0:
-            LOGGER.info(
-                f"[{self.__repr__()}] exc must be a floating point value greater than 0."
-            )
+            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
             raise ValueError("exc must be a floating point value greater than 0.")
 
         self._amp_gain: float = amp_gain
@@ -76,9 +68,7 @@ class SRILoadcell(LoadcellBase):
         self._prev_data: npt.NDArray[np.double] = self._data
         self._failed_reads = 0
 
-        self._calibration_offset: npt.NDArray[np.double] = np.zeros(
-            shape=(1, 6), dtype=np.double
-        )
+        self._calibration_offset: npt.NDArray[np.double] = np.zeros(shape=(1, 6), dtype=np.double)
         self._zero_calibration_offset: npt.NDArray[np.double] = self._calibration_offset
         self._is_calibrated: bool = False
         self._is_streaming: bool = False
@@ -88,14 +78,14 @@ class SRILoadcell(LoadcellBase):
         time.sleep(1)
         self._is_streaming = True
 
-    def reset(self):
+    def reset(self) -> None:
         self._calibration_offset = self._zero_calibration_offset
         self._is_calibrated = False
 
     def update(
         self,
-        calibration_offset: npt.NDArray[np.double] = None,
-        data_callback: Callable[..., npt.NDArray[np.uint8]] = None,
+        calibration_offset: Optional[npt.NDArray[np.double]] = None,
+        data_callback: Optional[Callable[..., npt.NDArray[np.uint8]]] = None,
     ) -> None:
         """
         Queries the loadcell for the latest data.
@@ -109,16 +99,13 @@ class SRILoadcell(LoadcellBase):
         signed_data = ((data - self.OFFSET) / self.ADC_RANGE) * self._exc
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
-        self._data = (
-            np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data)))
-            - calibration_offset
-        )
+        self._data = np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
 
     def calibrate(
         self,
         number_of_iterations: int = 2000,
         reset: bool = False,
-        data_callback: Callable[[], npt.NDArray[np.uint8]] = None,
+        data_callback: Optional[Callable[[], npt.NDArray[np.uint8]]] = None,
     ) -> None:
         """
         Obtains the initial loadcell reading (aka) loadcell_zero.
@@ -140,9 +127,7 @@ class SRILoadcell(LoadcellBase):
                     data_callback=data_callback,
                 )
                 iterative_calibration_offset = self._data
-                self._calibration_offset = (
-                    iterative_calibration_offset + self._calibration_offset
-                ) / 2.0
+                self._calibration_offset = (iterative_calibration_offset + self._calibration_offset) / 2.0
 
             self._is_calibrated = True
             LOGGER.info(f"[{self.__repr__()}] Calibration routine complete.")
@@ -153,7 +138,8 @@ class SRILoadcell(LoadcellBase):
 
         else:
             LOGGER.info(
-                f"[{self.__repr__()}] Loadcell has already been zeroed. To recalibrate, set reset=True in the calibrate method or call reset() first."
+                f"[{self.__repr__()}] Loadcell has already been zeroed. "
+                "To recalibrate, set reset=True in the calibrate method or call reset() first."
             )
 
     def stop(self) -> None:
@@ -161,23 +147,21 @@ class SRILoadcell(LoadcellBase):
         if hasattr(self, "_smbus"):
             self._smbus.close()
 
-    def _read_compressed_strain(self):
+    def _read_compressed_strain(self) -> Any:
         """Used for more recent versions of strain amp firmware"""
         try:
-            data = self._smbus.read_i2c_block_data(
-                self._i2c_address, MEMORY_CHANNELS.CH1_H, 10
-            )
+            data = self._smbus.read_i2c_block_data(self._i2c_address, MEMORY_CHANNELS.CH1_H, 10)
             self.failed_reads = 0
-        except OSError as e:
+        except OSError:
             self.failed_reads += 1
 
             if self.failed_reads >= 5:
-                raise Exception("Load cell unresponsive.")
+                raise LoadcellNotRespondingException("Load cell unresponsive.") from None
 
-        return self._unpack_compressed_strain(data)
+        return self._unpack_compressed_strain(np.array(object=data, dtype=np.uint8))
 
     @staticmethod
-    def _unpack_uncompressed_strain(data):
+    def _unpack_uncompressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         ch1 = (data[0] << 8) | data[1]
         ch2 = (data[2] << 8) | data[3]
@@ -188,7 +172,7 @@ class SRILoadcell(LoadcellBase):
         return np.array(object=[ch1, ch2, ch3, ch4, ch5, ch6])
 
     @staticmethod
-    def _unpack_compressed_strain(data):
+    def _unpack_compressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
         """Used for more recent versions of strainamp firmware"""
         return np.array(
             object=[
@@ -219,7 +203,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[0])
 
     @property
-    def fy(self):
+    def fy(self) -> float:
         """
         Latest force in the y (anterior/posterior) direction in Newtons.
         If using the standard OSL setup, this is positive in the posterior direction.
@@ -227,7 +211,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[1])
 
     @property
-    def fz(self):
+    def fz(self) -> float:
         """
         Latest force in the z (vertical) direction in Newtons.
         If using the standard OSL setup, this should be positive downwards.
@@ -236,7 +220,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[2])
 
     @property
-    def mx(self):
+    def mx(self) -> float:
         """
         Latest moment about the x (medial/lateral) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the user's right.
@@ -244,7 +228,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[3])
 
     @property
-    def my(self):
+    def my(self) -> float:
         """
         Latest moment about the y (anterior/posterior) axis in Nm.
         If using the standard OSL setup, this axis is positive in the posterior direction.
@@ -252,7 +236,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[4])
 
     @property
-    def mz(self):
+    def mz(self) -> float:
         """
         Latest moment about the z (vertical) axis in Nm.
         If using the standard OSL setup, this axis is positive towards the ground.
@@ -260,7 +244,7 @@ class SRILoadcell(LoadcellBase):
         return float(self.data[5])
 
     @property
-    def data(self):
+    def data(self) -> Any:
         """
         Returns a vector of the latest loadcell data.
         [Fx, Fy, Fz, Mx, My, Mz]

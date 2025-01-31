@@ -8,9 +8,7 @@ class ActuatorStreamException(Exception):
     """
 
     def __init__(self, tag: str) -> None:
-        super().__init__(
-            f"{tag} is not streaming, please call start() method before sending commands"
-        )
+        super().__init__(f"{tag} is not streaming, please call start() method before sending commands")
 
 
 class ActuatorConnectionException(Exception):
@@ -37,7 +35,8 @@ class ActuatorIsNoneException(Exception):
 
     def __init__(self, mode: str) -> None:
         super().__init__(
-            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during initialization or set the actuator instance using set_actuator method."
+            f"Actuator is None in {mode} mode, please pass the actuator instance to the mode during "
+            "initialization or set the actuator instance using set_actuator method."
         )
 
 
@@ -90,5 +89,6 @@ class ActuatorKeyException(Exception):
 
     def __init__(self, tag: str, key: str) -> None:
         super().__init__(
-            f"{tag} does not have {key} key in the actuators dictionary. Please check the actuators dictionary for the `{key}` key."
+            f"{tag} does not have {key} key in the actuators dictionary. "
+            f"Please check the actuators dictionary for the `{key}` key."
         )

@@ -1,6 +1,5 @@
 # Global Units Dictionary
-import enum
-from dataclasses import dataclass
+from enum import Enum
 
 """
 Global Units Dictionary
@@ -11,122 +10,86 @@ damping, length, position, mass, velocity, acceleration, time, current, and volt
 
 Usage:
 1. Utilize the `force`, `torque`, etc., classes to represent quantities and configure their unit conversion factors.
-2. Use the `convert_to_default` function to convert a value from a user unit to the default unit for the corresponding quantity.
+2. Use the `convert_to_default` function to convert a value from a user unit to the default unit
+   for the corresponding quantity.
 3. Use the `convert_from_default` function to convert a value from the default unit to a user-specified unit.
 """
 
+__all__ = [
+    "Force",
+    "Torque",
+    "Stiffness",
+    "Damping",
+    "Length",
+    "Position",
+    "Mass",
+    "Velocity",
+    "Acceleration",
+    "Current",
+    "Voltage",
+    "convert_to_default",
+    "convert_from_default",
+]
 
-@dataclass
-class force:
+
+class Force(float, Enum):
     N = 1.0
     lbf = 4.4482216152605
     kgf = 9.80665
 
-    def __repr__(self) -> str:
-        return f"force"
 
-
-@dataclass
-class torque:
+class Torque(float, Enum):
     N_m = 1.0
     lbf_inch = 0.1129848290276167
     kgf_cm = 0.0980665
 
-    def __repr__(self) -> str:
-        return f"torque"
 
-
-@dataclass
-class stiffness:
+class Stiffness(float, Enum):
     N_m_per_rad = 1.0
     N_m_per_deg = 0.017453292519943295
 
-    def __repr__(self) -> str:
-        return f"stiffness"
 
-
-@dataclass
-class damping:
+class Damping(float, Enum):
     N_m_per_rad_per_s = 1.0
     N_m_per_deg_per_s = 0.017453292519943295
 
-    def __repr__(self) -> str:
-        return f"damping"
 
-
-@dataclass
-class length:
+class Length(float, Enum):
     m = 1.0
     cm = 0.01
     inch = 0.0254
 
-    def __repr__(self) -> str:
-        return f"length"
 
-
-@dataclass
-class position:
+class Position(float, Enum):
     rad = 1.0
     deg = 0.017453292519943295
 
-    def __repr__(self) -> str:
-        return f"position"
 
-
-@dataclass
-class mass:
+class Mass(float, Enum):
     kg = 1.0
     g = 0.001
     lb = 0.45359237
 
-    def __repr__(self) -> str:
-        return f"mass"
 
-
-@dataclass
-class velocity:
+class Velocity(float, Enum):
     rad_per_s = 1.0
     deg_per_s = 0.017453292519943295
     rpm = 0.10471975511965977
 
-    def __repr__(self) -> str:
-        return f"velocity"
 
-
-@dataclass
-class acceleration:
+class Acceleration(float, Enum):
     rad_per_s2 = 1.0
     deg_per_s2 = 0.017453292519943295
 
-    def __repr__(self) -> str:
-        return f"acceleration"
 
-
-@dataclass
-class time:
-    s = 1.0
-    ms = 0.001
-
-    def __repr__(self) -> str:
-        return f"time"
-
-
-@dataclass
-class current:
+class Current(float, Enum):
     mA = 1
     A = 1000
 
-    def __repr__(self) -> str:
-        return f"current"
 
-
-@dataclass
-class voltage:
+class Voltage(float, Enum):
     mV = 1
     V = 1000
-
-    def __repr__(self) -> str:
-        return f"voltage"
 
 
 def convert_to_default(value: float, from_unit: float) -> float:
@@ -141,10 +104,10 @@ def convert_to_default(value: float, from_unit: float) -> float:
         float: Converted value in default units.
 
     Example:
-        >>> convert_to_default(2, units.current.A)
+        >>> convert_to_default(2, units.Current.A)
         2000 # returns value in mA, which is the default unit for current
 
-        >>> convert_to_default(10, units.voltage.V)
+        >>> convert_to_default(10, units.Voltage.V)
         10000 # returns value in mV, which is the default unit for voltage
 
         >>> convert_to_default(45, units.position.deg)
@@ -166,10 +129,10 @@ def convert_from_default(value: float, to_unit: float) -> float:
 
     Example:
 
-        >>> convert_from_default(2000, units.current.A)
+        >>> convert_from_default(2000, units.Current.A)
         2.0 # A
 
-        >>> convert_from_default(10000, units.voltage.V)
+        >>> convert_from_default(10000, units.Voltage.V)
         10.0 # V
 
         >>> convert_from_default(0.7853981633974483, units.position.deg)
@@ -180,9 +143,9 @@ def convert_from_default(value: float, to_unit: float) -> float:
 
 
 if __name__ == "__main__":
-    print(convert_to_default(2, current.A))
-    print(convert_to_default(10, voltage.V))
-    print(convert_to_default(45, position.deg))
-    print(convert_from_default(2000, current.A))
-    print(convert_from_default(10000, voltage.V))
-    print(convert_from_default(0.7853981633974483, position.deg))
+    print(convert_to_default(2, Current.A))
+    print(convert_to_default(10, Voltage.V))
+    print(convert_to_default(45, Position.deg))
+    print(convert_from_default(2000, Current.A))
+    print(convert_from_default(10000, Voltage.V))
+    print(convert_from_default(0.7853981633974483, Position.deg))

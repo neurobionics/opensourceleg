@@ -1,10 +1,10 @@
 # Reference - Performance Evaluation for `DephyActpack` and `moteus-r4`
 
-## Torque / Current Control 
+## Torque / Current Control
 
 ![](./images/torque_comp.png)
 
-## Position Control 
+## Position Control
 
 ![](./images/position_comp.png)
 

@@ -384,9 +384,7 @@ def test_cleanup_function_called_on_exception(monkeypatch):
     mock_cleanup_function = MagicMock()
     mock_lib.cleanup_func = mock_cleanup_function
 
-    controller = CompiledController(
-        "test_lib", "/path/to/lib", "main_func", cleanup_function_name="cleanup_func"
-    )
+    controller = CompiledController("test_lib", "/path/to/lib", "main_func", cleanup_function_name="cleanup_func")
 
     # Mock main_function to raise an exception
     def mock_main_function(inputs, outputs):

@@ -1,12 +1,8 @@
 # Global Units Dictionary
-import enum
-import time
-from dataclasses import dataclass
 
 import numpy as np
 import pytest
 from numpy import typing as npt
-from smbus2 import SMBus
 
 from opensourceleg.sensors import loadcell
 
@@ -17,7 +13,6 @@ DEFAULT_CAL_MATRIX = np.ones(shape=(6, 6), dtype=np.double)
 
 
 def test_SRILoadcell_init():
-
     invalid_cal_matrix = np.ones(shape=(5, 6), dtype=np.double)
     with pytest.raises(TypeError):
         SRI = loadcell.SRILoadcell(calibration_matrix=invalid_cal_matrix)
@@ -56,17 +51,13 @@ def test_SRILoadcell_init():
 
 
 def test_SRILoadcell_reset():
-
     SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
-    SRI._calibration_offset == np.ones(shape=(1, 6), dtype=np.double)
+    SRI._calibration_offset = np.ones(shape=(1, 6), dtype=np.double)
     SRI.reset()
-    assert np.array_equal(
-        SRI._calibration_offset, np.zeros(shape=(1, 6), dtype=np.double)
-    )
+    assert np.array_equal(SRI._calibration_offset, np.zeros(shape=(1, 6), dtype=np.double))
 
 
 def test_SRILoadcell_update():
-
     # Test basic call execution
     SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
     SRI.update(data_callback=_read_data)
@@ -105,10 +96,7 @@ def _update_calculations(SRI: loadcell.SRILoadcell, calibration_offset: float):
     test_data = _read_data()
     signed_data = ((test_data - SRI.OFFSET) / SRI.ADC_RANGE) * SRI._exc
     coupled_data = signed_data * 1000 / (SRI._exc * SRI._amp_gain)
-    data = (
-        np.transpose(a=SRI._calibration_matrix.dot(b=np.transpose(a=coupled_data)))
-        - calibration_offset
-    )
+    data = np.transpose(a=SRI._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
     return data
 
 

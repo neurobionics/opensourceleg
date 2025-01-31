@@ -1,11 +1,14 @@
+import os
 from unittest.mock import Mock
 
 import pytest
 
-from opensourceleg.logging import LOGGER
-from opensourceleg.robots.base import *
+from opensourceleg.logging import Logger
+from opensourceleg.robots.base import RobotBase
 from tests.test_actuators.test_actuators_base import MOTOR_CONSTANTS, MockActuator
 from tests.test_sensors.test_sensors_base import MockSensor
+
+CURR_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 # Creating a Mock Robot Base Class
@@ -24,7 +27,7 @@ class MockRobot(RobotBase):
 def mock_robot():
     tag_name = "test"
     test_tactuator = MockActuator(
-        "act_tag",
+        "MockActuator",
         10,
         MOTOR_CONSTANTS(
             MOTOR_COUNT_PER_REV=1000,
@@ -39,6 +42,16 @@ def mock_robot():
     test_tsensor = MockSensor()
     test_sensors = {"sensor1": test_tsensor}
     return MockRobot(tag=tag_name, actuators=test_actuators, sensors=test_sensors)
+
+
+@pytest.fixture(scope="function")
+def test_logger():
+    log = Logger(
+        log_path=CURR_DIR,
+        file_name="test_robots_base",
+    )
+    log.reset()
+    yield log
 
 
 # Test init
@@ -59,18 +72,14 @@ def test_robot_base_init():
     test_actuators = {"actuator": test_tactuator}
     test_tsensor = MockSensor()
     test_sensors = {"sensor": test_tsensor}
-    sample_robot = MockRobot(
-        tag=tag_name, actuators=test_actuators, sensors=test_sensors
-    )
-    assert all(
-        [
-            sample_robot.tag == tag_name,
-            sample_robot.actuators == test_actuators,
-            sample_robot.sensors == test_sensors,
-            type(sample_robot.actuators) == dict,
-            type(sample_robot.sensors) == dict,
-        ]
-    )
+    sample_robot = MockRobot(tag=tag_name, actuators=test_actuators, sensors=test_sensors)
+    assert all([
+        sample_robot.tag == tag_name,
+        sample_robot.actuators == test_actuators,
+        sample_robot.sensors == test_sensors,
+        type(sample_robot.actuators) is dict,
+        type(sample_robot.sensors) is dict,
+    ])
 
 
 # Test enter
@@ -91,8 +100,9 @@ def test_robot_base_exit(mock_robot: MockRobot):
 
 
 # Test start
-def test_robot_base_start(mock_robot: MockRobot):
-    # "pass" is implementation for start function in both Actuator and Sensor base classes so just testing if called for that part of function
+def test_robot_base_start(mock_robot: MockRobot, test_logger: Logger):
+    # "pass" is implementation for start function in both Actuator and Sensor base classes
+    # so just testing if called for that part of function
     MockActuator.start = Mock()
     MockSensor.start = Mock()
 
@@ -101,9 +111,9 @@ def test_robot_base_start(mock_robot: MockRobot):
 
     mock_robot.start()
 
-    file = open(LOGGER._file_path, "r")
+    file = open(test_logger.file_path)
     contents = file.read()
-    assert (f"DEBUG: Calling start method of act_tag") in contents
+    assert ("DEBUG: Calling start method of MockActuator") in contents
     assert "DEBUG: Calling start method of SensorBase" in contents
     file.close()
 
@@ -112,8 +122,9 @@ def test_robot_base_start(mock_robot: MockRobot):
 
 
 # Test stop
-def test_robot_base_stop(mock_robot: MockRobot):
-    # "pass" is implementation for stop function in both Actuator and Sensor base classes so just testing if called for that part of function
+def test_robot_base_stop(mock_robot: MockRobot, test_logger: Logger):
+    # "pass" is implementation for stop function in both Actuator and Sensor base classes
+    # so just testing if called for that part of function
     MockActuator.stop = Mock()
     MockSensor.stop = Mock()
 
@@ -122,9 +133,9 @@ def test_robot_base_stop(mock_robot: MockRobot):
 
     mock_robot.stop()
 
-    file = open(LOGGER._file_path, "r")
+    file = open(test_logger.file_path)
     contents = file.read()
-    assert "DEBUG: Calling stop method of act_tag" in contents
+    assert "DEBUG: Calling stop method of MockActuator" in contents
     assert "DEBUG: Calling stop method of SensorBase" in contents
     file.close()
 

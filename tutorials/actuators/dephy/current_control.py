@@ -1,4 +1,4 @@
-﻿import time
+import time
 
 import pandas as pd
 
@@ -17,16 +17,13 @@ def main():
         port="/dev/ttyACM0",
         gear_ratio=1.0,
     )
-    current_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Current": [],
-            "Command_Current": [],
-        }
-    )
+    current_data = pd.DataFrame({
+        "Time": [],
+        "Output_Current": [],
+        "Command_Current": [],
+    })
     clock = SoftRealtimeLoop(dt=DT)
     with actpack:
-
         try:
             actpack.set_control_mode(mode=CONTROL_MODES.CURRENT)
             actpack.set_current_gains(
@@ -34,7 +31,6 @@ def main():
             )
 
             for t in clock:
-
                 if t > TIME_TO_STEP:
                     command_current = 275
                     actpack.set_motor_current(value=command_current)  # in mA
@@ -54,13 +50,11 @@ def main():
                 current_data = pd.concat(
                     [
                         current_data,
-                        pd.DataFrame(
-                            {
-                                "Time": [t],
-                                "Output_Current": [actpack.motor_current],
-                                "Command_Current": [command_current],
-                            }
-                        ),
+                        pd.DataFrame({
+                            "Time": [t],
+                            "Output_Current": [actpack.motor_current],
+                            "Command_Current": [command_current],
+                        }),
                     ],
                     ignore_index=True,
                 )

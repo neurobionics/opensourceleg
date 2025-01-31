@@ -1,4 +1,4 @@
-﻿import time
+import time
 
 import numpy as np
 import pandas as pd
@@ -18,13 +18,11 @@ def main():
         gear_ratio=1.0,
     )
 
-    position_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Position": [],
-            "Command_Position": [],
-        }
-    )
+    position_data = pd.DataFrame({
+        "Time": [],
+        "Output_Position": [],
+        "Command_Position": [],
+    })
     clock = SoftRealtimeLoop(dt=DT)
     with actpack:
         try:
@@ -39,7 +37,6 @@ def main():
 
             current_position = actpack.output_position
             for t in clock:
-
                 if t > TIME_TO_STEP:
                     command_position = current_position + np.pi
                     actpack.set_output_position(value=command_position)
@@ -59,13 +56,11 @@ def main():
                 position_data = pd.concat(
                     [
                         position_data,
-                        pd.DataFrame(
-                            {
-                                "Time": [t],
-                                "Output_Position": [actpack.output_position],
-                                "Command_Position": [command_position],
-                            }
-                        ),
+                        pd.DataFrame({
+                            "Time": [t],
+                            "Output_Position": [actpack.output_position],
+                            "Command_Position": [command_position],
+                        }),
                     ],
                     ignore_index=True,
                 )

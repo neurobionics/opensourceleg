@@ -174,9 +174,7 @@ def test_from_to_transition():
     def action(data):
         action_called.append(True)
 
-    transition = FromToTransition(
-        event=event, source=state1, destination=state2, callback=criteria
-    )
+    transition = FromToTransition(event=event, source=state1, destination=state2, callback=criteria)
     transition.add_action(action)
     state1.start(data)
     next_state = transition(data)
@@ -194,9 +192,7 @@ def test_from_to_transition_no_criteria():
     def criteria(data):
         return False
 
-    transition = FromToTransition(
-        event=event, source=state1, destination=state2, callback=criteria
-    )
+    transition = FromToTransition(event=event, source=state1, destination=state2, callback=criteria)
     state1.start(data)
     next_state = transition(data)
     assert next_state == state1  # Should remain in state1

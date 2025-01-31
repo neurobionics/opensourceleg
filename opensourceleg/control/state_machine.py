@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 # A simple and scalable Finite State Machine module
 
-from typing import Any, Callable, List, Optional
-
 import time
-from dataclasses import dataclass, field
+from typing import Any, Callable, Optional
+
+from opensourceleg.logging.logger import LOGGER
 
 """
 The state_machine module provides classes for implementing a finite state machine (FSM).
@@ -56,7 +56,6 @@ class State:
         ankle_equilibrium_angle: float = 0.0,
         minimum_time_in_state: float = 2.0,
     ) -> None:
-
         self._name: str = name
 
         self._is_knee_active: bool = is_knee_active
@@ -79,13 +78,10 @@ class State:
         self._entry_callbacks: list[Callable[[Any], None]] = []
         self._exit_callbacks: list[Callable[[Any], None]] = []
 
-    def __eq__(self, __o) -> bool:
-        if __o.name == self._name:
-            return True
-        else:
-            return False
+    def __eq__(self, __o: Any) -> bool:
+        return bool(__o.name == self._name)
 
-    def __ne__(self, __o) -> bool:
+    def __ne__(self, __o: Any) -> bool:
         return not self.__eq__(__o)
 
     def __call__(self, data: Any) -> Any:
@@ -103,7 +99,7 @@ class State:
         """
         self._min_time_in_state = time
 
-    def set_knee_impedance_paramters(self, theta, k, b) -> None:
+    def set_knee_impedance_paramters(self, theta: float, k: float, b: float) -> None:
         """
         Set the knee impedance parameters
 
@@ -121,7 +117,7 @@ class State:
         self._knee_stiffness = k
         self._knee_damping = b
 
-    def set_ankle_impedance_paramters(self, theta, k, b) -> None:
+    def set_ankle_impedance_paramters(self, theta: float, k: float, b: float) -> None:
         """
         Set the ankle impedance parameters
 
@@ -193,7 +189,7 @@ class State:
         for c in self._exit_callbacks:
             c(data)
 
-    def make_knee_active(self):
+    def make_knee_active(self) -> None:
         """
         Make the knee active
 
@@ -203,7 +199,7 @@ class State:
         """
         self._is_knee_active = True
 
-    def make_ankle_active(self):
+    def make_ankle_active(self) -> None:
         """
         Make the ankle active
 
@@ -277,29 +273,26 @@ class Event:
     Event class
     """
 
-    def __init__(self, name) -> None:
+    def __init__(self, name: str) -> None:
         """
         Parameters
         ----------
         name : str
             The name of the event.
         """
-        self._name = name
+        self._name: str = name
 
-    def __eq__(self, __o) -> bool:
-        if __o.name == self._name:
-            return True
-        else:
-            return False
+    def __eq__(self, __o: Any) -> bool:
+        return bool(__o.name == self._name)
 
-    def __ne__(self, __o) -> bool:
+    def __ne__(self, __o: Any) -> bool:
         return not self.__eq__(__o)  # TODO: Check this fix
 
     def __repr__(self) -> str:
         return f"Event[{self._name}]"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
 
@@ -313,7 +306,7 @@ class Transition:
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        callback: Optional[Callable[[Any], bool]] = None,
     ) -> None:
         self._event: Event = event
         self._source_state: State = source
@@ -326,9 +319,7 @@ class Transition:
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (
-            f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
-        )
+        return f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
 
     def add_criteria(self, callback: Callable[[Any], bool]) -> None:
         self._criteria = callback
@@ -355,21 +346,16 @@ class FromToTransition(Transition):
         event: Event,
         source: State,
         destination: State,
-        callback: Callable[[Any], bool] = None,
+        callback: Optional[Callable[[Any], bool]] = None,
     ) -> None:
-        super().__init__(
-            event=event, source=source, destination=destination, callback=callback
-        )
+        super().__init__(event=event, source=source, destination=destination, callback=callback)
 
         self._from: State = source
         self._to: State = destination
 
     def __call__(self, data: Any, spoof: bool = False) -> State:
         if spoof:
-            if (
-                self._from.current_time_in_state
-                > self._from.minimum_time_spent_in_state
-            ):
+            if self._from.current_time_in_state > self._from.minimum_time_spent_in_state:
                 if self._action:
                     self._action(data)
 
@@ -418,7 +404,7 @@ class StateMachine:
         Whether or not the state machine is spoofing the state transitions.
     """
 
-    def __init__(self, osl=None, spoof: bool = False) -> None:
+    def __init__(self, osl: object = None, spoof: bool = False) -> None:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
@@ -435,7 +421,7 @@ class StateMachine:
         self._spoof: bool = spoof
 
     def __repr__(self) -> str:
-        return f"StateMachine"
+        return "StateMachine"
 
     def add_state(self, state: State, initial_state: bool = False) -> None:
         """
@@ -464,7 +450,7 @@ class StateMachine:
         source: State,
         destination: State,
         event: Event,
-        callback: Callable[[Any], bool] = None,
+        callback: Optional[Callable[[Any], bool]] = None,
     ) -> Optional[Transition]:
         """
         Add a transition to the state machine.
@@ -478,18 +464,13 @@ class StateMachine:
         event : Event
             The event that triggers the transition.
         callback : Callable[[Any], bool], optional
-            A callback function that returns a boolean value, which determines whether the transition is valid, by default None
+            A callback function that returns a boolean value,
+            which determines whether the transition is valid, by default None
         """
         transition = None
 
-        if (
-            source in self._states
-            and destination in self._states
-            and event in self._events
-        ):
-            transition = FromToTransition(
-                event=event, source=source, destination=destination, callback=callback
-            )
+        if source in self._states and destination in self._states and event in self._events:
+            transition = FromToTransition(event=event, source=source, destination=destination, callback=callback)
             self._transitions.append(transition)
 
         return transition
@@ -514,8 +495,10 @@ class StateMachine:
                 break
 
         if not validity:
-            assert self._osl is not None
-            self._osl.log.debug(f"Event isn't valid at {self._current_state.name}")
+            if self._osl is None:
+                raise ValueError("OSL object not set.")
+
+            LOGGER.debug(f"Event isn't valid at {self._current_state.name}")
 
     def start(self, data: Any = None) -> None:
         if not self._initial_state:
@@ -534,27 +517,24 @@ class StateMachine:
         self._exited = True
 
     def is_on(self) -> bool:
-        if self._current_state and self._current_state != self._exit_state:
-            return True
-        else:
-            return False
+        return bool(self._current_state and self._current_state != self._exit_state)
 
     def spoof(self, spoof: bool) -> None:
         self._spoof = spoof
 
     @property
-    def current_state(self):
+    def current_state(self) -> State:
         if self._current_state is None:
             return self._initial_state
         else:
             return self._current_state
 
     @property
-    def states(self):
+    def states(self) -> list[str]:
         return [state.name for state in self._states]
 
     @property
-    def is_spoofing(self):
+    def is_spoofing(self) -> bool:
         return self._spoof
 
 

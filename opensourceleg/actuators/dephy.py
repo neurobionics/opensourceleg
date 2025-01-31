@@ -1,10 +1,7 @@
-from typing import Any, Callable, Union, overload
-
 import os
 import time
 from ctypes import c_int
-from dataclasses import dataclass
-from unittest.mock import Mock
+from typing import Optional
 
 import numpy as np
 from flexsea.device import Device
@@ -24,9 +21,7 @@ from opensourceleg.actuators.decorators import (
 )
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
-    deprecated,
     deprecated_with_routing,
-    deprecated_with_suggestion,
 )
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
@@ -124,7 +119,7 @@ DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
 )
 
 
-class DephyActuator(Device, ActuatorBase):
+class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def __init__(
         self,
         tag: str = "DephyActuator",
@@ -185,10 +180,11 @@ class DephyActuator(Device, ActuatorBase):
         try:
             self.open()
             self._is_open = True
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -202,7 +198,6 @@ class DephyActuator(Device, ActuatorBase):
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
-
         self.stop_motor()
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         self._is_streaming = False
@@ -210,7 +205,6 @@ class DephyActuator(Device, ActuatorBase):
         self.close()
 
     def update(self) -> None:
-
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -220,14 +214,16 @@ class DephyActuator(Device, ActuatorBase):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
+                    Stopping motor."
             )
             # self.stop()
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
@@ -238,7 +234,7 @@ class DephyActuator(Device, ActuatorBase):
     def home(
         self,
         homing_voltage: int = 2000,
-        homing_frequency: int = None,
+        homing_frequency: Optional[int] = None,
         homing_direction: int = -1,
         joint_direction: int = -1,
         joint_position_offset: float = 0.0,
@@ -259,20 +255,18 @@ class DephyActuator(Device, ActuatorBase):
             joint_direction (int): Direction to move the joint during homing. Default is -1.
             joint_position_offset (float): Offset in radians to add to the joint position. Default is 0.0.
             motor_position_offset (float): Offset in radians to add to the motor position. Default is 0.0.
-            current_threshold (int): Current threshold in mA to stop homing the joint or actuator. This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
-            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+            current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
+                This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
+            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
+                This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
 
         """
         is_homing = True
-        homing_frequency = (
-            homing_frequency if homing_frequency is not None else self.frequency
-        )
+        homing_frequency = homing_frequency if homing_frequency is not None else self.frequency
 
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
-        self.set_motor_voltage(
-            value=homing_direction * homing_voltage
-        )  # mV, negative for counterclockwise
+        self.set_motor_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
         _joint_encoder_array = []
@@ -287,10 +281,7 @@ class DephyActuator(Device, ActuatorBase):
                 _motor_encoder_array.append(self.motor_position)
                 _joint_encoder_array.append(self.joint_position)
 
-                if (
-                    abs(self.output_velocity) <= velocity_threshold
-                    or abs(self.motor_current) >= current_threshold
-                ):
+                if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
                     is_homing = False
 
@@ -319,10 +310,11 @@ class DephyActuator(Device, ActuatorBase):
             self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
         else:
             LOGGER.debug(
-                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method to create one. The encoder map is used to estimate joint position more accurately."
+                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method \
+                    to create one. The encoder map is used to estimate joint position more accurately."
             )
 
-    def make_encoder_map(self, overwrite=False) -> None:
+    def make_encoder_map(self, overwrite: bool = False) -> None:
         """
         This method makes a lookup table to calculate the position measured by the joint encoder.
         This is necessary because the magnetic output encoders are nonlinear.
@@ -339,16 +331,12 @@ class DephyActuator(Device, ActuatorBase):
         """
 
         if not self.is_homed:
-            LOGGER.warning(
-                msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map."
-            )
-            return
+            LOGGER.warning(msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map.")
+            return None
 
         if os.path.exists(f"./{self.tag}_encoder_map.npy") and not overwrite:
-            LOGGER.info(
-                msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation."
-            )
-            return
+            LOGGER.info(msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation.")
+            return None
 
         self.set_control_mode(mode=CONTROL_MODES.CURRENT)
         self.set_current_gains()
@@ -363,7 +351,8 @@ class DephyActuator(Device, ActuatorBase):
         _output_position_array = []
 
         LOGGER.info(
-            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
+            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through \
+                its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
         )
 
         _start_time: float = time.time()
@@ -371,7 +360,8 @@ class DephyActuator(Device, ActuatorBase):
         try:
             while time.time() - _start_time < 10:
                 LOGGER.info(
-                    msg=f"[{self.__repr__()}] Mapping the {self.tag} joint encoder: {10 - time.time() + _start_time} seconds left."
+                    msg=f"[{self.__repr__()}] Mapping the {self.tag} \
+                        joint encoder: {10 - time.time() + _start_time} seconds left."
                 )
                 self.update()
                 _joint_encoder_array.append(self.joint_encoder_counts)
@@ -380,11 +370,9 @@ class DephyActuator(Device, ActuatorBase):
 
         except KeyboardInterrupt:
             LOGGER.warning(msg="Encoder map interrupted.")
-            return
+            return None
 
-        LOGGER.info(
-            msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint."
-        )
+        LOGGER.info(msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint.")
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
@@ -394,9 +382,7 @@ class DephyActuator(Device, ActuatorBase):
         self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
 
         np.save(file=f"./{self.tag}_encoder_map.npy", arr=_coeffs)
-        LOGGER.info(
-            msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'."
-        )
+        LOGGER.info(msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'.")
 
     def set_motor_torque(self, value: float) -> None:
         """
@@ -432,7 +418,7 @@ class DephyActuator(Device, ActuatorBase):
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         """
         Sets the motor current in mA.
 
@@ -456,7 +442,6 @@ class DephyActuator(Device, ActuatorBase):
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
-
         self.command_motor_voltage(value=int(value))
 
     def set_motor_position(self, value: float) -> None:
@@ -469,8 +454,7 @@ class DephyActuator(Device, ActuatorBase):
         """
         self.command_motor_position(
             value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
 
@@ -617,19 +601,17 @@ class DephyActuator(Device, ActuatorBase):
             ff=ff,
         )
 
-    def set_encoder_map(self, encoder_map) -> None:
+    def set_encoder_map(self, encoder_map: np.polynomial.polynomial.Polynomial) -> None:
         """Sets the joint encoder map"""
-        self._encoder_map = encoder_map
+        self._encoder_map: np.polynomial.polynomial.Polynomial = encoder_map
 
     @property
-    def encoder_map(self):
+    def encoder_map(self) -> Optional[np.polynomial.polynomial.Polynomial]:
         """Polynomial coefficients defining the joint encoder map from counts to radians."""
         if getattr(self, "_encoder_map", None) is not None:
             return self._encoder_map
         else:
-            LOGGER.warning(
-                msg="Encoder map is not set. Please call the make_encoder_map method to create one."
-            )
+            LOGGER.warning(msg="Encoder map is not set. Please call the make_encoder_map method to create one.")
             return None
 
     @property
@@ -795,7 +777,7 @@ class DephyActuator(Device, ActuatorBase):
             return 0.0
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
@@ -902,58 +884,42 @@ class DephyActuator(Device, ActuatorBase):
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
-        For a proof, see paper referenced in thermal model.
+        If you scale the torque command by this factor, the motor temperature will never
+        exceed max allowable temperature. For a proof, see paper referenced in thermal model.
         """
         return self._thermal_scale
 
 
 def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -1013,7 +979,6 @@ class DephyLegacyActuator(DephyActuator):
             self._is_streaming: bool = False
             self._is_open: bool = False
         else:
-
             # def set_is_streaming(self, value):
             #     self._is_streaming = value
 
@@ -1050,10 +1015,11 @@ class DephyLegacyActuator(DephyActuator):
                 log_level=self._debug_level,
                 log_enabled=self._dephy_log,
             )
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -1074,7 +1040,6 @@ class DephyLegacyActuator(DephyActuator):
         self.close()
 
     def update(self) -> None:
-
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -1084,27 +1049,30 @@ class DephyLegacyActuator(DephyActuator):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
 
         if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
+                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; \
+                    Case temperature: {self.case_temperature}."
             )
             raise ThermalLimitException("Internal thermal limit tripped.")
 
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         """
         Sets the motor current in mA.
 
@@ -1128,7 +1096,6 @@ class DephyLegacyActuator(DephyActuator):
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
-
         self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
 
     def set_motor_position(self, value: float) -> None:
@@ -1142,8 +1109,7 @@ class DephyLegacyActuator(DephyActuator):
         self.send_motor_command(
             ctrl_mode=c_int(self.mode.value),
             value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
 
@@ -1331,7 +1297,7 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
@@ -1421,19 +1387,19 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def is_streaming(self):
+    def is_streaming(self) -> bool:
         return self._is_streaming
 
     @is_streaming.setter
-    def is_streaming(self, value: bool):
+    def is_streaming(self, value: bool) -> None:
         self._is_streaming = value
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
         return self._is_open
 
     @is_open.setter
-    def is_open(self, value: bool):
+    def is_open(self, value: bool) -> None:
         self._is_open = value
 
     @property
