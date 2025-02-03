@@ -64,7 +64,7 @@ class OpenSourceLeg:
             file_path=file_name, log_format="[%(asctime)s] %(levelname)s: %(message)s"
         )
 
-        self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1)
+        self.clock = SoftRealtimeLoop(dt=1.0 / self._frequency, report=False, fade=0.1, track_naive_time=True)
 
         self._timestamp: float = time.time()
 

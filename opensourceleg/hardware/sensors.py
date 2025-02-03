@@ -10,6 +10,8 @@ from smbus2 import SMBus
 
 from ..tools.logger import Logger
 from .joints import Joint
+from NeuroLocoMiddleware.StatProfiler import SSProfile
+
 
 """
 Module Overview:
@@ -154,6 +156,7 @@ class Loadcell:
         self._loadcell_zero = np.zeros(shape=(1, 6), dtype=np.double)
         self._zeroed = False
 
+    @SSProfile("loadcell_update").decorate
     def update(self, loadcell_zero=None) -> None:
         """
         Queries the loadcell for the latest data.

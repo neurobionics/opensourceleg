@@ -14,6 +14,7 @@ from ..tools.logger import Logger
 from ..tools.safety import ThermalLimitException
 from .thermal import ThermalModel
 from .AS5048B_encoder import AS5048B_Encoder
+from NeuroLocoMiddleware.StatProfiler import SSProfile
 
 """
 Module Overview:
@@ -513,6 +514,7 @@ class DephyActpack(Device):
         if close_communication:
             self.close()
 
+    @SSProfile("actpack_update").decorate
     def update(self) -> None:
         """
         Queries the latest values from the actpack.

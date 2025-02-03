@@ -3,6 +3,7 @@ from typing import Any, Callable, List, Union
 import csv
 import logging
 from logging.handlers import RotatingFileHandler
+from NeuroLocoMiddleware.StatProfiler import SSProfile
 
 """
 Module Overview:
@@ -150,6 +151,7 @@ class Logger(logging.Logger):
         self._containers.append(container)
         self._attributes.append(attributes)
 
+    @SSProfile("log_update").decorate
     def update(self) -> None:
         """
         Logs the attributes of the class instance to the csv file
