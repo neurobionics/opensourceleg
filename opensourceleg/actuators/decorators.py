@@ -9,6 +9,21 @@ from opensourceleg.logging.exceptions import (
 
 
 def check_actuator_connection(func: Callable) -> Callable:
+    """
+    Decorator that verifies the actuator is connected before executing the method.
+
+    This decorator checks if the actuator is operating online. If the actuator is
+    offline, it raises an ActuatorConnectionException using the actuator's tag.
+
+    Args:
+        func (Callable): The method to wrap. It is expected to be an instance method of ActuatorBase.
+
+    Returns:
+        Callable: The wrapped method that executes only if the actuator is online.
+
+    Raises:
+        ActuatorConnectionException: If the actuator is offline.
+    """
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if self.is_offline:
@@ -20,6 +35,21 @@ def check_actuator_connection(func: Callable) -> Callable:
 
 
 def check_actuator_open(func: Callable) -> Callable:
+    """
+    Decorator that ensures the actuator is open before executing the method.
+
+    This decorator checks if the actuator is in an open state. If it is not open,
+    it raises an ActuatorConnectionException with the actuator's tag.
+
+    Args:
+        func (Callable): The method to wrap. It is expected to be an instance method of ActuatorBase.
+
+    Returns:
+        Callable: The wrapped method that executes only if the actuator is open.
+
+    Raises:
+        ActuatorConnectionException: If the actuator is not open.
+    """
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if not self.is_open:
@@ -31,6 +61,21 @@ def check_actuator_open(func: Callable) -> Callable:
 
 
 def check_actuator_stream(func: Callable) -> Callable:
+    """
+    Decorator that verifies the actuator is streaming data before executing the method.
+
+    This decorator checks if the actuator is actively streaming data. If the actuator
+    is not streaming, it raises an ActuatorStreamException using the actuator's tag.
+
+    Args:
+        func (Callable): The method to wrap. It is expected to be an instance method of ActuatorBase.
+
+    Returns:
+        Callable: The wrapped method that executes only if the actuator is streaming.
+
+    Raises:
+        ActuatorStreamException: If the actuator is not streaming.
+    """
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if not self.is_streaming:
