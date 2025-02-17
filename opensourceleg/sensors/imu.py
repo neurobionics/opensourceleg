@@ -136,9 +136,7 @@ class LordMicrostrainIMU(IMUBase):
         """
         self._connection = mscl.Connection.Serial(self.port, self.baud_rate)
         self._node = mscl.InertialNode(self._connection)
-        self._node.setActiveChannelFields(
-            mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels()
-        )
+        self._node.setActiveChannelFields(mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels())
         self._node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
 
@@ -172,9 +170,7 @@ class LordMicrostrainIMU(IMUBase):
         else:
             LOGGER.error(f"Failed to ping the IMU at {self.port}")
 
-    def update(
-        self, timeout: int = 500, max_packets: int = 1, return_packets: bool = False
-    ) -> Union[None, Any]:
+    def update(self, timeout: int = 500, max_packets: int = 1, return_packets: bool = False) -> Union[None, Any]:
         """
         Retrieve and update IMU data from the sensor.
 

@@ -35,12 +35,14 @@ def check_sensor_stream(func: Callable) -> Callable:
     Returns:
         Callable: The wrapped method that checks streaming status before execution.
     """
+
     @wraps(func)
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         # TODO: This could be a generic type that points to actuator, sensor, etc.
         if not self.is_streaming:
             raise SensorNotStreamingException(sensor_name=self.__repr__())
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -116,7 +118,7 @@ class SensorBase(ABC):
         Exit the runtime context for the sensor.
 
         This method calls stop() to shut down the sensor.
-        
+
         Args:
             exc_type (Any): Exception type if raised.
             exc_value (Any): Exception value if raised.

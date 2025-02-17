@@ -33,6 +33,7 @@ def check_actuator_connection(func: Callable) -> Callable:
         >>> actuator = MyActuator()
         >>> actuator.my_method()
     """
+
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if self.is_offline:
@@ -69,6 +70,7 @@ def check_actuator_open(func: Callable) -> Callable:
         >>> actuator.my_method()
 
     """
+
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if not self.is_open:
@@ -104,6 +106,7 @@ def check_actuator_stream(func: Callable) -> Callable:
         >>> actuator = MyActuator()
         >>> actuator.my_method()
     """
+
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
         if not self.is_streaming:

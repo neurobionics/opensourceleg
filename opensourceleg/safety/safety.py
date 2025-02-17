@@ -232,7 +232,7 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False) 
 
     Returns:
         Callable: Decorator function.
-    
+
     Raises:
         ValueError: If the property's value is greater than or equal to the maximum value
     """

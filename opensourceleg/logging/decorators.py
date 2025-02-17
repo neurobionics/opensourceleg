@@ -31,10 +31,12 @@ def deprecated(func: Callable) -> Callable:
     Returns:
         Callable: A wrapped version of the original function that logs a deprecation warning.
     """
+
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         LOGGER.warning(f"Function `{func.__name__}` is deprecated.")
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -51,6 +53,7 @@ def deprecated_with_suggestion(alternative_func: Callable) -> Callable:
     Returns:
         Callable: A decorator which, when applied to a function, marks it as deprecated with a suggestion.
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -58,7 +61,9 @@ def deprecated_with_suggestion(alternative_func: Callable) -> Callable:
                 f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead."
             )
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -76,6 +81,7 @@ def deprecated_with_routing(alternative_func: Callable) -> Callable:
     Returns:
         Callable: A decorator which, when applied to a function, replaces its behavior with that of the alternative.
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -84,11 +90,14 @@ def deprecated_with_routing(alternative_func: Callable) -> Callable:
                 "which will be called automatically now."
             )
             return alternative_func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
 if __name__ == "__main__":
+
     def add(a: int, b: int) -> int:
         return a + b
 

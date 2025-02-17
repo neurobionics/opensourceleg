@@ -20,9 +20,10 @@ from opensourceleg.logging.logger import LOGGER
 
 # TODO: Add validators for every custom data type
 
+
 @dataclass
 class MOTOR_CONSTANTS:
-    '''
+    """
     Class to define the motor constants.
 
     Example:
@@ -36,7 +37,8 @@ class MOTOR_CONSTANTS:
         ... )
         >>> print(constants.MOTOR_COUNT_PER_REV)
         2048
-    '''
+    """
+
     MOTOR_COUNT_PER_REV: float
     NM_PER_AMP: float
     NM_PER_RAD_TO_K: float
@@ -45,7 +47,7 @@ class MOTOR_CONSTANTS:
     MAX_WINDING_TEMPERATURE: float
 
     def __post_init__(self) -> None:
-        '''
+        """
         Function to validate the motor constants.
 
         Example:
@@ -58,23 +60,23 @@ class MOTOR_CONSTANTS:
             ...     MAX_CASE_TEMPERATURE=80.0,
             ...     MAX_WINDING_TEMPERATURE=120.0
             ... )
-        '''
+        """
         if any(x <= 0 for x in self.__dict__.values()):
             raise ValueError("All values in MOTOR_CONSTANTS must be non-zero and positive.")
 
     @property
     def RAD_PER_COUNT(self) -> float:
-        '''
+        """
         Calculate the radians per count.
 
-        Returns: 
+        Returns:
             float: Radians per count.
 
         Example:
             >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             >>> constants.RAD_PER_COUNT
             0.0030679615757712823
-        '''
+        """
         return 2 * np.pi / self.MOTOR_COUNT_PER_REV
 
     @property
@@ -101,6 +103,7 @@ class CONTROL_MODES(Enum):
         >>> CONTROL_MODES.POSITION
         <CONTROL_MODES.POSITION: 0>
     """
+
     IDLE = -1
     POSITION = 0
     VOLTAGE = 1
@@ -121,6 +124,7 @@ class ControlGains:
         >>> gains.kp
         1.0
     """
+
     kp: float = 0
     ki: float = 0
     kd: float = 0
@@ -154,6 +158,7 @@ class ControlModeConfig:
         >>> config.has_gains
         True
     """
+
     entry_callback: Callable[[Any], None]
     exit_callback: Callable[[Any], None]
     has_gains: bool = False
@@ -182,6 +187,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
         >>> mode_configs.IDLE.entry_callback(None)
         Idle entered
     """
+
     IDLE: Optional[ControlModeConfig] = None
     POSITION: Optional[ControlModeConfig] = None
     CURRENT: Optional[ControlModeConfig] = None
@@ -225,6 +231,7 @@ class MethodWithRequiredModes(Protocol):
         >>> isinstance(Dummy(), MethodWithRequiredModes)
         True
     """
+
     _required_modes: set[CONTROL_MODES]
 
 
@@ -250,6 +257,7 @@ def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
         ...     return value
         >>> some_method._required_modes  # May output: {<CONTROL_MODES.POSITION: 0>, <CONTROL_MODES.TORQUE: 5>}
     """
+
     def decorator(func: T) -> T:
         """
         Attach required control modes to the decorated function.
@@ -339,6 +347,7 @@ class ActuatorBase(ABC):
         >>> actuator.start()
         Started
     """
+
     def __init__(
         self,
         tag: str,

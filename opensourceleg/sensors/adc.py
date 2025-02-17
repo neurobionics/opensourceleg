@@ -413,8 +413,7 @@ class ADS131M0x(ADCBase):
             list[float]: A list of voltage readings (in mV) for each ADC channel.
         """
         mV = [
-            1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference)
-            for dat in self._read_data_counts()
+            1000 * ((dat) / (2 ** (self._RESOLUTION - 1)) * self._voltage_reference) for dat in self._read_data_counts()
         ]
         return mV
 
@@ -451,5 +450,5 @@ class ADS131M0x(ADCBase):
         """
         val = num
         if (num >> (bits - 1)) != 0:  # if sign bit is set
-            val = num - (1 << bits)   # compute negative value
+            val = num - (1 << bits)  # compute negative value
         return val

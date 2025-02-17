@@ -45,6 +45,7 @@ class LogLevel(int, Enum):
         ERROR: A more serious problem, the software has not been able to perform some function.
         CRITICAL: A serious error, indicating that the program itself may be unable to continue running.
     """
+
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
@@ -60,6 +61,7 @@ class Logger(logging.Logger):
     functionality to track and log variable values to a CSV file using an internal buffer.
     It supports different logging levels for file and stream handlers.
     """
+
     _instance = None
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "Logger":

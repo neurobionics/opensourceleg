@@ -135,6 +135,7 @@ if __name__ == "__main__":
 
         The attribute 'kp' is validated to ensure it is a number between 0 and 100.
         """
+
         kp = Number(0, 100)
 
         def __init__(self, kp_value: int) -> None:

@@ -129,6 +129,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         >>> actuator.set_motor_voltage(1500)
         >>> print(f"Joint position: {actuator.joint_position:.2f} rad")
     """
+
     def __init__(
         self,
         tag: str = "DephyActuator",
@@ -151,7 +152,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             offline=offline,
         )
         """
-        
+
         """
 
         self._debug_level: int = debug_level if dephy_log else 6
@@ -386,7 +387,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Eqn: 
+        Eqn:
             position = sum from i=0^5 (a_i*counts^i)
 
         Example:
@@ -557,7 +558,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             value (float): The position to set
-        
+
         Returns:
             None
 
@@ -883,13 +884,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def motor_encoder_counts(self) -> int:
         """
         Raw reading from motor encoder in counts.
-        
+
         Returns:
             int: Motor encoder counts.
 
         Example:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()    
+            >>> actuator.start()
             >>> print(f"Motor encoder counts: {actuator.motor_encoder_counts}")
         """
         if self._data is not None:
@@ -904,13 +905,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def joint_encoder_counts(self) -> int:
         """
         Raw reading from joint encoder in counts.
-        
+
         Returns:
             int: Joint encoder counts.
 
         Example:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()    
+            >>> actuator.start()
             >>> print(f"Joint encoder counts: {actuator.joint_encoder_counts}")
         """
         if self._data is not None:
@@ -947,7 +948,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def motor_acceleration(self) -> float:
         """
         Motor acceleration in rad/s^2.
-        
+
         Returns:
             float: Motor acceleration in rad/s^2.
 
@@ -969,7 +970,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def battery_voltage(self) -> float:
         """
         Battery voltage in mV.
-        
+
         Returns:
             float: Battery voltage in mV.
 
@@ -990,7 +991,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def battery_current(self) -> float:
         """
         Battery current in mA.
-        
+
         Returns:
             float: Battery current in mA.
 
@@ -1011,7 +1012,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     def joint_position(self) -> float:
         """
         Joint position in radians.
-        
+
         Returns:
             float: Joint position in radians.
 

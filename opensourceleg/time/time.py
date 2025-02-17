@@ -39,8 +39,8 @@ class LoopKiller:
 
     def handle_signal(self, signum: Any, frame: Any) -> None:
         """
-        Method to handle the signal from the operating system. 
-        This method is called when the operating system sends a signal to the process. 
+        Method to handle the signal from the operating system.
+        This method is called when the operating system sends a signal to the process.
         The signal is typically a shutdown signal, such as SIGTERM, SIGINT, or SIGHUP.
 
         Args:
@@ -58,11 +58,11 @@ class LoopKiller:
 
     def get_fade(self) -> float:
         """
-        Interpolates from 1 to zero with soft fade out. 
-        
+        Interpolates from 1 to zero with soft fade out.
+
         Returns:
             float: The fade value.
-            
+
         Example:
             >>> killer = LoopKiller()
             >>> killer.get_fade()
@@ -80,8 +80,8 @@ class LoopKiller:
     @property
     def kill_now(self) -> bool:
         """
-        Property to get the kill_now value. 
-        If the kill_now value is True, the loop will stop iterating. 
+        Property to get the kill_now value.
+        If the kill_now value is True, the loop will stop iterating.
         If the kill_now value is False, the loop will continue iterating.
 
         Returns:
@@ -91,7 +91,6 @@ class LoopKiller:
             >>> killer = LoopKiller()
             >>> killer.kill_now
         """
-
 
         if self._kill_now:
             return True
@@ -249,7 +248,7 @@ class SoftRealtimeLoop:
 
         Returns:
             float: The time since the last loop.
-        
+
         Example:
             >>> loop = SoftRealtimeLoop()
             >>> loop.time_since()

@@ -53,6 +53,7 @@ class MEMORY_CHANNELS(int, Enum):
 
     Each channel corresponds to a specific high or low byte of the ADC data.
     """
+
     CH1_H = 8
     CH1_L = 9
     CH2_H = 10
@@ -79,6 +80,7 @@ class SRILoadcell(LoadcellBase):
         ADC_RANGE (int): The maximum ADC value (2**12 - 1).
         OFFSET (float): The ADC mid-scale offset (half of 2**12).
     """
+
     ADC_RANGE = 2**12 - 1
     OFFSET = 2**12 / 2
 
@@ -182,9 +184,7 @@ class SRILoadcell(LoadcellBase):
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
         # Process the data using the calibration matrix and subtract the offset.
-        self._data = np.transpose(
-            a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))
-        ) - calibration_offset
+        self._data = np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
 
     def calibrate(
         self,
