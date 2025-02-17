@@ -120,6 +120,15 @@ DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
 
 
 class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
+    """
+    Interface to a Dephy actuator device.
+
+    Example:
+        >>> actuator = DephyActuator(port='/dev/ttyACM0', gear_ratio=2.0)
+        >>> actuator.start()
+        >>> actuator.set_motor_voltage(1500)
+        >>> print(f"Joint position: {actuator.joint_position:.2f} rad")
+    """
     def __init__(
         self,
         tag: str = "DephyActuator",
@@ -141,6 +150,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             frequency=frequency,
             offline=offline,
         )
+        """
+        
+        """
 
         self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
@@ -177,6 +189,19 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @check_actuator_connection
     def start(self) -> None:
+        """
+        Starts the actuator by opening the port, starting data streaming,
+        reading initial data, and setting the control mode to VOLTAGE.
+
+        Args:
+            None
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+        """
         try:
             self.open()
             self._is_open = True
@@ -198,6 +223,21 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
+        """
+        Stops the actuator by stopping the motor, switching to IDLE mode,
+        stopping data streaming, and closing the connection.
+
+        Args:
+            None
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> # ... perform control tasks ...
+            >>> actuator.stop()
+        """
         self.stop_motor()
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         self._is_streaming = False
@@ -205,6 +245,21 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.close()
 
     def update(self) -> None:
+        """
+        Updates the actuator's data by reading new values and updating the thermal model.
+        It raises exceptions if thermal limits are exceeded.
+
+        Args:
+            None
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator()
+            >>> actuator.start()
+            >>> actuator.update()
+            >>> print(f"Motor current: {actuator.motor_current} mA")
+        """
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -259,6 +314,10 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
                 This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.home(homing_voltage=2000, homing_direction=-1)
 
         """
         is_homing = True
@@ -319,11 +378,21 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         This method makes a lookup table to calculate the position measured by the joint encoder.
         This is necessary because the magnetic output encoders are nonlinear.
         By making the map while the joint is unloaded, joint position calculated by motor position * gear ratio
-        should be the same as the true joint position.
+        should be the same as the true joint position. Output from this function is a file containing a_i values parameterizing the map
 
-        Output from this function is a file containing a_i values parameterizing the map
+        Args:
+            overwrite (bool): Whether to overwrite the existing encoder map. Default is False.
 
-        Eqn: position = sum from i=0^5 (a_i*counts^i)
+        Returns:
+            None
+
+        Eqn: 
+            position = sum from i=0^5 (a_i*counts^i)
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.make_encoder_map(overwrite=True)
 
         Author: Kevin Best
                 U-M Locolab | Neurobionics Lab
@@ -389,6 +458,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
         Args:
             value (float): The torque to set in Nm.
+        Returns:
+            None
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_torque(0.1)
         """
         self.set_motor_current(
             value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
@@ -401,6 +476,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             value (float): torque in N_m
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_joint_torque(0.1)
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
@@ -412,6 +495,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             value (float): torque in N_m
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_output_torque(0.1)
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
@@ -424,6 +515,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             value (float): The current to set in mA.
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_current(1000)
         """
         self.command_motor_current(value=int(value))
 
@@ -437,6 +535,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             value (float): The voltage to set in mV.
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_voltage(100) TODO: Validate number
         """
         self.command_motor_voltage(value=int(value))
 
@@ -451,6 +557,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             value (float): The position to set
+        
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_position(0.1)
         """
         self.command_motor_position(
             value=int(
@@ -473,6 +587,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             ki (float): The integral gain
             kd (float): The derivative gain
             ff (float): The feedforward gain
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_position_gains(kp=30, ki=0, kd=0, ff=0)
         """
         self.set_gains(
             kp=int(kp),
@@ -498,6 +620,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             ki (float): The integral gain
             kd (float): The derivative gain
             ff (float): The feedforward gain
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_current_gains(kp=40, ki=400, kd=0, ff=128)
         """
         self.set_gains(
             kp=int(kp),
@@ -532,6 +662,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             k (float): Spring constant. Defaults to 100 Nm/rad.
             b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
             ff (float): Feedforward gain. Defaults to 128.
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_output_impedance(kp=40, ki=400, kd=0, k=100, b=3, ff=128)
         """
         self.set_motor_impedance(
             kp=kp,
@@ -562,6 +700,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             k (float): The spring constant
             b (float): The damping constant
             ff (float): The feedforward gain
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_impedance_gains(kp=40, ki=400, kd=0, k=200, b=400, ff=128)
         """
         self.set_gains(
             kp=int(kp),
@@ -591,6 +737,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             k (float): Spring constant. Defaults to 0.08922 Nm/rad.
             b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
             ff (float): Feedforward gain. Defaults to 128.
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_impedance(kp=40, ki=400, kd=0, k=0.08922, b=0.0038070, ff=128) TODO: Validate numbers
         """
         self.set_impedance_gains(
             kp=kp,
@@ -602,12 +756,35 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         )
 
     def set_encoder_map(self, encoder_map: np.polynomial.polynomial.Polynomial) -> None:
-        """Sets the joint encoder map"""
+        """
+        Sets the joint encoder map
+
+        Args:
+            encoder_map (np.polynomial.polynomial.Polynomial): The encoder map to set
+
+        Returns:
+            None
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=[1, 2, 3, 4, 5]))
+        """
         self._encoder_map: np.polynomial.polynomial.Polynomial = encoder_map
 
     @property
     def encoder_map(self) -> Optional[np.polynomial.polynomial.Polynomial]:
-        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+        """
+        Polynomial coefficients defining the joint encoder map from counts to radians.
+
+        Returns:
+            Optional[np.polynomial.polynomial.Polynomial]: The encoder map
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(actuator.encoder_map)
+        """
         if getattr(self, "_encoder_map", None) is not None:
             return self._encoder_map
         else:
@@ -616,7 +793,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_voltage(self) -> float:
-        """Q-axis motor voltage in mV."""
+        """
+        Q-axis motor voltage in mV.
+
+        Returns:
+            float: Motor voltage in mV.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor voltage: {actuator.motor_voltage} mV")
+        """
         if self._data is not None:
             return float(self._data["mot_volt"])
         else:
@@ -627,6 +814,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_current(self) -> float:
+        """
+        Motor current in mA.
+
+        Returns:
+            float: Motor current in mA.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor current: {actuator.motor_current} mA")
+        """
         if self._data is not None:
             return float(self._data["mot_cur"])
         else:
@@ -637,6 +835,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_torque(self) -> float:
+        """
+        Torque at the motor output in Nm.
+
+        Returns:
+            float: Motor torque in Nm.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor torque: {actuator.motor_torque} Nm")
+        """
         if self._data is not None:
             return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
@@ -647,6 +856,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_position(self) -> float:
+        """
+        Motor position in radians.
+
+        Returns:
+            float: Motor position in radians.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor position: {actuator.motor_position} rad")
+        """
         if self._data is not None:
             return (
                 float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -661,7 +881,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_encoder_counts(self) -> int:
-        """Raw reading from motor encoder in counts."""
+        """
+        Raw reading from motor encoder in counts.
+        
+        Returns:
+            int: Motor encoder counts.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()    
+            >>> print(f"Motor encoder counts: {actuator.motor_encoder_counts}")
+        """
         if self._data is not None:
             return int(self._data["mot_ang"])
         else:
@@ -672,7 +902,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def joint_encoder_counts(self) -> int:
-        """Raw reading from joint encoder in counts."""
+        """
+        Raw reading from joint encoder in counts.
+        
+        Returns:
+            int: Joint encoder counts.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()    
+            >>> print(f"Joint encoder counts: {actuator.joint_encoder_counts}")
+        """
         if self._data is not None:
             return int(self._data["ank_ang"])
         else:
@@ -683,6 +923,18 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_velocity(self) -> float:
+        """
+        Motor velocity in rad/s.
+
+        Returns:
+            float: Motor velocity in rad/s.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor velocity: {actuator.motor_velocity} rad/s")
+        """
+
         if self._data is not None:
             return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
@@ -693,6 +945,18 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def motor_acceleration(self) -> float:
+        """
+        Motor acceleration in rad/s^2.
+        
+        Returns:
+            float: Motor acceleration in rad/s^2.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor acceleration: {actuator.motor_acceleration} rad/s^2")
+        """
+
         if self._data is not None:
             return float(self._data["mot_acc"])
         else:
@@ -703,7 +967,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def battery_voltage(self) -> float:
-        """Battery voltage in mV."""
+        """
+        Battery voltage in mV.
+        
+        Returns:
+            float: Battery voltage in mV.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Battery voltage: {actuator.battery_voltage} mV")
+        """
         if self._data is not None:
             return float(self._data["batt_volt"])
         else:
@@ -714,7 +988,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def battery_current(self) -> float:
-        """Battery current in mA."""
+        """
+        Battery current in mA.
+        
+        Returns:
+            float: Battery current in mA.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Battery current: {actuator.battery_current} mA")
+        """
         if self._data is not None:
             return float(self._data["batt_curr"])
         else:
@@ -725,6 +1009,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def joint_position(self) -> float:
+        """
+        Joint position in radians.
+        
+        Returns:
+            float: Joint position in radians.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint position: {actuator.joint_position} rad")
+        """
         if self._data is not None:
             return (
                 float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -739,6 +1034,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     @property
     def joint_velocity(self) -> float:
+        """
+        Joint velocity in rad/s.
+
+        Returns:
+            float: Joint velocity in rad/s.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint velocity: {actuator.joint_velocity} rad/s")
+        """
         if self._data is not None:
             return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
         else:
@@ -750,13 +1056,31 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     @property
     def joint_torque(self) -> float:
         """
-        Torque at the joint output in Nm.
-        This is calculated using motor current, k_t, and the gear ratio.
+        Torque at the joint output in Nm. This is calculated using motor current, k_t, and the gear ratio.
+
+        Returns:
+            float: Joint torque in Nm.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint torque: {actuator.joint_torque} Nm")
         """
         return self.motor_torque * self.gear_ratio
 
     @property
     def case_temperature(self) -> float:
+        """
+        Case temperature in degrees celsius. This is read during actuator update.
+
+        Returns:
+            float: Case temperature in degrees celsius.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Case temperature: {actuator.case_temperature} C")
+        """
         if self._data is not None:
             return float(self._data["temperature"])
         else:
@@ -770,6 +1094,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         ESTIMATED temperature of the windings in celsius.
         This is calculated based on the thermal model using motor current.
+
+        Returns:
+            float: Winding temperature in degrees celsius.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Winding temperature: {actuator.winding_temperature} C")
         """
         if self._data is not None:
             return float(self._thermal_model.T_w)
@@ -801,6 +1133,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Acceleration in x direction in m/s^2.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Acceleration in x direction in m/s^2.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Acceleration in x direction: {actuator.accelx} m/s^2")
         """
         if self._data is not None:
             return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
@@ -815,6 +1155,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Acceleration in y direction in m/s^2.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Acceleration in y direction in m/s^2.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Acceleration in y direction: {actuator.accely} m/s^2")
         """
         if self._data is not None:
             return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
@@ -829,6 +1177,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Acceleration in z direction in m/s^2.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Acceleration in z direction in m/s^2.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Acceleration in z direction: {actuator.accelz} m/s^2")
         """
         if self._data is not None:
             return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
@@ -843,6 +1199,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Angular velocity in x direction in rad/s.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Angular velocity in x direction in rad/s.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Angular velocity in x direction: {actuator.gyrox} rad/s")
         """
         if self._data is not None:
             return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
@@ -857,6 +1221,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Angular velocity in y direction in rad/s.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Angular velocity in y direction in rad/s.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Angular velocity in y direction: {actuator.gyroy} rad/s")
         """
         if self._data is not None:
             return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
@@ -871,6 +1243,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Angular velocity in z direction in rad/s.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Angular velocity in z direction in rad/s.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Angular velocity in z direction: {actuator.gyroz} rad/s")
         """
         if self._data is not None:
             return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
@@ -886,6 +1266,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Scale factor to use in torque control, in [0,1].
         If you scale the torque command by this factor, the motor temperature will never
         exceed max allowable temperature. For a proof, see paper referenced in thermal model.
+
+        Returns:
+            float: Thermal scaling factor.
+
+        Example:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Thermal scaling factor: {actuator.thermal_scaling_factor}")
+            >>> actuator.update()
+            >>> # This will update the thermal model and return the new scaling factor.
+            >>> print(f"Thermal scaling factor: {actuator.thermal_scaling_factor}")
         """
         return self._thermal_scale
 

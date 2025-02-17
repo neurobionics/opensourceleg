@@ -15,8 +15,7 @@ class CompiledController:
     You can define these input and output structures however you please.
     See examples folder of repo for examples.
 
-    Parameters:
-    -----------
+    Args:
         library_name (string): The name of the compiled library file, without the *.so
         library_path (string): The path to the directory containing the library.
             See examples for how to get working directory of parent script.
@@ -29,7 +28,6 @@ class CompiledController:
             Again, pass None if you don't need this functionality.
 
     Authors:
-    --------
         Kevin Best, Senthur Raj Ayyappan
         Neurobionics Lab
         Robotics Department

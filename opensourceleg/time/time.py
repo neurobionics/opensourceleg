@@ -38,10 +38,35 @@ class LoopKiller:
         return "LoopKiller"
 
     def handle_signal(self, signum: Any, frame: Any) -> None:
+        """
+        Method to handle the signal from the operating system. 
+        This method is called when the operating system sends a signal to the process. 
+        The signal is typically a shutdown signal, such as SIGTERM, SIGINT, or SIGHUP.
+
+        Args:
+            signum (Any): The signal number.
+            frame (Any): The frame object.
+
+        Returns:
+            None
+
+        Example:
+            >>> killer = LoopKiller()
+            >>> killer.handle_signal(signal.SIGTERM, None)
+        """
         self.kill_now = True
 
     def get_fade(self) -> float:
-        # interpolates from 1 to zero with soft fade out
+        """
+        Interpolates from 1 to zero with soft fade out. 
+        
+        Returns:
+            float: The fade value.
+            
+        Example:
+            >>> killer = LoopKiller()
+            >>> killer.get_fade()
+        """
         if self._kill_soon:
             t = time.monotonic() - self._soft_kill_time
             if t >= self._fade_time:
@@ -54,6 +79,20 @@ class LoopKiller:
 
     @property
     def kill_now(self) -> bool:
+        """
+        Property to get the kill_now value. 
+        If the kill_now value is True, the loop will stop iterating. 
+        If the kill_now value is False, the loop will continue iterating.
+
+        Returns:
+            bool: The kill_now value.
+
+        Example:
+            >>> killer = LoopKiller()
+            >>> killer.kill_now
+        """
+
+
         if self._kill_now:
             return True
         if self._kill_soon:
@@ -64,6 +103,15 @@ class LoopKiller:
 
     @kill_now.setter
     def kill_now(self, val: bool) -> None:
+        """
+        Setter for the kill_now value. If true is set twice, then the loop will stop iterating immediately.
+
+        Args:
+            val (bool): The value to set the kill_now value to.
+
+        Returns:
+            None
+        """
         if val:
             if self._kill_soon:  # if you kill twice, then it becomes immediate
                 self._kill_now = True
@@ -127,9 +175,34 @@ class SoftRealtimeLoop:
 
     @property
     def fade(self) -> float:
+        """
+        Property to get the fade value.
+
+        Returns:
+            float: The fade value.
+
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.fade
+        """
         return self.killer.get_fade()
 
     def run(self, function_in_loop: Callable, dt: Optional[float] = None) -> None:
+        """
+        Method to run the function within the time loop.
+
+        Args:
+            function_in_loop (Callable): The function to run within the time loop.
+            dt (Optional[float]): The time delta. Defaults to None.
+
+        Returns:
+            None
+
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.run(function_in_loop)
+            TODO: Better example here.
+        """
         if dt is None:
             dt = self.dt
         self.t0 = self.t1 = time.monotonic() + dt
@@ -143,12 +216,44 @@ class SoftRealtimeLoop:
             self.t1 += dt
 
     def stop(self) -> None:
+        """
+        Method to stop the loop.
+
+        Returns:
+            None
+
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.start()
+            ... Running loop ...
+            >>> loop.stop()
+        """
         self.killer.kill_now = True
 
     def time(self) -> float:
+        """
+        Method to get the current time since the start of the time loop.
+
+        Returns:
+            float: The time since the start of the time loop.
+
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.time()
+        """
         return time.monotonic() - self.t0
 
     def time_since(self) -> float:
+        """
+        Method to get the time since the last loop. TODO: Is this true?
+
+        Returns:
+            float: The time since the last loop.
+        
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.time_since()
+        """
         return time.monotonic() - self.t1
 
     def __iter__(self) -> "SoftRealtimeLoop":

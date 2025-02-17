@@ -23,6 +23,15 @@ def check_actuator_connection(func: Callable) -> Callable:
 
     Raises:
         ActuatorConnectionException: If the actuator is offline.
+
+    Examples:
+        >>> class MyActuator(ActuatorBase):
+        ...     @check_actuator_connection
+        ...     def my_method(self):
+        ...         return "Hello, world!"
+        ...
+        >>> actuator = MyActuator()
+        >>> actuator.my_method()
     """
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
@@ -49,6 +58,16 @@ def check_actuator_open(func: Callable) -> Callable:
 
     Raises:
         ActuatorConnectionException: If the actuator is not open.
+
+    Example:
+        >>> class MyActuator(ActuatorBase):
+        ...     @check_actuator_open
+        ...     def my_method(self):
+        ...         return "Hello, world!"
+        ...
+        >>> actuator = MyActuator()
+        >>> actuator.my_method()
+
     """
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:
@@ -75,6 +94,15 @@ def check_actuator_stream(func: Callable) -> Callable:
 
     Raises:
         ActuatorStreamException: If the actuator is not streaming.
+
+    Example:
+        >>> class MyActuator(ActuatorBase):
+        ...     @check_actuator_stream
+        ...     def my_method(self):
+        ...         return "Hello, world!"
+        ...
+        >>> actuator = MyActuator()
+        >>> actuator.my_method()
     """
     @wraps(func)
     def wrapper(self: ActuatorBase, *args: Any, **kwargs: Any) -> Any:

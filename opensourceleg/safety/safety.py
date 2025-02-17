@@ -30,6 +30,10 @@ def is_changing(
 
     Returns:
         Callable: Decorator function.
+
+    Raises:
+        ValueError: If the property is not changing and no proxy attribute is provided.
+
     """
 
     history_key = f"_{attribute_name}_history"
@@ -71,6 +75,9 @@ def is_negative(clamp: bool = False) -> Callable:
 
     Returns:
         Callable: Decorator function.
+
+    Raises:
+        ValueError: If the property's value is not negative.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -96,6 +103,9 @@ def is_positive(clamp: bool = False) -> Callable:
 
     Returns:
         Callable: Decorator function.
+
+    Raises:
+        ValueError: If the property's value is not positive.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -121,6 +131,9 @@ def is_zero(clamp: bool = False) -> Callable:
 
     Returns:
         Callable: Decorator function.
+
+    Raises:
+        ValueError: If the property's value is not zero.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -182,6 +195,9 @@ def is_greater_than(min_value: float, clamp: bool = False, equality: bool = Fals
 
     Returns:
         Callable: Decorator function.
+
+    Raises:
+        ValueError: If the property's value is less than or equal to the minimum value
     """
 
     def decorator(func: Callable) -> Callable:
@@ -216,6 +232,9 @@ def is_less_than(max_value: float, clamp: bool = False, equality: bool = False) 
 
     Returns:
         Callable: Decorator function.
+    
+    Raises:
+        ValueError: If the property's value is greater than or equal to the maximum value
     """
 
     def decorator(func: Callable) -> Callable:
@@ -248,6 +267,9 @@ def custom_criteria(criteria: Callable) -> Callable:
 
     Returns:
         Callable: Decorator function.
+
+    Raises:
+        ValueError: If the property's value does not meet the custom criteria.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -266,6 +288,16 @@ def custom_criteria(criteria: Callable) -> Callable:
 class SafetyDecorators:
     """
     Dataclass that contains all safety decorators.
+
+    Attributes:
+        is_changing: Decorator to check if a property's value is changing.
+        is_negative: Decorator to check if a property's value is negative.
+        is_positive: Decorator to check if a property's value is positive.
+        is_zero: Decorator to check if a property's value is zero.
+        is_within_range: Decorator to check if a property's value is within a given range.
+        is_greater_than: Decorator to check if a property's value is greater than a given value.
+        is_less_than: Decorator to check if a property's value is less than a given value.
+        custom_criteria: Decorator to check if a property's value meets a custom criteria.
     """
 
     is_changing = is_changing
@@ -299,6 +331,10 @@ class SafetyManager:
             instance (object): Object that contains the attribute.
             attribute (str): Name of the attribute.
             decorator (Callable): Safety decorator to be applied to the attribute.
+
+        Raises:
+            AttributeError: If the attribute does not exist in the given object.
+            Warning: If the attribute is not a property. The SafetyManager only works on properties.
         """
 
         if not hasattr(instance, attribute):
@@ -323,6 +359,12 @@ class SafetyManager:
     def start(self) -> None:
         """
         Applies all decorators to the properties of the objects in the safe_objects dictionary.
+
+        Example:
+        >>> safety_manager = SafetyManager()
+        >>> safety_manager.add_safety(sensor, "value", SafetyDecorators.is_changing("value"))
+        >>> safety_manager.add_safety(sensor, "a", SafetyDecorators.is_positive())
+        >>> safety_manager.start()
         """
         for container, safe_attributes in self.safe_objects.items():
             container_subclass = type(f"{container.__class__.__name__}:SAFE", (container.__class__,), {})
@@ -343,6 +385,9 @@ class SafetyManager:
     def update(self) -> None:
         """
         Accesses the properties of the objects in the safe_objects dictionary, thereby triggering the decorators.
+
+        Example:
+        TODO: Add example
         """
         for container, safe_attributes in self.safe_objects.items():
             for attribute_name, _ in safe_attributes.items():

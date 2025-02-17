@@ -60,6 +60,10 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
 
         Returns:
             RobotBase: The current robot instance.
+
+        Example:
+            >>> with MyRobot() as robot:
+            ...     robot.update()
         """
         self.start()
         return self
@@ -84,6 +88,13 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
 
         For each actuator in the actuators dictionary, a debug message is logged and its start method is called.
         Similarly, for each sensor in the sensors dictionary, a debug message is logged and its start method is called.
+
+        Returns:
+            None
+
+        Example:
+            >>> robot = MyRobot()
+            >>> robot.start()
         """
         for actuator in self.actuators.values():
             LOGGER.debug(f"Calling start method of {actuator.tag}")
@@ -100,6 +111,15 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
 
         For each actuator in the actuators dictionary, a debug message is logged and its stop method is called.
         Similarly, for each sensor in the sensors dictionary, a debug message is logged and its stop method is called.
+
+        Returns:
+            None
+
+        Example:
+            >>> robot = MyRobot()
+            >>> robot.start()
+            ... # Do something with the robot
+            >>> robot.stop()
         """
         for actuator in self.actuators.values():
             LOGGER.debug(f"Calling stop method of {actuator.tag}")
@@ -115,6 +135,14 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Update all actuators and sensors.
 
         This method calls the update method for each actuator and sensor to refresh their state.
+
+        Returns:
+            None
+
+        Example:
+            >>> robot = MyRobot()
+            >>> robot.start()
+            >>> robot.update()
         """
         for actuator in self.actuators.values():
             actuator.update()
@@ -129,6 +157,11 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
 
         Returns:
             str: The robot's tag.
+
+        Example:
+            >>> robot = MyRobot()
+            >>> robot.tag
+            "my_robot"
         """
         return self._tag
 
