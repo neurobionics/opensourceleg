@@ -1,0 +1,2 @@
+::: opensourceleg.sensors.base
+

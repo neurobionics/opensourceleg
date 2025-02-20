@@ -9,7 +9,30 @@ copyright: Maintained by <a href="https://github.com/senthurayyappan">Senthur Ay
 
 nav:
   - Overview: index.md
-  - Modules: modules.md
+  - Modules: 
+      - Actuators:  
+        - Base: modules/actuators/actuators.md
+        - Dephy: modules/actuators/dephy.md
+        - Moteus: modules/actuators/moteus.md
+        - TMotor: modules/actuators/tmotor.md
+      - Collections: 
+        - Validators: modules/collections/validators.md
+      - Control: 
+        - Compiled Controller: modules/control/compiled_controller.md
+        - State Machine: modules/control/state_machine.md
+      - Logging: 
+        - Logger: modules/logging.md
+      - Sensors:
+        - Base: modules/sensors/sensors_base.md
+        - IMU: modules/sensors/imu.md
+        - Loadcell: modules/sensors/loadcell.md
+        - ADC: modules/sensors/adc.md
+        - Encoder: modules/sensors/encoder.md
+      - Robots: 
+        - Base: modules/robots/robots.md
+        - OSL: modules/robots/osl.md
+      - Safety: modules/safety.md
+      - Time: modules/time.md
 plugins:
   - search
   - mkdocstrings:
@@ -22,6 +45,13 @@ theme:
   name: material
   feature:
     tabs: true
+  highlightjs: true
+  hljs_languages:
+    - python
+    - yaml
+    - bash
+    - json
+    - markdown
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -48,7 +78,16 @@ extra:
       link: https://pypi.org/project/opensourceleg
 
 markdown_extensions:
+  - attr_list
+  - pymdownx.snippets
+  - pymdownx.highlight # For syntax highlighting
+  - pymdownx.superfences
+
   - toc:
       permalink: true
+
   - pymdownx.arithmatex:
       generic: true
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
