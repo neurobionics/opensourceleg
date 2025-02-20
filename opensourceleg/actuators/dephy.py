@@ -123,7 +123,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     """
     Interface to a Dephy actuator device.
 
-    Example:
+    Examples:
         >>> actuator = DephyActuator(port='/dev/ttyACM0', gear_ratio=2.0)
         >>> actuator.start()
         >>> actuator.set_motor_voltage(1500)
@@ -199,7 +199,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
         """
@@ -233,7 +233,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> # ... perform control tasks ...
@@ -255,7 +255,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator()
             >>> actuator.start()
             >>> actuator.update()
@@ -315,7 +315,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
                 This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.home(homing_voltage=2000, homing_direction=-1)
@@ -390,7 +390,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Eqn:
             position = sum from i=0^5 (a_i*counts^i)
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.make_encoder_map(overwrite=True)
@@ -461,7 +461,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             value (float): The torque to set in Nm.
         Returns:
             None
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_motor_torque(0.1)
@@ -481,7 +481,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_joint_torque(0.1)
@@ -500,7 +500,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_output_torque(0.1)
@@ -519,7 +519,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_motor_current(1000)
@@ -540,7 +540,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_motor_voltage(100) TODO: Validate number
@@ -562,7 +562,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_motor_position(0.1)
@@ -592,7 +592,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_position_gains(kp=30, ki=0, kd=0, ff=0)
@@ -625,7 +625,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_current_gains(kp=40, ki=400, kd=0, ff=128)
@@ -667,7 +667,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_output_impedance(kp=40, ki=400, kd=0, k=100, b=3, ff=128)
@@ -705,7 +705,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_impedance_gains(kp=40, ki=400, kd=0, k=200, b=400, ff=128)
@@ -742,7 +742,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_motor_impedance(kp=40, ki=400, kd=0, k=0.08922, b=0.0038070, ff=128) TODO: Validate numbers
@@ -766,7 +766,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             None
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> actuator.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=[1, 2, 3, 4, 5]))
@@ -781,7 +781,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             Optional[np.polynomial.polynomial.Polynomial]: The encoder map
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(actuator.encoder_map)
@@ -800,7 +800,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Motor voltage in mV.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor voltage: {actuator.motor_voltage} mV")
@@ -821,7 +821,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Motor current in mA.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor current: {actuator.motor_current} mA")
@@ -842,7 +842,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Motor torque in Nm.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor torque: {actuator.motor_torque} Nm")
@@ -863,7 +863,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Motor position in radians.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor position: {actuator.motor_position} rad")
@@ -888,7 +888,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             int: Motor encoder counts.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor encoder counts: {actuator.motor_encoder_counts}")
@@ -909,7 +909,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             int: Joint encoder counts.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Joint encoder counts: {actuator.joint_encoder_counts}")
@@ -930,7 +930,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Motor velocity in rad/s.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor velocity: {actuator.motor_velocity} rad/s")
@@ -952,7 +952,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Motor acceleration in rad/s^2.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Motor acceleration: {actuator.motor_acceleration} rad/s^2")
@@ -974,7 +974,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Battery voltage in mV.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Battery voltage: {actuator.battery_voltage} mV")
@@ -995,7 +995,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Battery current in mA.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Battery current: {actuator.battery_current} mA")
@@ -1016,7 +1016,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Joint position in radians.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Joint position: {actuator.joint_position} rad")
@@ -1041,7 +1041,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Joint velocity in rad/s.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Joint velocity: {actuator.joint_velocity} rad/s")
@@ -1062,7 +1062,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Joint torque in Nm.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Joint torque: {actuator.joint_torque} Nm")
@@ -1077,7 +1077,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Case temperature in degrees celsius.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Case temperature: {actuator.case_temperature} C")
@@ -1099,7 +1099,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Winding temperature in degrees celsius.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Winding temperature: {actuator.winding_temperature} C")
@@ -1138,7 +1138,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Acceleration in x direction in m/s^2.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Acceleration in x direction: {actuator.accelx} m/s^2")
@@ -1160,7 +1160,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Acceleration in y direction in m/s^2.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Acceleration in y direction: {actuator.accely} m/s^2")
@@ -1182,7 +1182,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Acceleration in z direction in m/s^2.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Acceleration in z direction: {actuator.accelz} m/s^2")
@@ -1204,7 +1204,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Angular velocity in x direction in rad/s.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Angular velocity in x direction: {actuator.gyrox} rad/s")
@@ -1226,7 +1226,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Angular velocity in y direction in rad/s.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Angular velocity in y direction: {actuator.gyroy} rad/s")
@@ -1248,7 +1248,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Angular velocity in z direction in rad/s.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Angular velocity in z direction: {actuator.gyroz} rad/s")
@@ -1271,7 +1271,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Returns:
             float: Thermal scaling factor.
 
-        Example:
+        Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
             >>> print(f"Thermal scaling factor: {actuator.thermal_scaling_factor}")

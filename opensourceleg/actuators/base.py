@@ -26,7 +26,7 @@ class MOTOR_CONSTANTS:
     """
     Class to define the motor constants.
 
-    Example:
+    Examples:
         >>> constants = MOTOR_CONSTANTS(
         ...     MOTOR_COUNT_PER_REV=2048,
         ...     NM_PER_AMP=0.02,
@@ -50,7 +50,7 @@ class MOTOR_CONSTANTS:
         """
         Function to validate the motor constants.
 
-        Example:
+        Examples:
             >>> # This will raise a ValueError because a negative value is invalid.
             >>> MOTOR_CONSTANTS(
             ...     MOTOR_COUNT_PER_REV=-2048,
@@ -72,7 +72,7 @@ class MOTOR_CONSTANTS:
         Returns:
             float: Radians per count.
 
-        Example:
+        Examples:
             >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             >>> constants.RAD_PER_COUNT
             0.0030679615757712823
@@ -87,7 +87,7 @@ class MOTOR_CONSTANTS:
         Returns:
             float: NM per milliamp.
 
-        Example:
+        Examples:
             >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             >>> constants.NM_PER_MILLIAMP
             2e-05
@@ -99,7 +99,7 @@ class CONTROL_MODES(Enum):
     """
     Enum to define various control modes.
 
-    Example:
+    Examples:
         >>> CONTROL_MODES.POSITION
         <CONTROL_MODES.POSITION: 0>
     """
@@ -119,7 +119,7 @@ class ControlGains:
     """
     Class to define the control gains.
 
-    Example:
+    Examples:
         >>> gains = ControlGains(kp=1.0, ki=0.1, kd=0.01, k=0.5, b=0.05, ff=0.0)
         >>> gains.kp
         1.0
@@ -144,7 +144,7 @@ class ControlModeConfig:
         has_gains (bool): Indicates if the control mode utilizes control gains.
         max_gains (Union[ControlGains, None]): The maximum allowable control gains (if applicable).
 
-    Example:
+    Examples:
         >>> def enter(actuator):
         ...     print("Entering mode")
         >>> def exit(actuator):
@@ -178,7 +178,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
         VELOCITY (Optional[ControlModeConfig]): Configuration for VELOCITY mode.
         TORQUE (Optional[ControlModeConfig]): Configuration for TORQUE mode.
 
-    Example:
+    Examples:
         >>> idle_config = ControlModeConfig(
         ...     entry_callback=lambda a: print("Idle entered"),
         ...     exit_callback=lambda a: print("Idle exited")
@@ -225,7 +225,7 @@ class MethodWithRequiredModes(Protocol):
     Attributes:
         _required_modes (set[CONTROL_MODES]): A set of control modes in which the method is permitted.
 
-    Example:
+    Examples:
         >>> class Dummy:
         ...     _required_modes = {CONTROL_MODES.IDLE}
         >>> isinstance(Dummy(), MethodWithRequiredModes)
@@ -251,7 +251,7 @@ def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
     Returns:
         Callable[[T], T]: The decorated function with an attached `_required_modes` attribute.
 
-    Example:
+    Examples:
         >>> @requires(CONTROL_MODES.POSITION, CONTROL_MODES.TORQUE)
         ... def some_method(self, value):
         ...     return value
@@ -289,7 +289,7 @@ class ActuatorBase(ABC):
     including managing control mode transitions, restricting method calls based on mode,
     and exposing actuator properties.
 
-    Example:
+    Examples:
         >>> class DummyActuator(ActuatorBase):
         ...     @property
         ...     def _CONTROL_MODE_CONFIGS(self):
@@ -370,7 +370,7 @@ class ActuatorBase(ABC):
             *args (Any): Additional positional arguments.
             **kwargs (Any): Additional keyword arguments.
 
-        Example:
+        Examples:
             >>> actuator = DummyActuator(
             ...     tag="act1",
             ...     gear_ratio=100,
@@ -411,7 +411,7 @@ class ActuatorBase(ABC):
         Returns:
             ActuatorBase: The actuator instance.
 
-        Example:
+        Examples:
             >>> with actuator as a:
             ...     print("Inside context")
             Started
@@ -430,7 +430,7 @@ class ActuatorBase(ABC):
             exc_value (Any): Exception value, if any.
             exc_traceback (Any): Exception traceback, if any.
 
-        Example:
+        Examples:
             >>> try:
             ...     with actuator:
             ...         raise ValueError("Test error")
@@ -451,7 +451,7 @@ class ActuatorBase(ABC):
             *args (Any): Positional arguments passed to the method.
             **kwargs (Any): Keyword arguments passed to the method.
 
-        Example:
+        Examples:
             >>> actuator._restricted_method("set_motor_voltage")
             # (Logs an error message and returns None)
         """
@@ -465,7 +465,7 @@ class ActuatorBase(ABC):
         Iterates through known control mode methods and saves those that have
         a `_required_modes` attribute to allow mode-based restrictions.
 
-        Example:
+        Examples:
             >>> print(actuator._original_methods)  # Dictionary of method names to methods
         """
         for method_name in CONTROL_MODE_METHODS:
@@ -484,7 +484,7 @@ class ActuatorBase(ABC):
         is permitted, the original method is used; otherwise, a restricted version
         that logs an error is assigned.
 
-        Example:
+        Examples:
             >>> actuator._set_mutated_methods()
         """
         for method_name, method in self._original_methods.items():
@@ -502,7 +502,7 @@ class ActuatorBase(ABC):
         Returns:
             CONTROL_MODE_CONFIGS: The configuration settings for each control mode.
 
-        Example:
+        Examples:
             >>> config = actuator._CONTROL_MODE_CONFIGS  # Implemented in subclass
         """
         pass
@@ -514,7 +514,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses to initialize and activate the actuator.
 
-        Example:
+        Examples:
             >>> actuator.start()
             Started
         """
@@ -527,7 +527,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses to safely deactivate the actuator.
 
-        Example:
+        Examples:
             >>> actuator.stop()
             Stopped
         """
@@ -540,7 +540,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses to refresh or recalculate state values.
 
-        Example:
+        Examples:
             >>> actuator.update()
             Updated
         """
@@ -556,7 +556,7 @@ class ActuatorBase(ABC):
         Returns:
             Optional[ControlModeConfig]: The configuration if it exists; otherwise, None.
 
-        Example:
+        Examples:
             >>> config = actuator._get_control_mode_config(CONTROL_MODES.IDLE)
             >>> print(config)
             None
@@ -577,7 +577,7 @@ class ActuatorBase(ABC):
         Args:
             mode (CONTROL_MODES): The new control mode to be set.
 
-        Example:
+        Examples:
             >>> actuator.set_control_mode(CONTROL_MODES.POSITION)
         """
         if self.mode == mode:
@@ -607,7 +607,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_voltage(12.0)
         """
         pass
@@ -623,7 +623,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_current(1.5)
         """
         pass
@@ -639,7 +639,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_position(0.5)
         """
         pass
@@ -657,7 +657,7 @@ class ActuatorBase(ABC):
         Args:
             value (float): The desired output position in radians.
 
-        Example:
+        Examples:
             >>> # Assuming gear_ratio is 100, this will set the motor position to 100 * value.
             >>> actuator.set_motor_position = lambda value: print(f"Motor position set to {value}")
             >>> actuator.set_output_position(1.0)
@@ -676,7 +676,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_torque(5.0)
         """
         pass
@@ -692,7 +692,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_joint_torque(5.0)
         """
         pass
@@ -711,7 +711,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_current_gains(1.0, 0.1, 0.01, 0.0)
         """
         pass
@@ -730,7 +730,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_position_gains(1.0, 0.1, 0.01, 0.0)
         """
         pass
@@ -751,7 +751,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.set_impedance_gains(1.0, 0.1, 0.01, 0.5, 0.05, 0.0)
         """
         pass
@@ -764,7 +764,7 @@ class ActuatorBase(ABC):
         Aligns the actuator to a known reference position.
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> actuator.home()
             Homed
         """
@@ -777,7 +777,7 @@ class ActuatorBase(ABC):
         Args:
             value (float): The motor zero position in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_zero_position(0.0)
             >>> actuator.motor_zero_position
             0.0
@@ -791,7 +791,7 @@ class ActuatorBase(ABC):
         Args:
             value (float): The motor position offset in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_position_offset(0.1)
             >>> actuator.motor_position_offset
             0.1
@@ -805,7 +805,7 @@ class ActuatorBase(ABC):
         Args:
             value (float): The joint zero position in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_joint_zero_position(0.0)
             >>> actuator.joint_zero_position
             0.0
@@ -819,7 +819,7 @@ class ActuatorBase(ABC):
         Args:
             value (float): The joint position offset in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_joint_position_offset(0.1)
             >>> actuator.joint_position_offset
             0.1
@@ -833,7 +833,7 @@ class ActuatorBase(ABC):
         Args:
             value (int): The joint direction, expected to be either 1 or -1.
 
-        Example:
+        Examples:
             >>> actuator.set_joint_direction(-1)
             >>> actuator.joint_direction
             -1
@@ -851,7 +851,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> pos = actuator.motor_position
             >>> print(pos)
             100.0
@@ -867,7 +867,7 @@ class ActuatorBase(ABC):
             float: The output position in radians, calculated by dividing the motor
                    position by the gear ratio. Note that this does not account for SEA compliance.
 
-        Example:
+        Examples:
             >>> # If motor_position is 100.0 and gear_ratio is 100, output_position will be 1.0
             >>> actuator.output_position
             1.0
@@ -885,7 +885,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> velocity = actuator.motor_velocity
             >>> print(velocity)
             10.0
@@ -901,7 +901,7 @@ class ActuatorBase(ABC):
             float: The output velocity in radians per second, calculated by dividing the motor
                    velocity by the gear ratio. Note that this does not account for SEA compliance.
 
-        Example:
+        Examples:
             >>> # If motor_velocity is 10.0 and gear_ratio is 100, output_velocity will be 0.1
             >>> actuator.output_velocity
             0.1
@@ -919,7 +919,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> voltage = actuator.motor_voltage
             >>> print(voltage)
             24.0
@@ -937,7 +937,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> current = actuator.motor_current
             >>> print(current)
             0.5
@@ -955,7 +955,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> torque = actuator.motor_torque
             >>> print(torque)
             2.0
@@ -970,7 +970,7 @@ class ActuatorBase(ABC):
         Returns:
             MOTOR_CONSTANTS: The motor constants.
 
-        Example:
+        Examples:
             >>> constants = actuator.MOTOR_CONSTANTS
             >>> constants.MAX_CASE_TEMPERATURE
             80.0
@@ -985,7 +985,7 @@ class ActuatorBase(ABC):
         Returns:
             CONTROL_MODES: The actuator's current control mode.
 
-        Example:
+        Examples:
             >>> actuator.mode
             <CONTROL_MODES.IDLE: -1>
         """
@@ -999,7 +999,7 @@ class ActuatorBase(ABC):
         Returns:
             str: The unique identifier for the actuator.
 
-        Example:
+        Examples:
             >>> actuator.tag
             "act1"
         """
@@ -1013,7 +1013,7 @@ class ActuatorBase(ABC):
         Returns:
             bool: True if the actuator is homed; otherwise, False.
 
-        Example:
+        Examples:
             >>> actuator.is_homed
             False
         """
@@ -1027,7 +1027,7 @@ class ActuatorBase(ABC):
         Returns:
             int: The control frequency in Hz.
 
-        Example:
+        Examples:
             >>> actuator.frequency
             1000
         """
@@ -1041,7 +1041,7 @@ class ActuatorBase(ABC):
         Returns:
             bool: True if offline; otherwise, False.
 
-        Example:
+        Examples:
             >>> actuator.is_offline
             False
         """
@@ -1055,7 +1055,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The gear ratio of the actuator.
 
-        Example:
+        Examples:
             >>> actuator.gear_ratio
             100
         """
@@ -1069,7 +1069,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The maximum case temperature defined in motor constants.
 
-        Example:
+        Examples:
             >>> actuator.max_case_temperature
             80.0
         """
@@ -1086,7 +1086,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> temp = actuator.case_temperature
             >>> print(temp)
             70.0
@@ -1104,7 +1104,7 @@ class ActuatorBase(ABC):
 
         Must be implemented by subclasses.
 
-        Example:
+        Examples:
             >>> temp = actuator.winding_temperature
             >>> print(temp)
             90.0
@@ -1119,7 +1119,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The maximum winding temperature defined in motor constants.
 
-        Example:
+        Examples:
             >>> actuator.max_winding_temperature
             120.0
         """
@@ -1133,7 +1133,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The motor zero position in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_zero_position(0.0)
             >>> actuator.motor_zero_position
             0.0
@@ -1148,7 +1148,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The motor position offset in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_motor_position_offset(0.1)
             >>> actuator.motor_position_offset
             0.1
@@ -1163,7 +1163,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The joint zero position in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_joint_zero_position(0.0)
             >>> actuator.joint_zero_position
             0.0
@@ -1178,7 +1178,7 @@ class ActuatorBase(ABC):
         Returns:
             float: The joint position offset in radians.
 
-        Example:
+        Examples:
             >>> actuator.set_joint_position_offset(0.1)
             >>> actuator.joint_position_offset
             0.1
@@ -1193,7 +1193,7 @@ class ActuatorBase(ABC):
         Returns:
             int: The joint direction (1 or -1).
 
-        Example:
+        Examples:
             >>> actuator.set_joint_direction(-1)
             >>> actuator.joint_direction
             -1
@@ -1208,7 +1208,7 @@ class ActuatorBase(ABC):
         Returns:
             bool: True if open; otherwise, False.
 
-        Example:
+        Examples:
             >>> actuator._is_open = True
             >>> actuator.is_open
             True
@@ -1223,7 +1223,7 @@ class ActuatorBase(ABC):
         Returns:
             bool: True if streaming; otherwise, False.
 
-        Example:
+        Examples:
             >>> actuator._is_streaming = True
             >>> actuator.is_streaming
             True
