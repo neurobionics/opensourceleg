@@ -210,7 +210,7 @@ class SoftRealtimeLoop:
             if ret == 0:
                 self.stop()
             while time.monotonic() < self.t1 and not self.killer.kill_now:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):  # type: ignore[attr-defined]
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
                     self.stop()
             self.t1 += dt
 
@@ -270,7 +270,7 @@ class SoftRealtimeLoop:
 
         while time.monotonic() < self.t1 and not self.killer.kill_now:
             try:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):  # type: ignore[attr-defined]
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
                     self.stop()
             except AttributeError:
                 pass
