@@ -21,8 +21,7 @@ class CompiledController:
             See examples for how to get working directory of parent script.
         main_function_name (string): Name of the main function to call within the library.
             This is the function that will get called via the run() method
-        initialization_function_name (string): Name of an initialization function for your library.
-        This gets called only once when the library is loaded. If you don't have an initialization function, pass None.
+        initialization_function_name (string): Name of an initialization function for your library. This gets called only once when the library is loaded. If you don't have an initialization function, pass None.
         cleanup_function_name (string): Name of a cleanup function for your library.
             This gets called when the CompiledController class has gone out of scope and is garbage collected.
             Again, pass None if you don't need this functionality.

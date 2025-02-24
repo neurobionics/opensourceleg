@@ -182,7 +182,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
         >>> idle_config = ControlModeConfig(
         ...     entry_callback=lambda a: print("Idle entered"),
         ...     exit_callback=lambda a: print("Idle exited")
-        ... )
+        ...
         >>> mode_configs = CONTROL_MODE_CONFIGS(IDLE=idle_config)
         >>> mode_configs.IDLE.entry_callback(None)
         Idle entered
@@ -646,7 +646,7 @@ class ActuatorBase(ABC):
 
     @requires(
         CONTROL_MODES.POSITION
-    )  # This needs to be tested as set_motor_position is already decorated with requires
+    )  # TODO: This needs to be tested as set_motor_position is already decorated with requires
     def set_output_position(self, value: float) -> None:
         """
         Set the output position of the actuator.
