@@ -15,21 +15,19 @@ class CompiledController:
     You can define these input and output structures however you please.
     See examples folder of repo for examples.
 
-    Parameters:
-    -----------
+    Args:
         library_name (string): The name of the compiled library file, without the *.so
         library_path (string): The path to the directory containing the library.
             See examples for how to get working directory of parent script.
         main_function_name (string): Name of the main function to call within the library.
-            This is the function that will get called via the run() method
-        initialization_function_name (string): Name of an initialization function for your library.
-        This gets called only once when the library is loaded. If you don't have an initialization function, pass None.
+            This is the function that will get called via the run() method initialization_function_name (string): Name
+            of an initialization function for your library. This gets called only once when the library is loaded. If
+            you don't have an initialization function, pass None.
         cleanup_function_name (string): Name of a cleanup function for your library.
             This gets called when the CompiledController class has gone out of scope and is garbage collected.
             Again, pass None if you don't need this functionality.
 
     Authors:
-    --------
         Kevin Best, Senthur Raj Ayyappan
         Neurobionics Lab
         Robotics Department

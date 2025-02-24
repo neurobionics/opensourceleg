@@ -17,16 +17,16 @@ class ThermalModel:
         1: C_w * dT_w/dt = (I^2)R + (T_c-T_w)/R_WC
         2: C_c * dT_c/dt = (T_w-T_c)/R_WC + (T_w-T_a)/R_CA
 
-    where:
-        C_w: Thermal capacitance of the winding
-        C_c: Thermal capacitance of the case
-        R_WC: Thermal resistance between the winding and the case
-        R_CA: Thermal resistance between the case and the ambient
-        T_w: Temperature of the winding
-        T_c: Temperature of the case
-        T_a: Temperature of the ambient
-        I: Current
-        R: Resistance
+        where:
+            C_w: Thermal capacitance of the winding
+            C_c: Thermal capacitance of the case
+            R_WC: Thermal resistance between the winding and the case
+            R_CA: Thermal resistance between the case and the ambient
+            T_w: Temperature of the winding
+            T_c: Temperature of the case
+            T_a: Temperature of the ambient
+            I: Current
+            R: Resistance
 
     Implementation:
         1: The model is updated at every time step with the current and the ambient temperature.
