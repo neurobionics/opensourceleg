@@ -59,7 +59,7 @@ class Validator(ABC):
             value (Any): The new value to set.
 
         Raises:
-            Any exception raised by the validate() method.
+            Any: Any exception raised by the validate() method.
         """
         self.validate(value)
         setattr(instance, self.private_name, value)

@@ -1,3 +1,1 @@
 ::: opensourceleg.sensors.encoder
-
-

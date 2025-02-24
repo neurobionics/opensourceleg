@@ -9,28 +9,28 @@ copyright: Maintained by <a href="https://github.com/senthurayyappan">Senthur Ay
 
 nav:
   - Overview: index.md
-  - Modules: 
-      - Actuators:  
-        - Base: modules/actuators/actuators.md
-        - Dephy: modules/actuators/dephy.md
-        - Moteus: modules/actuators/moteus.md
-        - TMotor: modules/actuators/tmotor.md
-      - Collections: 
-        - Validators: modules/collections/validators.md
-      - Control: 
-        - Compiled Controller: modules/control/compiled_controller.md
-        - State Machine: modules/control/state_machine.md
-      - Logging: 
-        - Logger: modules/logging.md
+  - Modules:
+      - Actuators:
+          - Base: modules/actuators/actuators.md
+          - Dephy: modules/actuators/dephy.md
+          - Moteus: modules/actuators/moteus.md
+          - TMotor: modules/actuators/tmotor.md
+      - Collections:
+          - Validators: modules/collections/validators.md
+      - Control:
+          - Compiled Controller: modules/control/compiled_controller.md
+          - State Machine: modules/control/state_machine.md
+      - Logging:
+          - Logger: modules/logging.md
       - Sensors:
-        - Base: modules/sensors/sensors_base.md
-        - IMU: modules/sensors/imu.md
-        - Loadcell: modules/sensors/loadcell.md
-        - ADC: modules/sensors/adc.md
-        - Encoder: modules/sensors/encoder.md
-      - Robots: 
-        - Base: modules/robots/robots.md
-        - OSL: modules/robots/osl.md
+          - Base: modules/sensors/sensors_base.md
+          - IMU: modules/sensors/imu.md
+          - Loadcell: modules/sensors/loadcell.md
+          - ADC: modules/sensors/adc.md
+          - Encoder: modules/sensors/encoder.md
+      - Robots:
+          - Base: modules/robots/robots.md
+          - OSL: modules/robots/osl.md
       - Safety: modules/safety.md
       - Time: modules/time.md
 plugins:

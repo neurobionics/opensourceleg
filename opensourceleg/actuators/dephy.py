@@ -194,8 +194,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Starts the actuator by opening the port, starting data streaming,
         reading initial data, and setting the control mode to VOLTAGE.
 
-        Args:
-            None
         Returns:
             None
 
@@ -228,8 +226,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Stops the actuator by stopping the motor, switching to IDLE mode,
         stopping data streaming, and closing the connection.
 
-        Args:
-            None
         Returns:
             None
 
@@ -250,8 +246,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Updates the actuator's data by reading new values and updating the thermal model.
         It raises exceptions if thermal limits are exceeded.
 
-        Args:
-            None
         Returns:
             None
 
@@ -379,7 +373,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         This method makes a lookup table to calculate the position measured by the joint encoder.
         This is necessary because the magnetic output encoders are nonlinear.
         By making the map while the joint is unloaded, joint position calculated by motor position * gear ratio
-        should be the same as the true joint position. Output from this function is a file containing a_i values parameterizing the map
+        should be the same as the true joint position. Output from this function is a file containing a_i values
+        parameterizing the map.
 
         Args:
             overwrite (bool): Whether to overwrite the existing encoder map. Default is False.
