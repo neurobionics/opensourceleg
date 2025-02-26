@@ -108,7 +108,7 @@ def test_softrealtimeloop_init(patch_time_time2):
     assert srtl.sum_var == 0.0
     assert srtl.sleep_t_agg == 0.0
     assert srtl.n == 0
-    assert srtl.report is False
+    assert srtl.report is True
 
 
 @pytest.fixture

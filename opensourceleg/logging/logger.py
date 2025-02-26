@@ -280,8 +280,8 @@ class Logger(logging.Logger):
             file_name = file_name.split(".")[0]
 
         self._user_file_name = file_name
-        self._file_path = ""
-        self._csv_path = ""
+        self._file_path = os.path.join(self._log_path, f"{file_name}.log")
+        self._csv_path = os.path.join(self._log_path, f"{file_name}.csv")
 
     def set_file_level(self, level: LogLevel) -> None:
         """

@@ -152,6 +152,7 @@ def test_repr(test_logger: Logger):
 # Test set file name
 def test_set_file_name_str(test_logger: Logger):
     test_logger.set_file_name("test_file")
+    print(test_logger._file_path)
     assert all([
         test_logger._user_file_name == "test_file",
         test_logger._file_path == f"{CURR_DIR}/test_file.log",
