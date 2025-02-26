@@ -37,24 +37,6 @@ __all__ = ["LOGGER", "LOG_LEVEL", "Logger"]
 
 class LogLevel(Enum):
     """
-    Enumerates the possible log levels.
-
-    Attributes:
-        DEBUG (int): Debug log level
-        INFO (int): Info log level
-        WARNING (int): Warning log level
-        ERROR (int): Error log level
-        CRITICAL (int): Critical log level
-
-    Examples:
-        >>> LogLevel.DEBUG
-        10
-        >>> LogLevel.INFO
-        20
-    """
-
-class LogLevel(int, Enum):
-    """
     Enum for log levels used by the Logger class.
 
     Attributes:
@@ -64,6 +46,7 @@ class LogLevel(int, Enum):
         ERROR: A more serious problem, the software has not been able to perform some function.
         CRITICAL: A serious error, indicating that the program itself may be unable to continue running.
     """
+
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
@@ -225,7 +208,7 @@ class Logger(logging.Logger):
             self._file_handler.setFormatter(fmt=self._std_formatter)
             self.addHandler(hdlr=self._file_handler)
 
-    def _ensure_file_handler(self):
+    def _ensure_file_handler(self) -> None:
         if not hasattr(self, "_file_handler"):
             self._setup_file_handler()
 
@@ -400,12 +383,12 @@ class Logger(logging.Logger):
 
         if self._file is None:
             self._file = open(self._csv_path, "w", newline="")
-            self._writer = csv.writer(self._file)
+            self._writer = csv.writer(self._file)  # type: ignore[assignment]
 
         if not self._header_written:
             self._write_header()
 
-        self._writer.writerows(self._buffer)
+        self._writer.writerows(self._buffer)  # type: ignore[attr-defined]
         self._buffer.clear()
         self._file.flush()
 
@@ -415,7 +398,7 @@ class Logger(logging.Logger):
         This header is written only once per log file.
         """
         header = list(self._var_names.values())
-        self._writer.writerow(header)
+        self._writer.writerow(header)  # type: ignore[attr-defined]
         self._header_written = True
 
     def _generate_file_paths(self) -> None:
@@ -648,7 +631,7 @@ class Logger(logging.Logger):
     def file_backup_count(self) -> int:
         """
         Get the number of backup log files to keep.
-    
+
         Returns:
             int: The backup count.
         """

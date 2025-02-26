@@ -12,7 +12,7 @@ if __name__ == "__main__":
     )
 
     with actpack:
-        for t in clock:
+        for _t in clock:
             actpack.update()
             LOGGER.info(
                 f"Motor Position: {actpack.motor_position}; "

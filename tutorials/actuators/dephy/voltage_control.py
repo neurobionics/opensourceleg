@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     with actpack:
         actpack.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
-        
+
         for t in clock:
             actpack.update()
 
