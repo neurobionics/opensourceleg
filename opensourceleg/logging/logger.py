@@ -26,13 +26,32 @@ Usage Guide:
 import csv
 import logging
 import os
-import time
 from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
 from typing import Any, Callable, Optional, Union
 
+__all__ = ["LOGGER", "LOG_LEVEL", "Logger"]
+
+
+class LogLevel(Enum):
+    """
+    Enumerates the possible log levels.
+
+    Attributes:
+        DEBUG (int): Debug log level
+        INFO (int): Info log level
+        WARNING (int): Warning log level
+        ERROR (int): Error log level
+        CRITICAL (int): Critical log level
+
+    Examples:
+        >>> LogLevel.DEBUG
+        10
+        >>> LogLevel.INFO
+        20
+    """
 
 class LogLevel(int, Enum):
     """
@@ -45,7 +64,6 @@ class LogLevel(int, Enum):
         ERROR: A more serious problem, the software has not been able to perform some function.
         CRITICAL: A serious error, indicating that the program itself may be unable to continue running.
     """
-
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
@@ -55,11 +73,51 @@ class LogLevel(int, Enum):
 
 class Logger(logging.Logger):
     """
-    Custom Logger class that logs attributes from class instances to a CSV file.
+    Represents a custom singleton logger class that extends the built-in Python logger. The logger provides additional
+    functionality for tracking and logging variables to a CSV file. It supports different log levels and log formatting
+    options.
 
-    This class extends Python's built-in `logging.Logger` and provides additional
-    functionality to track and log variable values to a CSV file using an internal buffer.
-    It supports different logging levels for file and stream handlers.
+    Args:
+        log_path (str): The path to save log files.
+        log_format (str): The log message format.
+        file_level (LogLevel): The log level for file output.
+        stream_level (LogLevel): The log level for console output.
+        file_max_bytes (int): The maximum size of the log file in bytes before rotation.
+        file_backup_count (int): The number of backup log files to keep.
+        file_name (Union[str, None]): The base name for the log file.
+        buffer_size (int): The maximum number of log entries to buffer before writing to the CSV file.
+
+    Properties:
+        - **file_path**: The path to the log file.
+        - **buffer_size**: The maximum number of log entries to buffer.
+        - **file_level**: The log level for file output.
+        - **stream_level**: The log level for console output.
+        - **file_max_bytes**: The maximum size of the log file in bytes before rotation.
+        - **file_backup_count**: The number of backup log files to keep.
+
+    Methods:
+        - **track_variable**: Track a variable for logging.
+        - **untrack_variable**: Stop tracking a variable.
+        - **flush_buffer**: Write the buffered log entries to the CSV file.
+        - **reset**: Reset the logger state.
+        - **close**: Close the logger and flush any remaining log entries.
+        - **debug**: Log a debug message.
+        - **info**: Log an info message.
+        - **warning**: Log a warning message.
+        - **error**: Log an error message.
+        - **critical**: Log a critical message.
+        - **log**: Log a message at a specific log level.
+
+    Examples:
+        >>> logger = Logger()
+        >>> logger.info("This is an info message")
+        [2022-01-01 12:00:00] INFO: This is an info message
+        >>> logger.debug("This is a debug message")
+        [2022-01-01 12:00:00] DEBUG: This is a debug message
+
+        >>> logger.track_variable(lambda: 42, "answer")
+        >>> logger.update()
+        >>> logger.flush_buffer()
     """
 
     _instance = None
@@ -73,6 +131,8 @@ class Logger(logging.Logger):
         """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+        else:
+            print(f"Reusing existing Logger instance: {id(cls._instance)}")
         return cls._instance
 
     def __init__(
@@ -111,10 +171,10 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self._user_file_name = file_name
 
-            self._file_path: Optional[str] = None
-            self._csv_path: Optional[str] = None
+            self._file_path: str = ""
+            self._csv_path: str = ""
             self._file: Optional[Any] = None
-            self._writer: Any = None
+            self._writer = None
             self._is_logging = False
             self._header_written = False
 
@@ -126,7 +186,6 @@ class Logger(logging.Logger):
             self._setup_logging()
             self._initialized: bool = True
         else:
-            self._log_path = log_path
             self.set_file_name(file_name)
             self.set_file_level(file_level)
             self.set_stream_level(stream_level)
@@ -135,58 +194,57 @@ class Logger(logging.Logger):
             self._file_backup_count = file_backup_count
             self.set_buffer_size(buffer_size)
 
+            self._log_path = log_path
+
     def _setup_logging(self) -> None:
         """
         Set up the stream logging handler.
 
         Configures the logger level, formatter, and attaches a stream handler for console output.
         """
-        self.setLevel(level=self._file_level)
-        self._std_formatter = logging.Formatter(self._log_format)
-
-        self._stream_handler = logging.StreamHandler()
-        self._stream_handler.setLevel(level=self._stream_level)
-        self._stream_handler.setFormatter(fmt=self._std_formatter)
-        self.addHandler(hdlr=self._stream_handler)
+        if not hasattr(self, "_stream_handler"):  # Prevent duplicate handlers
+            self.setLevel(level=self._file_level.value)
+            self._std_formatter = logging.Formatter(self._log_format)
+            self._stream_handler = logging.StreamHandler()
+            self._stream_handler.setLevel(level=self._stream_level.value)
+            self._stream_handler.setFormatter(fmt=self._std_formatter)
+            self.addHandler(hdlr=self._stream_handler)
 
     def _setup_file_handler(self) -> None:
-        """
-        Set up the file logging handler.
-
-        Creates a rotating file handler using the current file path, maximum file size,
-        and backup count. The handler is configured with the standard formatter.
-        """
-        if not self._file_path:
+        if not hasattr(self, "_file_handler"):  # Ensure file handler is added only once
             self._generate_file_paths()
 
-        self._file_handler = RotatingFileHandler(
-            filename=self._file_path if self._file_path else "",
-            mode="w",
-            maxBytes=self._file_max_bytes,
-            backupCount=self._file_backup_count,
-        )
-        self._file_handler.setLevel(level=self._file_level)
-        self._file_handler.setFormatter(fmt=self._std_formatter)
-        self.addHandler(hdlr=self._file_handler)
+            self._file_handler = RotatingFileHandler(
+                filename=self._file_path,
+                mode="w",
+                maxBytes=self._file_max_bytes,
+                backupCount=self._file_backup_count,
+                encoding="utf-8",
+            )
+            self._file_handler.setLevel(level=self._file_level.value)
+            self._file_handler.setFormatter(fmt=self._std_formatter)
+            self.addHandler(hdlr=self._file_handler)
 
-    def _ensure_file_handler(self) -> None:
-        """
-        Ensure that the file handler is set up.
-
-        If the file handler does not exist, it sets it up by calling `_setup_file_handler`.
-        """
+    def _ensure_file_handler(self):
         if not hasattr(self, "_file_handler"):
             self._setup_file_handler()
 
     def track_variable(self, var_func: Callable[[], Any], name: str) -> None:
         """
-        Track a variable by storing a callable that returns its value.
-
-        The variable can later be logged to a CSV file.
+        Record the value of a variable and log it to a CSV file.
 
         Args:
-            var_func (Callable[[], Any]): A zero-argument callable returning the current variable value.
-            name (str): The name of the variable to be used as a header in the CSV.
+            var_func: A function that returns the value of the variable.
+            name: The name of the variable.
+
+        Examples:
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value = 42
+            >>> obj = MyClass()
+            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
         """
         var_id = id(var_func)
         self._tracked_vars[var_id] = var_func
@@ -194,12 +252,20 @@ class Logger(logging.Logger):
 
     def untrack_variable(self, var_func: Callable[[], Any]) -> None:
         """
-        Stop tracking a variable.
-
-        Removes the variable from the tracked variables dictionary.
+        Stop tracking a variable and remove it from the logger buffer.
 
         Args:
-            var_func (Callable[[], Any]): The variable callable to stop tracking.
+            var_func: The function used to track the variable.
+
+        Examples:
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value = 42
+            >>> obj = MyClass()
+            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+            >>> LOGGER.untrack_variable(lambda: obj.value)
         """
         var_id = id(var_func)
         self._tracked_vars.pop(var_id, None)
@@ -214,53 +280,70 @@ class Logger(logging.Logger):
         """
         return f"Logger(file_path={self._file_path})"
 
-    def set_log_path(self, log_path: str) -> None:
-        """
-        Set a new log directory path and regenerate file paths.
-
-        Args:
-            log_path (str): The new directory path where log files should be stored.
-        """
-        self._log_path = log_path
-        self._generate_file_paths()
-
     def set_file_name(self, file_name: Union[str, None]) -> None:
         """
-        Set a new file name prefix and regenerate file paths.
+        Set the base name for the log file.
 
         Args:
-            file_name (Union[str, None]): The new file name prefix. If None, a default is generated.
+            file_name: The base name for the log file.
+
+        Examples:
+            >>> LOGGER.set_file_name("my_log_file")
+            >>> LOGGER.file_path
+            "./my_log_file.log"
         """
+        # if filename has an extension, remove it
+        if file_name is not None and "." in file_name:
+            file_name = file_name.split(".")[0]
+
         self._user_file_name = file_name
-        self._generate_file_paths()
+        self._file_path = ""
+        self._csv_path = ""
 
     def set_file_level(self, level: LogLevel) -> None:
         """
-        Set the logging level for the file handler.
+        Set the log level for file output.
 
         Args:
-            level (LogLevel): The new logging level for file output.
+            level: The log level for file output.
+
+        Examples:
+            >>> LOGGER.set_file_level(LogLevel.INFO)
+            >>> LOGGER.file_level
+            LogLevel.INFO
+            >>> LOGGER.debug("This is a debug message and will not be logged")
         """
         self._file_level = level
         if hasattr(self, "_file_handler"):
-            self._file_handler.setLevel(level=level)
+            self._file_handler.setLevel(level=level.value)
 
     def set_stream_level(self, level: LogLevel) -> None:
         """
-        Set the logging level for the stream (console) handler.
+        Set the log level for console output.
 
         Args:
-            level (LogLevel): The new logging level for stream output.
+            level: The log level for console output.
+
+        Examples:
+            >>> LOGGER.set_stream_level(LogLevel.INFO)
+            >>> LOGGER.stream_level
+            LogLevel.INFO
+            >>> LOGGER.debug("This is a debug message and will not be streamed")
         """
         self._stream_level = level
-        self._stream_handler.setLevel(level=level)
+        self._stream_handler.setLevel(level=level.value)
 
     def set_format(self, log_format: str) -> None:
         """
-        Set a new log format and update existing handlers.
+        Set the log message format. The format string uses the same syntax as the built-in Python logging module.
 
         Args:
-            log_format (str): The new format string for log messages.
+            log_format: The log message format.
+
+        Examples:
+            >>> LOGGER.set_format("[%(asctime)s] %(levelname)s: %(message)s")
+            >>> LOGGER.info("This is an info message")
+            [2022-01-01 12:00:00] INFO: This is an info message
         """
         self._log_format = log_format
         self._std_formatter = logging.Formatter(log_format)
@@ -270,20 +353,25 @@ class Logger(logging.Logger):
 
     def set_buffer_size(self, buffer_size: int) -> None:
         """
-        Set a new buffer size for the CSV log buffer.
+        Set the maximum number of log entries to buffer before writing to the CSV file.
 
         Args:
-            buffer_size (int): The maximum number of log records to buffer before writing to the CSV file.
+            buffer_size: The maximum number of log entries to buffer.
         """
         self._buffer_size = buffer_size
         self._buffer = deque(self._buffer, maxlen=buffer_size)
 
     def update(self) -> None:
         """
-        Update the logger by collecting the current values of tracked variables.
+        Update the logger by logging the current values of tracked variables to the buffer.
 
-        The values are appended as a row to the internal buffer. If the buffer is full,
-        it is flushed to the CSV log file.
+        Examples:
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value = 42
+            >>> obj = MyClass()
+            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.update()
         """
         if not self._tracked_vars:
             return
@@ -311,11 +399,7 @@ class Logger(logging.Logger):
         self._ensure_file_handler()
 
         if self._file is None:
-            self._file = open(
-                self._csv_path if self._csv_path else "",
-                mode="w",
-                newline="",
-            )
+            self._file = open(self._csv_path, "w", newline="")
             self._writer = csv.writer(self._file)
 
         if not self._header_written:
@@ -328,7 +412,6 @@ class Logger(logging.Logger):
     def _write_header(self) -> None:
         """
         Write the CSV header based on tracked variable names.
-
         This header is written only once per log file.
         """
         header = list(self._var_names.values())
@@ -348,11 +431,7 @@ class Logger(logging.Logger):
 
         base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
 
-        if not os.path.exists(self._log_path):
-            os.makedirs(self._log_path)
-
         file_path = os.path.join(self._log_path, base_name)
-
         self._file_path = file_path + ".log"
         self._csv_path = file_path + ".csv"
 
@@ -389,7 +468,6 @@ class Logger(logging.Logger):
         self._tracked_vars.clear()
         self._var_names.clear()
         self._header_written = False
-
         if hasattr(self, "_file_handler"):
             self._file_handler.close()
             del self._file_handler
@@ -399,9 +477,13 @@ class Logger(logging.Logger):
         Flush any buffered log data and close the CSV file.
 
         This method should be called before the program exits to ensure all data is written.
+        Close the logger and flush any remaining log entries.
+
+        Examples:
+            >>> LOGGER.close()
+            >>> LOGGER.info("This message will not be logged")
         """
         self.flush_buffer()
-
         if self._file:
             self._file.close()
             self._file = None
@@ -566,44 +648,21 @@ class Logger(logging.Logger):
     def file_backup_count(self) -> int:
         """
         Get the number of backup log files to keep.
-
+    
         Returns:
             int: The backup count.
         """
         return self._file_backup_count
 
 
-# Initialize a global logger instance to be used throughout the library.
-SCRIPT_DIR = os.path.dirname(__file__)
+# Initialize a global logger instance to be used throughout the library
 LOGGER = Logger()
+LOG_LEVEL = dict(enumerate(LogLevel.__members__.values()))
 
 if __name__ == "__main__":
+    LOGGER.info("This is an info message")
 
-    class Test:
-        def __init__(self) -> None:
-            self.a: float = 0.0
+    LOGGER.set_stream_level(LogLevel.CRITICAL)
 
-        def update(self) -> None:
-            self.a += 0.2
-
-    my_logger = Logger(buffer_size=1, file_name="test_logger", log_path="./logs")
-    x = 0.0
-    y = 0.0
-
-    test = Test()
-
-    my_logger.track_variable(lambda: x, "x")
-    my_logger.track_variable(lambda: y, "y")
-    my_logger.track_variable(lambda: test.a, "A")
-    my_logger.info("Starting logging...")
-
-    for _i in range(1000):
-        x += 0.1
-        y = x**2
-
-        test.update()
-        my_logger.update()
-
-        time.sleep(1 / 500)
-
-    my_logger.close()
+    LOGGER.info("This is an info message and won't be displayed")
+    LOGGER.critical("This is a critical message and will be displayed")

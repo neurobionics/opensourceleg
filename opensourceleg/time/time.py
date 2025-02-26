@@ -147,7 +147,7 @@ class SoftRealtimeLoop:
 
     """
 
-    def __init__(self, dt: float = 0.001, report: bool = False, fade: float = 0.0):
+    def __init__(self, dt: float = 0.001, report: bool = True, fade: float = 0.0):
         self.t0: float = time.monotonic()
         self.t1: float = self.t0
         self.killer: LoopKiller = LoopKiller(fade_time=fade)
