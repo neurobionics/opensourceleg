@@ -34,7 +34,7 @@ in-project = true
 python = ">=3.9,<4.0.0"
 pyserial = "^3.5"
 flexsea = "^8.0.1"
-smbus2 = "^0.4.2"
+smbus2 = ">=0.4.2,<0.6.0"
 numpy = "^1.24.3"
 
 [tool.poetry.group.dev.dependencies]
