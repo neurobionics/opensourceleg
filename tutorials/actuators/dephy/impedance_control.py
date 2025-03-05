@@ -24,33 +24,33 @@ def impedance_control():
     clock = SoftRealtimeLoop(dt=DT)
 
     with actpack:
+        actpack.update()
         actpack.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
         actpack.set_impedance_gains()
 
-        actpack.update()
         current_position = actpack.output_position
+        command_position = current_position
 
         k = 150
         b = 600
 
-        actpack.set_motor_impedance(
-            k=k,
-            b=b,
-        )
-        actpack.set_output_position(value=current_position + np.pi / 2)
-
         impedance_logger.track_variable(lambda: actpack.output_position, "Output Position")
-        impedance_logger.track_variable(lambda: actpack.motor_position, "Motor Position")
+        impedance_logger.track_variable(lambda: command_position, "Command Position")
         impedance_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
         impedance_logger.track_variable(lambda: time.time(), "Time")
 
         for t in clock:
             actpack.update()
-            # impedance_logger.info(f"Time: {t}; \
-            #                         Command Position: {current_position + np.pi / 2}; \
-            #                         Motor Position: {actpack.motor_position}; \
-            #                         Motor Voltage: {actpack.motor_voltage}; \
-            #                         Motor Current: {actpack.motor_current}")
+
+            if t > TIME_TO_STEP:
+                command_position = current_position + np.pi / 2
+
+            actpack.set_output_position(value=command_position)
+
+            impedance_logger.info(f"Time: {t}; \
+                                    Command Position: {command_position}; \
+                                    Output Position: {actpack.output_position}; \
+                                    Motor Current: {actpack.motor_current}")
 
             impedance_logger.update()
 

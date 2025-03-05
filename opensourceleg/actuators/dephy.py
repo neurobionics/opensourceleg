@@ -23,6 +23,7 @@ from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
     deprecated_with_routing,
 )
+from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
 
@@ -559,11 +560,21 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> actuator.start()
             >>> actuator.set_motor_position(0.1)
         """
-        self.command_motor_position(
-            value=int(
-                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
-        )
+        # TODO: New Dephy API splits impedance equilibrium position and position control into separate methods
+        if self.mode == CONTROL_MODES.POSITION:
+            self.command_motor_position(
+                value=int(
+                    (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                ),
+            )
+        elif self.mode == CONTROL_MODES.IMPEDANCE:
+            self.command_motor_impedance(
+                value=int(
+                    (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                ),
+            )
+        else:
+            raise ControlModeException(tag=self._tag, attribute="set_motor_position", mode=self._mode.name)
 
     def set_position_gains(
         self,

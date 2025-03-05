@@ -16,6 +16,7 @@ from typing import (
 
 import numpy as np
 
+from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.logging.logger import LOGGER
 
 # TODO: Add validators for every custom data type
@@ -455,8 +456,7 @@ class ActuatorBase(ABC):
             >>> actuator._restricted_method("set_motor_voltage")
             # (Logs an error message and returns None)
         """
-        LOGGER.error(f"{method_name}() is not available in {self._mode.name} mode.")
-        return None
+        raise ControlModeException(tag=self._tag, attribute=method_name, mode=self._mode.name)
 
     def _set_original_methods(self) -> None:
         """
@@ -629,7 +629,7 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.POSITION)
+    @requires(CONTROL_MODES.POSITION, CONTROL_MODES.IMPEDANCE)
     def set_motor_position(self, value: float) -> None:
         """
         Set the motor position.
@@ -645,7 +645,8 @@ class ActuatorBase(ABC):
         pass
 
     @requires(
-        CONTROL_MODES.POSITION
+        CONTROL_MODES.POSITION,
+        CONTROL_MODES.IMPEDANCE,
     )  # TODO: This needs to be tested as set_motor_position is already decorated with requires
     def set_output_position(self, value: float) -> None:
         """
