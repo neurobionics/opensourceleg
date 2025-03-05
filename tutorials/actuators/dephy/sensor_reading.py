@@ -1,5 +1,5 @@
-import opensourceleg.actuators.dephy as Dephy
-from opensourceleg.logging.logger import LOGGER, Logger
+from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.logging.logger import Logger
 from opensourceleg.time import SoftRealtimeLoop
 
 FREQUENCY = 1000
@@ -10,7 +10,7 @@ if __name__ == "__main__":
         file_name="sensor_reading.log",
     )
     clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
-    actpack = Dephy.DephyActuator(
+    actpack = DephyActuator(
         port="/dev/ttyACM0",
         gear_ratio=1.0,
     )

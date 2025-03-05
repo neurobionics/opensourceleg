@@ -151,9 +151,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             frequency=frequency,
             offline=offline,
         )
-        """
-
-        """
 
         self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
