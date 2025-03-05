@@ -1,7 +1,5 @@
-import time
-
-from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.actuators.base import CONTROL_MODES
+from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
 from opensourceleg.time import SoftRealtimeLoop
 
@@ -9,19 +7,13 @@ TIME_TO_STEP = 1.0
 FREQUENCY = 1000
 DT = 1 / FREQUENCY
 
+
 def current_control():
     current_logger = Logger(
         log_path="./logs",
         file_name="current_control",
     )
-    actpack = DephyActuator(
-        port="/dev/ttyACM0",
-        gear_ratio=9.0,
-        frequency=FREQUENCY,
-        debug_level=0,
-        dephy_log=False
-
-    )
+    actpack = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY, debug_level=0, dephy_log=False)
     clock = SoftRealtimeLoop(dt=DT)
 
     with actpack:

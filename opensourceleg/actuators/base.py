@@ -5,6 +5,7 @@ from functools import partial
 from typing import (
     Any,
     Callable,
+    ClassVar,
     NamedTuple,
     Optional,
     Protocol,
@@ -350,7 +351,7 @@ class ActuatorBase(ABC):
     """
 
     # Class-level mapping of methods to their required control modes
-    _METHOD_REQUIRED_MODES = {
+    _METHOD_REQUIRED_MODES: ClassVar[dict[str, set[CONTROL_MODES]]] = {
         "set_motor_voltage": {CONTROL_MODES.VOLTAGE},
         "set_motor_current": {CONTROL_MODES.CURRENT},
         "set_motor_position": {CONTROL_MODES.POSITION, CONTROL_MODES.IMPEDANCE},
@@ -486,16 +487,19 @@ class ActuatorBase(ABC):
         """
         # Get the method-to-required-modes mapping for this class
         method_modes_map = getattr(self.__class__, "_METHOD_REQUIRED_MODES", {})
-        
+
         for method_name, required_modes in method_modes_map.items():
             try:
                 method = getattr(self, method_name)
                 if callable(method):
                     self._original_methods[method_name] = method
-                    LOGGER.debug(msg=f"[{self.tag}] {method_name}() is available in modes: {[mode.name for mode in required_modes]}")
+                    LOGGER.debug(
+                        msg=f"[{self.tag}] {method_name}() is available in modes: "
+                        f"{[mode.name for mode in required_modes]}"
+                    )
             except AttributeError:
                 LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.__class__.__name__}.")
-        
+
     def _set_mutated_methods(self) -> None:
         """
         Update actuator methods based on the current control mode.

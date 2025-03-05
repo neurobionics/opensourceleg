@@ -2,8 +2,8 @@ import time
 
 import numpy as np
 
-from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.actuators.base import CONTROL_MODES
+from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
 from opensourceleg.time import SoftRealtimeLoop
 
@@ -17,13 +17,7 @@ def position_control():
         log_path="./logs",
         file_name="position_control",
     )
-    actpack = DephyActuator(
-        port="/dev/ttyACM0",
-        gear_ratio=9.0,
-        frequency=FREQUENCY,
-        debug_level=0,
-        dephy_log=False
-    )
+    actpack = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY, debug_level=0, dephy_log=False)
     clock = SoftRealtimeLoop(dt=DT)
 
     with actpack:
@@ -40,7 +34,7 @@ def position_control():
 
         for t in clock:
             if t > TIME_TO_STEP:
-                command_position = current_position + 2 *np.pi
+                command_position = current_position + 2 * np.pi
                 actpack.set_output_position(value=command_position)
 
             actpack.update()
@@ -49,6 +43,7 @@ def position_control():
                                  Command Position: {command_position}; \
                                  Output Position: {actpack.output_position}")
             position_logger.update()
+
 
 if __name__ == "__main__":
     position_control()

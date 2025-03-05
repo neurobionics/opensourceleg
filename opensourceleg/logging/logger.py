@@ -23,6 +23,7 @@ Usage Guide:
 5. PLEASE call the `close` method before exiting the program to ensure all data is written to the log file.
 """
 
+import contextlib
 import csv
 import logging
 import os
@@ -31,7 +32,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 __all__ = ["LOGGER", "LOG_LEVEL", "Logger"]
 
@@ -171,11 +172,11 @@ class Logger(logging.Logger):
                 self._is_logging = False
                 self._header_written = False
 
-                self._tracked_vars: Dict[int, Callable[[], Any]] = {}
-                self._var_names: Dict[int, str] = {}
+                self._tracked_vars: dict[int, Callable[[], Any]] = {}
+                self._var_names: dict[int, str] = {}
                 self._buffer: deque = deque(maxlen=buffer_size)
                 self._buffer_size: int = buffer_size
-                self._error_count: Dict[int, int] = {}  # Track errors per variable
+                self._error_count: dict[int, int] = {}  # Track errors per variable
                 self._max_errors_before_untrack: int = 5  # Auto-untrack after this many errors
 
                 try:
@@ -292,12 +293,12 @@ class Logger(logging.Logger):
                 self._error_count.pop(var_id, None)
                 self.debug(f"Stopped tracking variable: {name}")
             else:
-                self.warning(f"Attempted to untrack a variable that wasn't being tracked")
+                self.warning("Attempted to untrack a variable that wasn't being tracked")
 
-    def get_tracked_variables(self) -> List[Tuple[str, Any]]:
+    def get_tracked_variables(self) -> list[tuple[str, Any]]:
         """
         Get a list of currently tracked variables and their current values.
-        
+
         Returns:
             List[Tuple[str, Any]]: A list of tuples containing variable names and their current values.
         """
@@ -337,7 +338,7 @@ class Logger(logging.Logger):
             try:
                 # Ensure log directory exists
                 os.makedirs(self._log_path, exist_ok=True)
-                
+
                 # Handle None file_name case
                 if file_name is None:
                     # Generate default name if none provided
@@ -352,14 +353,14 @@ class Logger(logging.Logger):
                 self._user_file_name = file_name
                 self._file_path = os.path.join(self._log_path, f"{file_name}.log")
                 self._csv_path = os.path.join(self._log_path, f"{file_name}.csv")
-                
+
                 # If we already have a file handler, we need to recreate it
                 if hasattr(self, "_file_handler"):
                     self.removeHandler(self._file_handler)
                     self._file_handler.close()
                     del self._file_handler
                     self._setup_file_handler()
-                    
+
                 # Reset CSV file if it exists
                 if self._file:
                     self.close()
@@ -442,7 +443,7 @@ class Logger(logging.Logger):
     def set_csv_logging(self, enable: bool) -> None:
         """
         Enable or disable CSV logging.
-        
+
         Args:
             enable (bool): Whether to enable CSV logging.
         """
@@ -460,7 +461,7 @@ class Logger(logging.Logger):
     def set_max_errors_before_untrack(self, max_errors: int) -> None:
         """
         Set the maximum number of errors before a variable is automatically untracked.
-        
+
         Args:
             max_errors (int): Maximum number of errors before untracking.
         """
@@ -488,7 +489,7 @@ class Logger(logging.Logger):
         with self._lock:
             data = []
             vars_to_untrack = []
-            
+
             for var_id, get_value in self._tracked_vars.items():
                 try:
                     value = get_value()
@@ -499,22 +500,24 @@ class Logger(logging.Logger):
                     var_name = self._var_names.get(var_id, "unknown")
                     self.warning(f"Error getting value for {var_name}: {e}")
                     data.append("ERROR")
-                    
+
                     # Increment error count and check if we should untrack
                     self._error_count[var_id] = self._error_count.get(var_id, 0) + 1
                     if self._error_count[var_id] >= self._max_errors_before_untrack:
                         vars_to_untrack.append((var_id, var_name))
-            
+
             # Only add data if we have variables to track
             if data:
                 self._buffer.append(data)
-            
+
             # Untrack variables with too many errors
             for var_id, var_name in vars_to_untrack:
                 self._tracked_vars.pop(var_id, None)
                 self._var_names.pop(var_id, None)
                 self._error_count.pop(var_id, None)
-                self.warning(f"Auto-untracked variable {var_name} after {self._max_errors_before_untrack} consecutive errors")
+                self.warning(
+                    f"Auto-untracked variable {var_name} after {self._max_errors_before_untrack} consecutive errors"
+                )
 
             if len(self._buffer) >= self._buffer_size:
                 self.flush_buffer()
@@ -536,7 +539,7 @@ class Logger(logging.Logger):
                 if self._file is None:
                     try:
                         self._file = open(self._csv_path, "w", newline="")
-                        self._writer = csv.writer(self._file)
+                        self._writer = csv.writer(self._file)  # type: ignore[assignment]
                     except Exception as e:
                         self.error(f"Failed to open CSV file {self._csv_path}: {e}")
                         # Clear buffer to prevent memory buildup
@@ -547,17 +550,15 @@ class Logger(logging.Logger):
                     self._write_header()
 
                 try:
-                    self._writer.writerows(self._buffer)
+                    self._writer.writerows(self._buffer)  # type: ignore[attr-defined]
                     self._buffer.clear()
                     self._file.flush()
                 except Exception as e:
                     self.error(f"Failed to write to CSV file: {e}")
                     # Try to recover by reopening the file
                     if self._file:
-                        try:
+                        with contextlib.suppress(Exception):
                             self._file.close()
-                        except:
-                            pass
                     self._file = None
                     self._writer = None
                     self._header_written = False
@@ -572,7 +573,7 @@ class Logger(logging.Logger):
         try:
             header = list(self._var_names.values())
             if header:  # Only write header if we have variables
-                self._writer.writerow(header)
+                self._writer.writerow(header)  # type: ignore[attr-defined]
                 self._header_written = True
         except Exception as e:
             self.error(f"Failed to write CSV header: {e}")
@@ -587,7 +588,7 @@ class Logger(logging.Logger):
         try:
             # Ensure log directory exists
             os.makedirs(self._log_path, exist_ok=True)
-            
+
             now = datetime.now()
             timestamp = now.strftime("%Y%m%d_%H%M%S")
             script_name = os.path.basename(__file__).split(".")[0]
@@ -631,12 +632,12 @@ class Logger(logging.Logger):
         with self._lock:
             try:
                 self.close()
-                
+
                 if hasattr(self, "_file_handler"):
                     self.removeHandler(self._file_handler)
                     self._file_handler.close()
                     del self._file_handler
-                    
+
                 self.removeHandler(self._stream_handler)
                 self._setup_logging()
 
@@ -646,7 +647,7 @@ class Logger(logging.Logger):
                 self._header_written = False
                 self._file = None
                 self._writer = None
-                
+
                 self.debug("Logger reset successfully")
             except Exception as e:
                 print(f"Error resetting logger: {e}")  # Use print as logger might be in bad state
