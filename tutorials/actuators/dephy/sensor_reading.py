@@ -1,21 +1,24 @@
 import opensourceleg.actuators.dephy as Dephy
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.logging.logger import LOGGER, Logger
 from opensourceleg.time import SoftRealtimeLoop
 
 FREQUENCY = 1000
 
 if __name__ == "__main__":
+    sensor_logger = Logger(
+        log_path="./",
+        file_name="sensor_reading.log",
+    )
     clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
     actpack = Dephy.DephyActuator(
         port="/dev/ttyACM0",
         gear_ratio=1.0,
     )
+    sensor_logger.track_variable(lambda: actpack.motor_position, "Motor Position")
+    sensor_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
 
     with actpack:
-        for _t in clock:
+        for t in clock:
             actpack.update()
-            LOGGER.info(
-                f"Motor Position: {actpack.motor_position}; "
-                + f"Motor Voltage: {actpack.motor_voltage}; "
-                + f"Motor Current: {actpack.motor_current}; "
-            )
+            sensor_logger.info(f"Time: {t}; Motor Position: {actpack.motor_position};")
+            sensor_logger.update()

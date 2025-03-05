@@ -26,11 +26,12 @@ Usage Guide:
 import csv
 import logging
 import os
+import threading
 from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 __all__ = ["LOGGER", "LOG_LEVEL", "Logger"]
 
@@ -69,6 +70,7 @@ class Logger(logging.Logger):
         file_backup_count (int): The number of backup log files to keep.
         file_name (Union[str, None]): The base name for the log file.
         buffer_size (int): The maximum number of log entries to buffer before writing to the CSV file.
+        enable_csv_logging (bool): Whether to enable CSV logging.
 
     Properties:
         - **file_path**: The path to the log file.
@@ -77,6 +79,8 @@ class Logger(logging.Logger):
         - **stream_level**: The log level for console output.
         - **file_max_bytes**: The maximum size of the log file in bytes before rotation.
         - **file_backup_count**: The number of backup log files to keep.
+        - **csv_logging_enabled**: Whether CSV logging is enabled.
+        - **tracked_variable_count**: The number of currently tracked variables.
 
     Methods:
         - **track_variable**: Track a variable for logging.
@@ -104,6 +108,7 @@ class Logger(logging.Logger):
     """
 
     _instance = None
+    _lock = threading.RLock()  # Reentrant lock for thread safety
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "Logger":
         """
@@ -112,10 +117,11 @@ class Logger(logging.Logger):
         Returns:
             Logger: The singleton Logger instance.
         """
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        else:
-            print(f"Reusing existing Logger instance: {id(cls._instance)}")
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+            else:
+                logging.debug(f"Reusing existing Logger instance: {id(cls._instance)}")
         return cls._instance
 
     def __init__(
@@ -128,6 +134,7 @@ class Logger(logging.Logger):
         file_backup_count: int = 5,
         file_name: Union[str, None] = None,
         buffer_size: int = 1000,
+        enable_csv_logging: bool = True,
     ) -> None:
         """
         Initialize the Logger instance.
@@ -143,41 +150,50 @@ class Logger(logging.Logger):
             file_backup_count (int): Number of backup log files to keep.
             file_name (Union[str, None]): Optional user-specified file name prefix.
             buffer_size (int): Maximum number of log records to buffer before writing to CSV.
+            enable_csv_logging (bool): Whether to enable CSV logging.
         """
-        if not hasattr(self, "_initialized"):
-            super().__init__(__name__)
-            self._log_path = log_path
-            self._log_format = log_format
-            self._file_level = file_level
-            self._stream_level = stream_level
-            self._file_max_bytes = file_max_bytes
-            self._file_backup_count = file_backup_count
-            self._user_file_name = file_name
+        with self._lock:
+            if not hasattr(self, "_initialized"):
+                super().__init__(__name__)
+                self._log_path = log_path
+                self._log_format = log_format
+                self._file_level = file_level
+                self._stream_level = stream_level
+                self._file_max_bytes = file_max_bytes
+                self._file_backup_count = file_backup_count
+                self._user_file_name = file_name
+                self._enable_csv_logging = enable_csv_logging
 
-            self._file_path: str = ""
-            self._csv_path: str = ""
-            self._file: Optional[Any] = None
-            self._writer = None
-            self._is_logging = False
-            self._header_written = False
+                self._file_path: str = ""
+                self._csv_path: str = ""
+                self._file: Optional[Any] = None
+                self._writer = None
+                self._is_logging = False
+                self._header_written = False
 
-            self._tracked_vars: dict[int, Callable[[], Any]] = {}
-            self._var_names: dict[int, str] = {}
-            self._buffer: deque[list[str]] = deque(maxlen=buffer_size)
-            self._buffer_size: int = buffer_size
+                self._tracked_vars: Dict[int, Callable[[], Any]] = {}
+                self._var_names: Dict[int, str] = {}
+                self._buffer: deque = deque(maxlen=buffer_size)
+                self._buffer_size: int = buffer_size
+                self._error_count: Dict[int, int] = {}  # Track errors per variable
+                self._max_errors_before_untrack: int = 5  # Auto-untrack after this many errors
 
-            self._setup_logging()
-            self._initialized: bool = True
-        else:
-            self.set_file_name(file_name)
-            self.set_file_level(file_level)
-            self.set_stream_level(stream_level)
-            self.set_format(log_format)
-            self._file_max_bytes = file_max_bytes
-            self._file_backup_count = file_backup_count
-            self.set_buffer_size(buffer_size)
-
-            self._log_path = log_path
+                try:
+                    self._setup_logging()
+                    self._initialized: bool = True
+                except Exception as e:
+                    print(f"Error initializing logger: {e}")
+                    raise
+            else:
+                self.set_file_name(file_name)
+                self.set_file_level(file_level)
+                self.set_stream_level(stream_level)
+                self.set_format(log_format)
+                self._file_max_bytes = file_max_bytes
+                self._file_backup_count = file_backup_count
+                self.set_buffer_size(buffer_size)
+                self._enable_csv_logging = enable_csv_logging
+                self._log_path = log_path
 
     def _setup_logging(self) -> None:
         """
@@ -185,32 +201,46 @@ class Logger(logging.Logger):
 
         Configures the logger level, formatter, and attaches a stream handler for console output.
         """
-        if not hasattr(self, "_stream_handler"):  # Prevent duplicate handlers
-            self.setLevel(level=self._file_level.value)
-            self._std_formatter = logging.Formatter(self._log_format)
-            self._stream_handler = logging.StreamHandler()
-            self._stream_handler.setLevel(level=self._stream_level.value)
-            self._stream_handler.setFormatter(fmt=self._std_formatter)
-            self.addHandler(hdlr=self._stream_handler)
+        with self._lock:
+            if not hasattr(self, "_stream_handler"):  # Prevent duplicate handlers
+                self.setLevel(level=self._file_level.value)
+                self._std_formatter = logging.Formatter(self._log_format)
+                self._stream_handler = logging.StreamHandler()
+                self._stream_handler.setLevel(level=self._stream_level.value)
+                self._stream_handler.setFormatter(fmt=self._std_formatter)
+                self.addHandler(hdlr=self._stream_handler)
 
     def _setup_file_handler(self) -> None:
-        if not hasattr(self, "_file_handler"):  # Ensure file handler is added only once
-            self._generate_file_paths()
+        """
+        Set up the file logging handler.
+        """
+        with self._lock:
+            if not hasattr(self, "_file_handler"):  # Ensure file handler is added only once
+                try:
+                    self._generate_file_paths()
 
-            self._file_handler = RotatingFileHandler(
-                filename=self._file_path,
-                mode="w",
-                maxBytes=self._file_max_bytes,
-                backupCount=self._file_backup_count,
-                encoding="utf-8",
-            )
-            self._file_handler.setLevel(level=self._file_level.value)
-            self._file_handler.setFormatter(fmt=self._std_formatter)
-            self.addHandler(hdlr=self._file_handler)
+                    self._file_handler = RotatingFileHandler(
+                        filename=self._file_path,
+                        mode="w",
+                        maxBytes=self._file_max_bytes,
+                        backupCount=self._file_backup_count,
+                        encoding="utf-8",
+                    )
+                    self._file_handler.setLevel(level=self._file_level.value)
+                    self._file_handler.setFormatter(fmt=self._std_formatter)
+                    self.addHandler(hdlr=self._file_handler)
+                except Exception as e:
+                    self.error(f"Failed to set up file handler: {e}")
+                    # Fall back to console-only logging
+                    self.warning("Falling back to console-only logging")
 
     def _ensure_file_handler(self) -> None:
-        if not hasattr(self, "_file_handler"):
-            self._setup_file_handler()
+        """
+        Ensure that the file handler is set up.
+        """
+        with self._lock:
+            if not hasattr(self, "_file_handler"):
+                self._setup_file_handler()
 
     def track_variable(self, var_func: Callable[[], Any], name: str) -> None:
         """
@@ -229,9 +259,12 @@ class Logger(logging.Logger):
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
         """
-        var_id = id(var_func)
-        self._tracked_vars[var_id] = var_func
-        self._var_names[var_id] = name
+        with self._lock:
+            var_id = id(var_func)
+            self._tracked_vars[var_id] = var_func
+            self._var_names[var_id] = name
+            self._error_count[var_id] = 0  # Initialize error count
+            self.debug(f"Started tracking variable: {name}")
 
     def untrack_variable(self, var_func: Callable[[], Any]) -> None:
         """
@@ -250,18 +283,43 @@ class Logger(logging.Logger):
             >>> LOGGER.flush_buffer()
             >>> LOGGER.untrack_variable(lambda: obj.value)
         """
-        var_id = id(var_func)
-        self._tracked_vars.pop(var_id, None)
-        self._var_names.pop(var_id, None)
+        with self._lock:
+            var_id = id(var_func)
+            if var_id in self._tracked_vars:
+                name = self._var_names.get(var_id, "unknown")
+                self._tracked_vars.pop(var_id, None)
+                self._var_names.pop(var_id, None)
+                self._error_count.pop(var_id, None)
+                self.debug(f"Stopped tracking variable: {name}")
+            else:
+                self.warning(f"Attempted to untrack a variable that wasn't being tracked")
+
+    def get_tracked_variables(self) -> List[Tuple[str, Any]]:
+        """
+        Get a list of currently tracked variables and their current values.
+        
+        Returns:
+            List[Tuple[str, Any]]: A list of tuples containing variable names and their current values.
+        """
+        with self._lock:
+            result = []
+            for var_id, get_value in self._tracked_vars.items():
+                name = self._var_names.get(var_id, "unknown")
+                try:
+                    value = get_value()
+                    result.append((name, value))
+                except Exception as e:
+                    result.append((name, f"ERROR: {e}"))
+            return result
 
     def __repr__(self) -> str:
         """
         Return a string representation of the Logger instance.
 
         Returns:
-            str: A string representation including the current file path.
+            str: A string representation including the current file path and tracked variable count.
         """
-        return f"Logger(file_path={self._file_path})"
+        return f"Logger(file_path={self._file_path}, tracked_vars={len(self._tracked_vars)})"
 
     def set_file_name(self, file_name: Union[str, None]) -> None:
         """
@@ -275,13 +333,39 @@ class Logger(logging.Logger):
             >>> LOGGER.file_path
             "./my_log_file.log"
         """
-        # if filename has an extension, remove it
-        if file_name is not None and "." in file_name:
-            file_name = file_name.split(".")[0]
+        with self._lock:
+            try:
+                # Ensure log directory exists
+                os.makedirs(self._log_path, exist_ok=True)
+                
+                # Handle None file_name case
+                if file_name is None:
+                    # Generate default name if none provided
+                    now = datetime.now()
+                    timestamp = now.strftime("%Y%m%d_%H%M%S")
+                    script_name = os.path.basename(__file__).split(".")[0]
+                    file_name = f"{script_name}_{timestamp}"
+                elif "." in file_name:
+                    # If filename has an extension, remove it
+                    file_name = file_name.split(".")[0]
 
-        self._user_file_name = file_name
-        self._file_path = os.path.join(self._log_path, f"{file_name}.log")
-        self._csv_path = os.path.join(self._log_path, f"{file_name}.csv")
+                self._user_file_name = file_name
+                self._file_path = os.path.join(self._log_path, f"{file_name}.log")
+                self._csv_path = os.path.join(self._log_path, f"{file_name}.csv")
+                
+                # If we already have a file handler, we need to recreate it
+                if hasattr(self, "_file_handler"):
+                    self.removeHandler(self._file_handler)
+                    self._file_handler.close()
+                    del self._file_handler
+                    self._setup_file_handler()
+                    
+                # Reset CSV file if it exists
+                if self._file:
+                    self.close()
+            except Exception as e:
+                self.error(f"Error setting file name: {e}")
+                raise
 
     def set_file_level(self, level: LogLevel) -> None:
         """
@@ -296,9 +380,10 @@ class Logger(logging.Logger):
             LogLevel.INFO
             >>> LOGGER.debug("This is a debug message and will not be logged")
         """
-        self._file_level = level
-        if hasattr(self, "_file_handler"):
-            self._file_handler.setLevel(level=level.value)
+        with self._lock:
+            self._file_level = level
+            if hasattr(self, "_file_handler"):
+                self._file_handler.setLevel(level=level.value)
 
     def set_stream_level(self, level: LogLevel) -> None:
         """
@@ -313,8 +398,9 @@ class Logger(logging.Logger):
             LogLevel.INFO
             >>> LOGGER.debug("This is a debug message and will not be streamed")
         """
-        self._stream_level = level
-        self._stream_handler.setLevel(level=level.value)
+        with self._lock:
+            self._stream_level = level
+            self._stream_handler.setLevel(level=level.value)
 
     def set_format(self, log_format: str) -> None:
         """
@@ -328,11 +414,12 @@ class Logger(logging.Logger):
             >>> LOGGER.info("This is an info message")
             [2022-01-01 12:00:00] INFO: This is an info message
         """
-        self._log_format = log_format
-        self._std_formatter = logging.Formatter(log_format)
-        if hasattr(self, "_file_handler"):
-            self._file_handler.setFormatter(fmt=self._std_formatter)
-        self._stream_handler.setFormatter(fmt=self._std_formatter)
+        with self._lock:
+            self._log_format = log_format
+            self._std_formatter = logging.Formatter(log_format)
+            if hasattr(self, "_file_handler"):
+                self._file_handler.setFormatter(fmt=self._std_formatter)
+            self._stream_handler.setFormatter(fmt=self._std_formatter)
 
     def set_buffer_size(self, buffer_size: int) -> None:
         """
@@ -341,8 +428,47 @@ class Logger(logging.Logger):
         Args:
             buffer_size: The maximum number of log entries to buffer.
         """
-        self._buffer_size = buffer_size
-        self._buffer = deque(self._buffer, maxlen=buffer_size)
+        with self._lock:
+            if buffer_size <= 0:
+                self.warning(f"Invalid buffer size: {buffer_size}. Using default of 1000.")
+                buffer_size = 1000
+            self._buffer_size = buffer_size
+            # Create a new buffer with the updated size and copy over existing items
+            old_buffer = list(self._buffer)
+            self._buffer = deque(maxlen=buffer_size)
+            for item in old_buffer:
+                self._buffer.append(item)
+
+    def set_csv_logging(self, enable: bool) -> None:
+        """
+        Enable or disable CSV logging.
+        
+        Args:
+            enable (bool): Whether to enable CSV logging.
+        """
+        with self._lock:
+            if self._enable_csv_logging != enable:
+                self._enable_csv_logging = enable
+                if not enable:
+                    self.flush_buffer()
+                    if self._file:
+                        self._file.close()
+                        self._file = None
+                        self._writer = None
+                self.debug(f"CSV logging {'enabled' if enable else 'disabled'}")
+
+    def set_max_errors_before_untrack(self, max_errors: int) -> None:
+        """
+        Set the maximum number of errors before a variable is automatically untracked.
+        
+        Args:
+            max_errors (int): Maximum number of errors before untracking.
+        """
+        with self._lock:
+            if max_errors < 0:
+                self.warning(f"Invalid max_errors value: {max_errors}. Using default of 5.")
+                max_errors = 5
+            self._max_errors_before_untrack = max_errors
 
     def update(self) -> None:
         """
@@ -356,18 +482,42 @@ class Logger(logging.Logger):
             >>> LOGGER.track_variable(lambda: obj.value, "answer")
             >>> LOGGER.update()
         """
-        if not self._tracked_vars:
+        if not self._tracked_vars or not self._enable_csv_logging:
             return
 
-        data = []
-        for _var_id, get_value in self._tracked_vars.items():
-            value = get_value()
-            data.append(str(value))
+        with self._lock:
+            data = []
+            vars_to_untrack = []
+            
+            for var_id, get_value in self._tracked_vars.items():
+                try:
+                    value = get_value()
+                    data.append(str(value))
+                    # Reset error count on successful retrieval
+                    self._error_count[var_id] = 0
+                except Exception as e:
+                    var_name = self._var_names.get(var_id, "unknown")
+                    self.warning(f"Error getting value for {var_name}: {e}")
+                    data.append("ERROR")
+                    
+                    # Increment error count and check if we should untrack
+                    self._error_count[var_id] = self._error_count.get(var_id, 0) + 1
+                    if self._error_count[var_id] >= self._max_errors_before_untrack:
+                        vars_to_untrack.append((var_id, var_name))
+            
+            # Only add data if we have variables to track
+            if data:
+                self._buffer.append(data)
+            
+            # Untrack variables with too many errors
+            for var_id, var_name in vars_to_untrack:
+                self._tracked_vars.pop(var_id, None)
+                self._var_names.pop(var_id, None)
+                self._error_count.pop(var_id, None)
+                self.warning(f"Auto-untracked variable {var_name} after {self._max_errors_before_untrack} consecutive errors")
 
-        self._buffer.append(data)
-
-        if len(self._buffer) >= self._buffer_size:
-            self.flush_buffer()
+            if len(self._buffer) >= self._buffer_size:
+                self.flush_buffer()
 
     def flush_buffer(self) -> None:
         """
@@ -376,30 +526,56 @@ class Logger(logging.Logger):
         Ensures that the file handler is available, writes the header if not yet written,
         writes all buffered rows to the CSV, clears the buffer, and flushes the file.
         """
-        if not self._buffer:
+        if not self._buffer or not self._enable_csv_logging:
             return
 
-        self._ensure_file_handler()
+        with self._lock:
+            try:
+                self._ensure_file_handler()
 
-        if self._file is None:
-            self._file = open(self._csv_path, "w", newline="")
-            self._writer = csv.writer(self._file)  # type: ignore[assignment]
+                if self._file is None:
+                    try:
+                        self._file = open(self._csv_path, "w", newline="")
+                        self._writer = csv.writer(self._file)
+                    except Exception as e:
+                        self.error(f"Failed to open CSV file {self._csv_path}: {e}")
+                        # Clear buffer to prevent memory buildup
+                        self._buffer.clear()
+                        return
 
-        if not self._header_written:
-            self._write_header()
+                if not self._header_written:
+                    self._write_header()
 
-        self._writer.writerows(self._buffer)  # type: ignore[attr-defined]
-        self._buffer.clear()
-        self._file.flush()
+                try:
+                    self._writer.writerows(self._buffer)
+                    self._buffer.clear()
+                    self._file.flush()
+                except Exception as e:
+                    self.error(f"Failed to write to CSV file: {e}")
+                    # Try to recover by reopening the file
+                    if self._file:
+                        try:
+                            self._file.close()
+                        except:
+                            pass
+                    self._file = None
+                    self._writer = None
+                    self._header_written = False
+            except Exception as e:
+                self.error(f"Unexpected error in flush_buffer: {e}")
 
     def _write_header(self) -> None:
         """
         Write the CSV header based on tracked variable names.
         This header is written only once per log file.
         """
-        header = list(self._var_names.values())
-        self._writer.writerow(header)  # type: ignore[attr-defined]
-        self._header_written = True
+        try:
+            header = list(self._var_names.values())
+            if header:  # Only write header if we have variables
+                self._writer.writerow(header)
+                self._header_written = True
+        except Exception as e:
+            self.error(f"Failed to write CSV header: {e}")
 
     def _generate_file_paths(self) -> None:
         """
@@ -408,15 +584,22 @@ class Logger(logging.Logger):
         Creates the log directory if it does not exist, and uses the current timestamp
         (and optionally a user-specified name) to generate unique file names.
         """
-        now = datetime.now()
-        timestamp = now.strftime("%Y%m%d_%H%M%S")
-        script_name = os.path.basename(__file__).split(".")[0]
+        try:
+            # Ensure log directory exists
+            os.makedirs(self._log_path, exist_ok=True)
+            
+            now = datetime.now()
+            timestamp = now.strftime("%Y%m%d_%H%M%S")
+            script_name = os.path.basename(__file__).split(".")[0]
 
-        base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
+            base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
 
-        file_path = os.path.join(self._log_path, base_name)
-        self._file_path = file_path + ".log"
-        self._csv_path = file_path + ".csv"
+            file_path = os.path.join(self._log_path, base_name)
+            self._file_path = file_path + ".log"
+            self._csv_path = file_path + ".csv"
+        except Exception as e:
+            print(f"Error generating file paths: {e}")  # Use print as logger might not be ready
+            raise
 
     def __enter__(self) -> "Logger":
         """
@@ -445,15 +628,28 @@ class Logger(logging.Logger):
         Closes the current file, reinitializes the logging handlers, clears tracked variables,
         and resets header status.
         """
-        self.close()
-        self._setup_logging()
+        with self._lock:
+            try:
+                self.close()
+                
+                if hasattr(self, "_file_handler"):
+                    self.removeHandler(self._file_handler)
+                    self._file_handler.close()
+                    del self._file_handler
+                    
+                self.removeHandler(self._stream_handler)
+                self._setup_logging()
 
-        self._tracked_vars.clear()
-        self._var_names.clear()
-        self._header_written = False
-        if hasattr(self, "_file_handler"):
-            self._file_handler.close()
-            del self._file_handler
+                self._tracked_vars.clear()
+                self._var_names.clear()
+                self._error_count.clear()
+                self._header_written = False
+                self._file = None
+                self._writer = None
+                
+                self.debug("Logger reset successfully")
+            except Exception as e:
+                print(f"Error resetting logger: {e}")  # Use print as logger might be in bad state
 
     def close(self) -> None:
         """
@@ -466,11 +662,15 @@ class Logger(logging.Logger):
             >>> LOGGER.close()
             >>> LOGGER.info("This message will not be logged")
         """
-        self.flush_buffer()
-        if self._file:
-            self._file.close()
-            self._file = None
-            self._writer = None
+        with self._lock:
+            try:
+                self.flush_buffer()
+                if self._file:
+                    self._file.close()
+                    self._file = None
+                    self._writer = None
+            except Exception as e:
+                self.error(f"Error closing logger: {e}")
 
     def debug(self, msg: object, *args: object, **kwargs: Any) -> None:
         """
@@ -636,6 +836,26 @@ class Logger(logging.Logger):
             int: The backup count.
         """
         return self._file_backup_count
+
+    @property
+    def csv_logging_enabled(self) -> bool:
+        """
+        Get whether CSV logging is enabled.
+
+        Returns:
+            bool: Whether CSV logging is enabled.
+        """
+        return self._enable_csv_logging
+
+    @property
+    def tracked_variable_count(self) -> int:
+        """
+        Get the number of currently tracked variables.
+
+        Returns:
+            int: The number of tracked variables.
+        """
+        return len(self._tracked_vars)
 
 
 # Initialize a global logger instance to be used throughout the library
