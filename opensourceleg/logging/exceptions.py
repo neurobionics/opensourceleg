@@ -78,7 +78,7 @@ class ControlModeException(Exception):
             mode (str): The control mode in which the attribute cannot be set.
         """
         super().__init__(
-            f"[{tag}] Cannot set {attribute} in {mode} mode. Please set the actuator to {attribute} mode first."
+            f"[{tag}] Cannot use {attribute}() in {mode} mode. \nPlease verify that the actuator is in the correct control mode. Exiting..."
         )
 
 

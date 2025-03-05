@@ -35,7 +35,7 @@ def current_control():
 
         for t in clock:
             if t > TIME_TO_STEP:
-                command_current = 1000
+                command_current = 500
                 actpack.set_motor_current(value=command_current)  # in mA
 
             actpack.update()
