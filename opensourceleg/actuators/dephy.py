@@ -316,6 +316,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         is_homing = True
         homing_frequency = homing_frequency if homing_frequency is not None else self.frequency
 
+        LOGGER.info(
+            f"[{self.__repr__()}] Homing {self.tag} joint."
+            "Please make sure the joint is free to move and press Enter to continue."
+        )
+        input()
+
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
         self.set_motor_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
