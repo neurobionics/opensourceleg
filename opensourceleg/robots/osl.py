@@ -26,7 +26,8 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
             actuator.home()
 
     def make_encoder_maps(self) -> None:
-        pass
+        for actuator in self.actuators.values():
+            actuator.make_encoder_map()
 
     @property
     def knee(self) -> Union[TActuator, ActuatorBase]:
