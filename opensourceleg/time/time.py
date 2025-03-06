@@ -163,14 +163,22 @@ class SoftRealtimeLoop:
         return "SoftRealtimeLoop"
 
     def __del__(self) -> None:
-        if self.report:
+        if self.report and self.n > 0:  # Only report if we have at least one cycle
             print("In %d cycles at %.2f Hz:" % (self.n, 1.0 / self.dt))
             print("\tavg error: %.3f milliseconds" % (1e3 * self.sum_err / self.n))
-            print(
-                "\tstddev error: %.3f milliseconds"
-                % (1e3 * sqrt((self.sum_var - self.sum_err**2 / self.n) / (self.n - 1)))
-            )
-            print("\tpercent of time sleeping: %.1f %%" % (self.sleep_t_agg / self.time() * 100.0))
+            if self.n > 1:  # Need at least 2 samples for standard deviation
+                print(
+                    "\tstddev error: %.3f milliseconds"
+                    % (1e3 * sqrt(max(0, (self.sum_var - self.sum_err**2 / self.n) / (self.n - 1))))
+                )
+            else:
+                print("\tstddev error: N/A (need at least 2 samples)")
+
+            total_time = self.time()
+            if total_time > 0:  # Prevent division by zero
+                print("\tpercent of time sleeping: %.1f %%" % (self.sleep_t_agg / total_time * 100.0))
+            else:
+                print("\tpercent of time sleeping: N/A (total time is zero)")
 
     @property
     def fade(self) -> float:
