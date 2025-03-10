@@ -27,7 +27,10 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
     def make_encoder_maps(self) -> None:
         for actuator in self.actuators.values():
-            actuator.make_encoder_map()
+            if hasattr(actuator, "make_encoder_map"):
+                actuator.make_encoder_map()
+            else:
+                LOGGER.warning(f"[{actuator.__repr__()}] No encoder map method found. Skipping.")
 
     @property
     def knee(self) -> Union[TActuator, ActuatorBase]:
