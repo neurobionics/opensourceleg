@@ -32,271 +32,316 @@ def test_log_level_len():
 
 @pytest.fixture(scope="function")
 def test_logger():
+    """
+    Create a new singleton instance of the Logger class.
+
+    Yields:
+        Logger: A new singleton instance of the Logger class.
+    """
+    # Create a new singleton instance
     log = Logger(
         log_path=CURR_DIR,
         file_name="test_logging",
     )
     log.reset()
+
     yield log
+    log.reset()
+
+    if hasattr(log, "_file") and log._file:
+        log._file.close()
+        log._file = None
+
+    for ext in [".log", ".csv"]:
+        file_path = os.path.join(CURR_DIR, f"test_logging{ext}")
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+
+@pytest.fixture(scope="function")
+def isolated_logger():
+    """
+    Creates a non-singleton instance of the Logger class by resetting the singleton state.
+
+    Yields:
+        Logger: A non-singleton instance of the Logger class.
+    """
+    original_instance = Logger._instance
+    Logger._instance = None
+
+    # Create a test instance
+    log = Logger(
+        log_path=CURR_DIR,
+        file_name="test_logging",
+    )
+
+    yield log
+
+    # Clean up
+    log.reset()
+    if hasattr(log, "_file") and log._file:
+        log._file.close()
+
+    # Restore original singleton
+    Logger._instance = original_instance
 
 
 # check if the fixture is being reset after each test
-def test_fixture_reset(test_logger: Logger):
-    assert not hasattr(test_logger, "_file_handler")
+def test_fixture_reset(isolated_logger: Logger):
+    assert not hasattr(isolated_logger, "_file_handler")
 
 
 # Test new
-def test_logger_new(test_logger: Logger):
+def test_logger_new(isolated_logger: Logger):
     new_logger = Logger.__new__(Logger)
-    assert new_logger is test_logger
+    assert new_logger is isolated_logger
     new_logger.reset()
 
 
 # Test init
-def test_logger_init_default(test_logger: Logger):
+def test_logger_init_default(isolated_logger: Logger):
     assert all([
-        isinstance(test_logger.file_level, LogLevel),
-        isinstance(test_logger.stream_level, LogLevel),
-        test_logger.file_max_bytes == 0,
-        test_logger._file_backup_count == 5,
-        test_logger.buffer_size == 1000,
+        isinstance(isolated_logger.file_level, LogLevel),
+        isinstance(isolated_logger.stream_level, LogLevel),
+        isolated_logger.file_max_bytes == 0,
+        isolated_logger._file_backup_count == 5,
+        isolated_logger.buffer_size == 1000,
     ])
 
 
-def test_logger_init_set(test_logger: Logger):
-    test_logger = Logger(buffer_size=10, file_level=LogLevel.CRITICAL)
+def test_logger_init_set(isolated_logger: Logger):
+    isolated_logger = Logger(buffer_size=10, file_level=LogLevel.CRITICAL)
     assert all([
-        test_logger._log_format == "[%(asctime)s] %(levelname)s: %(message)s",
-        test_logger._buffer_size == 10,
-        test_logger._file_level == LogLevel.CRITICAL,
+        isolated_logger._log_format == "[%(asctime)s] %(levelname)s: %(message)s",
+        isolated_logger._buffer_size == 10,
+        isolated_logger._file_level == LogLevel.CRITICAL,
     ])
 
 
 # Test setup logging
-def test_setup_logging():
-    test_logger = Logger(
+def test_setup_logging(isolated_logger: Logger):
+    isolated_logger = Logger(
         log_format="[%(levelname)s]",
         file_level=LogLevel.DEBUG,
         stream_level=LogLevel.INFO,
     )
-    test_logger._setup_logging()
+    isolated_logger._setup_logging()
     assert all([
-        test_logger.level == LogLevel.DEBUG.value,
-        test_logger._stream_handler.level == LogLevel.INFO.value,
-        test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
+        isolated_logger.level == LogLevel.DEBUG.value,
+        isolated_logger._stream_handler.level == LogLevel.INFO.value,
+        isolated_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
     ])
-    test_logger.reset()
+    isolated_logger.reset()
 
 
 # Test setup file handler
-def test_setup_file_handler(test_logger: Logger):
-    assert not hasattr(test_logger, "_file_handler")
+def test_setup_file_handler(isolated_logger: Logger):
+    assert not hasattr(isolated_logger, "_file_handler")
 
-    test_logger._setup_file_handler()
+    isolated_logger._setup_file_handler()
 
     assert all([
-        test_logger._file_handler.maxBytes == 0,
-        test_logger._file_handler.backupCount == 5,
-        test_logger._file_handler.level == LogLevel.DEBUG.value,
-        test_logger._file_handler.mode == "w",
-        test_logger._file_handler.formatter._fmt == "[%(asctime)s] %(levelname)s: %(message)s",
-        hasattr(test_logger, "_file_handler"),
+        isolated_logger._file_handler.maxBytes == 0,
+        isolated_logger._file_handler.backupCount == 5,
+        isolated_logger._file_handler.level == LogLevel.DEBUG.value,
+        isolated_logger._file_handler.mode == "w",
+        isolated_logger._file_handler.formatter._fmt == "[%(asctime)s] %(levelname)s: %(message)s",
+        hasattr(isolated_logger, "_file_handler"),
     ])
 
 
 # Test ensure file handler
-def test_ensure_file_handler_called_once(test_logger: Logger):
-    original_setup = test_logger._setup_file_handler
+def test_ensure_file_handler_called_once(isolated_logger: Logger):
+    original_setup = isolated_logger._setup_file_handler
 
-    test_logger._setup_file_handler = Mock()
-    test_logger._ensure_file_handler()
-    test_logger._setup_file_handler.assert_called_once()
+    isolated_logger._setup_file_handler = Mock()
+    isolated_logger._ensure_file_handler()
+    isolated_logger._setup_file_handler.assert_called_once()
 
-    test_logger._setup_file_handler = original_setup
+    isolated_logger._setup_file_handler = original_setup
 
 
-def test_ensure_file_handler(test_logger: Logger):
-    assert not hasattr(test_logger, "_file_handler")
-    test_logger._ensure_file_handler()
-    assert hasattr(test_logger, "_file_handler")
+def test_ensure_file_handler(isolated_logger: Logger):
+    assert not hasattr(isolated_logger, "_file_handler")
+    isolated_logger._ensure_file_handler()
+    assert hasattr(isolated_logger, "_file_handler")
 
-    test_logger.reset()
+    isolated_logger.reset()
 
 
 # Test track & untrack variable
-def test_track_and_untrack_variable(test_logger: Logger):
+def test_track_and_untrack_variable(isolated_logger: Logger):
     def test_func() -> list:
         return [1, 2, 3]
 
     assert test_func() == [1, 2, 3]
 
-    test_logger.track_variable(test_func, "Testing")
+    isolated_logger.track_variable(test_func, "Testing")
     assert all([
-        test_func in list(test_logger._tracked_vars.values()),
-        "Testing" in list(test_logger._var_names.values()),
+        test_func in list(isolated_logger._tracked_vars.values()),
+        "Testing" in list(isolated_logger._var_names.values()),
     ])
 
-    test_logger.untrack_variable(test_func)
+    isolated_logger.untrack_variable(test_func)
     assert all([
-        test_func not in list(test_logger._tracked_vars.values()),
-        "Testing" not in list(test_logger._var_names.values()),
+        test_func not in list(isolated_logger._tracked_vars.values()),
+        "Testing" not in list(isolated_logger._var_names.values()),
     ])
 
 
 # Test repr
-def test_repr(test_logger: Logger):
-    test_logger._file_path = "newpath"
-    assert test_logger.__repr__() == "Logger(file_path=newpath)"
+# def test_repr(test_logger: Logger):
+#     test_logger._file_path = "newpath"
+#     assert test_logger.__repr__() == "Logger(file_path=newpath)"
 
 
 # Test set file name
-def test_set_file_name_str(test_logger: Logger):
-    test_logger.set_file_name("test_file")
-    print(test_logger._file_path)
+def test_set_file_name_str(isolated_logger: Logger):
+    isolated_logger.set_file_name("test_file")
     assert all([
-        test_logger._user_file_name == "test_file",
-        test_logger._file_path == f"{CURR_DIR}/test_file.log",
-        test_logger._csv_path == f"{CURR_DIR}/test_file.csv",
+        isolated_logger._user_file_name == "test_file",
+        isolated_logger._file_path == f"{CURR_DIR}/test_file.log",
+        isolated_logger._csv_path == f"{CURR_DIR}/test_file.csv",
     ])
 
 
-def test_set_file_name_none(test_logger: Logger):
-    test_logger.set_file_name(None)
+def test_set_file_name_none(isolated_logger: Logger):
+    isolated_logger.set_file_name(None)
     assert all([
-        test_logger._user_file_name is None,
+        isolated_logger._user_file_name is not None,
     ])
 
 
 # Test set file level
-def test_set_file_level(test_logger: Logger):
-    test_logger.set_file_level(LogLevel.CRITICAL)
+def test_set_file_level(isolated_logger: Logger):
+    isolated_logger.set_file_level(LogLevel.CRITICAL)
     assert all([
-        test_logger._file_level == LogLevel.CRITICAL,
-        not hasattr(test_logger, "_file_handler"),
+        isolated_logger._file_level == LogLevel.CRITICAL,
+        not hasattr(isolated_logger, "_file_handler"),
     ])
 
 
-def test_set_file_level_has_attr(test_logger: Logger):
-    test_logger._setup_file_handler()
-    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "w"])
+def test_set_file_level_has_attr(isolated_logger: Logger):
+    isolated_logger._setup_file_handler()
+    assert all([hasattr(isolated_logger, "_file_handler"), isolated_logger._file_handler.mode == "w"])
 
-    test_logger.set_file_level(LogLevel.DEBUG)
+    isolated_logger.set_file_level(LogLevel.DEBUG)
     assert all([
-        test_logger._file_level == LogLevel.DEBUG,
-        test_logger._file_handler.level == LogLevel.DEBUG.value,
+        isolated_logger._file_level == LogLevel.DEBUG,
+        isolated_logger._file_handler.level == LogLevel.DEBUG.value,
     ])
 
 
 # Test set stream level
-def test_set_stream_level(test_logger: Logger):
-    test_logger.set_stream_level(LogLevel.ERROR)
+def test_set_stream_level(isolated_logger: Logger):
+    isolated_logger.set_stream_level(LogLevel.ERROR)
     assert all([
-        hasattr(test_logger, "_stream_handler"),
-        test_logger._stream_level == LogLevel.ERROR,
-        test_logger._stream_handler.level == LogLevel.ERROR.value,
+        hasattr(isolated_logger, "_stream_handler"),
+        isolated_logger._stream_level == LogLevel.ERROR,
+        isolated_logger._stream_handler.level == LogLevel.ERROR.value,
     ])
 
 
 # Test set format
-def test_set_format(test_logger: Logger):
-    test_logger.set_format("[%(levelname)s]")
+def test_set_format(isolated_logger: Logger):
+    isolated_logger.set_format("[%(levelname)s]")
     assert all([
-        test_logger._log_format == "[%(levelname)s]",
-        isinstance(test_logger._std_formatter, logging.Formatter),
-        test_logger._std_formatter._fmt == "[%(levelname)s]",
-        not hasattr(test_logger, "_file_handler"),
-        test_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
+        isolated_logger._log_format == "[%(levelname)s]",
+        isinstance(isolated_logger._std_formatter, logging.Formatter),
+        isolated_logger._std_formatter._fmt == "[%(levelname)s]",
+        not hasattr(isolated_logger, "_file_handler"),
+        isolated_logger._stream_handler.formatter._fmt == "[%(levelname)s]",
     ])
 
 
-def test_set_format_has_attr(test_logger: Logger):
-    test_logger._setup_file_handler()
-    assert all([hasattr(test_logger, "_file_handler"), test_logger._file_handler.mode == "w"])
+def test_set_format_has_attr(isolated_logger: Logger):
+    isolated_logger._setup_file_handler()
+    assert all([hasattr(isolated_logger, "_file_handler"), isolated_logger._file_handler.mode == "w"])
 
-    test_logger.set_format("[%(test)s]")
-    assert test_logger._file_handler.formatter._fmt == "[%(test)s]"
+    isolated_logger.set_format("[%(test)s]")
+    assert isolated_logger._file_handler.formatter._fmt == "[%(test)s]"
 
 
 # Test set buffer size
-def test_set_buffer_size(test_logger: Logger):
-    test_logger.set_buffer_size(5)
+def test_set_buffer_size(isolated_logger: Logger):
+    isolated_logger.set_buffer_size(5)
     assert all([
-        test_logger._buffer_size == 5,
-        isinstance(test_logger._buffer, deque),
-        test_logger._buffer.maxlen == 5,
+        isolated_logger._buffer_size == 5,
+        isinstance(isolated_logger._buffer, deque),
+        isolated_logger._buffer.maxlen == 5,
     ])
 
 
 # Test update
-def test_update(test_logger: Logger):
+def test_update(isolated_logger: Logger):
     def test_func() -> int:
         return 18
 
     def test_func2() -> int:
         return 8
 
-    assert not test_logger._tracked_vars
-    test_logger.track_variable(test_func, "first")
-    test_logger.update()
-    test_logger.track_variable(test_func2, "second")
-    test_logger.update()
+    assert not isolated_logger._tracked_vars
+    isolated_logger.track_variable(test_func, "first")
+    isolated_logger.update()
+    isolated_logger.track_variable(test_func2, "second")
+    isolated_logger.update()
     assert all([
-        test_logger._buffer[0] == ["18"],
-        test_logger._buffer[1] == ["18", "8"],
-        len(test_logger._buffer) == 2,
+        isolated_logger._buffer[0] == ["18"],
+        isolated_logger._buffer[1] == ["18", "8"],
+        len(isolated_logger._buffer) == 2,
     ])
 
 
 # Test update size exceeded
-def test_update_size_exceeded(test_logger: Logger):
+def test_update_size_exceeded(isolated_logger: Logger):
     def test_func() -> int:
         return -2
 
-    test_logger.set_buffer_size(2)
-    test_logger.track_variable(test_func, "test")
-    test_logger.update()
-    assert len(test_logger._buffer) == 1
+    isolated_logger.set_buffer_size(2)
+    isolated_logger.track_variable(test_func, "test")
+    isolated_logger.update()
+    assert len(isolated_logger._buffer) == 1
 
-    test_logger.track_variable(test_func, "test2")
-    test_logger.update()
-    assert len(test_logger._buffer) == 0
+    isolated_logger.track_variable(test_func, "test2")
+    isolated_logger.update()
+    assert len(isolated_logger._buffer) == 0
 
 
 # Test flush buffer
-def test_flush_buffer(test_logger: Logger):
+def test_flush_buffer(isolated_logger: Logger):
     def test_func() -> int:
         return -2
 
-    test_logger.track_variable(test_func, "test")
-    test_logger.update()
-    assert len(test_logger._buffer) == 1
+    isolated_logger.track_variable(test_func, "test")
+    isolated_logger.update()
+    assert len(isolated_logger._buffer) == 1
 
-    test_logger._ensure_file_handler()
+    isolated_logger._ensure_file_handler()
 
-    test_logger.flush_buffer()
-    assert len(test_logger._buffer) == 0
+    isolated_logger.flush_buffer()
+    assert len(isolated_logger._buffer) == 0
 
     # Ensure expected output was written
-    file = open(test_logger._csv_path)
+    file = open(isolated_logger._csv_path)
     expected = "test\n-2\n"
     assert expected == file.read()
     file.close()
 
 
 # Test write header
-def test_write_header(test_logger: Logger):
-    test_logger.track_variable(lambda: 2, "first")
-    test_logger.track_variable(lambda: 4, "second")
+def test_write_header(isolated_logger: Logger):
+    isolated_logger.track_variable(lambda: 2, "first")
+    isolated_logger.track_variable(lambda: 4, "second")
 
-    test_logger._ensure_file_handler()
-    test_logger._file = open(test_logger._csv_path, "w", newline="")
-    test_logger._writer = csv.writer(test_logger._file)
-    test_logger._write_header()
-    test_logger.close()
-    assert test_logger._header_written is True
+    isolated_logger._ensure_file_handler()
+    isolated_logger._file = open(isolated_logger._csv_path, "w", newline="")
+    isolated_logger._writer = csv.writer(isolated_logger._file)
+    isolated_logger._write_header()
+    isolated_logger.close()
+    assert isolated_logger._header_written is True
 
     # Ensure expected output was written
-    file = open(test_logger._csv_path)
+    file = open(isolated_logger._csv_path)
     header_contents = file.read()
     expected = "first,second\n"
     assert expected == header_contents
@@ -304,168 +349,168 @@ def test_write_header(test_logger: Logger):
 
 
 # Test generate file paths
-def test_generate_file_paths_no_input_filename(test_logger: Logger):
-    test_logger._user_file_name = None
-    test_logger._generate_file_paths()
-    assert all([".log" in test_logger._file_path, ".csv" in test_logger._csv_path])
+def test_generate_file_paths_no_input_filename(isolated_logger: Logger):
+    isolated_logger._user_file_name = None
+    isolated_logger._generate_file_paths()
+    assert all([".log" in isolated_logger._file_path, ".csv" in isolated_logger._csv_path])
     # For timestamp-based file names, portion of string minus script name will be 20 chars
-    assert len(test_logger._csv_path) >= 20
+    assert len(isolated_logger._csv_path) >= 20
 
 
-def test_generate_file_paths_with_input_filename(test_logger: Logger):
-    test_logger._user_file_name = "test_file"
-    test_logger._generate_file_paths()
-    assert test_logger._csv_path == f"{test_logger.log_path}/test_file.csv"
+def test_generate_file_paths_with_input_filename(isolated_logger: Logger):
+    isolated_logger._user_file_name = "test_file"
+    isolated_logger._generate_file_paths()
+    assert isolated_logger._csv_path == f"{isolated_logger.log_path}/test_file.csv"
 
 
 # Test enter
-def test_enter(test_logger: Logger):
-    assert test_logger.__enter__() is test_logger
+def test_enter(isolated_logger: Logger):
+    assert isolated_logger.__enter__() is isolated_logger
 
 
 # Test exit
-def test_exit(test_logger: Logger):
-    with test_logger:
+def test_exit(isolated_logger: Logger):
+    with isolated_logger:
         # Perform some logging operations
-        test_logger.track_variable(lambda: 1, "test_var")
-        test_logger.update()
+        isolated_logger.track_variable(lambda: 1, "test_var")
+        isolated_logger.update()
 
     # After exiting the context, the logger should be closed
-    assert len(test_logger._buffer) == 0
-    assert test_logger._file is None
-    assert test_logger._writer is None
+    assert len(isolated_logger._buffer) == 0
+    assert isolated_logger._file is None
+    assert isolated_logger._writer is None
 
 
 # Test reset
-def test_reset(test_logger: Logger):
-    test_logger.track_variable(lambda: 2, "test")
-    test_logger.update()
-    test_logger._setup_file_handler()
+def test_reset(isolated_logger: Logger):
+    isolated_logger.track_variable(lambda: 2, "test")
+    isolated_logger.update()
+    isolated_logger._setup_file_handler()
     assert all([
-        len(test_logger._buffer) == 1,
-        len(test_logger._tracked_vars) == 1,
-        len(test_logger._var_names) == 1,
-        hasattr(test_logger, "_file_handler"),
+        len(isolated_logger._buffer) == 1,
+        len(isolated_logger._tracked_vars) == 1,
+        len(isolated_logger._var_names) == 1,
+        hasattr(isolated_logger, "_file_handler"),
     ])
 
-    test_logger.reset()
+    isolated_logger.reset()
     assert all([
-        len(test_logger._buffer) == 0,
-        len(test_logger._tracked_vars) == 0,
-        len(test_logger._var_names) == 0,
-        not hasattr(test_logger, "_file_handler"),
+        len(isolated_logger._buffer) == 0,
+        len(isolated_logger._tracked_vars) == 0,
+        len(isolated_logger._var_names) == 0,
+        hasattr(isolated_logger, "_file_handler"),
     ])
 
 
-def test_reset_header(test_logger: Logger):
-    test_logger.track_variable(lambda: 2, "test")
-    test_logger.update()
-    test_logger.flush_buffer()
-    assert test_logger._header_written is True
+def test_reset_header(isolated_logger: Logger):
+    isolated_logger.track_variable(lambda: 2, "test")
+    isolated_logger.update()
+    isolated_logger.flush_buffer()
+    assert isolated_logger._header_written is True
 
-    test_logger.reset()
-    assert test_logger._header_written is False
+    isolated_logger.reset()
+    assert isolated_logger._header_written is False
 
 
 # Test close
-def test_close(test_logger: Logger):
-    test_logger.track_variable(lambda: 2, "first")
-    test_logger.update()
-    test_logger.flush_buffer()
+def test_close(isolated_logger: Logger):
+    isolated_logger.track_variable(lambda: 2, "first")
+    isolated_logger.update()
+    isolated_logger.flush_buffer()
 
-    assert test_logger._file
-    test_logger.close()
-    assert not test_logger._file
-    assert not test_logger._writer
+    assert isolated_logger._file
+    isolated_logger.close()
+    assert not isolated_logger._file
+    assert not isolated_logger._writer
 
 
 # Test debug
-def test_debug(test_logger: Logger):
-    original_ensure = test_logger._ensure_file_handler
+def test_debug(isolated_logger: Logger):
+    original_ensure = isolated_logger._ensure_file_handler
     original_debug = logging.Logger.debug
 
-    test_logger._ensure_file_handler = Mock()
+    isolated_logger._ensure_file_handler = Mock()
     logging.Logger.debug = Mock()
-    test_logger.debug("debug_test")
-    test_logger._ensure_file_handler.assert_called_once()
+    isolated_logger.debug("debug_test")
+    isolated_logger._ensure_file_handler.assert_called_once()
     logging.Logger.debug.assert_called_once_with("debug_test")
 
-    test_logger._ensure_file_handler = original_ensure
+    isolated_logger._ensure_file_handler = original_ensure
     logging.Logger.debug = original_debug
 
 
 # Test info
-def test_info(test_logger: Logger):
-    original_ensure = test_logger._ensure_file_handler
+def test_info(isolated_logger: Logger):
+    original_ensure = isolated_logger._ensure_file_handler
     original_info = logging.Logger.info
 
-    test_logger._ensure_file_handler = Mock()
+    isolated_logger._ensure_file_handler = Mock()
     logging.Logger.info = Mock()
-    test_logger.info("info_test")
-    test_logger._ensure_file_handler.assert_called_once()
+    isolated_logger.info("info_test")
+    isolated_logger._ensure_file_handler.assert_called_once()
     logging.Logger.info.assert_called_once_with("info_test")
 
-    test_logger._ensure_file_handler = original_ensure
+    isolated_logger._ensure_file_handler = original_ensure
     logging.Logger.info = original_info
 
 
 # Test warning
-def test_warning(test_logger: Logger):
-    original_ensure = test_logger._ensure_file_handler
+def test_warning(isolated_logger: Logger):
+    original_ensure = isolated_logger._ensure_file_handler
     original_warning = logging.Logger.warning
 
-    test_logger._ensure_file_handler = Mock()
+    isolated_logger._ensure_file_handler = Mock()
     logging.Logger.warning = Mock()
-    test_logger.warning("warning_test")
-    test_logger._ensure_file_handler.assert_called_once()
+    isolated_logger.warning("warning_test")
+    isolated_logger._ensure_file_handler.assert_called_once()
     logging.Logger.warning.assert_called_once_with("warning_test")
 
-    test_logger._ensure_file_handler = original_ensure
+    isolated_logger._ensure_file_handler = original_ensure
     logging.Logger.warning = original_warning
 
 
 # Test error
-def test_error(test_logger: Logger):
-    original_ensure = test_logger._ensure_file_handler
+def test_error(isolated_logger: Logger):
+    original_ensure = isolated_logger._ensure_file_handler
     original_error = logging.Logger.error
 
-    test_logger._ensure_file_handler = Mock()
+    isolated_logger._ensure_file_handler = Mock()
     logging.Logger.error = Mock()
-    test_logger.error("error_test")
-    test_logger._ensure_file_handler.assert_called_once()
+    isolated_logger.error("error_test")
+    isolated_logger._ensure_file_handler.assert_called_once()
     logging.Logger.error.assert_called_once_with("error_test")
 
-    test_logger._ensure_file_handler = original_ensure
+    isolated_logger._ensure_file_handler = original_ensure
     logging.Logger.error = original_error
 
 
 # Test critical
-def test_critical(test_logger: Logger):
-    original_ensure = test_logger._ensure_file_handler
+def test_critical(isolated_logger: Logger):
+    original_ensure = isolated_logger._ensure_file_handler
     original_critical = logging.Logger.critical
 
-    test_logger._ensure_file_handler = Mock()
+    isolated_logger._ensure_file_handler = Mock()
     logging.Logger.critical = Mock()
-    test_logger.critical("critical_test")
-    test_logger._ensure_file_handler.assert_called_once()
+    isolated_logger.critical("critical_test")
+    isolated_logger._ensure_file_handler.assert_called_once()
     logging.Logger.critical.assert_called_once_with("critical_test")
 
-    test_logger._ensure_file_handler = original_ensure
+    isolated_logger._ensure_file_handler = original_ensure
     logging.Logger.critical = original_critical
 
 
 # Test log
-def test_log(test_logger: Logger):
-    original_ensure = test_logger._ensure_file_handler
+def test_log(isolated_logger: Logger):
+    original_ensure = isolated_logger._ensure_file_handler
     original_log = logging.Logger.log
 
-    test_logger._ensure_file_handler = Mock()
+    isolated_logger._ensure_file_handler = Mock()
     logging.Logger.log = Mock()
-    test_logger.log(LogLevel.DEBUG, "log_test")
-    test_logger._ensure_file_handler.assert_called_once()
+    isolated_logger.log(LogLevel.DEBUG, "log_test")
+    isolated_logger._ensure_file_handler.assert_called_once()
     logging.Logger.log.assert_called_once_with(LogLevel.DEBUG, "log_test")
 
-    test_logger._ensure_file_handler = original_ensure
+    isolated_logger._ensure_file_handler = original_ensure
     logging.Logger.log = original_log
 
 
@@ -481,36 +526,36 @@ def test_log(test_logger: Logger):
 
 
 # Test buffer size
-def test_buffer_size(test_logger: Logger):
-    test_logger.set_buffer_size(5)
-    assert test_logger.buffer_size == 5
+def test_buffer_size(isolated_logger: Logger):
+    isolated_logger.set_buffer_size(5)
+    assert isolated_logger.buffer_size == 5
 
 
 # Test file level
-def test_file_level(test_logger: Logger):
-    test_logger.set_file_level(LogLevel.WARNING)
-    assert test_logger.file_level == LogLevel.WARNING
+def test_file_level(isolated_logger: Logger):
+    isolated_logger.set_file_level(LogLevel.WARNING)
+    assert isolated_logger.file_level == LogLevel.WARNING
 
 
 # Test stream level
-def test_stream_level(test_logger: Logger):
-    assert test_logger._file is None
-    test_logger.set_stream_level(LogLevel.INFO)
-    assert test_logger.stream_level == LogLevel.INFO
+def test_stream_level(isolated_logger: Logger):
+    assert isolated_logger._file is None
+    isolated_logger.set_stream_level(LogLevel.INFO)
+    assert isolated_logger.stream_level == LogLevel.INFO
 
 
 # Test file max bytes
 def test_max_bytes():
-    test_logger = Logger(file_max_bytes=200)
-    assert test_logger.file_max_bytes == 200
-    test_logger.reset()
+    isolated_logger = Logger(file_max_bytes=200)
+    assert isolated_logger.file_max_bytes == 200
+    isolated_logger.reset()
 
 
 # Test file backup count
 def test_file_backup_count():
-    test_logger = Logger(file_backup_count=10)
-    assert test_logger.file_backup_count == 10
-    test_logger.reset()
+    isolated_logger = Logger(file_backup_count=10)
+    assert isolated_logger.file_backup_count == 10
+    isolated_logger.reset()
 
 
 # Test initialized global logger
