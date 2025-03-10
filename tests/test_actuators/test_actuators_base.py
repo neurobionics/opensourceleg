@@ -16,6 +16,7 @@ from opensourceleg.actuators.base import (
     T,
     requires,
 )
+from opensourceleg.logging.exceptions import ControlModeException
 
 DEFAULT_VALUES = [0, 1, 1000, -1000]
 
@@ -539,7 +540,9 @@ def test_temperature_limits(mock_actuator: MockActuator):
 
 def test_method_restriction(mock_actuator: MockActuator):
     mock_actuator.set_control_mode(CONTROL_MODES.IDLE)
-    assert mock_actuator.set_motor_voltage(5.0) is None  # Should be restricted in IDLE mode
+
+    with pytest.raises(ControlModeException):
+        mock_actuator.set_motor_voltage(5.0)
 
     mock_actuator.set_control_mode(CONTROL_MODES.VOLTAGE)
     with patch.object(mock_actuator, "set_motor_voltage") as mock_method:

@@ -633,14 +633,21 @@ class Logger(logging.Logger):
             try:
                 self.close()
 
+                # Remove and clean up handlers
                 if hasattr(self, "_file_handler"):
                     self.removeHandler(self._file_handler)
                     self._file_handler.close()
                     del self._file_handler
 
-                self.removeHandler(self._stream_handler)
+                if hasattr(self, "_stream_handler"):
+                    self.removeHandler(self._stream_handler)
+                    self._stream_handler.close()  # Close the stream handler
+                    del self._stream_handler  # Delete the attribute
+
+                # Reinitialize logging
                 self._setup_logging()
 
+                # Reset tracking and state variables
                 self._tracked_vars.clear()
                 self._var_names.clear()
                 self._error_count.clear()
