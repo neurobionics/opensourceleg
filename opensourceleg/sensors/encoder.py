@@ -6,29 +6,13 @@ import time
 import numpy as np
 from smbus2 import SMBus
 
+from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import EncoderBase
 from opensourceleg.time import SoftRealtimeLoop
 from opensourceleg.utilities.utilities import from_twos_compliment, to_twos_compliment
 
 
 class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name change A-- uses SPI, B uses I2C
-    """Class for the AS5048B encoder, implements the Encoder interface
-
-    https://www.mouser.com/datasheet/2/588/AS5048_DS000298_4_00-2324531.pdf
-
-
-    Args:
-        Encoder (_type_): _description_
-        bus (str): Path to the i2c bus ex. '/dev/i2c-1'
-        A1_adr_pin (int): State of the adress pin A1 on the AS5048A module
-        A2_adr_pin (int): State of the adress pin A1 on the AS5048A module
-        name (str): _description_
-        debug_level (int): _description_
-
-    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se),
-            Senthur Ayyappan (senthura@umich.edu)
-    """
-
     ENC_RESOLUTION = 2**14  # 14 bit resolution
     I2C_BASE_ADR_7BIT = 0b1000000  # The adress base on the format <base[6:2]> <A1[1]> <A2[0]>
 
@@ -56,8 +40,27 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         name: str = "AS5048B",
         zero_position: int = 0,
     ) -> None:
+        """
+        Class for the AS5048B encoder, implements the Encoder interface
+
+        https://www.mouser.com/datasheet/2/588/AS5048_DS000298_4_00-2324531.pdf
+
+
+        Args:
+            bus (str): Path to the i2c bus ex. '/dev/i2c-1'
+            A1_adr_pin (int): State of the adress pin A1 on the AS5048A module
+            A2_adr_pin (int): State of the adress pin A1 on the AS5048A module
+            name (str): Tag name for the encoder
+            zero_position (int): The zero position of the encoder
+
+        Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se),
+                Senthur Ayyappan (senthura@umich.edu)
+        """
         self.name = name
         self.bus = bus
+
+        super().__init__()
+
         self.addr = AS5048B.I2C_BASE_ADR_7BIT | ((bool(A2_adr_pin)) << 1) | ((bool(A1_adr_pin)) << 0)
         self._reset_data()
 
@@ -72,12 +75,12 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         self._scale_factor = self._two_pi / AS5048B.ENC_RESOLUTION
 
     def start(self) -> None:
-        print(f"Opening encoder communication: {self.__class__.__name__} - {self.name}")
+        LOGGER.info(f"Opening encoder communication: {self.__class__.__name__} - {self.name}")
         self._SMBus = SMBus(self.bus)
         self.update()  # Use public method instead of _update
         if self.zero_position != self._zero_to_set:
             self.zero_position = self._zero_to_set
-            print(f"Set zero position to {self.zero_position}")
+            LOGGER.info(f"Set zero position to {self.zero_position}")
 
         self._is_streaming = True
 
@@ -156,13 +159,13 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
             raise OSError("Invalid data returned on read, DIAG_OCF != 1")
 
         if self.diag_COF:
-            print("CORDIC Overflow, sample invalid")
+            LOGGER.info("CORDIC Overflow, sample invalid")
 
         if self.diag_compH:
-            print("Low magnetic field comp triggered")
+            LOGGER.info("Low magnetic field comp triggered")
 
         if self.diag_compL:
-            print("High magnetic field comp triggered")
+            LOGGER.info("High magnetic field comp triggered")
 
     @property
     def position(self) -> float:
@@ -247,7 +250,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         else:
             self._write_registers(AS5048B.OTP_ZERO_POSITION_HIGH, payload)
 
-    def set_zero(self) -> None:
+    def set_zero_position(self) -> None:
         """
         Calculates the midpoint between the current endpoints and sets it as
         the zero position.
@@ -263,7 +266,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         max_value = from_twos_compliment(self.encoder_output, 14)
         mid_value = (min_value + max_value) // 2
         self.zero_position = to_twos_compliment(mid_value, 14)
-        print("[SET] Zero registers:", self.zero_position)
+        LOGGER.info("[SET] Zero registers:", self.zero_position)
 
     @property
     def diag_compH(self) -> bool:
@@ -364,8 +367,8 @@ if __name__ == "__main__":
         knee_enc.update()
         ankle_enc.update()
 
-        knee_enc.set_zero()  # if you want 0 at the midpoint of a given range
-        ankle_enc.set_zero()  # if you want 0 at the midpoint of a given range
+        knee_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
+        ankle_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
 
         knee_enc.zero_position = knee_enc.encoder_output  # sets the current position to 0 rad
         ankle_enc.zero_position = ankle_enc.encoder_output  # sets the current position to 0 rad
@@ -373,5 +376,5 @@ if __name__ == "__main__":
         for _t in clock:
             knee_enc.update()
             ankle_enc.update()
-            print(np.rad2deg(knee_enc.position), np.rad2deg(knee_enc.abs_ang))
-            print(np.rad2deg(ankle_enc.position), np.rad2deg(ankle_enc.abs_ang))
+            LOGGER.info(np.rad2deg(knee_enc.position), np.rad2deg(knee_enc.abs_ang))
+            LOGGER.info(np.rad2deg(ankle_enc.position), np.rad2deg(ankle_enc.abs_ang))
