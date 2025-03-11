@@ -31,15 +31,11 @@ The easiest and quickest way to install the _opensourceleg_ library is via [pip]
 pip install opensourceleg
 ```
 
-> If you plan on installing the _opensourceleg_ library on a Raspberry Pi, we recommend using [opensourcelegpi](https://github.com/neurobionics/opensourcelegpi) tool, which is a cloud-based CI tool used to build an up-to-date OS for a [Raspberry Pi](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) that can be used headless/GUI-less to control autonomous/remote robotic systems. This tool bundles the _opensourceleg_ library and its dependencies into a single OS image, which can be flashed onto a microSD card and used to boot a Raspberry Pi. For more information, click [here](https://github.com/neurobionics/opensourcelegpi/blob/main/README.md).
+You can now use the library in your projects! Please refer to the [documentation](https://opensourceleg.readthedocs.io/en/latest/) for tutorials, examples, and more.
 
-### Developing
+### Developing and Contributing to the Library
 
-// ... existing code ...
-
-### Developing
-
-To modify, develop, or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we recommend following these steps:
+If you'd like to modify or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we recommend following these steps:
 
 1. **Fork the repository** by clicking the "Fork" button at the top right of this [page](https://github.com/neurobionics/opensourceleg).
 
@@ -85,7 +81,7 @@ To modify, develop, or contribute to the [opensourceleg](https://pypi.org/projec
    git push origin feature-or-bugfix-name
    ```
 
-10. **Create a Pull Request** by navigating to your fork on GitHub and clicking "New Pull Request".
+10. **Create a Pull Request** by navigating to your fork on GitHub and clicking `New Pull Request`.
 
 Your changes will be reviewed by the maintainers, and if approved, they will be merged into the main repository.
 
