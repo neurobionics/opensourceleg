@@ -1,44 +1,53 @@
-﻿import time
+import time
 
 import numpy as np
 
-import opensourceleg.actuators.dephy as Dephy
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.actuators.base import CONTROL_MODES
+from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.logging.logger import Logger
+from opensourceleg.time import SoftRealtimeLoop
 
-actpack = Dephy.DephyActuator(
-    port="/dev/ttyACM0",
-    gear_ratio=1.0,
-)
+TIME_TO_STEP = 1.0
+FREQUENCY = 1000
+DT = 1 / FREQUENCY
 
-with actpack:
-    try:
-        actpack.set_control_mode(mode=actpack.CONTROL_MODES.IMPEDANCE)
+
+def impedance_control():
+    impedance_logger = Logger(
+        log_path="./logs",
+        file_name="impedance_control",
+    )
+    actpack = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY, debug_level=0, dephy_log=False)
+    clock = SoftRealtimeLoop(dt=DT)
+
+    with actpack:
         actpack.update()
-        k = 150
-        b = 600
+        actpack.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        actpack.set_impedance_gains()
+
         current_position = actpack.output_position
-        while True:
+        command_position = current_position
+
+        impedance_logger.track_variable(lambda: actpack.output_position, "Output Position")
+        impedance_logger.track_variable(lambda: command_position, "Command Position")
+        impedance_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
+        impedance_logger.track_variable(lambda: time.time(), "Time")
+
+        for t in clock:
             actpack.update()
-            current_position = actpack.output_position
-            k += 100
-            actpack.set_impedance_gains(
-                kp=40,
-                ki=400,
-                k=k,
-                b=b,
-                ff=128,
-            )
-            actpack.set_output_position(value=current_position + np.pi / 2)
 
-            LOGGER.info(
-                "".join(
-                    f"Motor Position: {actpack.motor_position}\t"
-                    + f"Motor Voltage: {actpack.motor_voltage}\t"
-                    + f"Motor Current: {actpack.motor_current}\t"
-                )
-            )
-            input("Press Enter to continue...")
-            time.sleep(0.2)
+            if t > TIME_TO_STEP:
+                command_position = current_position + np.pi / 2
 
-    except KeyboardInterrupt:
-        exit()
+            actpack.set_output_position(value=command_position)
+
+            impedance_logger.info(f"Time: {t}; \
+                                    Command Position: {command_position}; \
+                                    Output Position: {actpack.output_position}; \
+                                    Motor Current: {actpack.motor_current}")
+
+            impedance_logger.update()
+
+
+if __name__ == "__main__":
+    impedance_control()

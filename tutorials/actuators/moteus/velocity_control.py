@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 
 import numpy as np
 import pandas as pd
@@ -23,13 +23,11 @@ async def main():
         bus_id=3,
         gear_ratio=9.0,
     )
-    velocity_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Velocity": [],
-            "Command_Velocity": [],
-        }
-    )
+    velocity_data = pd.DataFrame({
+        "Time": [],
+        "Output_Velocity": [],
+        "Command_Velocity": [],
+    })
     clock = SoftRealtimeLoop(dt=DT)
 
     try:
@@ -44,43 +42,37 @@ async def main():
         await mc1.update()
 
         for t in clock:
-
             # current_time = time.monotonic()
 
             if t > TIME_TO_STEP:
-
                 mc1.set_motor_velocity(
                     value=np.pi * 2,
                 )
                 await mc1.update()
 
-            print(f"######")
+            print("######")
             LOGGER.info(
                 "".join(
                     f"Motor Velocity: {mc1.motor_velocity}\t"
-                    + f"Motor Velocity Command: {mc1._data[0].values[Register.COMMAND_VELOCITY] * 2 * np.pi / mc1.gear_ratio}\t"
+                    + "Motor Velocity Command: "
+                    + f"{mc1._data[0].values[Register.COMMAND_VELOCITY] * 2 * np.pi / mc1.gear_ratio}\t"
                 )
             )
             velocity_data = pd.concat(
                 [
                     velocity_data,
-                    pd.DataFrame(
-                        {
-                            "Time": [t],
-                            "Output_Velocity": [mc1.motor_velocity],
-                            "Command_Velocity": [
-                                mc1._data[0].values[Register.COMMAND_VELOCITY]
-                                * 2
-                                * np.pi
-                                / mc1.gear_ratio
-                            ],
-                        }
-                    ),
+                    pd.DataFrame({
+                        "Time": [t],
+                        "Output_Velocity": [mc1.motor_velocity],
+                        "Command_Velocity": [
+                            mc1._data[0].values[Register.COMMAND_VELOCITY] * 2 * np.pi / mc1.gear_ratio
+                        ],
+                    }),
                 ],
                 ignore_index=True,
             )
 
-            print(f"------")
+            print("------")
             await asyncio.sleep(DT)
 
     finally:
