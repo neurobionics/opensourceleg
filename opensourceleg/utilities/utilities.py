@@ -1,5 +1,5 @@
-def to_twos_compliment(value: int, bit_length: int) -> int:
-    """Converts a signed integer to 2's compliment for of a defined number of bits
+def to_twos_complement(value: int, bit_length: int) -> int:
+    """Converts a signed integer to 2's complement for a defined number of bits
     as an unsigned integer
 
     Args:
