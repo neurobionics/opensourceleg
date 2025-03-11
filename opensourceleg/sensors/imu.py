@@ -136,6 +136,24 @@ class LordMicrostrainIMU(IMUBase):
 
         return channels
 
+    def set_update_timeout(self, timeout: int) -> None:
+        """
+        Set the update timeout for the sensor.
+        """
+        self._update_timeout = timeout
+
+    def set_max_packets(self, max_packets: int) -> None:
+        """
+        Set the maximum number of packets to retrieve.
+        """
+        self._max_packets = max_packets
+
+    def set_return_packets(self, return_packets: bool) -> None:
+        """
+        Set the return packets flag.
+        """
+        self._return_packets = return_packets
+
     def start(self) -> None:
         """
         Start the Lord Microstrain IMU sensor.
@@ -191,11 +209,11 @@ class LordMicrostrainIMU(IMUBase):
         Returns:
             Union[None, Any]: Returns the data packets if `return_packets` is True; otherwise, None.
         """
-        data_packets = self._node.getDataPackets(timeout=self._update_timeout, maxPackets=self._max_packets)
+        data_packets = self._node.getDataPackets(timeout=self.update_timeout, maxPackets=self.max_packets)
         data_points = data_packets[-1].data()
         self._data = {data.channelName(): data.as_float() for data in data_points}
 
-        if self._return_packets:
+        if self.return_packets:
             return data_packets
         else:
             return None
@@ -248,6 +266,27 @@ class LordMicrostrainIMU(IMUBase):
             bool: True if streaming; otherwise, False.
         """
         return self._is_streaming
+
+    @property
+    def update_timeout(self) -> int:
+        """
+        Get the update timeout for the sensor.
+        """
+        return self._update_timeout
+
+    @property
+    def max_packets(self) -> int:
+        """
+        Get the maximum number of packets to retrieve.
+        """
+        return self._max_packets
+
+    @property
+    def return_packets(self) -> bool:
+        """
+        Get the return packets flag.
+        """
+        return self._return_packets
 
     @property
     def data(self) -> dict[str, float]:
