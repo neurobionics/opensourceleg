@@ -32,19 +32,26 @@ class State:
         self,
         name: str = "state",
         minimum_time_in_state: float = 2.0,
+        entry_callbacks: Optional[list[Callable[[Any], None]]] = None,
+        exit_callbacks: Optional[list[Callable[[Any], None]]] = None,
+        **kwargs: Any,
     ) -> None:
+        if exit_callbacks is None:
+            exit_callbacks = []
+        if entry_callbacks is None:
+            entry_callbacks = []
         self._name: str = name
-        self._minimum_time_in_state: float = minimum_time_in_state
 
-        self._custom_data: dict[str, Any] = {}
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         self._time_entered: float = 0.0
         self._time_exited: float = 0.0
         self._min_time_in_state: float = minimum_time_in_state
 
         # Callbacks
-        self._entry_callbacks: list[Callable[[Any], None]] = []
-        self._exit_callbacks: list[Callable[[Any], None]] = []
+        self._entry_callbacks: list[Callable[[Any], None]] = entry_callbacks
+        self._exit_callbacks: list[Callable[[Any], None]] = exit_callbacks
 
     def __eq__(self, __o: Any) -> bool:
         return bool(__o.name == self._name)
@@ -67,59 +74,21 @@ class State:
         """
         self._min_time_in_state = time
 
-    def set_custom_data(self, key: str, value: Any) -> None:
-        """
-        Set custom data for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
-
-        Args:
-            key (str): Key of the data
-            value (Any): Value of the data
-        """
-
-        self._custom_data.setdefault(key, value)
-
-    def get_custom_data(self, key: str) -> Any:
-        """
-        Get custom data for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
-
-        Args:
-            key (str): Key of the data
-
-        Returns:
-            Any: Value of the data
-        """
-        return self._custom_data[key]
-
-    def get_all_custom_data(self) -> dict[str, Any]:
-        """
-        Get the entire custom data dictionary for the state. The custom data is a dictionary
-        that can be used to store any data you want to associate with
-        the state.
-
-        Returns:
-            dict: All custom data
-        """
-        return self._custom_data
-
     def on_entry(self, callback: Callable[[Any], None]) -> None:
         self._entry_callbacks.append(callback)
 
     def on_exit(self, callback: Callable[[Any], None]) -> None:
         self._exit_callbacks.append(callback)
 
-    def start(self, data: Any) -> None:
-        self._time_entered = time.time()
+    def start(self, *args: Any, **kwargs: Any) -> None:
+        self._time_entered = time.monotonic()
         for c in self._entry_callbacks:
-            c(data)
+            c(*args, **kwargs)
 
-    def stop(self, data: Any) -> None:
-        self._time_exited = time.time()
+    def stop(self, *args: Any, **kwargs: Any) -> None:
+        self._time_exited = time.monotonic()
         for c in self._exit_callbacks:
-            c(data)
+            c(*args, **kwargs)
 
     @property
     def name(self) -> str:
@@ -131,7 +100,7 @@ class State:
 
     @property
     def current_time_in_state(self) -> float:
-        return time.time() - self._time_entered
+        return time.monotonic() - self._time_entered
 
     @property
     def time_spent_in_state(self) -> float:
@@ -155,10 +124,8 @@ class Event:
 
     def __init__(self, name: str) -> None:
         """
-        Parameters
-        ----------
-        name : str
-            The name of the event.
+        Args:
+            name (str): The name of the event.
         """
         self._name: str = name
 
@@ -178,7 +145,10 @@ class Event:
 
 class Transition:
     """
-    Transition class
+    Transition class that handles state transitions in a finite state machine.
+    A transition connects a source state to a destination state and is triggered by an event.
+    It can include criteria that must be met for the transition to occur and actions to execute
+    during the transition.
     """
 
     def __init__(
@@ -191,12 +161,37 @@ class Transition:
         self._event: Event = event
         self._source_state: State = source
         self._destination_state: State = destination
+        self._from: State = source  # For backward compatibility
+        self._to: State = destination  # For backward compatibility
 
         self._criteria: Optional[Callable[[Any], bool]] = callback
         self._action: Optional[Callable[[Any], None]] = None
 
-    def __call__(self, data: Any) -> Any:
-        raise NotImplementedError
+    def __call__(self, *args: Any, **kwargs: Any) -> State:
+        if kwargs.get("spoof", False):
+            if self._source_state.current_time_in_state > self._source_state.minimum_time_spent_in_state:
+                if self._action:
+                    self._action(*args, **kwargs)
+
+                self._source_state.stop(*args, **kwargs)
+                self._destination_state.start(*args, **kwargs)
+
+                return self._destination_state
+
+            else:
+                return self._source_state
+
+        elif not self._criteria or self._criteria(*args, **kwargs):
+            if self._action:
+                self._action(*args, **kwargs)
+
+            self._source_state.stop(*args, **kwargs)
+            self._destination_state.start(*args, **kwargs)
+
+            return self._destination_state
+
+        else:
+            return self._source_state
 
     def __repr__(self) -> str:
         return f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
@@ -218,46 +213,6 @@ class Transition:
     @property
     def destination_state(self) -> State:
         return self._destination_state
-
-
-class FromToTransition(Transition):
-    def __init__(
-        self,
-        event: Event,
-        source: State,
-        destination: State,
-        callback: Optional[Callable[[Any], bool]] = None,
-    ) -> None:
-        super().__init__(event=event, source=source, destination=destination, callback=callback)
-
-        self._from: State = source
-        self._to: State = destination
-
-    def __call__(self, data: Any, spoof: bool = False) -> State:
-        if spoof:
-            if self._from.current_time_in_state > self._from.minimum_time_spent_in_state:
-                if self._action:
-                    self._action(data)
-
-                self._from.stop(data=data)
-                self._to.start(data=data)
-
-                return self._to
-
-            else:
-                return self._from
-
-        elif not self._criteria or self._criteria(data):
-            if self._action:
-                self._action(data)
-
-            self._from.stop(data=data)
-            self._to.start(data=data)
-
-            return self._to
-
-        else:
-            return self._from
 
 
 class StateMachine:
@@ -288,7 +243,7 @@ class StateMachine:
         # State Machine Variables
         self._states: list[State] = []
         self._events: list[Event] = []
-        self._transitions: list[FromToTransition] = []
+        self._transitions: list[Transition] = []
         self._exit_callback: Optional[Callable[[Idle, Any], None]] = None
         self._exit_state: State = Idle()
         self.add_state(state=self._exit_state)
@@ -350,12 +305,12 @@ class StateMachine:
         transition = None
 
         if source in self._states and destination in self._states and event in self._events:
-            transition = FromToTransition(event=event, source=source, destination=destination, callback=callback)
+            transition = Transition(event=event, source=source, destination=destination, callback=callback)
             self._transitions.append(transition)
 
         return transition
 
-    def update(self, data: Any = None) -> None:
+    def update(self, *args: Any, **kwargs: Any) -> None:
         validity = False
 
         if not (self._initial_state or self._current_state):
@@ -363,13 +318,13 @@ class StateMachine:
 
         for transition in self._transitions:
             if transition.source_state == self._current_state:
-                self._current_state = transition(self._osl, spoof=self.is_spoofing)
+                self._current_state = transition(*args, **kwargs)
 
                 if isinstance(self._current_state, Idle) and not self._exited:
                     self._exited = True
 
                     if self._exit_callback:
-                        self._exit_callback(self._current_state, data)
+                        self._exit_callback(self._current_state, *args, **kwargs)
 
                 validity = True
                 break
@@ -380,19 +335,19 @@ class StateMachine:
 
             LOGGER.debug(f"Event isn't valid at {self._current_state.name}")
 
-    def start(self, data: Any = None) -> None:
+    def start(self, *args: Any, **kwargs: Any) -> None:
         if not self._initial_state:
             raise ValueError("Initial state not set.")
 
         self._current_state = self._initial_state
         self._exited = False
-        self._current_state.start(data=data)
+        self._current_state.start(*args, **kwargs)
 
-    def stop(self, data: Any = None) -> None:
+    def stop(self, *args: Any, **kwargs: Any) -> None:
         if not (self._initial_state or self._current_state):
             raise ValueError("OSL isn't active.")
 
-        self._current_state.stop(data=data)
+        self._current_state.stop(*args, **kwargs)
         self._current_state = self._exit_state
         self._exited = True
 
