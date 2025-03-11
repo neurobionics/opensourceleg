@@ -7,7 +7,7 @@ from smbus2 import SMBus
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import EncoderBase
 from opensourceleg.time import SoftRealtimeLoop
-from opensourceleg.utilities.utilities import from_twos_compliment, to_twos_compliment
+from opensourceleg.utilities.utilities import from_twos_complement, to_twos_complement
 
 
 class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name change A-- uses SPI, B uses I2C
@@ -168,7 +168,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
     @property
     def position(self) -> float:
         """Get the current angular position in radians"""
-        signed_output = from_twos_compliment(self.encoder_output, 14)
+        signed_output = from_twos_complement(self.encoder_output, 14)
         return signed_output * self._scale_factor
 
     @property
@@ -206,8 +206,8 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         except TypeError:
             return self.position
 
-        encAngRadOld = from_twos_compliment(encAngleDataOld, 14) * self._scale_factor
-        encAngRadNew = from_twos_compliment(encAngleDataNew, 14) * self._scale_factor
+        encAngRadOld = from_twos_complement(encAngleDataOld, 14) * self._scale_factor
+        encAngRadNew = from_twos_complement(encAngleDataNew, 14) * self._scale_factor
 
         # Detect rotation crossings
         diff = encAngRadNew - encAngRadOld
@@ -257,14 +257,15 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         self.zero_position = 0
         self.update()
-        min_value = from_twos_compliment(self.encoder_output, 14)
+        min_value = from_twos_complement(self.encoder_output, 14)
 
         input("Set joint in upper position and press enter")
         self.update()
-        max_value = from_twos_compliment(self.encoder_output, 14)
+        max_value = from_twos_complement(self.encoder_output, 14)
         mid_value = (min_value + max_value) // 2
-        self.zero_position = to_twos_compliment(mid_value, 14)
+        self.zero_position = to_twos_complement(mid_value, 14)
         LOGGER.info(f"[SET] Zero registers: {self.zero_position}")
+
     @property
     def diag_compH(self) -> bool:
         """

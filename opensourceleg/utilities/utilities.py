@@ -4,10 +4,10 @@ def to_twos_complement(value: int, bit_length: int) -> int:
 
     Args:
         value (int): Signed integer to convert
-        bits (int): Number of bits of 2's compliment representation
+        bits (int): Number of bits of 2's complement representation
 
     Returns:
-        int: Unsigned integer 2's compliment
+        int: Unsigned integer 2's complement
 
     Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
 
@@ -28,12 +28,12 @@ def to_twos_complement(value: int, bit_length: int) -> int:
     return int(value + 2**bit_length)
 
 
-def from_twos_compliment(value: int, bit_length: int) -> int:
-    """Converts a 2's compliment integer to a signed integer
+def from_twos_complement(value: int, bit_length: int) -> int:
+    """Converts a 2's complement integer to a signed integer
 
     Args:
-        value (int): 2's compliment integer
-        bit_length (int): Number of bits of 2's compliment representation
+        value (int): 2's complement integer
+        bit_length (int): Number of bits of 2's complement representation
 
     Returns:
         int: Signed integer
