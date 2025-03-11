@@ -1,7 +1,5 @@
-#
-# Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
-#
 import time
+from typing import Union
 
 import numpy as np
 from smbus2 import SMBus
@@ -66,9 +64,9 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         self._zero_to_set = zero_position
         self._is_streaming = False
-        self._data: bytes | None = None
+        self._data: Union[bytes, None] = None
         self.rotations = 0
-        self._SMBus: SMBus | None = None
+        self._SMBus: Union[SMBus, None] = None
 
         # Cache for frequently used values
         self._two_pi = 2 * np.pi
