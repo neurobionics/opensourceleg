@@ -199,12 +199,8 @@ class LordMicrostrainIMU(IMUBase):
 
     def update(self) -> Union[None, Any]:
         """
-        Retrieve and update IMU data from the sensor.
-
-        Args:
-            timeout (int, optional): Timeout for data packet retrieval in milliseconds. Defaults to 500.
-            max_packets (int, optional): Maximum number of data packets to retrieve. Defaults to 1.
-            return_packets (bool, optional): If True, returns the raw data packets. Defaults to False.
+        Retrieve and update IMU data from the sensor. To modify update parameters, use the set_update_timeout,
+        set_max_packets, and set_return_packets methods.
 
         Returns:
             Union[None, Any]: Returns the data packets if `return_packets` is True; otherwise, None.
