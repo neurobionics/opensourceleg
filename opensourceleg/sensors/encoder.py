@@ -264,8 +264,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         max_value = from_twos_compliment(self.encoder_output, 14)
         mid_value = (min_value + max_value) // 2
         self.zero_position = to_twos_compliment(mid_value, 14)
-        LOGGER.info("[SET] Zero registers:", self.zero_position)
-
+        LOGGER.info(f"[SET] Zero registers: {self.zero_position}")
     @property
     def diag_compH(self) -> bool:
         """
