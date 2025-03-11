@@ -24,7 +24,8 @@ def to_twos_compliment(value: int, bit_length: int) -> int:
 
     if value >= 0:
         return value
-    return value + 2**bit_length
+
+    return int(value + 2**bit_length)
 
 
 def from_twos_compliment(value: int, bit_length: int) -> int:
