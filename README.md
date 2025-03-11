@@ -15,6 +15,8 @@
 
 An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
 
+> NOTE: We are currently testing the new version of the library (main branch), and the PyPI release will be updated soon. If you are looking for the source behind the existing PyPI release, please refer to the [legacy branch](https://github.com/neurobionics/opensourceleg/tree/legacy).
+
 <img src="https://github.com/neurobionics/opensourceleg/blob/66ad4289ef9ba8701fac9337778f87b657286484/assets/images/banner.gif?raw=true" width="800" title="Open-Source Leg">
 
 </div>
@@ -33,36 +35,59 @@ pip install opensourceleg
 
 ### Developing
 
-To modify, develop, or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we encourage you to install [Poetry](https://python-poetry.org), which is a python packaging and dependency management tool. Once you have Poetry installed on your local machine, you can clone the repository and install the _opensourceleg_ library by running the following commands:
+// ... existing code ...
 
-```bash
-git clone https://github.com/neurobionics/opensourceleg.git
-cd opensourceleg
+### Developing
 
-poetry install
-poetry shell
-```
+To modify, develop, or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we recommend following these steps:
 
-Finally, install the environment and the pre-commit hooks with
+1. **Fork the repository** by clicking the "Fork" button at the top right of this [page](https://github.com/neurobionics/opensourceleg).
 
-```bash
-make install
-```
+2. **Clone your fork** to your local machine:
 
-You are now ready to start development on your project!
-The CI/CD pipeline will be triggered when you open a pull request, merge to main, or when you create a new release.
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/opensourceleg.git
+   cd opensourceleg
+   ```
 
-To finalize the set-up for publishing to PyPI or Artifactory, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/codecov/).
+3. **Set up the upstream remote** to keep your fork in sync with the main repository:
 
-## Releasing a new version
+   ```bash
+   git remote add upstream https://github.com/neurobionics/opensourceleg.git
+   ```
 
-- Create an API Token on [PyPI](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/neurobionics/opensourceleg/settings/secrets/actions/new).
-- Create a [new release](https://github.com/neurobionics/opensourceleg/releases/new) on Github.
-- Create a new tag in the form `*.*.*`.
-- For more details, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/cicd/#how-to-trigger-a-release).
+4. **Install Poetry** if you haven't already. [Poetry](https://python-poetry.org) is a python packaging and dependency management tool. We use poetry to manage dependencies and build the library.
+
+5. **Install dependencies and activate the virtual environment**:
+
+   ```bash
+   poetry install
+   poetry shell
+   ```
+
+6. **Install pre-commit hooks**:
+
+   ```bash
+   make install
+   ```
+
+7. **Create a new branch** for your feature or bugfix:
+
+   ```bash
+   git checkout -b feature-or-bugfix-name
+   ```
+
+8. **Make your changes** and commit them with descriptive messages.
+
+9. **Push your changes** to your fork:
+
+   ```bash
+   git push origin feature-or-bugfix-name
+   ```
+
+10. **Create a Pull Request** by navigating to your fork on GitHub and clicking "New Pull Request".
+
+Your changes will be reviewed by the maintainers, and if approved, they will be merged into the main repository.
 
 ## License
 
