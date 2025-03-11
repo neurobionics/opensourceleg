@@ -2,18 +2,19 @@
 # A simple and scalable Finite State Machine module
 
 import time
+from collections.abc import Iterator
 from typing import Any, Callable, Optional
 
 from opensourceleg.logging.logger import LOGGER
 
 """
 The state_machine module provides classes for implementing a finite state machine (FSM).
-It includes the State, Idle, Event, Transition, FromToTransition, and StateMachine classes.
+It includes the State, Event, Transition, and StateMachine classes.
 
 Usage:
 1. Use the `State` class to represent a state in the FSM.
 2. Utilize the `Event` class to define events that trigger state transitions.
-3. Create transitions between states using the `Transition` and `FromToTransition` classes.
+3. Create transitions between states using the `Transition` class.
    Add criteria and actions as needed.
 4. Instantiate the `StateMachine` class, add states, events, and transitions, and start the FSM.
 """
@@ -55,6 +56,9 @@ class State:
 
     def __ne__(self, __o: Any) -> bool:
         return not self.__eq__(__o)
+
+    def __hash__(self) -> int:
+        return hash(self._name)
 
     def __call__(self, data: Any) -> Any:
         pass
@@ -102,16 +106,6 @@ class State:
     @property
     def time_spent_in_state(self) -> float:
         return self._time_exited - self._time_entered
-
-
-class Idle(State):
-    def __init__(self) -> None:
-        self._name = "idle"
-        super().__init__(name=self._name)
-
-    @property
-    def status(self) -> str:
-        return self._name
 
 
 class Event:
@@ -254,8 +248,8 @@ class StateMachine:
         self._states: list[State] = []
         self._events: list[Event] = []
         self._transitions: list[Transition] = []
-        self._exit_callback: Optional[Callable[[Idle, Any], None]] = None
-        self._exit_state: State = Idle()
+        self._exit_callback: Optional[Callable[[State, Any], None]] = None
+        self._exit_state: State = State(name="exit")
         self.add_state(state=self._exit_state)
         self._initial_state: State = self._exit_state
         self._current_state: State = self._exit_state
@@ -404,7 +398,10 @@ class StateMachine:
             self._initial_state = state
 
     def add_event(self, event: Event) -> None:
-        self._events.append(event)
+        if event not in self._events:
+            self._events.append(event)
+        else:
+            LOGGER.warning(f"Event {event.name} already exists in state machine")
 
     def add_transition(
         self,
@@ -480,7 +477,7 @@ class StateMachine:
 
                 self._current_state = transition(*args, **kwargs)
 
-                if isinstance(self._current_state, Idle) and not self._exited:
+                if self._current_state.name == "exit" and not self._exited:
                     self._exited = True
                     if self._exit_callback:
                         self._exit_callback(self._current_state, *args, **kwargs)
@@ -499,14 +496,30 @@ class StateMachine:
         self._current_state.start(*args, **kwargs)
 
     def stop(self, *args: Any, **kwargs: Any) -> None:
-        if not (self._initial_state or self._current_state):
-            raise ValueError("OSL isn't active.")
+        if not self.is_active():
+            raise ValueError("State machine isn't active.")
 
         self._current_state.stop(*args, **kwargs)
         self._current_state = self._exit_state
         self._exited = True
 
-    def is_on(self) -> bool:
+    def __enter__(self) -> "StateMachine":
+        self.start()
+        return self
+
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        self.stop()
+
+    def __del__(self) -> None:
+        self.stop()
+
+    def __iter__(self) -> Iterator[State]:
+        return iter(self._states)
+
+    def __next__(self) -> State:
+        return next(self._states)
+
+    def is_active(self) -> bool:
         return bool(self._current_state and self._current_state != self._exit_state)
 
     def spoof(self, spoof: bool) -> None:
@@ -527,7 +540,7 @@ class StateMachine:
     def is_spoofing(self) -> bool:
         return self._spoof
 
-    def set_exit_callback(self, callback: Callable[[Idle, Any], None]) -> None:
+    def set_exit_callback(self, callback: Callable[[State, Any], None]) -> None:
         """
         Set a callback to be called when the state machine exits.
 
@@ -559,4 +572,10 @@ class StateMachine:
 
 
 if __name__ == "__main__":
-    pass
+    sm = StateMachine()
+    sm.add_state(State(name="state1"))
+    sm.add_state(State(name="state2"))
+    sm.add_transition(sm.get_state_by_name("state1"), sm.get_state_by_name("state2"), Event("event1"))
+    sm.start()
+    sm.update(Event("event1"))
+    print(sm.current_state)
