@@ -1,45 +1,58 @@
-#!/usr/bin/python3
-# A simple and scalable Finite State Machine module
+"""
+(c) 2025 Open-Source Leg
+
+A simple and scalable Finite State Machine module.
+It includes the State, Event, Transition, and StateMachine classes.
+
+Usage:
+1. Use the `State` class to represent a state in the FSM.
+2. Utilize the `Event` class to define events that trigger state transitions.
+3. Create transitions between states using the `Transition` class. Add criteria and actions as needed.
+4. Instantiate the `StateMachine` class, add states, events, and transitions, and start the FSM.
+5. Use the "main" function as an example to see how to use the FSM.
+
+Author:
+    - Senthur Ayyappan <senthura@umich.edu>
+"""
 
 import time
 from collections.abc import Iterator
 from typing import Any, Callable, Optional
 
 from opensourceleg.logging.logger import LOGGER
-
-"""
-The state_machine module provides classes for implementing a finite state machine (FSM).
-It includes the State, Event, Transition, and StateMachine classes.
-
-Usage:
-1. Use the `State` class to represent a state in the FSM.
-2. Utilize the `Event` class to define events that trigger state transitions.
-3. Create transitions between states using the `Transition` class.
-   Add criteria and actions as needed.
-4. Instantiate the `StateMachine` class, add states, events, and transitions, and start the FSM.
-"""
+from opensourceleg.time import SoftRealtimeLoop
 
 
 class State:
-    """
-    A class to represent a state in a finite state machine.
-
-    Args:
-        name (str): Name of the state
-        minimum_time_in_state (float): Minimum time spent in the state in seconds. Default: 2.0
-        entry_callbacks (list[Callable]): Functions to call when entering the state
-        exit_callbacks (list[Callable]): Functions to call when exiting the state
-        **kwargs: Additional attributes to set on the state
-    """
-
     def __init__(
         self,
         name: str = "state",
-        minimum_time_in_state: float = 2.0,
+        minimum_time_in_state: float = 0.0,
         entry_callbacks: Optional[list[Callable[[Any], None]]] = None,
         exit_callbacks: Optional[list[Callable[[Any], None]]] = None,
         **kwargs: Any,
     ) -> None:
+        """
+        A class to represent a state in a finite state machine.
+        Custom attributes can be added to the state using keyword arguments.
+
+        Args:
+            name: Name of the state
+            minimum_time_in_state: Minimum time spent in the state in seconds. \
+                Transition to the next state will not occur until this time has elapsed.
+                Defaults to 0.0 seconds.
+            entry_callbacks: List of functions to call when entering the state.
+            exit_callbacks: List of functions to call when exiting the state.
+            **kwargs: Additional attributes to set on the state
+
+        Example:
+            >>> state = State(
+            ...     name="idle",
+            ...     minimum_time_in_state=2.0,
+            ...     entry_callbacks=[print("Entering idle state")],
+            ...     exit_callbacks=[print("Exiting idle state")],
+            ... )
+        """
         self._name: str = name
         self._time_entered: float = 0.0
         self._time_exited: float = 0.0
@@ -47,7 +60,6 @@ class State:
         self._entry_callbacks: list[Callable[[Any], None]] = entry_callbacks or []
         self._exit_callbacks: list[Callable[[Any], None]] = exit_callbacks or []
 
-        # Set additional attributes
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -60,9 +72,6 @@ class State:
     def __hash__(self) -> int:
         return hash(self._name)
 
-    def __call__(self, data: Any) -> Any:
-        pass
-
     def __repr__(self) -> str:
         return f"State[{self._name}]"
 
@@ -71,52 +80,119 @@ class State:
         Set the minimum time spent in the state
 
         Args:
-            time (float): Minimum time spent in the state in seconds
+            time: Minimum time spent in the state in seconds
+
+        Example:
+            >>> state.set_minimum_time_spent_in_state(2.0)
         """
         self._min_time_in_state = time
 
-    def on_entry(self, callback: Callable[[Any], None]) -> None:
+    def add_entry_callback(self, callback: Callable[[Any], None]) -> None:
+        """
+        Add a callback function to be called when entering the state.
+
+        Args:
+            callback: Function to be called when entering the state
+
+        Example:
+            >>> state.add_entry_callback(lambda: if t > 0: print("Entering idle state"))
+        """
         self._entry_callbacks.append(callback)
 
-    def on_exit(self, callback: Callable[[Any], None]) -> None:
+    def add_exit_callback(self, callback: Callable[[Any], None]) -> None:
+        """
+        Add a callback function to be called when exiting the state.
+
+        Args:
+            callback: Function to be called when exiting the state
+
+        Example:
+            >>> state.add_exit_callback(lambda: if t > 1: print("Exiting idle state"))
+        """
         self._exit_callbacks.append(callback)
 
     def start(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Start the state.
+
+        Args:
+            *args: Arguments to pass to the entry callbacks
+            **kwargs: Keyword arguments to pass to the entry callbacks
+
+        Example:
+            >>> state.start(x=1)
+        """
         self._time_entered = time.monotonic()
         for c in self._entry_callbacks:
             c(*args, **kwargs)
 
     def stop(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Stop the state.
+
+        Args:
+            *args: Arguments to pass to the exit callbacks
+            **kwargs: Keyword arguments to pass to the exit callbacks
+
+        Example:
+            >>> state.stop(x=1)
+        """
         self._time_exited = time.monotonic()
         for c in self._exit_callbacks:
             c(*args, **kwargs)
 
     @property
     def name(self) -> str:
+        """
+        Get the name of the state.
+
+        Returns:
+            str: The name of the state
+        """
         return self._name
 
     @property
     def minimum_time_spent_in_state(self) -> float:
+        """
+        Get the minimum time spent in the state.
+
+        Returns:
+            float: The minimum time spent in the state
+        """
         return self._min_time_in_state
 
     @property
     def current_time_in_state(self) -> float:
+        """
+        Get the current time spent in the state.
+
+        Returns:
+            float: The current time spent in the state
+        """
         return time.monotonic() - self._time_entered
 
     @property
     def time_spent_in_state(self) -> float:
+        """
+        Get the time spent in the state.
+
+        Returns:
+            float: The time spent in the state
+        """
         return self._time_exited - self._time_entered
 
 
 class Event:
-    """
-    Event class
-    """
-
     def __init__(self, name: str) -> None:
         """
+        A class to represent an event in a finite state machine.
+        This is a simple label to identify an event that triggers a transition.
+
         Args:
-            name (str): The name of the event.
+            name: The name of the event.
+
+        Example:
+            >>> event = Event("walk")
         """
         self._name: str = name
 
@@ -131,64 +207,86 @@ class Event:
 
     @property
     def name(self) -> str:
+        """
+        Get the name of the event.
+
+        Returns:
+            str: The name of the event
+        """
         return self._name
 
 
 class Transition:
-    """
-    Transition class that handles state transitions in a finite state machine.
-    A transition connects a source state to a destination state and is triggered by an event.
-    It can include criteria that must be met for the transition to occur and actions to execute
-    during the transition.
-
-    Args:
-        event (Event): The event that triggers this transition
-        source (State): The source state
-        destination (State): The destination state
-        criteria (Callable): Optional function that returns True if transition should occur
-        action (Callable): Optional function to execute during transition
-    """
-
     def __init__(
         self,
         event: Event,
         source: State,
         destination: State,
-        criteria: Optional[Callable[[Any], bool]] = None,
-        action: Optional[Callable[[Any], None]] = None,
+        criteria: Optional[Callable[..., bool]] = None,
+        action: Optional[Callable[..., None]] = None,
     ) -> None:
+        """
+        Transition class that handles state transitions in a finite state machine.
+        A transition connects a source state to a destination state and is triggered by an event.
+        It should include criteria that must be met for the transition to occur and actions to execute
+        during the transition.
+
+        Args:
+            event: The event that triggers this transition
+            source: The source state
+            destination: The destination state
+            criteria: Optional function that returns True if transition should occur
+            action: Optional function to execute during transition
+
+        Example:
+            >>> transition = Transition(
+            ...     event=Event("walk"),
+            ...     source=State("idle"),
+            ...     destination=State("walking"),
+            ...     criteria=lambda: True,
+            ...     action=lambda: print("Walking")
+            ... )
+        """
         self._event: Event = event
         self._source_state: State = source
         self._destination_state: State = destination
-        self._from: State = source  # For backward compatibility
-        self._to: State = destination  # For backward compatibility
 
-        self._criteria: Optional[Callable[[Any], bool]] = criteria
-        self._action: Optional[Callable[[Any], None]] = action
+        self._criteria: Optional[Callable[..., bool]] = criteria
+        self._action: Optional[Callable[..., None]] = action
 
-    def __call__(self, *args: Any, **kwargs: Any) -> State:
-        if kwargs.get("spoof", False):
-            if self._source_state.current_time_in_state > self._source_state.minimum_time_spent_in_state:
-                if self._action:
-                    self._action(*args, **kwargs)
+    def __call__(self, **kwargs: Any) -> State:
+        if not self._criteria:
+            criteria_met = True
+        else:
+            try:
+                import inspect
 
-                self._source_state.stop(*args, **kwargs)
-                self._destination_state.start(*args, **kwargs)
+                # Filter kwargs to only include parameters the function expects
+                criteria_params = inspect.signature(self._criteria).parameters
+                filtered_kwargs = {k: v for k, v in kwargs.items() if k in criteria_params}
 
-                return self._destination_state
-
-            else:
+                criteria_met = self._criteria(**filtered_kwargs)
+            except Exception as e:
+                LOGGER.warning(f"Failed to call criteria function for transition {self}: {e}")
                 return self._source_state
 
-        elif not self._criteria or self._criteria(*args, **kwargs):
+        if criteria_met:
             if self._action:
-                self._action(*args, **kwargs)
+                try:
+                    import inspect
 
-            self._source_state.stop(*args, **kwargs)
-            self._destination_state.start(*args, **kwargs)
+                    # Filter kwargs to only include parameters the function expects
+                    action_params = inspect.signature(self._action).parameters
+                    filtered_kwargs = {k: v for k, v in kwargs.items() if k in action_params}
+
+                    self._action(**filtered_kwargs)
+                except Exception as e:
+                    LOGGER.warning(f"Failed to call action function for transition {self}: {e}")
+
+            self._source_state.stop(**kwargs)
+            self._destination_state.start(**kwargs)
 
             return self._destination_state
-
         else:
             return self._source_state
 
@@ -196,69 +294,102 @@ class Transition:
         return f"Transition[{self._source_state.name} -> {self._destination_state.name}]"
 
     def add_criteria(self, callback: Callable[[Any], bool]) -> None:
+        """
+        Add a criteria function to the transition.
+
+        Args:
+            callback: Function that returns True if transition should occur
+
+        Example:
+            >>> transition.add_criteria(lambda: if t > 0: True)
+        """
         self._criteria = callback
 
     def add_action(self, callback: Callable[[Any], Any]) -> None:
+        """
+        Add an action function to the transition.
+
+        Args:
+            callback: Function to execute during transition
+
+        Example:
+            >>> transition.add_action(lambda: print("Walking"))
+        """
         self._action = callback
 
     @property
     def event(self) -> Event:
+        """
+        Get the event that triggers this transition.
+
+        Returns:
+            Event: The event that triggers this transition
+        """
         return self._event
 
     @property
     def source_state(self) -> State:
+        """
+        Get the source state of this transition.
+
+        Returns:
+            State: The source state of this transition
+        """
         return self._source_state
 
     @property
     def destination_state(self) -> State:
+        """
+        Get the destination state of this transition.
+
+        Returns:
+            State: The destination state of this transition
+        """
         return self._destination_state
 
 
 class StateMachine:
-    """
-    State Machine class
+    def __init__(
+        self,
+        states: Optional[list[State]] = None,
+        events: Optional[list[Event]] = None,
+        initial_state_name: Optional[str] = None,
+    ) -> None:
+        """
+        A flexible finite state machine class that supports:
+        - Multiple states with transitions between them
+        - Events that trigger transitions
+        - Entry and exit actions for states
+        - Minimum time constraints for states
 
-    A flexible finite state machine implementation that supports:
-    - Multiple states with transitions between them
-    - Event-driven transitions with optional criteria
-    - Entry and exit actions for states
-    - Minimum time constraints for states
-    - Testing mode with spoofed transitions
+        Args:
+            states: List of states to add to the state machine
+            events: List of events to add to the state machine
+            initial_state_name: Name of the initial state to set
 
-    Parameters
-    ----------
-    spoof : bool
-        If True, the state machine will spoof the state transitions--ie, it will not
-        check the criteria for transitioning but will instead transition after the
-        minimum time spent in state has elapsed. This is useful for testing.
-        Defaults to False.
-
-    Attributes
-    ----------
-    current_state : State
-        The current state of the state machine.
-    states : list[str]
-        The list of state names in the state machine.
-    is_spoofing : bool
-        Whether or not the state machine is spoofing the state transitions.
-    """
-
-    def __init__(self, spoof: bool = False, **kwargs: Any) -> None:
-        # State Machine Variables
+        Example:
+            >>> sm = StateMachine(states=[State("idle"), State("walking"), State("running")],
+            ...     events=[Event("walk"), Event("run"), Event("stop")],
+            ...     initial_state_name="idle")
+        """
         self._states: list[State] = []
         self._events: list[Event] = []
         self._transitions: list[Transition] = []
-        self._exit_callback: Optional[Callable[[State, Any], None]] = None
-        self._exit_state: State = State(name="exit")
-        self.add_state(state=self._exit_state)
-        self._initial_state: State = self._exit_state
-        self._current_state: State = self._exit_state
-
-        self._exited = True
-        self._spoof: bool = spoof
-
-        # For transition lookup
         self._transition_map: dict[State, list[Transition]] = {}
+
+        self._exit_state: State = State(name="exit")
+        self._initial_state: Optional[State] = None
+        self._current_state: State = self._exit_state
+        self._exited = True
+
+        if states:
+            self.add_states(states, initial_state_name)
+
+        if events:
+            self.add_events(events)
+
+        # add the exit state after all user states are added
+        self.add_state(state=self._exit_state)
 
     def __repr__(self) -> str:
         return "StateMachine"
@@ -268,8 +399,11 @@ class StateMachine:
         Add multiple states to the state machine at once.
 
         Args:
-            states (list[State]): List of states to add
-            initial_state_name (Optional[str]): Name of the state to set as initial state
+            states: List of states to add
+            initial_state_name: Name of the state to set as initial state
+
+        Example:
+            >>> sm.add_states([State("idle"), State("walking"), State("running")], initial_state_name="idle")
         """
         for state in states:
             if state not in self._states:
@@ -293,7 +427,10 @@ class StateMachine:
         Add multiple events to the state machine at once.
 
         Args:
-            events (list[Event]): List of events to add
+            events: List of events to add
+
+        Example:
+            >>> sm.add_events([Event("walk"), Event("run"), Event("stop")])
         """
         for event in events:
             if event not in self._events:
@@ -305,19 +442,33 @@ class StateMachine:
         """
         Add multiple transitions from a dictionary configuration.
 
-        The dictionary should have the following structure:
-        {
-            "source_state_name": {
-                "event_name": {
-                    "destination": "destination_state_name",
-                    "criteria": optional_criteria_function,
-                    "action": optional_action_function
+        Args:
+            transitions_dict: Dictionary of transitions to add. The dictionary should have the following structure:
+            {
+                "source_state_name": {
+                    "event_name": {
+                        "destination": "destination_state_name",
+                        "criteria": optional_criteria_function,
+                        "action": optional_action_function
+                    }
                 }
             }
-        }
 
-        Args:
-            transitions_dict (dict): Dictionary of transitions to add
+        Example:
+            >>> sm.add_transitions_from_dict({
+            ...     "idle": {
+            ...         "walk": {
+            ...             "destination": "walking",
+            ...             "criteria": lambda: True,
+            ...             "action": lambda: print("Walking")
+            ...         },
+            ...         "run": {
+            ...             "destination": "running",
+            ...             "criteria": lambda: True,
+            ...             "action": lambda: print("Running")
+            ...         },
+            ...     }
+            ... })
         """
         for source_name, events_dict in transitions_dict.items():
             source_state = self.get_state_by_name(source_name)
@@ -357,11 +508,19 @@ class StateMachine:
         Create a new state and add it to the state machine.
 
         Args:
-            name (str): Name of the state
+            name: Name of the state
             **kwargs: Additional arguments to pass to the State constructor
 
         Returns:
             State: The created state
+
+        Example:
+            >>> sm.create_state(
+            ...     name="idle",
+            ...     minimum_time_spent_in_state=2.0,
+            ...     entry_callbacks=[print("Entering idle state")],
+            ...     exit_callbacks=[print("Exiting idle state")],
+            ... )
         """
         state = State(name=name, **kwargs)
         self.add_state(state)
@@ -372,10 +531,13 @@ class StateMachine:
         Create a new event and add it to the state machine.
 
         Args:
-            name (str): Name of the event
+            name: Name of the event
 
         Returns:
             Event: The created event
+
+        Example:
+            >>> sm.create_event("walk")
         """
         event = Event(name=name)
         self.add_event(event)
@@ -386,18 +548,38 @@ class StateMachine:
         Add a state to the state machine.
 
         Args:
-            state (State): The state to be added.
-            initial_state (bool, optional): Whether the state is the initial state, by default False
+            state: The state to be added.
+            initial_state: Whether the state is the initial state, by default False
+
+        Example:
+            >>> sm.add_state(State("idle"), initial_state=True)
         """
         if state in self._states:
             raise ValueError("State already exists.")
 
         self._states.append(state)
 
+        # Initialize transition map entry
+        if state not in self._transition_map:
+            self._transition_map[state] = []
+
         if initial_state:
             self._initial_state = state
 
+        # Set the first non-exit state as initial if no initial state is set yet
+        if self._initial_state is None and state.name != "exit":
+            self._initial_state = state
+
     def add_event(self, event: Event) -> None:
+        """
+        Add an event to the state machine.
+
+        Args:
+            event: The event to be added
+
+        Example:
+            >>> sm.add_event(Event("walk"))
+        """
         if event not in self._events:
             self._events.append(event)
         else:
@@ -414,24 +596,24 @@ class StateMachine:
         """
         Add a transition to the state machine.
 
-        Parameters
-        ----------
-        source : State
-            The source state.
-        destination : State
-            The destination state.
-        event : Event
-            The event that triggers the transition.
-        criteria : Callable[[Any], bool], optional
-            A callback function that returns a boolean value,
-            which determines whether the transition is valid, by default None
-        action : Callable[[Any], None], optional
-            A callback function to execute during the transition, by default None
+        Args:
+            source: The source state
+            destination: The destination state
+            event: The event that triggers the transition
+            criteria: A callback function that returns a boolean value, which determines whether the transition is valid
+            action: A callback function to execute during the transition
 
-        Returns
-        -------
-        Optional[Transition]
-            The created transition, or None if the transition couldn't be created
+        Returns:
+            Optional[Transition]: The created transition, or None if the transition couldn't be created
+
+        Example:
+            >>> sm.add_transition(
+            ...     source=State("idle"),
+            ...     destination=State("walking"),
+            ...     event=Event("walk"),
+            ...     criteria=lambda: True,
+            ...     action=lambda: print("Walking"),
+            ... )
         """
         transition = None
 
@@ -452,50 +634,75 @@ class StateMachine:
 
         return transition
 
-    def update(self, event: Event, *args: Any, **kwargs: Any) -> None:
+    def update(self, **kwargs: Any) -> None:
         """
-        Update the state machine based on the given event.
+        Update the state machine, checking all possible transitions from the current state.
+        If any transition's criteria are met, the state machine will transition automatically.
 
-        Parameters
-        ----------
-        event : Event
-            The event that may trigger a transition
-        *args, **kwargs
-            Additional arguments to pass to transition criteria and actions
+        Args:
+            **kwargs: Named arguments to pass to transition criteria and actions
+
+        Example:
+            >>> sm.update(t=t)
         """
-        if not (self._initial_state or self._current_state):
+        if not self._current_state:
             raise ValueError("State machine isn't active.")
 
-        # Use transition map for faster lookup
+        # Check if minimum time in state has elapsed
+        if self._current_state.current_time_in_state < self._current_state.minimum_time_spent_in_state:
+            return
+
         transitions = self._transition_map.get(self._current_state, [])
 
-        for transition in transitions:
-            if transition.event == event:
-                # Pass spoof flag if we're in spoof mode
-                if self._spoof:
-                    kwargs["spoof"] = True
+        if not transitions and self._current_state != self._exit_state:
+            LOGGER.debug(f"No transitions defined for state {self._current_state.name}")
+            return
 
-                self._current_state = transition(*args, **kwargs)
+        for transition in transitions:
+            next_state = transition(**kwargs)
+
+            # If state changed, update current state and exit
+            if next_state != self._current_state:
+                self._current_state = next_state
 
                 if self._current_state.name == "exit" and not self._exited:
                     self._exited = True
-                    if self._exit_callback:
-                        self._exit_callback(self._current_state, *args, **kwargs)
 
                 return
 
-        # No valid transition found
-        LOGGER.debug(f"Event {event.name} isn't valid at state {self._current_state.name}")
+        LOGGER.debug(f"No valid transitions from state {self._current_state.name}")
 
     def start(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Start the state machine.
+
+        Args:
+            *args: Arguments to pass to the initial state
+            **kwargs: Keyword arguments to pass to the initial state
+
+        Example:
+            >>> sm.start(x=1)
+        """
         if not self._initial_state:
-            raise ValueError("Initial state not set.")
+            raise ValueError(
+                "No initial state set. Add at least one state with initial_state=True or add a non-exit state."
+            )
 
         self._current_state = self._initial_state
         self._exited = False
         self._current_state.start(*args, **kwargs)
 
     def stop(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Stop the state machine.
+
+        Args:
+            *args: Arguments to pass to the exit state
+            **kwargs: Keyword arguments to pass to the exit state
+
+        Example:
+            >>> sm.stop(x=1)
+        """
         if not self.is_active():
             raise ValueError("State machine isn't active.")
 
@@ -504,10 +711,33 @@ class StateMachine:
         self._exited = True
 
     def __enter__(self) -> "StateMachine":
+        """
+        Enter the context manager for the state machine.
+
+        Returns:
+            StateMachine: The state machine
+
+        Example:
+            >>> with sm:
+            ...     # Use the state machine
+            ...     pass
+        """
         self.start()
         return self
 
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Exit the context manager for the state machine.
+
+        Args:
+            *args: Arguments to pass to the exit state
+            **kwargs: Keyword arguments to pass to the exit state
+
+        Example:
+            >>> with sm:
+            ...     # Use the state machine
+            ...     pass
+        """
         self.stop()
 
     def __del__(self) -> None:
@@ -525,11 +755,14 @@ class StateMachine:
     def is_active(self) -> bool:
         return bool(self._current_state and self._current_state != self._exit_state)
 
-    def spoof(self, spoof: bool) -> None:
-        self._spoof = spoof
-
     @property
     def current_state(self) -> State:
+        """
+        Get the current state of the state machine.
+
+        Returns:
+            State: The current state of the state machine
+        """
         if self._current_state is None:
             return self._initial_state
         else:
@@ -537,36 +770,23 @@ class StateMachine:
 
     @property
     def states(self) -> list[str]:
+        """
+        Get the names of all states in the state machine.
+
+        Returns:
+            list[str]: The names of all states in the state machine
+        """
         return [state.name for state in self._states]
-
-    @property
-    def is_spoofing(self) -> bool:
-        return self._spoof
-
-    def set_exit_callback(self, callback: Callable[[State, Any], None]) -> None:
-        """
-        Set a callback to be called when the state machine exits.
-
-        Parameters
-        ----------
-        callback : Callable
-            The callback function to call when exiting
-        """
-        self._exit_callback = callback
 
     def get_state_by_name(self, name: str) -> Optional[State]:
         """
         Get a state by its name.
 
-        Parameters
-        ----------
-        name : str
-            The name of the state to find
+        Args:
+            name: The name of the state to find
 
-        Returns
-        -------
-        Optional[State]
-            The state with the given name, or None if not found
+        Returns:
+            Optional[State]: The state with the given name, or None if not found
         """
         for state in self._states:
             if state.name == name:
@@ -575,15 +795,59 @@ class StateMachine:
 
 
 if __name__ == "__main__":
+    DT = 1 / 200
+    clock = SoftRealtimeLoop(DT)
+
     sm = StateMachine()
+
+    # Define states first
     idle = State(name="idle")
-    moving = State(name="moving")
+    walking = State(name="walking")
+    running = State(name="running")
 
+    # Add states to the state machine
     sm.add_state(idle)
-    sm.add_state(moving)
+    sm.add_state(walking)
+    sm.add_state(running)
 
-    sm.add_transition(idle, moving, Event("event1"))
+    # Create and add events to the state machine
+    walk_event = Event("walk")
+    run_event = Event("run")
+    stop_event = Event("stop")
 
-    sm.start()
-    sm.update(Event("event1"))
-    print(sm.current_state)
+    sm.add_event(walk_event)
+    sm.add_event(run_event)
+    sm.add_event(stop_event)
+
+    # Define criteria for transitions
+    def walk_criteria(t: float) -> bool:
+        return t > 1.0 and t < 2.0
+
+    def run_criteria(t: float) -> bool:
+        return t > 2.0 and t < 3.0
+
+    def stop_criteria(t: float) -> bool:
+        return t > 3.0 and t < 4.0
+
+    # Now use the event objects when adding transitions to the state machine
+    sm.add_transition(idle, walking, walk_event, criteria=walk_criteria)
+    sm.add_transition(walking, running, run_event, criteria=run_criteria)
+    sm.add_transition(running, idle, stop_event, criteria=stop_criteria)
+
+    # Test the state machine update method with transitions
+    with sm:
+        for t in clock:
+            sm.update(t=t)
+            LOGGER.info(f"Current state: {sm.current_state.name}, Time: {t:.2f}")
+
+    LOGGER.info(f"State machine exited, current state: {sm.current_state.name}")
+    clock.stop()
+
+    # Test the state machine iterator (offline)
+    with sm:
+        LOGGER.info(f"Starting state machine with initial state: {sm.current_state.name}")
+        for state in sm:
+            LOGGER.info(f"Current state: {state.name}")
+            time.sleep(1)
+
+    LOGGER.info(f"State machine exited, current state: {sm.current_state.name}")
