@@ -443,16 +443,7 @@ class StateMachine:
         Add multiple transitions from a dictionary configuration.
 
         Args:
-            transitions_dict: Dictionary of transitions to add. The dictionary should have the following structure:
-            {
-                "source_state_name": {
-                    "event_name": {
-                        "destination": "destination_state_name",
-                        "criteria": optional_criteria_function,
-                        "action": optional_action_function
-                    }
-                }
-            }
+            transitions_dict: Dictionary of transitions to add
 
         Example:
             >>> sm.add_transitions_from_dict({

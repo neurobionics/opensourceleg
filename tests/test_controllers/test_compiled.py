@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 import numpy.ctypeslib as ctl
 import pytest
 
-# Assume CompiledController class is defined in compiled_controller.py
 from opensourceleg.controllers.compiled import CompiledController
 
 
