@@ -5,7 +5,7 @@ import numpy.ctypeslib as ctl
 import pytest
 
 # Assume CompiledController class is defined in compiled_controller.py
-from opensourceleg.control.compiled_controller import CompiledController
+from opensourceleg.controllers.compiled import CompiledController
 
 
 def test___init__(monkeypatch):

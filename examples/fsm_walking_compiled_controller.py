@@ -14,7 +14,7 @@ import os
 import numpy as np
 
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.control.compiled_controller import CompiledController
+from opensourceleg.controllers.compiled import CompiledController
 from opensourceleg.sensors.loadcell import SRILoadcell
 from opensourceleg.time import SoftRealtimeLoop
 from opensourceleg.units import units

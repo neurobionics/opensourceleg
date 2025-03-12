@@ -343,7 +343,7 @@ class StateMachine:
                     LOGGER.warning(f"Destination state {dest_name} not found, skipping transition")
                     continue
 
-                # Add the transition
+                # Add the transition - now we're sure source_state and dest_state are not None
                 self.add_transition(
                     source=source_state,
                     destination=dest_state,
@@ -517,7 +517,10 @@ class StateMachine:
         return iter(self._states)
 
     def __next__(self) -> State:
-        return next(self._states)
+        try:
+            return next(iter(self._states))
+        except StopIteration as e:
+            raise StopIteration("No states in state machine") from e
 
     def is_active(self) -> bool:
         return bool(self._current_state and self._current_state != self._exit_state)
@@ -573,9 +576,14 @@ class StateMachine:
 
 if __name__ == "__main__":
     sm = StateMachine()
-    sm.add_state(State(name="state1"))
-    sm.add_state(State(name="state2"))
-    sm.add_transition(sm.get_state_by_name("state1"), sm.get_state_by_name("state2"), Event("event1"))
+    idle = State(name="idle")
+    moving = State(name="moving")
+
+    sm.add_state(idle)
+    sm.add_state(moving)
+
+    sm.add_transition(idle, moving, Event("event1"))
+
     sm.start()
     sm.update(Event("event1"))
     print(sm.current_state)

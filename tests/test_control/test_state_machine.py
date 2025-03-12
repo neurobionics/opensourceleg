@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from opensourceleg.control.state_machine import Event, Idle, State, StateMachine, Transition
+from opensourceleg.controllers.fsm import Event, Idle, State, StateMachine, Transition
 
 
 # Use a dummy OSL class to simulate the OpenSourceLeg object
