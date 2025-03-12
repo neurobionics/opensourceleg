@@ -10,6 +10,7 @@ from opensourceleg.time import SoftRealtimeLoop
 TIME_TO_STEP = 1.0
 FREQUENCY = 1000
 DT = 1 / FREQUENCY
+GEAR_RATIO = 1.0
 
 
 def position_control():
@@ -17,7 +18,9 @@ def position_control():
         log_path="./logs",
         file_name="position_control",
     )
-    actpack = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY, debug_level=0, dephy_log=False)
+    actpack = DephyActuator(
+        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
+    )
     clock = SoftRealtimeLoop(dt=DT)
 
     with actpack:
@@ -34,7 +37,7 @@ def position_control():
 
         for t in clock:
             if t > TIME_TO_STEP:
-                command_position = current_position + 2 * np.pi
+                command_position = current_position + (1 / 2) * np.pi
                 actpack.set_output_position(value=command_position)
 
             actpack.update()

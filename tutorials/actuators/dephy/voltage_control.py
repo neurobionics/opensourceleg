@@ -8,6 +8,7 @@ from opensourceleg.time import SoftRealtimeLoop
 FREQUENCY = 1000
 TIME_TO_STEP = 1.0
 DT = 1 / FREQUENCY
+GEAR_RATIO = 1.0
 
 
 def voltage_control():
@@ -16,7 +17,9 @@ def voltage_control():
         file_name="voltage_control",
     )
 
-    actpack = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY, debug_level=0, dephy_log=False)
+    actpack = DephyActuator(
+        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
+    )
 
     command_voltage = 0
 

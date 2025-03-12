@@ -3,16 +3,21 @@ from opensourceleg.logging.logger import Logger
 from opensourceleg.time import SoftRealtimeLoop
 
 FREQUENCY = 1000
+DT = 1 / FREQUENCY
+GEAR_RATIO = 1.0
 
 if __name__ == "__main__":
     sensor_logger = Logger(
         log_path="./",
         file_name="sensor_reading.log",
     )
-    clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
+    clock = SoftRealtimeLoop(dt=DT)
     actpack = DephyActuator(
         port="/dev/ttyACM0",
-        gear_ratio=1.0,
+        gear_ratio=GEAR_RATIO,
+        frequency=FREQUENCY,
+        debug_level=0,
+        dephy_log=False,
     )
     sensor_logger.track_variable(lambda: actpack.motor_position, "Motor Position")
     sensor_logger.track_variable(lambda: actpack.motor_current, "Motor Current")

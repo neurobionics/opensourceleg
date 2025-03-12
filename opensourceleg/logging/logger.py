@@ -211,6 +211,13 @@ class Logger(logging.Logger):
                 self._stream_handler.setFormatter(fmt=self._std_formatter)
                 self.addHandler(hdlr=self._stream_handler)
 
+    def set_stream_terminator(self, terminator: str) -> None:
+        """
+        Set the terminator for the stream handler.
+        """
+        with self._lock:
+            self._stream_handler.terminator = terminator
+
     def _setup_file_handler(self) -> None:
         """
         Set up the file logging handler.

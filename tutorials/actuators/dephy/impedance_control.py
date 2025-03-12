@@ -10,6 +10,7 @@ from opensourceleg.time import SoftRealtimeLoop
 TIME_TO_STEP = 1.0
 FREQUENCY = 1000
 DT = 1 / FREQUENCY
+GEAR_RATIO = 1.0
 
 
 def impedance_control():
@@ -17,8 +18,12 @@ def impedance_control():
         log_path="./logs",
         file_name="impedance_control",
     )
-    actpack = DephyActuator(port="/dev/ttyACM0", gear_ratio=9.0, frequency=FREQUENCY, debug_level=0, dephy_log=False)
+    actpack = DephyActuator(
+        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
+    )
     clock = SoftRealtimeLoop(dt=DT)
+
+    impedance_logger.set_stream_terminator("\r")
 
     with actpack:
         actpack.update()
@@ -41,10 +46,12 @@ def impedance_control():
 
             actpack.set_output_position(value=command_position)
 
-            impedance_logger.info(f"Time: {t}; \
-                                    Command Position: {command_position}; \
-                                    Output Position: {actpack.output_position}; \
-                                    Motor Current: {actpack.motor_current}")
+            impedance_logger.info(
+                f"Time: {t}; "
+                f"Command Position: {command_position}; "
+                f"Output Position: {actpack.output_position}; "
+                f"Motor Current: {actpack.motor_current}",
+            )
 
             impedance_logger.update()
 
