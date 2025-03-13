@@ -18,8 +18,8 @@ nav:
       - Collections:
           - Validators: modules/collections/validators.md
       - Control:
-          - Compiled Controller: modules/controllers/compiled.md
-          - State Machine: modules/controllers/fsm.md
+          - Compiled Controller: modules/control/compiled.md
+          - State Machine: modules/control/fsm.md
       - Logging:
           - Logger: modules/logging.md
       - Sensors:

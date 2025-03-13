@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import numpy.ctypeslib as ctl
 import pytest
 
-from opensourceleg.controllers.compiled import CompiledController
+from opensourceleg.control.compiled import CompiledController
 
 
 def test___init__(monkeypatch):

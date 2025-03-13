@@ -1,6 +1,6 @@
 import os
 
-from opensourceleg.controllers.compiled import CompiledController
+from opensourceleg.control.compiled import CompiledController
 
 my_linalg = CompiledController(
     library_name="lin_alg.so",
