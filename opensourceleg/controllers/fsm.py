@@ -111,31 +111,31 @@ class State:
         """
         self._exit_callbacks.append(callback)
 
-    def start(self, *args: Any, **kwargs: Any) -> None:
+    def enter(self, *args: Any, **kwargs: Any) -> None:
         """
-        Start the state.
+        Enter the state.
 
         Args:
             *args: Arguments to pass to the entry callbacks
             **kwargs: Keyword arguments to pass to the entry callbacks
 
         Example:
-            >>> state.start(x=1)
+            >>> state.enter(x=1)
         """
         self._time_entered = time.monotonic()
         for c in self._entry_callbacks:
             c(*args, **kwargs)
 
-    def stop(self, *args: Any, **kwargs: Any) -> None:
+    def exit(self, *args: Any, **kwargs: Any) -> None:
         """
-        Stop the state.
+        Exit the state.
 
         Args:
             *args: Arguments to pass to the exit callbacks
             **kwargs: Keyword arguments to pass to the exit callbacks
 
         Example:
-            >>> state.stop(x=1)
+            >>> state.exit(x=1)
         """
         self._time_exited = time.monotonic()
         for c in self._exit_callbacks:
@@ -283,8 +283,8 @@ class Transition:
                 except Exception as e:
                     LOGGER.warning(f"Failed to call action function for transition {self}: {e}")
 
-            self._source_state.stop(**kwargs)
-            self._destination_state.start(**kwargs)
+            self._source_state.exit(**kwargs)
+            self._destination_state.enter(**kwargs)
 
             return self._destination_state
         else:
@@ -352,7 +352,6 @@ class StateMachine:
     def __init__(
         self,
         states: Optional[list[State]] = None,
-        events: Optional[list[Event]] = None,
         initial_state_name: Optional[str] = None,
     ) -> None:
         """
@@ -364,12 +363,10 @@ class StateMachine:
 
         Args:
             states: List of states to add to the state machine
-            events: List of events to add to the state machine
             initial_state_name: Name of the initial state to set
 
         Example:
             >>> sm = StateMachine(states=[State("idle"), State("walking"), State("running")],
-            ...     events=[Event("walk"), Event("run"), Event("stop")],
             ...     initial_state_name="idle")
         """
         self._states: list[State] = []
@@ -377,19 +374,11 @@ class StateMachine:
         self._transitions: list[Transition] = []
         self._transition_map: dict[State, list[Transition]] = {}
 
-        self._exit_state: State = State(name="exit")
         self._initial_state: Optional[State] = None
-        self._current_state: State = self._exit_state
-        self._exited = True
+        self._current_state: Optional[State] = None
 
         if states:
             self.add_states(states, initial_state_name)
-
-        if events:
-            self.add_events(events)
-
-        # add the exit state after all user states are added
-        self.add_state(state=self._exit_state)
 
     def __repr__(self) -> str:
         return "StateMachine"
@@ -414,11 +403,13 @@ class StateMachine:
             else:
                 LOGGER.warning(f"State {state.name} already exists in state machine")
 
-        # Set initial state if specified
+        # Set initial state if specified and warn if overwriting
         if initial_state_name:
-            initial_state = self.get_state_by_name(initial_state_name)
-            if initial_state:
-                self._initial_state = initial_state
+            user_defined_initial_state = self.get_state_by_name(initial_state_name)
+            if user_defined_initial_state:
+                if self.initial_state is not None:
+                    LOGGER.warning(f"Overwriting initial state from {self.initial_state.name} to {initial_state_name}")
+                self._initial_state = user_defined_initial_state
             else:
                 LOGGER.warning(f"Initial state {initial_state_name} not found in added states")
 
@@ -437,62 +428,6 @@ class StateMachine:
                 self._events.append(event)
             else:
                 LOGGER.warning(f"Event {event.name} already exists in state machine")
-
-    def add_transitions_from_dict(self, transitions_dict: dict) -> None:
-        """
-        Add multiple transitions from a dictionary configuration.
-
-        Args:
-            transitions_dict: Dictionary of transitions to add
-
-        Example:
-            >>> sm.add_transitions_from_dict({
-            ...     "idle": {
-            ...         "walk": {
-            ...             "destination": "walking",
-            ...             "criteria": lambda: True,
-            ...             "action": lambda: print("Walking")
-            ...         },
-            ...         "run": {
-            ...             "destination": "running",
-            ...             "criteria": lambda: True,
-            ...             "action": lambda: print("Running")
-            ...         },
-            ...     }
-            ... })
-        """
-        for source_name, events_dict in transitions_dict.items():
-            source_state = self.get_state_by_name(source_name)
-            if not source_state:
-                LOGGER.warning(f"Source state {source_name} not found, skipping transitions")
-                continue
-
-            for event_name, transition_info in events_dict.items():
-                # Find the event
-                event = next((e for e in self._events if e.name == event_name), None)
-                if not event:
-                    LOGGER.warning(f"Event {event_name} not found, skipping transition")
-                    continue
-
-                # Find the destination state
-                dest_name = transition_info.get("destination")
-                if not dest_name:
-                    LOGGER.warning(f"No destination specified for transition from {source_name} on {event_name}")
-                    continue
-
-                dest_state = self.get_state_by_name(dest_name)
-                if not dest_state:
-                    LOGGER.warning(f"Destination state {dest_name} not found, skipping transition")
-                    continue
-
-                # Add the transition - now we're sure source_state and dest_state are not None
-                self.add_transition(
-                    source=source_state,
-                    destination=dest_state,
-                    event=event,
-                    criteria=transition_info.get("criteria"),
-                    action=transition_info.get("action"),
-                )
 
     def create_state(self, name: str, **kwargs: Any) -> State:
         """
@@ -514,7 +449,7 @@ class StateMachine:
             ... )
         """
         state = State(name=name, **kwargs)
-        self.add_state(state)
+        self.add_states([state])
         return state
 
     def create_event(self, name: str) -> Event:
@@ -531,56 +466,14 @@ class StateMachine:
             >>> sm.create_event("walk")
         """
         event = Event(name=name)
-        self.add_event(event)
+        self.add_events([event])
         return event
-
-    def add_state(self, state: State, initial_state: bool = False) -> None:
-        """
-        Add a state to the state machine.
-
-        Args:
-            state: The state to be added.
-            initial_state: Whether the state is the initial state, by default False
-
-        Example:
-            >>> sm.add_state(State("idle"), initial_state=True)
-        """
-        if state in self._states:
-            raise ValueError("State already exists.")
-
-        self._states.append(state)
-
-        # Initialize transition map entry
-        if state not in self._transition_map:
-            self._transition_map[state] = []
-
-        if initial_state:
-            self._initial_state = state
-
-        # Set the first non-exit state as initial if no initial state is set yet
-        if self._initial_state is None and state.name != "exit":
-            self._initial_state = state
-
-    def add_event(self, event: Event) -> None:
-        """
-        Add an event to the state machine.
-
-        Args:
-            event: The event to be added
-
-        Example:
-            >>> sm.add_event(Event("walk"))
-        """
-        if event not in self._events:
-            self._events.append(event)
-        else:
-            LOGGER.warning(f"Event {event.name} already exists in state machine")
 
     def add_transition(
         self,
         source: State,
         destination: State,
-        event: Event,
+        event_name: str,
         criteria: Optional[Callable[[Any], bool]] = None,
         action: Optional[Callable[[Any], None]] = None,
     ) -> Optional[Transition]:
@@ -590,7 +483,7 @@ class StateMachine:
         Args:
             source: The source state
             destination: The destination state
-            event: The event that triggers the transition
+            event_name: The name of the event that triggers the transition
             criteria: A callback function that returns a boolean value, which determines whether the transition is valid
             action: A callback function to execute during the transition
 
@@ -601,12 +494,13 @@ class StateMachine:
             >>> sm.add_transition(
             ...     source=State("idle"),
             ...     destination=State("walking"),
-            ...     event=Event("walk"),
+            ...     event_name="walk",
             ...     criteria=lambda: True,
             ...     action=lambda: print("Walking"),
             ... )
         """
         transition = None
+        event = self.create_event(event_name)
 
         if source in self._states and destination in self._states and event in self._events:
             transition = Transition(
@@ -645,7 +539,7 @@ class StateMachine:
 
         transitions = self._transition_map.get(self._current_state, [])
 
-        if not transitions and self._current_state != self._exit_state:
+        if not transitions:
             LOGGER.debug(f"No transitions defined for state {self._current_state.name}")
             return
 
@@ -655,9 +549,6 @@ class StateMachine:
             # If state changed, update current state and exit
             if next_state != self._current_state:
                 self._current_state = next_state
-
-                if self._current_state.name == "exit" and not self._exited:
-                    self._exited = True
 
                 return
 
@@ -680,8 +571,7 @@ class StateMachine:
             )
 
         self._current_state = self._initial_state
-        self._exited = False
-        self._current_state.start(*args, **kwargs)
+        self._current_state.enter(*args, **kwargs)
 
     def stop(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -694,12 +584,10 @@ class StateMachine:
         Example:
             >>> sm.stop(x=1)
         """
-        if not self.is_active():
+        if not self._current_state:
             raise ValueError("State machine isn't active.")
 
-        self._current_state.stop(*args, **kwargs)
-        self._current_state = self._exit_state
-        self._exited = True
+        self._current_state.exit(*args, **kwargs)
 
     def __enter__(self) -> "StateMachine":
         """
@@ -743,21 +631,25 @@ class StateMachine:
         except StopIteration as e:
             raise StopIteration("No states in state machine") from e
 
-    def is_active(self) -> bool:
-        return bool(self._current_state and self._current_state != self._exit_state)
-
     @property
-    def current_state(self) -> State:
+    def current_state(self) -> Optional[State]:
         """
         Get the current state of the state machine.
 
         Returns:
             State: The current state of the state machine
         """
-        if self._current_state is None:
-            return self._initial_state
-        else:
-            return self._current_state
+        return self._current_state
+
+    @property
+    def initial_state(self) -> Optional[State]:
+        """
+        Get the initial state of the state machine.
+
+        Returns:
+            State: The initial state of the state machine
+        """
+        return self._initial_state
 
     @property
     def states(self) -> list[str]:
@@ -797,18 +689,7 @@ if __name__ == "__main__":
     running = State(name="running")
 
     # Add states to the state machine
-    sm.add_state(idle)
-    sm.add_state(walking)
-    sm.add_state(running)
-
-    # Create and add events to the state machine
-    walk_event = Event("walk")
-    run_event = Event("run")
-    stop_event = Event("stop")
-
-    sm.add_event(walk_event)
-    sm.add_event(run_event)
-    sm.add_event(stop_event)
+    sm.add_states([idle, walking, running], initial_state_name="idle")
 
     # Define criteria for transitions
     def walk_criteria(t: float) -> bool:
@@ -821,24 +702,23 @@ if __name__ == "__main__":
         return t > 3.0 and t < 4.0
 
     # Now use the event objects when adding transitions to the state machine
-    sm.add_transition(idle, walking, walk_event, criteria=walk_criteria)
-    sm.add_transition(walking, running, run_event, criteria=run_criteria)
-    sm.add_transition(running, idle, stop_event, criteria=stop_criteria)
+    sm.add_transition(idle, walking, "walk", criteria=walk_criteria)
+    sm.add_transition(walking, running, "run", criteria=run_criteria)
+    sm.add_transition(running, idle, "stop", criteria=stop_criteria)
 
     # Test the state machine update method with transitions
     with sm:
         for t in clock:
             sm.update(t=t)
-            LOGGER.info(f"Current state: {sm.current_state.name}, Time: {t:.2f}")
+            LOGGER.info(f"Current state: {sm.current_state.name if sm.current_state else 'None'}, Time: {t:.2f}")
 
-    LOGGER.info(f"State machine exited, current state: {sm.current_state.name}")
+    LOGGER.info(f"State machine exited, current state: {sm.current_state.name if sm.current_state else 'None'}")
     clock.stop()
 
     # Test the state machine iterator (offline)
     with sm:
-        LOGGER.info(f"Starting state machine with initial state: {sm.current_state.name}")
         for state in sm:
             LOGGER.info(f"Current state: {state.name}")
             time.sleep(1)
 
-    LOGGER.info(f"State machine exited, current state: {sm.current_state.name}")
+    LOGGER.info(f"State machine exited, current state: {sm.current_state.name if sm.current_state else 'None'}")
