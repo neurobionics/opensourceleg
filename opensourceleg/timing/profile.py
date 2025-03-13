@@ -1,6 +1,7 @@
 import time
 from math import sqrt
-from typing import Callable, Any
+from typing import Any, Callable
+
 
 class Profiler:
     def __init__(self, name: str):
@@ -8,8 +9,8 @@ class Profiler:
         A class to profile the execution speed of real-time code.
 
         Can use in three ways:
-            1. tic/toc 
-            2. lambda 
+            1. tic/toc
+            2. lambda
             3. decorator
 
         See examples in the main block of the file.
@@ -29,7 +30,7 @@ class Profiler:
         self.name: str = name
         self._t0: float | None = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         """
         Destructor to print profiling results when the instance is deleted.
         """
@@ -37,11 +38,14 @@ class Profiler:
             mean: float = self.agg / self.N
             stddev: float = sqrt((self.aggvar - self.N * mean**2) / (self.N - 1))
         except ZeroDivisionError:
-            mean = float('NaN')
-            stddev = float('NaN')
-        print(f"Profiler Results - {self.name}: N = {self.N}, avg: {mean * 1e3} ms, stddev: {stddev * 1e3} ms, total: {self.agg} s")
+            mean = float("NaN")
+            stddev = float("NaN")
+        print(
+            f"Profiler Results - {self.name}: N = {self.N}, avg: {mean * 1e3} ms, "
+            f"stddev: {stddev * 1e3} ms, total: {self.agg} s"
+        )
 
-    @property 
+    @property
     def N(self) -> int:
         """
         Get the number of recorded intervals.
@@ -50,7 +54,7 @@ class Profiler:
             int: The number of recorded intervals.
         """
         return self._N
-    
+
     @property
     def agg(self) -> float:
         """
@@ -60,7 +64,7 @@ class Profiler:
             float: The aggregate time.
         """
         return self._agg
-    
+
     @property
     def aggvar(self) -> float:
         """
@@ -117,16 +121,17 @@ class Profiler:
         Returns:
             callable: The decorated function.
         """
+
         def ret(*args: Any, **kwargs: Any) -> Any:
             self.tic()
             x: Any = func(*args, **kwargs)
             self.toc()
             return x
+
         return ret
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Example tic toc usage
     profiler_tt = Profiler("tic_toc_example")
     profiler_tt.tic()
@@ -140,12 +145,10 @@ if __name__ == '__main__':
     @Profiler("decorator_example").decorate
     def my_decorated_function() -> None:
         time.sleep(0.01)
-    for i in range(100):
+
+    for _i in range(100):
         my_decorated_function()
-    
+
     # Example lambda usage
-    for i in range(3):
+    for _i in range(3):
         Profiler("lambda_example").profile(lambda: time.sleep(0.1))
-
-
-

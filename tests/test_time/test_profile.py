@@ -1,9 +1,6 @@
 import time
 
-import pytest
-
 from opensourceleg.timing.profile import Profiler
-
 
 # def test_no_runs():
 #     Profiler("test_none")
@@ -26,6 +23,7 @@ from opensourceleg.timing.profile import Profiler
 #     for i in range(1000):
 #         Profiler("lambda").profile(lambda : time.sleep(0.0001))
 
+
 def test_tic_toc():
     profiler = Profiler("tic_toc_test")
     profiler.tic()
@@ -39,6 +37,3 @@ def test_tic_toc():
     assert profiler.N == 2
     assert profiler.agg > 0.9 and profiler.agg < 1.1
     assert profiler.aggvar > 0.45 and profiler.aggvar < 0.55
-
-
-# test_tic_toc()
