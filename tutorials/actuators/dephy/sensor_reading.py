@@ -1,6 +1,6 @@
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.timing import SoftRealtimeLoop
 
 FREQUENCY = 1000
 DT = 1 / FREQUENCY

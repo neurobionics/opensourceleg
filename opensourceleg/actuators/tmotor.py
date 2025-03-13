@@ -25,7 +25,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_stream,
 )
 from opensourceleg.math import ThermalModel
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.timing import SoftRealtimeLoop
 
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,

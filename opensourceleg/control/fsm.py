@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from typing import Any, Callable, Optional
 
 from opensourceleg.logging.logger import LOGGER
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.timing import SoftRealtimeLoop
 
 
 class State:

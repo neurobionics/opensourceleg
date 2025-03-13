@@ -13,7 +13,7 @@ import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.timing import SoftRealtimeLoop
 from opensourceleg.units import units
 
 FREQUENCY = 200
