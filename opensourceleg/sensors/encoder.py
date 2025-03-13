@@ -37,6 +37,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         A2_adr_pin: bool = False,
         name: str = "AS5048B",
         zero_position: int = 0,
+        enable_diagnostics: bool = False,
     ) -> None:
         """
         Class for the AS5048B encoder, implements the Encoder interface
@@ -56,6 +57,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """
         self.name = name
         self.bus = bus
+        self.enable_diagnostics = enable_diagnostics
 
         super().__init__()
 
@@ -89,9 +91,10 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         self._reset_data()
         self._is_streaming = False
 
-    def update(self, enable_diagnostics: bool = False) -> None:
+    def update(self) -> None:
         self._read_data_registers()
-        if enable_diagnostics:
+
+        if self.enable_diagnostics:
             self._check_diagnostics()
 
     # def apply_state(self, state: Encoder.State) -> None:
