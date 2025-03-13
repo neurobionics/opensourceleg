@@ -75,13 +75,15 @@ If you'd like to modify or contribute to the [opensourceleg](https://pypi.org/pr
 
 8. **Make your changes** and commit them with descriptive messages.
 
-9. **Push your changes** to your fork:
+9. **Run checks**. See [the contributing guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md) for more information.
+
+10. **Push your changes** to your fork:
 
    ```bash
    git push origin feature-or-bugfix-name
    ```
 
-10. **Create a Pull Request** by navigating to your fork on GitHub and clicking `New Pull Request`.
+11. **Create a Pull Request** by navigating to your fork on GitHub and clicking `New Pull Request`.
 
 Your changes will be reviewed by the maintainers, and if approved, they will be merged into the main repository.
 
