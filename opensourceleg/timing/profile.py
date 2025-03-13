@@ -78,6 +78,12 @@ class Profiler:
     def tic(self) -> None:
         """
         Start a new timing interval.
+
+        Example:
+            profiler = Profiler("example")
+            profiler.tic()
+            time.sleep(0.1)
+            profiler.toc()
         """
         self._t0 = time.time()
 
@@ -87,6 +93,12 @@ class Profiler:
 
         Returns:
             float: The duration of the interval.
+
+        Example:
+            profiler = Profiler("example")
+            profiler.tic()
+            time.sleep(0.1)
+            duration = profiler.toc()
         """
         if self._t0 is not None:
             t: float = time.time() - self._t0
@@ -105,6 +117,10 @@ class Profiler:
 
         Returns:
             Any: The return value of the function.
+
+        Example:
+            profiler = Profiler("example")
+            result = profiler.profile(lambda: time.sleep(0.1))
         """
         self.tic()
         x: Any = func()
@@ -120,6 +136,15 @@ class Profiler:
 
         Returns:
             callable: The decorated function.
+
+        Example:
+            profiler = Profiler("example")
+
+            @profiler.decorate
+            def my_function():
+                time.sleep(0.1)
+
+            my_function()
         """
 
         def ret(*args: Any, **kwargs: Any) -> Any:
