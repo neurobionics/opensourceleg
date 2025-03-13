@@ -415,6 +415,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
             list[float]: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where forces are in Newtons and moments in Nm.
         """
         if self._data is not None:
-            return self._data[0].tolist()
+            return list(map(float, self._data[0].tolist()))
         else:
-            return self._zero_calibration_offset.tolist()
+            return list(map(float, self._zero_calibration_offset.tolist()))
