@@ -407,14 +407,14 @@ class DephyLoadcellAmplifier(LoadcellBase):
         return self.data[5]
 
     @property
-    def data(self) -> float:
+    def data(self) -> list[float]:
         """
         Get the latest processed load cell data.
 
         Returns:
-            Any: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where forces are in Newtons and moments in Nm.
+            list[float]: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where forces are in Newtons and moments in Nm.
         """
         if self._data is not None:
-            return self._data[0]
+            return self._data[0].tolist()
         else:
-            return self._zero_calibration_offset
+            return self._zero_calibration_offset.tolist()
