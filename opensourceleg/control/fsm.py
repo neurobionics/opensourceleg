@@ -478,7 +478,8 @@ class StateMachine:
         action: Optional[Callable[[Any], None]] = None,
     ) -> Optional[Transition]:
         """
-        Add a transition to the state machine.
+        Add a transition to the state machine. If multiple transitions exist from the same source state,
+        precedence is given to the first added transition.
 
         Args:
             source: The source state
@@ -522,7 +523,8 @@ class StateMachine:
     def update(self, **kwargs: Any) -> None:
         """
         Update the state machine, checking all possible transitions from the current state.
-        If any transition's criteria are met, the state machine will transition automatically.
+        If any transition's criteria are met, the state machine will transition automatically. If multiple
+        transitions exist from the same source state, precedence is given to the first added transition.
 
         Args:
             **kwargs: Named arguments to pass to transition criteria and actions
