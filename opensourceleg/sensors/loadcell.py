@@ -343,7 +343,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             float: Force (N) along the x-axis.
         """
-        return float(self.data[0])
+        return self.data[0]
 
     @property
     def fy(self) -> float:
@@ -355,7 +355,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             float: Force (N) along the y-axis.
         """
-        return float(self.data[1])
+        return self.data[1]
 
     @property
     def fz(self) -> float:
@@ -368,7 +368,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             float: Force (N) along the z-axis.
         """
-        return float(self.data[2])
+        return self.data[2]
 
     @property
     def mx(self) -> float:
@@ -380,7 +380,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             float: Moment (Nm) about the x-axis.
         """
-        return float(self.data[3])
+        return self.data[3]
 
     @property
     def my(self) -> float:
@@ -392,7 +392,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             float: Moment (Nm) about the y-axis.
         """
-        return float(self.data[4])
+        return self.data[4]
 
     @property
     def mz(self) -> float:
@@ -404,10 +404,10 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             float: Moment (Nm) about the z-axis.
         """
-        return float(self.data[5])
+        return self.data[5]
 
     @property
-    def data(self) -> Any:
+    def data(self) -> float:
         """
         Get the latest processed load cell data.
 
