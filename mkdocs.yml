@@ -1,0 +1,93 @@
+site_name: opensourceleg
+repo_url: https://github.com/neurobionics/opensourceleg
+site_url: https://neurobionics.github.io/opensourceleg
+site_description: An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.
+site_author: Open-Source Leg
+edit_uri: edit/main/docs/
+repo_name: neurobionics/opensourceleg
+copyright: Maintained by <a href="https://github.com/senthurayyappan">Senthur Ayyappan</a>.
+
+nav:
+  - Overview: index.md
+  - Modules:
+      - Actuators:
+          - Base: modules/actuators/actuators.md
+          - Dephy: modules/actuators/dephy.md
+          - Moteus: modules/actuators/moteus.md
+          - TMotor: modules/actuators/tmotor.md
+      - Collections:
+          - Validators: modules/collections/validators.md
+      - Control:
+          - Compiled Controller: modules/control/compiled.md
+          - State Machine: modules/control/fsm.md
+      - Logging:
+          - Logger: modules/logging.md
+      - Sensors:
+          - Base: modules/sensors/sensors_base.md
+          - IMU: modules/sensors/imu.md
+          - Loadcell: modules/sensors/loadcell.md
+          - ADC: modules/sensors/adc.md
+          - Encoder: modules/sensors/encoder.md
+      - Robots:
+          - Base: modules/robots/robots.md
+          - OSL: modules/robots/osl.md
+      - Safety: modules/safety.md
+      - Time: modules/time.md
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          setup_commands:
+            - import sys
+            - sys.path.append('../')
+theme:
+  name: material
+  feature:
+    tabs: true
+  highlightjs: true
+  hljs_languages:
+    - python
+    - yaml
+    - bash
+    - json
+    - markdown
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/neurobionics/opensourceleg
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/opensourceleg
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.snippets
+  - pymdownx.highlight # For syntax highlighting
+  - pymdownx.superfences
+
+  - toc:
+      permalink: true
+
+  - pymdownx.arithmatex:
+      generic: true
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true

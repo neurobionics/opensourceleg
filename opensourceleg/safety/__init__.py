@@ -1,4 +1,4 @@
-from opensourceleg.safety.safety import *
+from .safety import *  # noqa: F403
 
 """
 Safety module for opensourceleg library.

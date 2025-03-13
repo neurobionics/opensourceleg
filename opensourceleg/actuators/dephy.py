@@ -1,10 +1,7 @@
-from typing import Any, Callable, Union, overload
-
 import os
 import time
 from ctypes import c_int
-from dataclasses import dataclass
-from unittest.mock import Mock
+from typing import Optional
 
 import numpy as np
 from flexsea.device import Device
@@ -24,10 +21,9 @@ from opensourceleg.actuators.decorators import (
 )
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
-    deprecated,
     deprecated_with_routing,
-    deprecated_with_suggestion,
 )
+from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.math import ThermalModel
 from opensourceleg.safety import ThermalLimitException
 
@@ -124,7 +120,17 @@ DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
 )
 
 
-class DephyActuator(Device, ActuatorBase):
+class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
+    """
+    Interface to a Dephy actuator device.
+
+    Examples:
+        >>> actuator = DephyActuator(port='/dev/ttyACM0', gear_ratio=2.0)
+        >>> actuator.start()
+        >>> actuator.set_motor_voltage(1500)
+        >>> print(f"Joint position: {actuator.joint_position:.2f} rad")
+    """
+
     def __init__(
         self,
         tag: str = "DephyActuator",
@@ -182,13 +188,25 @@ class DephyActuator(Device, ActuatorBase):
 
     @check_actuator_connection
     def start(self) -> None:
+        """
+        Starts the actuator by opening the port, starting data streaming,
+        reading initial data, and setting the control mode to VOLTAGE.
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+        """
         try:
             self.open()
             self._is_open = True
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -202,7 +220,19 @@ class DephyActuator(Device, ActuatorBase):
     @check_actuator_stream
     @check_actuator_open
     def stop(self) -> None:
+        """
+        Stops the actuator by stopping the motor, switching to IDLE mode,
+        stopping data streaming, and closing the connection.
 
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> # ... perform control tasks ...
+            >>> actuator.stop()
+        """
         self.stop_motor()
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         self._is_streaming = False
@@ -210,7 +240,19 @@ class DephyActuator(Device, ActuatorBase):
         self.close()
 
     def update(self) -> None:
+        """
+        Updates the actuator's data by reading new values and updating the thermal model.
+        It raises exceptions if thermal limits are exceeded.
 
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator()
+            >>> actuator.start()
+            >>> actuator.update()
+            >>> print(f"Motor current: {actuator.motor_current} mA")
+        """
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -220,14 +262,16 @@ class DephyActuator(Device, ActuatorBase):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
+                    Stopping motor."
             )
             # self.stop()
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
@@ -238,7 +282,7 @@ class DephyActuator(Device, ActuatorBase):
     def home(
         self,
         homing_voltage: int = 2000,
-        homing_frequency: int = None,
+        homing_frequency: Optional[int] = None,
         homing_direction: int = -1,
         joint_direction: int = -1,
         joint_position_offset: float = 0.0,
@@ -259,20 +303,28 @@ class DephyActuator(Device, ActuatorBase):
             joint_direction (int): Direction to move the joint during homing. Default is -1.
             joint_position_offset (float): Offset in radians to add to the joint position. Default is 0.0.
             motor_position_offset (float): Offset in radians to add to the motor position. Default is 0.0.
-            current_threshold (int): Current threshold in mA to stop homing the joint or actuator. This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
-            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+            current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
+                This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
+            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
+                This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.home(homing_voltage=2000, homing_direction=-1)
 
         """
         is_homing = True
-        homing_frequency = (
-            homing_frequency if homing_frequency is not None else self.frequency
+        homing_frequency = homing_frequency if homing_frequency is not None else self.frequency
+
+        LOGGER.info(
+            f"[{self.__repr__()}] Homing {self.tag} joint."
+            "Please make sure the joint is free to move and press Enter to continue."
         )
+        input()
 
         self.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
 
-        self.set_motor_voltage(
-            value=homing_direction * homing_voltage
-        )  # mV, negative for counterclockwise
+        self.set_motor_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
 
         _motor_encoder_array = []
         _joint_encoder_array = []
@@ -287,10 +339,7 @@ class DephyActuator(Device, ActuatorBase):
                 _motor_encoder_array.append(self.motor_position)
                 _joint_encoder_array.append(self.joint_position)
 
-                if (
-                    abs(self.output_velocity) <= velocity_threshold
-                    or abs(self.motor_current) >= current_threshold
-                ):
+                if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
                     is_homing = False
 
@@ -319,19 +368,31 @@ class DephyActuator(Device, ActuatorBase):
             self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
         else:
             LOGGER.debug(
-                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method to create one. The encoder map is used to estimate joint position more accurately."
+                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method \
+                    to create one. The encoder map is used to estimate joint position more accurately."
             )
 
-    def make_encoder_map(self, overwrite=False) -> None:
+    def make_encoder_map(self, overwrite: bool = False) -> None:
         """
         This method makes a lookup table to calculate the position measured by the joint encoder.
         This is necessary because the magnetic output encoders are nonlinear.
         By making the map while the joint is unloaded, joint position calculated by motor position * gear ratio
-        should be the same as the true joint position.
+        should be the same as the true joint position. Output from this function is a file containing a_i values
+        parameterizing the map.
 
-        Output from this function is a file containing a_i values parameterizing the map
+        Args:
+            overwrite (bool): Whether to overwrite the existing encoder map. Default is False.
 
-        Eqn: position = sum from i=0^5 (a_i*counts^i)
+        Returns:
+            None
+
+        Eqn:
+            position = sum from i=0^5 (a_i*counts^i)
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.make_encoder_map(overwrite=True)
 
         Author: Kevin Best
                 U-M Locolab | Neurobionics Lab
@@ -339,16 +400,12 @@ class DephyActuator(Device, ActuatorBase):
         """
 
         if not self.is_homed:
-            LOGGER.warning(
-                msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map."
-            )
-            return
+            LOGGER.warning(msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map.")
+            return None
 
         if os.path.exists(f"./{self.tag}_encoder_map.npy") and not overwrite:
-            LOGGER.info(
-                msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation."
-            )
-            return
+            LOGGER.info(msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation.")
+            return None
 
         self.set_control_mode(mode=CONTROL_MODES.CURRENT)
         self.set_current_gains()
@@ -363,7 +420,8 @@ class DephyActuator(Device, ActuatorBase):
         _output_position_array = []
 
         LOGGER.info(
-            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
+            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through \
+                its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
         )
 
         _start_time: float = time.time()
@@ -371,7 +429,8 @@ class DephyActuator(Device, ActuatorBase):
         try:
             while time.time() - _start_time < 10:
                 LOGGER.info(
-                    msg=f"[{self.__repr__()}] Mapping the {self.tag} joint encoder: {10 - time.time() + _start_time} seconds left."
+                    msg=f"[{self.__repr__()}] Mapping the {self.tag} \
+                        joint encoder: {10 - time.time() + _start_time} seconds left."
                 )
                 self.update()
                 _joint_encoder_array.append(self.joint_encoder_counts)
@@ -380,11 +439,9 @@ class DephyActuator(Device, ActuatorBase):
 
         except KeyboardInterrupt:
             LOGGER.warning(msg="Encoder map interrupted.")
-            return
+            return None
 
-        LOGGER.info(
-            msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint."
-        )
+        LOGGER.info(msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint.")
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
@@ -394,15 +451,19 @@ class DephyActuator(Device, ActuatorBase):
         self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
 
         np.save(file=f"./{self.tag}_encoder_map.npy", arr=_coeffs)
-        LOGGER.info(
-            msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'."
-        )
+        LOGGER.info(msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'.")
 
     def set_motor_torque(self, value: float) -> None:
         """
         Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
         Args:
             value (float): The torque to set in Nm.
+        Returns:
+            None
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_torque(0.1)
         """
         self.set_motor_current(
             value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
@@ -415,6 +476,14 @@ class DephyActuator(Device, ActuatorBase):
 
         Args:
             value (float): torque in N_m
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_joint_torque(0.1)
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
@@ -426,18 +495,33 @@ class DephyActuator(Device, ActuatorBase):
 
         Args:
             value (float): torque in N_m
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_output_torque(0.1)
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         """
         Sets the motor current in mA.
 
         Args:
             value (float): The current to set in mA.
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_current(1000)
         """
         self.command_motor_current(value=int(value))
 
@@ -451,12 +535,19 @@ class DephyActuator(Device, ActuatorBase):
 
         Args:
             value (float): The voltage to set in mV.
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_voltage(100) TODO: Validate number
         """
         self.command_motor_voltage(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
-
         self.command_motor_voltage(value=int(value))
 
     def set_motor_position(self, value: float) -> None:
@@ -466,13 +557,30 @@ class DephyActuator(Device, ActuatorBase):
 
         Args:
             value (float): The position to set
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_position(0.1)
         """
-        self.command_motor_position(
-            value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
-        )
+        # TODO: New Dephy API splits impedance equilibrium position and position control into separate methods
+        if self.mode == CONTROL_MODES.POSITION:
+            self.command_motor_position(
+                value=int(
+                    (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                ),
+            )
+        elif self.mode == CONTROL_MODES.IMPEDANCE:
+            self.command_motor_impedance(
+                value=int(
+                    (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                ),
+            )
+        else:
+            raise ControlModeException(tag=self._tag, attribute="set_motor_position", mode=self._mode.name)
 
     def set_position_gains(
         self,
@@ -489,6 +597,14 @@ class DephyActuator(Device, ActuatorBase):
             ki (float): The integral gain
             kd (float): The derivative gain
             ff (float): The feedforward gain
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_position_gains(kp=30, ki=0, kd=0, ff=0)
         """
         self.set_gains(
             kp=int(kp),
@@ -514,6 +630,14 @@ class DephyActuator(Device, ActuatorBase):
             ki (float): The integral gain
             kd (float): The derivative gain
             ff (float): The feedforward gain
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_current_gains(kp=40, ki=400, kd=0, ff=128)
         """
         self.set_gains(
             kp=int(kp),
@@ -548,6 +672,14 @@ class DephyActuator(Device, ActuatorBase):
             k (float): Spring constant. Defaults to 100 Nm/rad.
             b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
             ff (float): Feedforward gain. Defaults to 128.
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_output_impedance(kp=40, ki=400, kd=0, k=100, b=3, ff=128)
         """
         self.set_motor_impedance(
             kp=kp,
@@ -578,6 +710,14 @@ class DephyActuator(Device, ActuatorBase):
             k (float): The spring constant
             b (float): The damping constant
             ff (float): The feedforward gain
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_impedance_gains(kp=40, ki=400, kd=0, k=200, b=400, ff=128)
         """
         self.set_gains(
             kp=int(kp),
@@ -607,6 +747,14 @@ class DephyActuator(Device, ActuatorBase):
             k (float): Spring constant. Defaults to 0.08922 Nm/rad.
             b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
             ff (float): Feedforward gain. Defaults to 128.
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_motor_impedance(kp=40, ki=400, kd=0, k=0.08922, b=0.0038070, ff=128) TODO: Validate numbers
         """
         self.set_impedance_gains(
             kp=kp,
@@ -617,24 +765,55 @@ class DephyActuator(Device, ActuatorBase):
             ff=ff,
         )
 
-    def set_encoder_map(self, encoder_map) -> None:
-        """Sets the joint encoder map"""
-        self._encoder_map = encoder_map
+    def set_encoder_map(self, encoder_map: np.polynomial.polynomial.Polynomial) -> None:
+        """
+        Sets the joint encoder map
+
+        Args:
+            encoder_map (np.polynomial.polynomial.Polynomial): The encoder map to set
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=[1, 2, 3, 4, 5]))
+        """
+        self._encoder_map: np.polynomial.polynomial.Polynomial = encoder_map
 
     @property
-    def encoder_map(self):
-        """Polynomial coefficients defining the joint encoder map from counts to radians."""
+    def encoder_map(self) -> Optional[np.polynomial.polynomial.Polynomial]:
+        """
+        Polynomial coefficients defining the joint encoder map from counts to radians.
+
+        Returns:
+            Optional[np.polynomial.polynomial.Polynomial]: The encoder map
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(actuator.encoder_map)
+        """
         if getattr(self, "_encoder_map", None) is not None:
             return self._encoder_map
         else:
-            LOGGER.warning(
-                msg="Encoder map is not set. Please call the make_encoder_map method to create one."
-            )
+            LOGGER.warning(msg="Encoder map is not set. Please call the make_encoder_map method to create one.")
             return None
 
     @property
     def motor_voltage(self) -> float:
-        """Q-axis motor voltage in mV."""
+        """
+        Q-axis motor voltage in mV.
+
+        Returns:
+            float: Motor voltage in mV.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor voltage: {actuator.motor_voltage} mV")
+        """
         if self._data is not None:
             return float(self._data["mot_volt"])
         else:
@@ -645,6 +824,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def motor_current(self) -> float:
+        """
+        Motor current in mA.
+
+        Returns:
+            float: Motor current in mA.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor current: {actuator.motor_current} mA")
+        """
         if self._data is not None:
             return float(self._data["mot_cur"])
         else:
@@ -655,6 +845,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def motor_torque(self) -> float:
+        """
+        Torque at the motor output in Nm.
+
+        Returns:
+            float: Motor torque in Nm.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor torque: {actuator.motor_torque} Nm")
+        """
         if self._data is not None:
             return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
@@ -665,6 +866,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def motor_position(self) -> float:
+        """
+        Motor position in radians.
+
+        Returns:
+            float: Motor position in radians.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor position: {actuator.motor_position} rad")
+        """
         if self._data is not None:
             return (
                 float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -679,7 +891,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def motor_encoder_counts(self) -> int:
-        """Raw reading from motor encoder in counts."""
+        """
+        Raw reading from motor encoder in counts.
+
+        Returns:
+            int: Motor encoder counts.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor encoder counts: {actuator.motor_encoder_counts}")
+        """
         if self._data is not None:
             return int(self._data["mot_ang"])
         else:
@@ -690,7 +912,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def joint_encoder_counts(self) -> int:
-        """Raw reading from joint encoder in counts."""
+        """
+        Raw reading from joint encoder in counts.
+
+        Returns:
+            int: Joint encoder counts.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint encoder counts: {actuator.joint_encoder_counts}")
+        """
         if self._data is not None:
             return int(self._data["ank_ang"])
         else:
@@ -701,6 +933,18 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def motor_velocity(self) -> float:
+        """
+        Motor velocity in rad/s.
+
+        Returns:
+            float: Motor velocity in rad/s.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor velocity: {actuator.motor_velocity} rad/s")
+        """
+
         if self._data is not None:
             return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
@@ -711,6 +955,18 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def motor_acceleration(self) -> float:
+        """
+        Motor acceleration in rad/s^2.
+
+        Returns:
+            float: Motor acceleration in rad/s^2.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Motor acceleration: {actuator.motor_acceleration} rad/s^2")
+        """
+
         if self._data is not None:
             return float(self._data["mot_acc"])
         else:
@@ -721,7 +977,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def battery_voltage(self) -> float:
-        """Battery voltage in mV."""
+        """
+        Battery voltage in mV.
+
+        Returns:
+            float: Battery voltage in mV.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Battery voltage: {actuator.battery_voltage} mV")
+        """
         if self._data is not None:
             return float(self._data["batt_volt"])
         else:
@@ -732,7 +998,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def battery_current(self) -> float:
-        """Battery current in mA."""
+        """
+        Battery current in mA.
+
+        Returns:
+            float: Battery current in mA.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Battery current: {actuator.battery_current} mA")
+        """
         if self._data is not None:
             return float(self._data["batt_curr"])
         else:
@@ -743,6 +1019,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def joint_position(self) -> float:
+        """
+        Joint position in radians.
+
+        Returns:
+            float: Joint position in radians.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint position: {actuator.joint_position} rad")
+        """
         if self._data is not None:
             return (
                 float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
@@ -757,6 +1044,17 @@ class DephyActuator(Device, ActuatorBase):
 
     @property
     def joint_velocity(self) -> float:
+        """
+        Joint velocity in rad/s.
+
+        Returns:
+            float: Joint velocity in rad/s.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint velocity: {actuator.joint_velocity} rad/s")
+        """
         if self._data is not None:
             return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
         else:
@@ -768,13 +1066,31 @@ class DephyActuator(Device, ActuatorBase):
     @property
     def joint_torque(self) -> float:
         """
-        Torque at the joint output in Nm.
-        This is calculated using motor current, k_t, and the gear ratio.
+        Torque at the joint output in Nm. This is calculated using motor current, k_t, and the gear ratio.
+
+        Returns:
+            float: Joint torque in Nm.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Joint torque: {actuator.joint_torque} Nm")
         """
         return self.motor_torque * self.gear_ratio
 
     @property
     def case_temperature(self) -> float:
+        """
+        Case temperature in degrees celsius. This is read during actuator update.
+
+        Returns:
+            float: Case temperature in degrees celsius.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Case temperature: {actuator.case_temperature} C")
+        """
         if self._data is not None:
             return float(self._data["temperature"])
         else:
@@ -788,6 +1104,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         ESTIMATED temperature of the windings in celsius.
         This is calculated based on the thermal model using motor current.
+
+        Returns:
+            float: Winding temperature in degrees celsius.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Winding temperature: {actuator.winding_temperature} C")
         """
         if self._data is not None:
             return float(self._thermal_model.T_w)
@@ -795,7 +1119,7 @@ class DephyActuator(Device, ActuatorBase):
             return 0.0
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
@@ -819,6 +1143,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         Acceleration in x direction in m/s^2.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Acceleration in x direction in m/s^2.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Acceleration in x direction: {actuator.accelx} m/s^2")
         """
         if self._data is not None:
             return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
@@ -833,6 +1165,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         Acceleration in y direction in m/s^2.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Acceleration in y direction in m/s^2.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Acceleration in y direction: {actuator.accely} m/s^2")
         """
         if self._data is not None:
             return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
@@ -847,6 +1187,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         Acceleration in z direction in m/s^2.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Acceleration in z direction in m/s^2.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Acceleration in z direction: {actuator.accelz} m/s^2")
         """
         if self._data is not None:
             return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
@@ -861,6 +1209,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         Angular velocity in x direction in rad/s.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Angular velocity in x direction in rad/s.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Angular velocity in x direction: {actuator.gyrox} rad/s")
         """
         if self._data is not None:
             return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
@@ -875,6 +1231,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         Angular velocity in y direction in rad/s.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Angular velocity in y direction in rad/s.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Angular velocity in y direction: {actuator.gyroy} rad/s")
         """
         if self._data is not None:
             return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
@@ -889,6 +1253,14 @@ class DephyActuator(Device, ActuatorBase):
         """
         Angular velocity in z direction in rad/s.
         Measured using actpack's onboard IMU.
+
+        Returns:
+            float: Angular velocity in z direction in rad/s.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Angular velocity in z direction: {actuator.gyroz} rad/s")
         """
         if self._data is not None:
             return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
@@ -902,58 +1274,53 @@ class DephyActuator(Device, ActuatorBase):
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
-        For a proof, see paper referenced in thermal model.
+        If you scale the torque command by this factor, the motor temperature will never
+        exceed max allowable temperature. For a proof, see paper referenced in thermal model.
+
+        Returns:
+            float: Thermal scaling factor.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> print(f"Thermal scaling factor: {actuator.thermal_scaling_factor}")
+            >>> actuator.update()
+            >>> # This will update the thermal model and return the new scaling factor.
+            >>> print(f"Thermal scaling factor: {actuator.thermal_scaling_factor}")
         """
         return self._thermal_scale
 
 
 def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(
-        msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode."
-    )
+    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -1013,7 +1380,6 @@ class DephyLegacyActuator(DephyActuator):
             self._is_streaming: bool = False
             self._is_open: bool = False
         else:
-
             # def set_is_streaming(self, value):
             #     self._is_streaming = value
 
@@ -1050,10 +1416,11 @@ class DephyLegacyActuator(DephyActuator):
                 log_level=self._debug_level,
                 log_enabled=self._dephy_log,
             )
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -1074,7 +1441,6 @@ class DephyLegacyActuator(DephyActuator):
         self.close()
 
     def update(self) -> None:
-
         self._data = self.read()
 
         self._thermal_model.T_c = self.case_temperature
@@ -1084,27 +1450,30 @@ class DephyLegacyActuator(DephyActuator):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                    Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
 
         if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; Case temperature: {self.case_temperature}."
+                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; \
+                    Case temperature: {self.case_temperature}."
             )
             raise ThermalLimitException("Internal thermal limit tripped.")
 
     def set_motor_current(
         self,
         value: float,
-    ):
+    ) -> None:
         """
         Sets the motor current in mA.
 
@@ -1128,7 +1497,6 @@ class DephyLegacyActuator(DephyActuator):
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
     def set_voltage(self, value: float) -> None:
-
         self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
 
     def set_motor_position(self, value: float) -> None:
@@ -1142,8 +1510,7 @@ class DephyLegacyActuator(DephyActuator):
         self.send_motor_command(
             ctrl_mode=c_int(self.mode.value),
             value=int(
-                (value + self.motor_zero_position + self.motor_position_offset)
-                / self.MOTOR_CONSTANTS.RAD_PER_COUNT
+                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
             ),
         )
 
@@ -1331,7 +1698,7 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def genvars(self):
+    def genvars(self) -> np.ndarray:
         """Dephy's 'genvars' object."""
         if self._data is not None:
             return np.array(
@@ -1421,19 +1788,19 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def is_streaming(self):
+    def is_streaming(self) -> bool:
         return self._is_streaming
 
     @is_streaming.setter
-    def is_streaming(self, value: bool):
+    def is_streaming(self, value: bool) -> None:
         self._is_streaming = value
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
         return self._is_open
 
     @is_open.setter
-    def is_open(self, value: bool):
+    def is_open(self, value: bool) -> None:
         self._is_open = value
 
     @property

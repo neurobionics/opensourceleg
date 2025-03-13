@@ -1,22 +1,5 @@
-# Check http://editorconfig.org for more information
-# This is the main config file for this project:
-root = true
+max_line_length = 120
 
-[*]
-charset = utf-8
-end_of_line = lf
-insert_final_newline = true
-indent_style = tab
-trim_trailing_whitespace = true
-
-[*.{py, pyi}]
-indent_style = tab
-
-[Makefile]
-indent_style = tab
-
-[*.md]
-trim_trailing_whitespace = false
-
-[*.{diff,patch}]
-trim_trailing_whitespace = false
+[*.json]
+indent_style = space
+indent_size = 4

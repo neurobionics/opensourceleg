@@ -17,7 +17,6 @@ from opensourceleg.actuators.base import (
     CONTROL_MODES,
     MOTOR_CONSTANTS,
     ActuatorBase,
-    ControlGains,
     ControlModeConfig,
 )
 from opensourceleg.actuators.decorators import (
@@ -25,7 +24,6 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.logging import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.time import SoftRealtimeLoop
 
@@ -84,12 +82,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def __init__(
         self,
         tag: str = "TMotorActuator",
-        motor_type="AK80-9",
-        motor_ID=41,
+        motor_type: str = "AK80-9",
+        motor_ID: int = 41,
         gear_ratio: float = 1.0,
         frequency: int = 500,
         offline: bool = False,
-        max_mosfett_temp=50,
+        max_mosfett_temp: float = 50,
     ):
         """
         Sets up the motor manager. Note the device will not be powered on by this method! You must
@@ -179,9 +177,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._entered = True
         self.is_streaming = True
         if not self.check_can_connection():
-            raise RuntimeError(
-                "Device not connected: " + str(self.device_info_string())
-            )
+            raise RuntimeError("Device not connected: " + str(self.device_info_string()))
         return self
 
     @check_actuator_stream
@@ -196,9 +192,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def home(self):
         pass
 
-    # this method is called by the user to synchronize the current state used by the controller
-    # with the most recent message recieved
-    def update(self):
+    def update(self):  # noqa: C901
         """
         This method is called by the user to synchronize the current state used by the controller
         with the most recent message recieved, as well as to send the current command.
@@ -207,37 +201,29 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         # check that the motor is safely turned on
         if not self._entered:
             raise RuntimeError(
-                "Tried to update motor state before safely powering on for device: "
-                + self.device_info_string()
+                "Tried to update motor state before safely powering on for device: " + self.device_info_string()
             )
 
         if self.case_temperature > self.max_temp:
-            raise RuntimeError(
-                "Temperature greater than {}C for device: {}".format(
-                    self.max_temp, self.device_info_string()
-                )
-            )
+            raise RuntimeError(f"Temperature greater than {self.max_temp}C for device: {self.device_info_string()}")
 
         # check that the motor data is recent
         # print(self._command_sent)
         now = time.time()
-        if (now - self._last_command_time) < 0.25 and (
-            (now - self._last_update_time) > 0.1
-        ):
-            # print("State update requested but no data recieved from motor. Delay longer after zeroing, decrease frequency, or check connection.")
+        if (now - self._last_command_time) < 0.25 and ((now - self._last_update_time) > 0.1):
             warnings.warn(
-                "State update requested but no data from motor. Delay longer after zeroing, decrease frequency, or check connection. "
+                "State update requested but no data from motor. Delay longer after zeroing, \
+                decrease frequency, or check connection. "
                 + self.device_info_string(),
                 RuntimeWarning,
+                stacklevel=2,
             )
         else:
             self._command_sent = False
 
         # artificially extending the range of the position, current, and velocity that we track
         P_max = MIT_Params[self.type]["P_max"] + 0.01
-        I_max = (
-            self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"]) + 1.0
-        )
+        I_max = self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"]) + 1.0
         V_max = MIT_Params[self.type]["V_max"] + 0.01
 
         if self._old_pos is None:
@@ -259,64 +245,42 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         actual_current = new_curr
 
         # The TMotor will wrap around to -max at the limits for all values it returns!! Account for this
-        if (thresh_pos <= new_pos and new_pos <= P_max) and (
-            -P_max <= old_pos and old_pos <= -thresh_pos
-        ):
+        if (thresh_pos <= new_pos and new_pos <= P_max) and (-P_max <= old_pos and old_pos <= -thresh_pos):
             self._times_past_position_limit -= 1
-        elif (thresh_pos <= old_pos and old_pos <= P_max) and (
-            -P_max <= new_pos and new_pos <= -thresh_pos
-        ):
+        elif (thresh_pos <= old_pos and old_pos <= P_max) and (-P_max <= new_pos and new_pos <= -thresh_pos):
             self._times_past_position_limit += 1
 
-        # current is basically the same as position, but if you instantly command a switch it can actually change fast enough
-        # to throw this off, so that is accounted for too. We just put a hard limit on the current to solve current jitter problems.
-        if (thresh_curr <= new_curr and new_curr <= I_max) and (
-            -I_max <= old_curr and old_curr <= -thresh_curr
-        ):
+        # current is basically the same as position, but if you instantly
+        # command a switch it can actually change fast enough
+        # to throw this off, so that is accounted for too. We just put a hard limit on the current
+        # to solve current jitter problems.
+        if (thresh_curr <= new_curr and new_curr <= I_max) and (-I_max <= old_curr and old_curr <= -thresh_curr):
             # self._old_current_zone = -1
             # if (thresh_curr <= curr_command and curr_command <= I_max):
             #     self._times_past_current_limit -= 1
             if curr_command > 0:
-                actual_current = self.TMotor_current_to_qaxis_current(
-                    MIT_Params[self.type]["T_max"]
-                )
+                actual_current = self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"])
             elif curr_command < 0:
-                actual_current = -self.TMotor_current_to_qaxis_current(
-                    MIT_Params[self.type]["T_max"]
-                )
+                actual_current = -self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"])
             else:
-                actual_current = -self.TMotor_current_to_qaxis_current(
-                    MIT_Params[self.type]["T_max"]
-                )
+                actual_current = -self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"])
             new_curr = actual_current
-        elif (thresh_curr <= old_curr and old_curr <= I_max) and (
-            -I_max <= new_curr and new_curr <= -thresh_curr
-        ):
+        elif (thresh_curr <= old_curr and old_curr <= I_max) and (-I_max <= new_curr and new_curr <= -thresh_curr):
             # self._old_current_zone = 1
             # if not (-I_max <= curr_command and curr_command <= -thresh_curr):
             #     self._times_past_current_limit += 1
             if curr_command > 0:
-                actual_current = self.TMotor_current_to_qaxis_current(
-                    MIT_Params[self.type]["T_max"]
-                )
+                actual_current = self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"])
             elif curr_command < 0:
-                actual_current = -self.TMotor_current_to_qaxis_current(
-                    MIT_Params[self.type]["T_max"]
-                )
+                actual_current = -self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"])
             else:
-                actual_current = self.TMotor_current_to_qaxis_current(
-                    MIT_Params[self.type]["T_max"]
-                )
+                actual_current = self.TMotor_current_to_qaxis_current(MIT_Params[self.type]["T_max"])
             new_curr = actual_current
 
         # velocity should work the same as position
-        if (thresh_vel <= new_vel and new_vel <= V_max) and (
-            -V_max <= old_vel and old_vel <= -thresh_vel
-        ):
+        if (thresh_vel <= new_vel and new_vel <= V_max) and (-V_max <= old_vel and old_vel <= -thresh_vel):
             self._times_past_velocity_limit -= 1
-        elif (thresh_vel <= old_vel and old_vel <= V_max) and (
-            -V_max <= new_vel and new_vel <= -thresh_vel
-        ):
+        elif (thresh_vel <= old_vel and old_vel <= V_max) and (-V_max <= new_vel and new_vel <= -thresh_vel):
             self._times_past_velocity_limit += 1
 
         # update expanded state variables
@@ -325,21 +289,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._old_vel = new_vel
 
         self._motor_state.set_state_obj(self._motor_state_async)
-        self._motor_state.position += (
-            self._times_past_position_limit * 2 * MIT_Params[self.type]["P_max"]
-        )
+        self._motor_state.position += self._times_past_position_limit * 2 * MIT_Params[self.type]["P_max"]
         self._motor_state.current = actual_current
-        self._motor_state.velocity += (
-            self._times_past_velocity_limit * 2 * MIT_Params[self.type]["V_max"]
-        )
+        self._motor_state.velocity += self._times_past_velocity_limit * 2 * MIT_Params[self.type]["V_max"]
 
         # send current motor command
         self._send_command()
-
-        # # writing to log file
-        # if self.csv_file_name is not None:
-        #     self.csv_writer.writerow([self._last_update_time - self._start_time] + [self.LOG_FUNCTIONS[var]() for var in self.log_vars])
-
         self._updated = False
 
     # sends a command to the motor depending on whats controlm mode the motor is in
@@ -352,8 +307,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         This allows control based on actual q-axis current, rather than estimated torque, which
         doesn't account for friction losses.
         """
-        # if self._control_state == _TMotorManState.FULL_STATE:
-        #     self._canman.MIT_controller(self.ID,self.type, self._command.position, self._command.velocity, self._command.kp, self._command.kd, self.qaxis_current_to_TMotor_current(self._command.current))
         if self.mode == CONTROL_MODES.IMPEDANCE:
             self._canman.MIT_controller(
                 self.ID,
@@ -387,19 +340,17 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 0.0,
             )
         else:
-            raise RuntimeError(
-                "UNDEFINED STATE for device " + self.device_info_string()
-            )
+            raise RuntimeError("UNDEFINED STATE for device " + self.device_info_string())
         self._last_command_time = time.time()
 
     # getters for motor state
     @property
-    def case_temperature(self):
+    def case_temperature(self) -> float:
         """
         Returns:
         The most recently updated motor temperature in degrees C.
         """
-        return self._motor_state.temperature
+        return float(self._motor_state.temperature)
 
     @property
     def winding_temperature(self) -> float:
@@ -413,56 +364,59 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             return 0.0
 
     @property
-    def motor_current(self):
+    def motor_current(self) -> float:
         """
         Returns:
         The most recently updated qaxis current in amps
         """
-        return self._motor_state.current
+        return float(self._motor_state.current)
 
     @property
-    def motor_voltage(self):
+    def motor_voltage(self) -> float:
         # Not implemented
         return 0.0
 
     @property
-    def output_position(self):
+    def output_position(self) -> float:
         """
         Returns:
         The most recently updated output angle in radians
         """
-        return self._motor_state.position
+        return float(self._motor_state.position)
 
     @property
-    def output_velocity(self):
+    def output_velocity(self) -> float:
         """
         Returns:
             The most recently updated output velocity in radians per second
         """
-        return self._motor_state.velocity
+        return float(self._motor_state.velocity)
 
     @property
-    def output_acceleration(self):
+    def output_acceleration(self) -> float:
         """
         Returns:
             The most recently updated output acceleration in radians per second per second
         """
-        return self._motor_state.acceleration
+        return float(self._motor_state.acceleration)
 
     @property
-    def output_torque(self):
+    def output_torque(self) -> float:
         """
         Returns:
             the most recently updated output torque in Nm
         """
-        return (
-            self.motor_current
-            * MIT_Params[self.type]["Kt_actual"]
-            * MIT_Params[self.type]["GEAR_RATIO"]
-        )
+        return float(self.motor_current * MIT_Params[self.type]["Kt_actual"] * MIT_Params[self.type]["GEAR_RATIO"])
 
     # uses plain impedance mode, will send 0.0 for current command.
-    def set_impedance_gains(self, kp=0, ki=0, K=0.08922, B=0.0038070, ff=0):
+    def set_impedance_gains(
+        self,
+        kp: float = 0,
+        ki: float = 0,
+        K: float = 0.08922,
+        B: float = 0.0038070,
+        ff: float = 0,
+    ) -> None:
         """
         Uses plain impedance mode, will send 0.0 for current command in addition to position request.
 
@@ -473,21 +427,29 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
             B: The damping in Nm/(rad/s)
             ff: A dummy argument for backward compatibility with the dephy library.
         """
-        assert (
-            isfinite(K)
-            and MIT_Params[self.type]["Kp_min"] <= K
-            and K <= MIT_Params[self.type]["Kp_max"]
-        )
-        assert (
-            isfinite(B)
-            and MIT_Params[self.type]["Kd_min"] <= B
-            and B <= MIT_Params[self.type]["Kd_max"]
-        )
+        if not (isfinite(K) and MIT_Params[self.type]["Kp_min"] <= K and MIT_Params[self.type]["Kp_max"] >= K):
+            raise ValueError(
+                f"K must be finite and between \
+                {MIT_Params[self.type]['Kp_min']} and {MIT_Params[self.type]['Kp_max']}"
+            )
+
+        if not (isfinite(B) and MIT_Params[self.type]["Kd_min"] <= B and MIT_Params[self.type]["Kd_max"] >= B):
+            raise ValueError(
+                f"B must be finite and between \
+                {MIT_Params[self.type]['Kd_min']} and {MIT_Params[self.type]['Kd_max']}"
+            )
+
         self._command.kp = K
         self._command.kd = B
         self._command.velocity = 0.0
 
-    def set_current_gains(self, kp=40, ki=400, ff=128, spoof=False):
+    def set_current_gains(
+        self,
+        kp: float = 40,
+        ki: float = 400,
+        ff: float = 128,
+        spoof: bool = False,
+    ) -> None:
         """
         Uses plain current mode, will send 0.0 for position gains in addition to requested current.
 
@@ -499,7 +461,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         pass
 
-    def set_velocity_gains(self, kd=1.0):
+    def set_velocity_gains(
+        self,
+        kd: float = 1.0,
+    ) -> None:
         """
         Uses plain speed mode, will send 0.0 for position gain and for feed forward current.
 
@@ -508,12 +473,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self._command.kd = kd
 
-    def set_position_gains(self):
+    def set_position_gains(self) -> None:
         # Not implemented
         pass
 
     # used for either impedance or MIT mode to set output angle
-    def set_output_position(self, value):
+    def set_output_position(self, value: float) -> None:
         """
         Used for either impedance or full state feedback mode to set output angle command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -525,9 +490,6 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Raises:
             RuntimeError: If the position command is outside the range of the motor.
         """
-        # position commands must be within a certain range :/
-        # pos = (np.abs(pos) % MIT_Params[self.type]["P_max"])*np.sign(pos) # this doesn't work because it will unwind itself!
-        # CANNOT Control using impedance mode for angles greater than 12.5 rad!!
         if np.abs(value) >= MIT_Params[self.type]["P_max"]:
             raise RuntimeError(
                 "Cannot control using impedance mode for angles with magnitude greater than "
@@ -535,11 +497,9 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 + "rad!"
             )
 
-        # if self._control_state not in [_TMotorManState.IMPEDANCE, _TMotorManState.FULL_STATE]:
-        #     raise RuntimeError("Attempted to send position command without gains for device " + self.device_info_string())
         self._command.position = value
 
-    def set_output_velocity(self, value):
+    def set_output_velocity(self, value: float) -> None:
         """
         Used for either speed or full state feedback mode to set output velocity command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -558,13 +518,11 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 + "rad/s!"
             )
 
-        # if self._control_state not in [_TMotorManState.SPEED, _TMotorManState.FULL_STATE]:
-        #     raise RuntimeError("Attempted to send speed command without gains for device " + self.device_info_string())
         self._command.velocity = value
 
     # used for either current MIT mode to set current
 
-    def set_motor_current(self, value):
+    def set_motor_current(self, value: float) -> None:
         """
         Used for either current or full state feedback mode to set current command.
         Note, this does not send a command, it updates the TMotorManager's saved command,
@@ -573,12 +531,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Args:
             value: the desired current in amps.
         """
-        # if self._control_state not in [_TMotorManState.CURRENT, _TMotorManState.FULL_STATE]:
-        #     raise RuntimeError("Attempted to send current command before entering current mode for device " + self.device_info_string())
         self._command.current = value
 
     # used for either current or MIT Mode to set current, based on desired torque
-    def set_joint_torque(self, value):
+    def set_joint_torque(self, value: float) -> None:
         """
         Used for either current or MIT Mode to set current, based on desired torque.
         If a more complicated torque model is available for the motor, that will be used.
@@ -587,14 +543,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Args:
             value: The desired output torque in Nm.
         """
-        self.set_motor_current(
-            value
-            / MIT_Params[self.type]["Kt_actual"]
-            / MIT_Params[self.type]["GEAR_RATIO"]
-        )
+        self.set_motor_current(value / MIT_Params[self.type]["Kt_actual"] / MIT_Params[self.type]["GEAR_RATIO"])
 
     # motor-side functions to account for the gear ratio
-    def set_motor_torque(self, value):
+    def set_motor_torque(self, value: float) -> None:
         """
         Version of set_output_torque that accounts for gear ratio to control motor-side torque
 
@@ -603,7 +555,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self.set_output_torque(value * MIT_Params[self.type]["Kt_actual"])
 
-    def set_motor_position(self, value):
+    def set_motor_position(self, value: float) -> None:
         """
         Wrapper for set_output_angle that accounts for gear ratio to control motor-side angle
 
@@ -612,7 +564,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self.set_output_position(value / (MIT_Params[self.type]["GEAR_RATIO"]))
 
-    def set_motor_velocity(self, value):
+    def set_motor_velocity(self, value: float) -> None:
         """
         Wrapper for set_output_velocity that accounts for gear ratio to control motor-side velocity
 
@@ -621,52 +573,52 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         self.set_output_velocity(value / (MIT_Params[self.type]["GEAR_RATIO"]))
 
-    def set_motor_voltage(self, value):
+    def set_motor_voltage(self, value: float) -> float:
         # Not implemented
         pass
 
     @property
-    def motor_position(self):
+    def motor_position(self) -> float:
         """
         Wrapper for get_output_angle that accounts for gear ratio to get motor-side angle
 
         Returns:
             The most recently updated motor-side angle in rad.
         """
-        return self._motor_state.position * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self._motor_state.position * MIT_Params[self.type]["GEAR_RATIO"])
 
     @property
-    def motor_velocity(self):
+    def motor_velocity(self) -> float:
         """
         Wrapper for get_output_velocity that accounts for gear ratio to get motor-side velocity
 
         Returns:
             The most recently updated motor-side velocity in rad/s.
         """
-        return self._motor_state.velocity * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self._motor_state.velocity * MIT_Params[self.type]["GEAR_RATIO"])
 
     @property
-    def motor_acceleration(self):
+    def motor_acceleration(self) -> float:
         """
         Wrapper for get_output_acceleration that accounts for gear ratio to get motor-side acceleration
 
         Returns:
             The most recently updated motor-side acceleration in rad/s/s.
         """
-        return self._motor_state.acceleration * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self._motor_state.acceleration * MIT_Params[self.type]["GEAR_RATIO"])
 
     @property
-    def motor_torque(self):
+    def motor_torque(self) -> float:
         """
         Wrapper for get_output_torque that accounts for gear ratio to get motor-side torque
 
         Returns:
             The most recently updated motor-side torque in Nm.
         """
-        return self.output_torque * MIT_Params[self.type]["GEAR_RATIO"]
+        return float(self.output_torque * MIT_Params[self.type]["GEAR_RATIO"])
 
     # Pretty stuff
-    def __str__(self):
+    def __str__(self) -> str:
         """Prints the motor's device info and current"""
         return (
             self.device_info_string()
@@ -695,17 +647,18 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         if not self._entered:
             raise RuntimeError(
-                "Tried to check_can_connection before entering motor control! Enter control using the __enter__ method, or instantiating the TMotorManager in a with block."
+                "Tried to check_can_connection before entering motor control! \
+                Enter control using the __enter__ method, or instantiating the TMotorManager in a with block."
             )
         Listener = can.BufferedReader()
         self._canman.notifier.add_listener(Listener)
-        for i in range(10):
+        for _i in range(10):
             self.power_on()
             time.sleep(0.001)
         success = True
         self._is_open = True
         time.sleep(0.1)
-        for i in range(10):
+        for _i in range(10):
             if Listener.get_message(timeout=0.1) is None:
                 success = False
                 self._is_open = False

@@ -1,76 +1,49 @@
-﻿import time
-
-import pandas as pd
-
-import opensourceleg.actuators.dephy as Dephy
 from opensourceleg.actuators.base import CONTROL_MODES
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.logging.logger import Logger
 from opensourceleg.time import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
-FREQUENCY = 200
+FREQUENCY = 1000
 DT = 1 / FREQUENCY
+GEAR_RATIO = 1.0
+
+CURRENT_SETPOINT = 600  # mA
 
 
-def main():
-    actpack = Dephy.DephyActuator(
-        port="/dev/ttyACM0",
-        gear_ratio=1.0,
+def current_control():
+    current_logger = Logger(
+        log_path="./logs",
+        file_name="current_control",
     )
-    current_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Current": [],
-            "Command_Current": [],
-        }
+    actpack = DephyActuator(
+        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
     )
     clock = SoftRealtimeLoop(dt=DT)
+
+    # current_logger.set_stream_terminator("\r")
+
     with actpack:
+        actpack.set_control_mode(mode=CONTROL_MODES.CURRENT)
+        actpack.set_current_gains()
 
-        try:
-            actpack.set_control_mode(mode=CONTROL_MODES.CURRENT)
-            actpack.set_current_gains(
-                # if no input, then default gains are applied
+        command_current = 0
+
+        current_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
+        current_logger.track_variable(lambda: command_current, "Command Current")
+
+        for t in clock:
+            if t > TIME_TO_STEP:
+                command_current = CURRENT_SETPOINT
+                actpack.set_motor_current(value=command_current)  # in mA
+
+            actpack.update()
+
+            current_logger.info(
+                f"Time: {t}; " f"Command Current: {command_current}; " f"Motor Current: {actpack.motor_current}",
             )
-
-            for t in clock:
-
-                if t > TIME_TO_STEP:
-                    command_current = 275
-                    actpack.set_motor_current(value=command_current)  # in mA
-
-                else:
-                    command_current = 0
-
-                actpack.update()
-
-                LOGGER.info(
-                    "".join(
-                        f"Motor Position: {actpack.motor_position}\t"
-                        + f"Motor Voltage: {actpack.motor_voltage}\t"
-                        + f"Motor Current: {actpack.motor_current}\t"
-                    )
-                )
-                current_data = pd.concat(
-                    [
-                        current_data,
-                        pd.DataFrame(
-                            {
-                                "Time": [t],
-                                "Output_Current": [actpack.motor_current],
-                                "Command_Current": [command_current],
-                            }
-                        ),
-                    ],
-                    ignore_index=True,
-                )
-
-                time.sleep(DT)
-
-        finally:
-            current_data.to_csv("current_data_dephy.csv", index=False)
-            exit()
+            current_logger.update()
 
 
 if __name__ == "__main__":
-    main()
+    current_control()
