@@ -79,7 +79,7 @@ class Profiler:
         """
         Start a new timing interval.
         """
-        self.t0 = time.time()
+        self._t0 = time.time()
 
     def toc(self) -> float:
         """
@@ -88,8 +88,8 @@ class Profiler:
         Returns:
             float: The duration of the interval.
         """
-        if self.t0 is not None:
-            t: float = time.time() - self.t0
+        if self._t0 is not None:
+            t: float = time.time() - self._t0
             self._N += 1
             self._agg += t
             self._aggvar += t**2
