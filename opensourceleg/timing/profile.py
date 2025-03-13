@@ -1,6 +1,6 @@
 import time
 from math import sqrt
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 
 class Profiler:
@@ -28,7 +28,7 @@ class Profiler:
         self._agg: float = 0.0
         self._aggvar: float = 0.0
         self.name: str = name
-        self._t0: float | None = None
+        self._t0: Union[float, None] = None
 
     def __del__(self) -> None:
         """
