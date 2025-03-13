@@ -79,9 +79,9 @@ If you'd like to modify or contribute to the [opensourceleg](https://pypi.org/pr
 
 10. **Push your changes** to your fork:
 
-   ```bash
-   git push origin feature-or-bugfix-name
-   ```
+```bash
+git push origin feature-or-bugfix-name
+```
 
 11. **Create a Pull Request** by navigating to your fork on GitHub and clicking `New Pull Request`.
 
