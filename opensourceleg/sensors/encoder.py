@@ -6,7 +6,7 @@ from smbus2 import SMBus
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import EncoderBase
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.timing import SoftRealtimeLoop
 from opensourceleg.utilities.utilities import from_twos_complement, to_twos_complement
 
 

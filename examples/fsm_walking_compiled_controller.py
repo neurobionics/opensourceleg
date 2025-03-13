@@ -16,7 +16,7 @@ import numpy as np
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.control.compiled import CompiledController
 from opensourceleg.sensors.loadcell import SRILoadcell
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.timing import SoftRealtimeLoop
 from opensourceleg.units import units
 
 use_offline_mode = False
