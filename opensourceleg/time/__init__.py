@@ -1,5 +1,5 @@
-from opensourceleg.time.time import SoftRealtimeLoop
 from opensourceleg.time.profile import Profiler
+from opensourceleg.time.time import SoftRealtimeLoop
 
 """
 Time module for opensourceleg library.
