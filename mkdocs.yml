@@ -18,7 +18,6 @@ nav:
           - Reading IMU Data: tutorials/sensors/reading_imu_data.md
           - Reading Loadcell Data: tutorials/sensors/reading_loadcell_data.md
           - Reading ADC Data: tutorials/sensors/reading_adc_data.md
-          - Developing a Custom Sensor: tutorials/sensors/developing_a_custom_sensor.md
       - Actuators:
           - Getting Started: tutorials/actuators/getting_started.md
           - Reading Data: tutorials/actuators/reading_data.md
@@ -26,10 +25,6 @@ nav:
           - Commanding Current: tutorials/actuators/commanding_current.md
           - Commanding Position: tutorials/actuators/commanding_position.md
           - Commanding Impedance: tutorials/actuators/commanding_impedance.md
-          - Developing a Custom Actuator: tutorials/actuators/developing_a_custom_actuator.md
-      - Robots:
-          - Getting Started: tutorials/robots/getting_started.md
-          - Developing a Custom Robot: tutorials/robots/developing_a_custom_robot.md
       - Control:
           - Getting Started: tutorials/control/getting_started.md
           - Compiled Controller: tutorials/control/compiled_controller.md

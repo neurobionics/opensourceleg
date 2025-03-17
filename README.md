@@ -27,12 +27,12 @@ An open-source software library for numerical computation, data acquisition, <br
 
 This library solves common challenges in developing, testing, and deploying robotic algorithms:
 
-| Feature | Description |
-|---------|-------------|
-| 📦 Standardized Interfaces | Provides consistent interfaces for common actuators and sensors |
+| Feature                         | Description                                                         |
+| ------------------------------- | ------------------------------------------------------------------- |
+| 📦 Standardized Interfaces      | Provides consistent interfaces for common actuators and sensors     |
 | 🔄 Ready-to-Use Implementations | Offers ready-to-use implementations for popular hardware components |
-| 🔍 Extensible Architecture | Allows for easy integration of custom components |
-| 🧪 Comprehensive Benchmarks | Includes comprehensive benchmarks for popular hardware components |
+| 🔍 Extensible Architecture      | Allows for easy integration of custom components                    |
+| 🧪 Comprehensive Benchmarks     | Includes comprehensive benchmarks for popular hardware components   |
 
 ## 👥 Ideal for Roboticists Who
 
@@ -45,22 +45,21 @@ This library solves common challenges in developing, testing, and deploying robo
 
 The library currently supports the following hardware components:
 
-| Actuators | Unit Tests | Hardware Tests | Benchmarks | Documentation |
-|-----------|------------|-------------------|------------|---------------|
-| Dephy Actpack | ✅ | ✅ | ⚠️ | ✅ |
-| Moteus | ✅ | ⚠️ | ⚠️ | ✅ |
-| TMotor | ✅ | ⚠️ | ❌ | ⚠️ |
+| Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
+| ------------- | ---------- | -------------- | ---------- | ------------- |
+| Dephy Actpack | ✅         | ✅             | ⚠️         | ✅            |
+| Moteus        | ✅         | ⚠️             | ⚠️         | ✅            |
+| TMotor        | ✅         | ⚠️             | ❌         | ⚠️            |
 
-| Sensors | Unit Tests | Hardware Tests | Benchmarks | Documentation |
-|---------|------------|-------------------|------------|---------------|
-| AS5048B Encoder | ✅ | ✅ | ❌ | ✅ |
-| Lord Microstrain IMU | ✅ | ✅ | ❌ | ✅ |
-| SRI Loadcell | ✅ | ✅ | ❌ | ✅ |
+| Sensors              | Unit Tests | Hardware Tests | Benchmarks | Documentation |
+| -------------------- | ---------- | -------------- | ---------- | ------------- |
+| AS5048B Encoder      | ✅         | ✅             | ❌         | ✅            |
+| Lord Microstrain IMU | ✅         | ✅             | ❌         | ✅            |
+| SRI Loadcell         | ✅         | ✅             | ❌         | ✅            |
 
 > Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available
 
 > Hardware tests indicate successful testing on physical devices. Benchmarks include performance metrics such as response time and accuracy measurements. Documentation includes API reference and usage examples.
-
 
 ## Installation
 
@@ -71,7 +70,6 @@ pip install opensourceleg
 ```
 
 For more details on the installation process, please refer to the [installation guide](https://neurobionics.github.io/opensourceleg/installation).
-
 
 ## Usage
 
@@ -86,7 +84,6 @@ from opensourceleg.sensors.encoder import AS5048B
 ```
 
 For more details on available modules, tutorials, and examples, please refer to the [documentation](https://neurobionics.github.io/opensourceleg/tutorials/getting_started).
-
 
 ## License
 
