@@ -9,30 +9,72 @@ copyright: Maintained by <a href="https://github.com/senthurayyappan">Senthur Ay
 
 nav:
   - Overview: index.md
-  - Modules:
-      - Actuators:
-          - Base: modules/actuators/actuators.md
-          - Dephy: modules/actuators/dephy.md
-          - Moteus: modules/actuators/moteus.md
-          - TMotor: modules/actuators/tmotor.md
-      - Collections:
-          - Validators: modules/collections/validators.md
-      - Control:
-          - Compiled Controller: modules/control/compiled.md
-          - State Machine: modules/control/fsm.md
-      - Logging:
-          - Logger: modules/logging.md
+  - Installation: installation.md
+  - Tutorials:
+      - Getting Started: tutorials/getting_started.md
       - Sensors:
-          - Base: modules/sensors/sensors_base.md
-          - IMU: modules/sensors/imu.md
-          - Loadcell: modules/sensors/loadcell.md
-          - ADC: modules/sensors/adc.md
-          - Encoder: modules/sensors/encoder.md
+          - Getting Started: tutorials/sensors/getting_started.md
+          - Reading Encoder Data: tutorials/sensors/reading_encoder_data.md
+          - Reading IMU Data: tutorials/sensors/reading_imu_data.md
+          - Reading Loadcell Data: tutorials/sensors/reading_loadcell_data.md
+          - Reading ADC Data: tutorials/sensors/reading_adc_data.md
+          - Developing a Custom Sensor: tutorials/sensors/developing_a_custom_sensor.md
+      - Actuators:
+          - Getting Started: tutorials/actuators/getting_started.md
+          - Reading Data: tutorials/actuators/reading_data.md
+          - Commanding Voltage: tutorials/actuators/commanding_voltage.md
+          - Commanding Current: tutorials/actuators/commanding_current.md
+          - Commanding Position: tutorials/actuators/commanding_position.md
+          - Commanding Impedance: tutorials/actuators/commanding_impedance.md
+          - Developing a Custom Actuator: tutorials/actuators/developing_a_custom_actuator.md
       - Robots:
-          - Base: modules/robots/robots.md
-          - OSL: modules/robots/osl.md
-      - Safety: modules/safety.md
-      - Time: modules/time.md
+          - Getting Started: tutorials/robots/getting_started.md
+          - Developing a Custom Robot: tutorials/robots/developing_a_custom_robot.md
+      - Control:
+          - Getting Started: tutorials/control/getting_started.md
+          - Compiled Controller: tutorials/control/compiled_controller.md
+          - State Machine: tutorials/control/state_machine.md
+      - Logging:
+          - Getting Started: tutorials/logging/getting_started.md
+      - Safety:
+          - Getting Started: tutorials/safety/getting_started.md
+      - Time:
+          - Getting Started: tutorials/time/getting_started.md
+  - Examples:
+      - Getting Started: examples/getting_started.md
+      - Open-Source Leg:
+          - Getting Started: examples/osl/getting_started.md
+          - Commanding Joint Position: examples/osl/commanding_joint_position.md
+          - Developing a FSM controller: examples/osl/developing_a_fsm_controller.md
+          - Loading a Compiled Controller: examples/osl/loading_a_compiled_controller.md
+          - Developing a Custom Controller: examples/osl/developing_a_custom_controller.md
+  - API:
+      - Actuators:
+          - Base: api/actuators/actuators.md
+          - Dephy: api/actuators/dephy.md
+          - Moteus: api/actuators/moteus.md
+          - TMotor: api/actuators/tmotor.md
+      - Collections:
+          - Validators: api/collections/validators.md
+      - Control:
+          - Compiled Controller: api/control/compiled.md
+          - State Machine: api/control/fsm.md
+      - Logging:
+          - Logger: api/logging.md
+      - Sensors:
+          - Base: api/sensors/sensors_base.md
+          - IMU: api/sensors/imu.md
+          - Loadcell: api/sensors/loadcell.md
+          - ADC: api/sensors/adc.md
+          - Encoder: api/sensors/encoder.md
+      - Robots:
+          - Base: api/robots/robots.md
+          - OSL: api/robots/osl.md
+      - Safety: api/safety.md
+      - Time: api/time.md
+  - Contributing: contributing.md
+  - Security: security.md
+  - License: license.md
 plugins:
   - search
   - mkdocstrings:
