@@ -1,4 +1,4 @@
-from opensourceleg.timing.time import SoftRealtimeLoop
+from opensourceleg.time.time import SoftRealtimeLoop
 
 """
 Time module for opensourceleg library.

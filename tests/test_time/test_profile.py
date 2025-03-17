@@ -1,6 +1,6 @@
 import time
 
-from opensourceleg.timing.profile import Profiler
+from opensourceleg.time.profile import Profiler
 
 
 def test_tic_toc():

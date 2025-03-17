@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from opensourceleg.timing.time import LoopKiller, SoftRealtimeLoop
+from opensourceleg.time.time import LoopKiller, SoftRealtimeLoop
 
 
 def test_loopkiller_init():
