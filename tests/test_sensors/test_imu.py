@@ -245,12 +245,16 @@ def test_ping_success(sample_imu: MockLordMicrostrainIMU):
 
 # Test update
 def test_update(sample_imu: MockLordMicrostrainIMU):
+    sample_imu.set_update_timeout(400)
+    sample_imu.set_max_packets(3)
+    sample_imu.set_return_packets(True)
+
     sample_imu.start()
     assert sample_imu._data == {}
-    sample_imu.update(500, 2, False)
+    sample_imu.update()
     assert sample_imu._data == {"mockdata": 20}
 
-    return_val = sample_imu.update(400, 3, True)
+    return_val = sample_imu.update()
     assert len(return_val) == 3
     for i in range(0, 3):
         assert isinstance(return_val[i], MockDataPockets)

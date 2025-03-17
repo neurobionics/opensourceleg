@@ -15,13 +15,13 @@ DEFAULT_CAL_MATRIX = np.ones(shape=(6, 6), dtype=np.double)
 def test_SRILoadcell_init():
     invalid_cal_matrix = np.ones(shape=(5, 6), dtype=np.double)
     with pytest.raises(TypeError):
-        SRI = loadcell.SRILoadcell(calibration_matrix=invalid_cal_matrix)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=invalid_cal_matrix)
     with pytest.raises(ValueError):
-        SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX, amp_gain=0)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, amp_gain=0)
     with pytest.raises(ValueError):
-        SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX, exc=0)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, exc=0)
 
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
 
     assert SRI._amp_gain == 125.0
     assert SRI._exc == 5.0
@@ -51,7 +51,7 @@ def test_SRILoadcell_init():
 
 
 def test_SRILoadcell_reset():
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
     SRI._calibration_offset = np.ones(shape=(1, 6), dtype=np.double)
     SRI.reset()
     assert np.array_equal(SRI._calibration_offset, np.zeros(shape=(1, 6), dtype=np.double))
@@ -59,7 +59,7 @@ def test_SRILoadcell_reset():
 
 def test_SRILoadcell_update():
     # Test basic call execution
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
     SRI.update(data_callback=_read_data)
 
     # Ensuring self._calibration_offset was used
@@ -92,7 +92,7 @@ def _read_random_data() -> npt.NDArray[np.uint8]:
 
 
 # Function to run update calculations from inside the update method
-def _update_calculations(SRI: loadcell.SRILoadcell, calibration_offset: float):
+def _update_calculations(SRI: loadcell.DephyLoadcellAmplifier, calibration_offset: float):
     test_data = _read_data()
     signed_data = ((test_data - SRI.OFFSET) / SRI.ADC_RANGE) * SRI._exc
     coupled_data = signed_data * 1000 / (SRI._exc * SRI._amp_gain)

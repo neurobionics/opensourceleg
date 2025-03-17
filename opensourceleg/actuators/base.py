@@ -5,6 +5,7 @@ from functools import partial
 from typing import (
     Any,
     Callable,
+    ClassVar,
     NamedTuple,
     Optional,
     Protocol,
@@ -16,6 +17,7 @@ from typing import (
 
 import numpy as np
 
+from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.logging.logger import LOGGER
 
 # TODO: Add validators for every custom data type
@@ -348,6 +350,22 @@ class ActuatorBase(ABC):
         Started
     """
 
+    # Class-level mapping of methods to their required control modes
+    _METHOD_REQUIRED_MODES: ClassVar[dict[str, set[CONTROL_MODES]]] = {
+        "set_motor_voltage": {CONTROL_MODES.VOLTAGE},
+        "set_motor_current": {CONTROL_MODES.CURRENT},
+        "set_motor_position": {CONTROL_MODES.POSITION, CONTROL_MODES.IMPEDANCE},
+        "set_output_position": {CONTROL_MODES.POSITION, CONTROL_MODES.IMPEDANCE},
+        "set_motor_impedance": {CONTROL_MODES.IMPEDANCE},
+        "set_output_impedance": {CONTROL_MODES.IMPEDANCE},
+        "set_motor_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
+        "set_joint_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
+        "set_output_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
+        "set_current_gains": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
+        "set_position_gains": {CONTROL_MODES.POSITION},
+        "set_impedance_gains": {CONTROL_MODES.IMPEDANCE},
+    }
+
     def __init__(
         self,
         tag: str,
@@ -455,26 +473,32 @@ class ActuatorBase(ABC):
             >>> actuator._restricted_method("set_motor_voltage")
             # (Logs an error message and returns None)
         """
-        LOGGER.error(f"{method_name}() is not available in {self._mode.name} mode.")
-        return None
+        raise ControlModeException(tag=self._tag, attribute=method_name, mode=self._mode.name)
 
     def _set_original_methods(self) -> None:
         """
         Store the original methods that require specific control modes.
 
-        Iterates through known control mode methods and saves those that have
-        a `_required_modes` attribute to allow mode-based restrictions.
+        Uses a class-level mapping of methods to their required control modes
+        to ensure proper inheritance of restrictions in derived classes.
 
         Examples:
             >>> print(actuator._original_methods)  # Dictionary of method names to methods
         """
-        for method_name in CONTROL_MODE_METHODS:
+        # Get the method-to-required-modes mapping for this class
+        method_modes_map = getattr(self.__class__, "_METHOD_REQUIRED_MODES", {})
+
+        for method_name, required_modes in method_modes_map.items():
             try:
                 method = getattr(self, method_name)
-                if callable(method) and hasattr(method, "_required_modes"):
+                if callable(method):
                     self._original_methods[method_name] = method
+                    LOGGER.debug(
+                        msg=f"[{self.tag}] {method_name}() is available in modes: "
+                        f"{[mode.name for mode in required_modes]}"
+                    )
             except AttributeError:
-                LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.tag}.")
+                LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.__class__.__name__}.")
 
     def _set_mutated_methods(self) -> None:
         """
@@ -488,7 +512,7 @@ class ActuatorBase(ABC):
             >>> actuator._set_mutated_methods()
         """
         for method_name, method in self._original_methods.items():
-            if self._mode in method._required_modes:
+            if self._mode in self._METHOD_REQUIRED_MODES[method_name]:
                 setattr(self, method_name, method)
             else:
                 setattr(self, method_name, partial(self._restricted_method, method_name))
@@ -597,7 +621,6 @@ class ActuatorBase(ABC):
         self._set_mutated_methods()
 
     @abstractmethod
-    @requires(CONTROL_MODES.VOLTAGE)
     def set_motor_voltage(self, value: float) -> None:
         """
         Set the motor voltage.
@@ -613,7 +636,6 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.CURRENT)
     def set_motor_current(self, value: float) -> None:
         """
         Set the motor current.
@@ -629,7 +651,6 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.POSITION)
     def set_motor_position(self, value: float) -> None:
         """
         Set the motor position.
@@ -644,9 +665,6 @@ class ActuatorBase(ABC):
         """
         pass
 
-    @requires(
-        CONTROL_MODES.POSITION
-    )  # TODO: This needs to be tested as set_motor_position is already decorated with requires
     def set_output_position(self, value: float) -> None:
         """
         Set the output position of the actuator.
@@ -666,7 +684,6 @@ class ActuatorBase(ABC):
         self.set_motor_position(value=value * self.gear_ratio)
 
     @abstractmethod
-    @requires(CONTROL_MODES.TORQUE)
     def set_motor_torque(self, value: float) -> None:
         """
         Set the motor torque.
@@ -682,7 +699,6 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.TORQUE)
     def set_joint_torque(self, value: float) -> None:
         """
         Set the joint torque.
@@ -698,7 +714,6 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.CURRENT)
     def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """
         Set the current control gains.
@@ -717,7 +732,6 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.POSITION)
     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """
         Set the position control gains.
@@ -736,7 +750,6 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    @requires(CONTROL_MODES.IMPEDANCE)
     def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
         """
         Set the impedance control gains.

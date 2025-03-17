@@ -53,12 +53,12 @@ def is_changing(
                 current_std = np.std(list(history))
                 if current_std < threshold:
                     if proxy_attribute_name is not None:
-                        print(f"{attribute_name} isn't stable, returning {proxy_attribute_name}")
+                        print(f"{attribute_name} isn't changing, returning {proxy_attribute_name}")
                         if not hasattr(instance, proxy_key):
                             setattr(instance, proxy_key, True)
                         return getattr(instance, proxy_attribute_name)
                     else:
-                        raise ValueError(f"{attribute_name} is unstable")
+                        raise ValueError(f"{attribute_name} is not changing")
             return value
 
         return wrapper
@@ -428,8 +428,8 @@ if __name__ == "__main__":
     safety_manager.add_safety(sensor, "a", SafetyDecorators.is_positive())
     safety_manager.start()
 
-    for i in range(10):
-        sensor.value = i
-        sensor.a = 5 - i
-        print(sensor.value, sensor.a)
+    for _i in range(10):
+        sensor.value = 1
+        sensor.a = 5
+        print(sensor.__dir__())
         safety_manager.update()

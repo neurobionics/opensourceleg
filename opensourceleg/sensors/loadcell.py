@@ -1,14 +1,14 @@
 """
-Module for interfacing with SRILoadcell sensors.
+Module for interfacing with SRI Loadcell sensors.
 
-This module provides an implementation of a load cell sensor (SRILoadcell) that
+This module provides an implementation of a load cell sensor (DephyLoadcellAmplifier) that
 inherits from LoadcellBase. It uses an I2C interface via SMBus to communicate with
 a strain amplifier and processes raw ADC data to compute forces and moments.
 
 Classes:
     LoadcellNotRespondingException: Exception raised when the load cell does not respond.
     MEMORY_CHANNELS: Enum representing memory channel addresses for load cell readings.
-    SRILoadcell: Concrete implementation of a load cell sensor that provides force and moment data.
+    DephyLoadcellAmplifier: Concrete implementation of a load cell sensor that provides force and moment data.
 
 Dependencies:
     - numpy
@@ -47,7 +47,7 @@ class LoadcellNotRespondingException(Exception):
         super().__init__(message)
 
 
-class MEMORY_CHANNELS(int, Enum):
+class DEPHY_AMPLIFIER_MEMORY_CHANNELS(int, Enum):
     """
     Enumeration of memory channel addresses used by the load cell.
 
@@ -68,11 +68,11 @@ class MEMORY_CHANNELS(int, Enum):
     CH6_L = 19
 
 
-class SRILoadcell(LoadcellBase):
+class DephyLoadcellAmplifier(LoadcellBase):
     """
-    Implementation of a load cell sensor using the SRILoadcell hardware.
+    Implementation of a load cell sensor using the Dephy Loadcell Amplifier.
 
-    This class communicates with a strain amplifier via I2C using the SMBus interface,
+    This class communicates with the dephy strain amplifier via I2C using the SMBus interface,
     processes the raw ADC data, and computes forces (Fx, Fy, Fz) and moments (Mx, My, Mz)
     based on a provided calibration matrix and hardware configuration.
 
@@ -93,7 +93,7 @@ class SRILoadcell(LoadcellBase):
         i2c_address: int = 0x66,
     ) -> None:
         """
-        Initialize the SRILoadcell sensor.
+        Initialize the Dephy loadcell amplifier.
 
         Validates the provided parameters and initializes internal variables for data
         acquisition, calibration, and streaming.
@@ -258,7 +258,7 @@ class SRILoadcell(LoadcellBase):
             Any: The unpacked strain data.
         """
         try:
-            data = self._smbus.read_i2c_block_data(self._i2c_address, MEMORY_CHANNELS.CH1_H, 10)
+            data = self._smbus.read_i2c_block_data(self._i2c_address, DEPHY_AMPLIFIER_MEMORY_CHANNELS.CH1_H, 10)
             self.failed_reads = 0
         except OSError:
             self.failed_reads += 1
@@ -343,7 +343,7 @@ class SRILoadcell(LoadcellBase):
         Returns:
             float: Force (N) along the x-axis.
         """
-        return float(self.data[0])
+        return self.data[0]
 
     @property
     def fy(self) -> float:
@@ -355,7 +355,7 @@ class SRILoadcell(LoadcellBase):
         Returns:
             float: Force (N) along the y-axis.
         """
-        return float(self.data[1])
+        return self.data[1]
 
     @property
     def fz(self) -> float:
@@ -368,7 +368,7 @@ class SRILoadcell(LoadcellBase):
         Returns:
             float: Force (N) along the z-axis.
         """
-        return float(self.data[2])
+        return self.data[2]
 
     @property
     def mx(self) -> float:
@@ -380,7 +380,7 @@ class SRILoadcell(LoadcellBase):
         Returns:
             float: Moment (Nm) about the x-axis.
         """
-        return float(self.data[3])
+        return self.data[3]
 
     @property
     def my(self) -> float:
@@ -392,7 +392,7 @@ class SRILoadcell(LoadcellBase):
         Returns:
             float: Moment (Nm) about the y-axis.
         """
-        return float(self.data[4])
+        return self.data[4]
 
     @property
     def mz(self) -> float:
@@ -404,17 +404,17 @@ class SRILoadcell(LoadcellBase):
         Returns:
             float: Moment (Nm) about the z-axis.
         """
-        return float(self.data[5])
+        return self.data[5]
 
     @property
-    def data(self) -> Any:
+    def data(self) -> list[float]:
         """
         Get the latest processed load cell data.
 
         Returns:
-            Any: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where forces are in Newtons and moments in Nm.
+            list[float]: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where forces are in Newtons and moments in Nm.
         """
         if self._data is not None:
-            return self._data[0]
+            return list(map(float, self._data[0].tolist()))
         else:
-            return self._zero_calibration_offset
+            return list(map(float, self._zero_calibration_offset.tolist()))

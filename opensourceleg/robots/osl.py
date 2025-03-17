@@ -8,28 +8,57 @@ from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyLegacyAct
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
-from opensourceleg.sensors.loadcell import SRILoadcell
+from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
 
 
 class OpenSourceLeg(RobotBase[TActuator, TSensor]):
+    """
+    Open Source Leg (OSL) class derived from RobotBase.
+    """
+
     def start(self) -> None:
+        """
+        Start the OSL.
+        """
         super().start()
 
     def stop(self) -> None:
+        """
+        Stop the OSL.
+        """
         super().stop()
 
     def update(self) -> None:
+        """
+        Update the robot.
+        """
         super().update()
 
     def home(self) -> None:
+        """
+        Call the home method for all actuators.
+        """
         for actuator in self.actuators.values():
             actuator.home()
 
     def make_encoder_maps(self) -> None:
-        pass
+        """
+        Make encoder maps for all actuators.
+        """
+        for actuator in self.actuators.values():
+            if hasattr(actuator, "make_encoder_map"):
+                actuator.make_encoder_map()
+            else:
+                LOGGER.warning(f"[{actuator.__repr__()}] No encoder map method found. Skipping.")
 
     @property
     def knee(self) -> Union[TActuator, ActuatorBase]:
+        """
+        Get the knee actuator.
+
+        Returns:
+            Union[TActuator, ActuatorBase]: The knee actuator.
+        """
         try:
             return self.actuators["knee"]
         except KeyError:
@@ -38,6 +67,12 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
     @property
     def ankle(self) -> Union[TActuator, ActuatorBase]:
+        """
+        Get the ankle actuator.
+
+        Returns:
+            Union[TActuator, ActuatorBase]: The ankle actuator.
+        """
         try:
             return self.actuators["ankle"]
         except KeyError:
@@ -46,6 +81,12 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
     @property
     def loadcell(self) -> Union[TSensor, LoadcellBase]:
+        """
+        Get the loadcell sensor.
+
+        Returns:
+            Union[TSensor, LoadcellBase]: The loadcell sensor.
+        """
         try:
             return self.sensors["loadcell"]
         except KeyError:
@@ -54,6 +95,12 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
     @property
     def joint_encoder_knee(self) -> Union[TSensor, SensorBase]:
+        """
+        Get the knee joint encoder sensor.
+
+        Returns:
+            Union[TSensor, SensorBase]: The knee joint encoder sensor.
+        """
         try:
             return self.sensors["joint_encoder_knee"]
         except KeyError:
@@ -65,6 +112,12 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
     @property
     def joint_encoder_ankle(self) -> Union[TSensor, SensorBase]:
+        """
+        Get the ankle joint encoder sensor.
+
+        Returns:
+            Union[TSensor, SensorBase]: The ankle joint encoder sensor.
+        """
         try:
             return self.sensors["joint_encoder_ankle"]
         except KeyError:
@@ -93,7 +146,7 @@ if __name__ == "__main__":
             "knee": DephyLegacyActuator("knee", offline=False, frequency=frequency, gear_ratio=9 * (83 / 18)),
         },
         sensors={
-            "loadcell": SRILoadcell(calibration_matrix=LOADCELL_MATRIX),
+            "loadcell": DephyLoadcellAmplifier(calibration_matrix=LOADCELL_MATRIX),
         },
     )
 

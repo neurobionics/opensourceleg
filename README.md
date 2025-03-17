@@ -2,8 +2,8 @@
 
 <h1>opensourceleg</h1>
 
-[![Build status](https://github.com/neurobionics/opensourceleg/workflows/build/badge.svg?branch=master&event=push)](https://github.com/neurobionics/opensourceleg/actions?query=workflow%3Abuild)
-[![Documentation Status](https://readthedocs.org/projects/opensourceleg/badge/?version=latest)](https://opensourceleg.readthedocs.io/en/latest/?badge=latest)
+[![Build status](https://github.com/neurobionics/opensourceleg/workflows/build/badge.svg)](https://github.com/neurobionics/opensourceleg/actions?query=workflow%3Abuild)
+[![Documentation Status](https://github.com/neurobionics/opensourceleg/actions/workflows/pages/pages-build-deployment/badge.svg)](https://neurobionics.github.io/opensourceleg/)
 [![Python Version](https://img.shields.io/pypi/pyversions/opensourceleg.svg)](https://pypi.org/project/opensourceleg/)
 [![Dependencies Status](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg)](https://github.com/neurobionics/opensourceleg/pulls?utf8=%E2%9C%93&q=is%3Apr%20author%3Aapp%2Fdependabot)
 
@@ -14,6 +14,8 @@
 ![Coverage Report](assets/images/coverage.svg)
 
 An open-source software library for numerical computation, data acquisition, <br>and control of lower-limb robotic prostheses.
+
+> NOTE: We are currently testing the new version of the library (main branch), and the PyPI release will be updated soon. If you are looking for the source behind the existing PyPI release, please refer to the [legacy branch](https://github.com/neurobionics/opensourceleg/tree/legacy).
 
 <img src="https://github.com/neurobionics/opensourceleg/blob/66ad4289ef9ba8701fac9337778f87b657286484/assets/images/banner.gif?raw=true" width="800" title="Open-Source Leg">
 
@@ -29,40 +31,61 @@ The easiest and quickest way to install the _opensourceleg_ library is via [pip]
 pip install opensourceleg
 ```
 
-> If you plan on installing the _opensourceleg_ library on a Raspberry Pi, we recommend using [opensourcelegpi](https://github.com/neurobionics/opensourcelegpi) tool, which is a cloud-based CI tool used to build an up-to-date OS for a [Raspberry Pi](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) that can be used headless/GUI-less to control autonomous/remote robotic systems. This tool bundles the _opensourceleg_ library and its dependencies into a single OS image, which can be flashed onto a microSD card and used to boot a Raspberry Pi. For more information, click [here](https://github.com/neurobionics/opensourcelegpi/blob/main/README.md).
+You can now use the library in your projects! Please refer to the [documentation](https://opensourceleg.readthedocs.io/en/latest/) for tutorials, examples, and more.
 
-### Developing
+### Developing and Contributing to the Library
 
-To modify, develop, or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we encourage you to install [Poetry](https://python-poetry.org), which is a python packaging and dependency management tool. Once you have Poetry installed on your local machine, you can clone the repository and install the _opensourceleg_ library by running the following commands:
+If you'd like to modify or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we recommend following these steps:
+
+1. **Fork the repository** by clicking the "Fork" button at the top right of this [page](https://github.com/neurobionics/opensourceleg).
+
+2. **Clone your fork** to your local machine:
+
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/opensourceleg.git
+   cd opensourceleg
+   ```
+
+3. **Set up the upstream remote** to keep your fork in sync with the main repository:
+
+   ```bash
+   git remote add upstream https://github.com/neurobionics/opensourceleg.git
+   ```
+
+4. **Install Poetry** if you haven't already. [Poetry](https://python-poetry.org) is a python packaging and dependency management tool. We use poetry to manage dependencies and build the library.
+
+5. **Install dependencies and activate the virtual environment**:
+
+   ```bash
+   poetry install
+   poetry shell
+   ```
+
+6. **Install pre-commit hooks**:
+
+   ```bash
+   make install
+   ```
+
+7. **Create a new branch** for your feature or bugfix:
+
+   ```bash
+   git checkout -b feature-or-bugfix-name
+   ```
+
+8. **Make your changes** and commit them with descriptive messages.
+
+9. **Run checks**. See [the contributing guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md) for more information.
+
+10. **Push your changes** to your fork:
 
 ```bash
-git clone https://github.com/neurobionics/opensourceleg.git
-cd opensourceleg
-
-poetry install
-poetry shell
+git push origin feature-or-bugfix-name
 ```
 
-Finally, install the environment and the pre-commit hooks with
+11. **Create a Pull Request** by navigating to your fork on GitHub and clicking `New Pull Request`.
 
-```bash
-make install
-```
-
-You are now ready to start development on your project!
-The CI/CD pipeline will be triggered when you open a pull request, merge to main, or when you create a new release.
-
-To finalize the set-up for publishing to PyPI or Artifactory, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/codecov/).
-
-## Releasing a new version
-
-- Create an API Token on [PyPI](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/neurobionics/opensourceleg/settings/secrets/actions/new).
-- Create a [new release](https://github.com/neurobionics/opensourceleg/releases/new) on Github.
-- Create a new tag in the form `*.*.*`.
-- For more details, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/cicd/#how-to-trigger-a-release).
+Your changes will be reviewed by the maintainers, and if approved, they will be merged into the main repository.
 
 ## License
 

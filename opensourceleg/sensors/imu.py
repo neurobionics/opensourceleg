@@ -70,6 +70,9 @@ class LordMicrostrainIMU(IMUBase):
         port: str = "/dev/ttyUSB0",
         baud_rate: int = 921600,
         frequency: int = 200,
+        update_timeout: int = 500,
+        max_packets: int = 1,
+        return_packets: bool = False,
     ) -> None:
         """
         Initialize the LordMicrostrainIMU sensor.
@@ -78,10 +81,16 @@ class LordMicrostrainIMU(IMUBase):
             port (str, optional): Serial port for the IMU. Defaults to "/dev/ttyUSB0".
             baud_rate (int, optional): Baud rate for the serial connection. Defaults to 921600.
             frequency (int, optional): Data streaming frequency in Hz. Defaults to 200.
+            update_timeout (int, optional): Timeout for data packet retrieval in milliseconds. Defaults to 500.
+            max_packets (int, optional): Maximum number of data packets to retrieve. Defaults to 1.
+            return_packets (bool, optional): If True, returns the raw data packets. Defaults to False.
         """
         self._port = port
         self._baud_rate = baud_rate
         self._frequency = frequency
+        self._update_timeout = update_timeout
+        self._max_packets = max_packets
+        self._return_packets = return_packets
         self._is_streaming = False
         self._connection = None
         self._data: dict[str, float] = {}
@@ -127,6 +136,24 @@ class LordMicrostrainIMU(IMUBase):
 
         return channels
 
+    def set_update_timeout(self, timeout: int) -> None:
+        """
+        Set the update timeout for the sensor.
+        """
+        self._update_timeout = timeout
+
+    def set_max_packets(self, max_packets: int) -> None:
+        """
+        Set the maximum number of packets to retrieve.
+        """
+        self._max_packets = max_packets
+
+    def set_return_packets(self, return_packets: bool) -> None:
+        """
+        Set the return packets flag.
+        """
+        self._return_packets = return_packets
+
     def start(self) -> None:
         """
         Start the Lord Microstrain IMU sensor.
@@ -170,23 +197,19 @@ class LordMicrostrainIMU(IMUBase):
         else:
             LOGGER.error(f"Failed to ping the IMU at {self.port}")
 
-    def update(self, timeout: int = 500, max_packets: int = 1, return_packets: bool = False) -> Union[None, Any]:
+    def update(self) -> Union[None, Any]:
         """
-        Retrieve and update IMU data from the sensor.
-
-        Args:
-            timeout (int, optional): Timeout for data packet retrieval in milliseconds. Defaults to 500.
-            max_packets (int, optional): Maximum number of data packets to retrieve. Defaults to 1.
-            return_packets (bool, optional): If True, returns the raw data packets. Defaults to False.
+        Retrieve and update IMU data from the sensor. To modify update parameters, use the set_update_timeout,
+        set_max_packets, and set_return_packets methods.
 
         Returns:
             Union[None, Any]: Returns the data packets if `return_packets` is True; otherwise, None.
         """
-        data_packets = self._node.getDataPackets(timeout=timeout, maxPackets=max_packets)
+        data_packets = self._node.getDataPackets(timeout=self.update_timeout, maxPackets=self.max_packets)
         data_points = data_packets[-1].data()
         self._data = {data.channelName(): data.as_float() for data in data_points}
 
-        if return_packets:
+        if self.return_packets:
             return data_packets
         else:
             return None
@@ -239,6 +262,27 @@ class LordMicrostrainIMU(IMUBase):
             bool: True if streaming; otherwise, False.
         """
         return self._is_streaming
+
+    @property
+    def update_timeout(self) -> int:
+        """
+        Get the update timeout for the sensor.
+        """
+        return self._update_timeout
+
+    @property
+    def max_packets(self) -> int:
+        """
+        Get the maximum number of packets to retrieve.
+        """
+        return self._max_packets
+
+    @property
+    def return_packets(self) -> bool:
+        """
+        Get the return packets flag.
+        """
+        return self._return_packets
 
     @property
     def data(self) -> dict[str, float]:

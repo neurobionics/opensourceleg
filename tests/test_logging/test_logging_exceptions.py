@@ -45,8 +45,8 @@ def test_control_mode_exception():
     with pytest.raises(ControlModeException) as e:
         raise ControlModeException(test_str, test_att, test_mode)
     assert (
-        str(e.value)
-        == f"[{test_str}] Cannot set {test_att} in {test_mode} mode. Please set the actuator to {test_att} mode first."
+        str(e.value) == f"[{test_str}] Cannot use {test_att}() in {test_mode} mode.\n"
+        f"Please verify that the actuator is in the correct control mode. Exiting..."
     )
 
 
