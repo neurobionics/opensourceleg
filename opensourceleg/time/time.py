@@ -30,7 +30,7 @@ class LoopKiller:
     def __init__(self, fade_time: float = 0.0):
         signal.signal(signal.SIGTERM, self.handle_signal)
         signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGHUP, self.handle_signal)
+        signal.signal(signal.SIGHUP, self.handle_signal)  # type: ignore[attr-defined]
         self._fade_time: float = fade_time
         self._soft_kill_time: float = 0.0
 
@@ -218,7 +218,7 @@ class SoftRealtimeLoop:
             if ret == 0:
                 self.stop()
             while time.monotonic() < self.t1 and not self.killer.kill_now:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):  # type: ignore[attr-defined]
                     self.stop()
             self.t1 += dt
 
@@ -278,7 +278,7 @@ class SoftRealtimeLoop:
 
         while time.monotonic() < self.t1 and not self.killer.kill_now:
             try:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):  # type: ignore[attr-defined]
                     self.stop()
             except AttributeError:
                 pass

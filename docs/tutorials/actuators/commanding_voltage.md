@@ -67,21 +67,21 @@ The main loop:
 
 1. Navigate to the tutorial directory:
 
-   ```bash
-   cd tutorials/actuators/dephy
-   ```
+      ```bash
+      cd tutorials/actuators/dephy
+      ```
 
 2. Run the script:
 
-   ```bash
-   python commanding_voltage.py
-   ```
+      ```bash
+      python commanding_voltage.py
+      ```
 
 3. Expected behavior:
 
-   - t < 1.0s: Motor maintains 0 mV
-   - t ≥ 1.0s: Motor steps to 1000 mV
-   - Data is continuously logged to `./logs/commanding_voltage.csv`
+      - t < 1.0s: Motor maintains 0 mV
+      - t ≥ 1.0s: Motor steps to 1000 mV
+      - Data is continuously logged to `./logs/commanding_voltage.csv`
 
 ## Additional Notes
 

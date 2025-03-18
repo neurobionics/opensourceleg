@@ -1,6 +1,6 @@
 # Configuring the Logger
 
-This guide covers the various ways to configure the Logger for your needs. All examples can be found in the [`configuring_logger.py`](../tutorials/logging/configuring_logger.py) script.
+This guide covers the various ways to configure the Logger for your needs. All examples can be found in the [`configuring_logger.py`](https://github.com/neurobionics/opensourceleg/tree/main/tutorials/logging/configuring_logger.py) script.
 
 ## Initial Setup
 

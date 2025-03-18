@@ -1,67 +1,139 @@
 # Getting Started with Logging
 
-The `opensourceleg` library provides a powerful logging system through the `Logger` class, which is built on top of the native `logging` module. This guide will introduce you to the basics of logging and help you get started.
+The `opensourceleg` library provides an easy-to-use yet powerful logging system that helps you track what's happening in your application. Whether you're debugging issues, monitoring performance, or collecting data, our logging system has you covered.
 
 ## Overview
 
-The Logger class offers:
+Our `Logger` class builds upon Python's native `logging` module and adds several powerful features:
 
-- Standard logging levels (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`)
-- CSV data logging for variables
-- File and console output
-- Thread-safe operation
-- Singleton pattern (one logger instance across your application)
+- **Data Logging**: Easily track variables and measurements over time
+- **Flexible Output**: Write to both console and files simultaneously
+- **Thread Safety**: Safe to use in multi-threaded applications
+- **Singleton Pattern**: One logger instance across your entire application
 
-## Basic Usage
+## Quick Start
 
-### 1. Importing the Logger
+### 1. Create Your Logger
 
-```python
-from opensourceleg.logging import LOGGER, LogLevel
-```
-
-### 2. Simple Logging
+First, create a logger instance in your Python file:
 
 ```python
-# Basic logging at different levels
-LOGGER.debug("Detailed information for debugging")
-LOGGER.info("General information about program execution")
-LOGGER.warning("Warning messages for potentially problematic situations")
-LOGGER.error("Error messages for serious problems")
-LOGGER.critical("Critical messages for fatal errors")
-```
+from opensourceleg.logging import Logger, LogLevel
 
-### 3. Basic Configuration
-
-```python
-# Initialize logger with custom settings
 logger = Logger(
-    log_path="./logs",          # Where to save log files
-    file_name="my_experiment",  # Base name for log files
-    buffer_size=1000           # How many entries to buffer before writing
+    log_path="./logs",
+    file_name="my_application"
 )
 ```
 
-## Core Concepts
+### 2. Start Logging!
 
-- Logger uses a singleton pattern
-- All imports reference the same logger instance
-- Configuration changes affect all users of the logger
+It's as simple as:
 
-- Console output for immediate feedback
-- File output for permanent record
-- Different log levels can be set for each
+```python
+# Log some basic information
+logger.info("Application started")
 
-- Automatically log variable values over time
-- CSV output for data analysis
-- Buffer system for efficient writing
+# Log when something might be wrong
+logger.warning("Battery level below 20%")
+
+# Log errors when they occur
+logger.error("Failed to connect to sensor")
+```
+
+### 3. Understanding Log Levels
+
+We provide five log levels, from least to most severe:
+
+```python
+# For detailed debugging information
+logger.debug("Motor position: 123.4 degrees")
+
+# For general information
+logger.info("Robot initialized successfully")
+
+# For potential issues
+logger.warning("Battery running low")
+
+# For serious problems
+logger.error("Failed to read sensor data")
+
+# For fatal errors
+logger.critical("System shutdown required")
+```
+
+### 4. Customizing Your Logger
+
+You can configure the logger to match your needs:
+
+```python
+logger = Logger(
+    log_path="./logs",          # Where to save your log files
+    file_name="robot_test",     # Name your log files (e.g., robot_test_2024_03_20.log)
+    buffer_size=1000,           # Save to file every 1000 entries
+    console_level=LogLevel.INFO # Show INFO and above in console
+)
+```
+
+## Understanding Logger Instances
+
+Our logging system uses a singleton pattern, which means there's only one logger instance per configuration. Here's how to properly use it in your applications:
+
+### Creating Your Own Logger (Recommended)
+
+```python
+from opensourceleg.logging import Logger
+
+# Create your own logger instance
+logger = Logger(
+    log_path="./logs",
+    file_name="my_experiment"
+)
+
+# Use your logger instance throughout your application
+logger.info("Application started")
+logger.debug("Configuration loaded")
+```
+
+### About the Global Logger (For Internal Use)
+
+The library includes a global `LOGGER` instance, but this is primarily for internal library use:
+
+```python
+from opensourceleg.logging import LOGGER  # Meant for library internal use
+
+# Prefer creating your own logger instance instead of using LOGGER directly
+```
+
+## Best Practices
+
+1. **Use Appropriate Log Levels**
+
+    - `DEBUG`: Detailed information for debugging
+    - `INFO`: General operational messages
+    - `WARNING`: Something unexpected but not critical
+    - `ERROR`: Something failed but application continues
+    - `CRITICAL`: Application cannot continue
+
+2. **Include Relevant Details**
+
+    ```python
+    logger.error(f"Sensor read failed: {sensor_id}, Error: {error_message}")
+    ```
+
+    f-strings are preferred over string interpolation. This is because they are more readable and easier to debug.
+
+3. **Log Early, Log Often**
+
+    - Better to have too much information than too little
+    - You can always filter logs later
 
 ## Next Steps
 
-Choose a tutorial to get started:
+Ready to dive deeper? Check out these tutorials:
 
-1. [Configuring the Logger](configuring_logger.md)
-2. [Logging Data](logging_data.md)
-3. [Read the API Reference](../../api/logging.md)
+1. [Configuring the Logger](configuring_logger.md) - Learn all configuration options
+2. [Logging Data](logging_data.md) - Master data logging and analysis
+3. [API Reference](../../api/logging.md) - Complete API documentation
 
-Each tutorial walks you through specific use cases and best practices.
+Need help? Join our community discussion or open an issue on GitHub!

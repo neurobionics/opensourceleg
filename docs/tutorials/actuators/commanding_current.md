@@ -67,19 +67,19 @@ The main loop:
 
 1. Navigate to the tutorial directory:
 
-   ```bash
-   cd tutorials/actuators/dephy
-   ```
+      ```bash
+      cd tutorials/actuators/dephy
+      ```
 
 2. Run the script:
 
-   ```bash
-   python commanding_current.py
-   ```
+      ```bash
+      python commanding_current.py
+      ```
 
 3. Expected behavior:
-   - t < 1.0s: Motor maintains 0 mA
-   - t ≥ 1.0s: Motor steps to 600 mA
-   - Data is continuously logged to `./logs/commanding_current.csv`
+      - t < 1.0s: Motor maintains 0 mA
+      - t ≥ 1.0s: Motor steps to 600 mA
+      - Data is continuously logged to `./logs/commanding_current.csv`
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).

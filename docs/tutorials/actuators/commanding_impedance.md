@@ -68,20 +68,20 @@ The main loop:
 
 1. Navigate to the tutorial directory:
 
-   ```bash
-   cd tutorials/actuators/dephy
-   ```
+      ```bash
+      cd tutorials/actuators/dephy
+      ```
 
 2. Run the script:
 
-   ```bash
-   python commanding_impedance.py
-   ```
+      ```bash
+      python commanding_impedance.py
+      ```
 
 3. Expected behavior:
-   - t < 1.0s: Motor maintains initial position
-   - t ≥ 1.0s: Motor moves to position + π/2 radians
-   - Movement will be compliant due to impedance control
-   - Data is continuously logged to `./logs/commanding_impedance.csv`
+      - t < 1.0s: Motor maintains initial position
+      - t ≥ 1.0s: Motor moves to position + π/2 radians
+      - Movement will be compliant due to impedance control
+      - Data is continuously logged to `./logs/commanding_impedance.csv`
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).

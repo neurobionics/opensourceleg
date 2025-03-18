@@ -41,16 +41,16 @@ Please follow these guidelines when following the `opensourceleg.actuators` tuto
 
 - Start with conservative values:
 
-  - Low voltages in voltage control
-  - Low currents in current control
-  - Small steps in position control
+    - Low voltages in voltage control
+    - Low currents in current control
+    - Small steps in position control
 
 - Continuously monitor sensor readings
 - Watch for unexpected behavior:
-  - Oscillations
-  - Excessive current draw
-  - Unusual sounds or vibrations
-  - Unexpected resistance
+    - Oscillations
+    - Excessive current draw
+    - Unusual sounds or vibrations
+    - Unexpected resistance
 
 ### 4. Best Practices
 
@@ -75,9 +75,9 @@ Please follow these guidelines when following the `opensourceleg.actuators` tuto
 - Verify USB permissions
 - Try physical reconnection:
 
-  1.  Unplug USB
-  2.  Wait a few seconds
-  3.  Reconnect
+    1.  Unplug USB
+    2.  Wait a few seconds
+    3.  Reconnect
 
 - Verify power supply connection
 - Check voltage levels
