@@ -317,14 +317,15 @@ class Logger(logging.Logger):
                     "Invalid input: var_func and name must both be either single values or lists of equal length."
                 )
 
-    def untrack_variable(self, var_func: Callable[[], Any]) -> None:
+    def untrack_variable(self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]]) -> None:
         """
-        Stop tracking a variable and remove it from the logger buffer.
+        Stop tracking a variable (or multiple variables) and remove it from the logger buffer.
 
         Args:
-            var_func: The function used to track the variable.
+            var_func: A function (or list of functions) used to track the variable(s).
 
         Examples:
+            # Single variable untracking
             >>> class MyClass:
             ...     def __init__(self):
             ...         self.value = 42
@@ -333,17 +334,47 @@ class Logger(logging.Logger):
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
             >>> LOGGER.untrack_variable(lambda: obj.value)
+
+            # Multiple variable untracking
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value1 = 42
+            ...         self.value2 = 84
+            >>> obj = MyClass()
+            >>> LOGGER.track_variable(
+            ...     [lambda: obj.value1, lambda: obj.value2],
+            ...     ["answer1", "answer2"]
+            ... )
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+            >>> LOGGER.untrack_variable([lambda: obj.value1, lambda: obj.value2])
         """
         with self._lock:
-            var_id = id(var_func)
-            if var_id in self._tracked_vars:
-                name = self._var_names.get(var_id, "unknown")
-                self._tracked_vars.pop(var_id, None)
-                self._var_names.pop(var_id, None)
-                self._error_count.pop(var_id, None)
-                self.debug(f"Stopped tracking variable: {name}")
+            if isinstance(var_func, list):
+                # Handle multiple variables
+                for func in var_func:
+                    var_id = id(func)
+                    if var_id in self._tracked_vars:
+                        name = self._var_names.get(var_id, "unknown")
+                        self._tracked_vars.pop(var_id, None)
+                        self._var_names.pop(var_id, None)
+                        self._error_count.pop(var_id, None)
+                        self.debug(f"Stopped tracking variable: {name}")
+                    else:
+                        self.warning("Attempted to untrack a variable that wasn't being tracked")
+            elif callable(var_func):
+                # Handle a single variable
+                var_id = id(var_func)
+                if var_id in self._tracked_vars:
+                    name = self._var_names.get(var_id, "unknown")
+                    self._tracked_vars.pop(var_id, None)
+                    self._var_names.pop(var_id, None)
+                    self._error_count.pop(var_id, None)
+                    self.debug(f"Stopped tracking variable: {name}")
+                else:
+                    self.warning("Attempted to untrack a variable that wasn't being tracked")
             else:
-                self.warning("Attempted to untrack a variable that wasn't being tracked")
+                raise TypeError("Invalid input: var_func must be either a single callable or a list of callables.")
 
     def get_tracked_variables(self) -> list[tuple[str, Any]]:
         """
