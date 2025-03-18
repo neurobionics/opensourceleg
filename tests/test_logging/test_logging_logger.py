@@ -280,15 +280,40 @@ def test_update(isolated_logger: Logger):
     def test_func2() -> int:
         return 8
 
+    class TestClass:
+        def __init__(self):
+            self.val1 = 1
+            self.val2 = 2
+            self.val3 = 3
+
+    test_class = TestClass()
+
     assert not isolated_logger._tracked_vars
     isolated_logger.track_variable(test_func, "first")
     isolated_logger.update()
     isolated_logger.track_variable(test_func2, "second")
     isolated_logger.update()
+    val1_func = lambda: test_class.val1
+    val2_func = lambda: test_class.val2
+    val3_func = lambda: test_class.val3
+    isolated_logger.track_variable(val1_func, "third")
+    isolated_logger.track_variable([val2_func, val3_func], ["fourth", "fifth"])
+    isolated_logger.update()
+
     assert all([
         isolated_logger._buffer[0] == ["18"],
         isolated_logger._buffer[1] == ["18", "8"],
-        len(isolated_logger._buffer) == 2,
+        isolated_logger._buffer[2] == ["18", "8", "1", "2", "3"],
+        isolated_logger.get_tracked_variables()
+        == [("first", 18), ("second", 8), ("third", 1), ("fourth", 2), ("fifth", 3)],
+        len(isolated_logger._buffer) == 3,
+    ])
+    isolated_logger.untrack_variable(val1_func)
+    isolated_logger.untrack_variable([val2_func, val3_func])
+    isolated_logger.update()
+    assert all([
+        len(isolated_logger._buffer) == 4,
+        isolated_logger._buffer[3] == ["18", "8"],
     ])
 
 
