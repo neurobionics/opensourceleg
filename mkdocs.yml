@@ -20,7 +20,7 @@ nav:
           - Reading ADC Data: tutorials/sensors/reading_adc_data.md
       - Actuators:
           - Getting Started: tutorials/actuators/getting_started.md
-          - Reading Data: tutorials/actuators/reading_data.md
+          - Reading Sensor Data: tutorials/actuators/reading_sensor_data.md
           - Commanding Voltage: tutorials/actuators/commanding_voltage.md
           - Commanding Current: tutorials/actuators/commanding_current.md
           - Commanding Position: tutorials/actuators/commanding_position.md

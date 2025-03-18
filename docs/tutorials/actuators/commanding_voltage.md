@@ -10,25 +10,14 @@ Voltage control is the most basic form of motor control. This example shows how 
 - Command a voltage step input
 - Log and monitor the actuator's response
 
-## Prerequisites
-
-- Raspberry Pi
-- Python environment with `opensourceleg` package installed
-
-## Hardware Setup
-
-1. External power supply connected to the actuator
-2. Dephy actuator connected via USB (typically at `/dev/ttyACM0`) and powered on
-3. Ensure the actuator is securely mounted if testing with loads
-
 ## Code Structure
 
-The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/actuators/dephy/voltage_control.py) is organized into four main sections:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/actuators/dephy/commanding_voltage.py) is organized into four main sections:
 
 ### 1. Configuration
 
 ```python
---8<-- "tutorials/actuators/dephy/voltage_control.py:1:12"
+--8<-- "tutorials/actuators/dephy/commanding_voltage.py:1:12"
 ```
 
 Key parameters:
@@ -40,7 +29,7 @@ Key parameters:
 ### 2. Initialization
 
 ```python
---8<-- "tutorials/actuators/dephy/voltage_control.py:12:34"
+--8<-- "tutorials/actuators/dephy/commanding_voltage.py:12:34"
 ```
 
 This section:
@@ -52,7 +41,7 @@ This section:
 ### 3. Control Setup
 
 ```python
---8<-- "tutorials/actuators/dephy/voltage_control.py:36:38"
+--8<-- "tutorials/actuators/dephy/commanding_voltage.py:36:38"
 ```
 
 Before the main loop, we:
@@ -64,7 +53,7 @@ Before the main loop, we:
 ### 4. Control Loop
 
 ```python
---8<-- "tutorials/actuators/dephy/voltage_control.py:39:50"
+--8<-- "tutorials/actuators/dephy/commanding_voltage.py:39:50"
 ```
 
 The main loop:
@@ -85,66 +74,19 @@ The main loop:
 2. Run the script:
 
    ```bash
-   python voltage_control.py
+   python commanding_voltage.py
    ```
 
 3. Expected behavior:
 
    - t < 1.0s: Motor maintains 0 mV
    - t ≥ 1.0s: Motor steps to 1000 mV
-   - Data is continuously logged to `./logs/voltage_control.csv`
-
-## Analyzing the Results
-
-The logged data includes:
-
-- **Time**: Elapsed time in seconds
-- **Command Voltage**: Desired voltage in mV
-- **Motor Voltage**: Actual motor voltage in mV
+   - Data is continuously logged to `./logs/commanding_voltage.csv`
 
 ## Additional Notes
 
 - Voltage control provides no feedback regulation
 - Motor speed will vary with load under constant voltage
 - This mode is useful for basic testing and characterization of the motor
-
-## Safety Considerations
-
-⚠️ **Important Safety Notes**:
-
-1. **Mechanical Safety**
-
-   - Ensure the actuator is properly mounted
-   - Keep clear of moving parts
-   - Have an emergency stop plan
-
-2. **Electrical Safety**
-
-   - Don't exceed rated voltage limits
-   - Ensure proper power supply connection
-
-3. **Operation Safety**
-
-   - Start with lower voltages when testing
-   - Be ready to terminate the script (`Ctrl+C`)
-   - Verify sensor readings are reasonable
-   - Be aware that voltage control provides no inherent speed limiting
-
-## Troubleshooting
-
-Common issues and solutions:
-
-1. **No USB Connection**
-
-   - Check if the device shows up in `/dev`
-   - Verify USB permissions
-   - Try unplugging and reconnecting
-
-2. **Unexpected Behavior**
-
-   - Verify power supply connection
-   - Check voltage limits
-   - Monitor current draw
-   - Ensure proper control mode setting
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
