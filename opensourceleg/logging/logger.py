@@ -96,6 +96,10 @@ class Logger(logging.Logger):
         - **critical**: Log a critical message.
         - **log**: Log a message at a specific log level.
 
+    Author:
+    - Senthur Ayyappan <senthura@umich.edu>
+    - Kevin Best <tkbest@umich.edu>
+
     Examples:
         >>> logger = Logger()
         >>> logger.info("This is an info message")
