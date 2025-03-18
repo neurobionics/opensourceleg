@@ -274,7 +274,7 @@ class Logger(logging.Logger):
             ...     def __init__(self):
             ...         self.value = 42
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.track_variable(lambda: obj.value, "value")
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
 
@@ -286,7 +286,7 @@ class Logger(logging.Logger):
             >>> obj = MyClass()
             >>> LOGGER.track_variable(
             ...     [lambda: obj.value1, lambda: obj.value2],
-            ...     ["answer1", "answer2"]
+            ...     ["value1", "value2"]
             ... )
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
@@ -330,7 +330,7 @@ class Logger(logging.Logger):
             ...     def __init__(self):
             ...         self.value = 42
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.track_variable(lambda: obj.value, "value")
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
             >>> LOGGER.untrack_variable(lambda: obj.value)
@@ -343,7 +343,7 @@ class Logger(logging.Logger):
             >>> obj = MyClass()
             >>> LOGGER.track_variable(
             ...     [lambda: obj.value1, lambda: obj.value2],
-            ...     ["answer1", "answer2"]
+            ...     ["value1", "value2"]
             ... )
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
