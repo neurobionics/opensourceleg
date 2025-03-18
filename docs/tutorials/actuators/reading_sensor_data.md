@@ -54,21 +54,21 @@ The main loop:
 
 1. Navigate to the tutorial directory:
 
-   ```bash
-   cd tutorials/actuators/dephy
-   ```
+      ```bash
+      cd tutorials/actuators/dephy
+      ```
 
 2. Run the script:
 
-   ```bash
-   python reading_sensor_data.py
-   ```
+      ```bash
+      python reading_sensor_data.py
+      ```
 
 3. Expected behavior:
 
-   - Continuous reading of sensor values
-   - Data logged to `./logs/reading_sensor_data.csv`
-   - No active control (read-only operation)
+      - Continuous reading of sensor values
+      - Data logged to `./logs/reading_sensor_data.csv`
+      - No active control (read-only operation)
 
 ## Additional Notes
 

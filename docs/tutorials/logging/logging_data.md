@@ -32,11 +32,6 @@ In this example:
 --8<-- "tutorials/logging/logging_data.py:76:79"
 ```
 
-The resulting CSV file will contain columns for:
-- Timestamp
-- Each tracked variable
-- Any additional logged information
-
 ## More Examples
 
 ### 1. Recording Sensor Data
@@ -48,6 +43,7 @@ This example demonstrates how to log data from a sensor in real-time. While this
 ```
 
 Key features demonstrated:
+
 - Continuous data collection
 - Real-time logging
 - Error handling for sensor failures
