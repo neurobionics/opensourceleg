@@ -250,15 +250,22 @@ class Logger(logging.Logger):
             if not hasattr(self, "_file_handler"):
                 self._setup_file_handler()
 
-    def track_variable(self, var_func: Callable[[], Any], name: str) -> None:
+    def track_variable(
+        self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]], name: Union[str, list[str]]
+    ) -> None:
         """
-        Record the value of a variable and log it to a CSV file.
+        Record the value of a variable (or multiple variables) and log it to a CSV file.
 
         Args:
-            var_func: A function that returns the value of the variable.
-            name: The name of the variable.
+            var_func: A function (or list of functions) that returns the value(s) of the variable(s).
+            name: The name (or list of names) of the variable(s).
+
+        Raises:
+            ValueError: If the lengths of `var_func` and `name` lists do not match.
+            TypeError: If `var_func` and `name` are not both single values or lists of equal length.
 
         Examples:
+            # Single variable tracking
             >>> class MyClass:
             ...     def __init__(self):
             ...         self.value = 42
@@ -266,13 +273,45 @@ class Logger(logging.Logger):
             >>> LOGGER.track_variable(lambda: obj.value, "answer")
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
+
+            # Multiple variable tracking
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value1 = 42
+            ...         self.value2 = 84
+            >>> obj = MyClass()
+            >>> LOGGER.track_variable(
+            ...     [lambda: obj.value1, lambda: obj.value2],
+            ...     ["answer1", "answer2"]
+            ... )
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
         """
         with self._lock:
-            var_id = id(var_func)
-            self._tracked_vars[var_id] = var_func
-            self._var_names[var_id] = name
-            self._error_count[var_id] = 0  # Initialize error count
-            self.debug(f"Started tracking variable: {name}")
+            if isinstance(var_func, list) and isinstance(name, list):
+                # Ensure the lengths of var_func and name match
+                if len(var_func) != len(name):
+                    raise ValueError("The number of variable functions and names must match.")
+                for func, var_name in zip(var_func, name):
+                    var_id = id(func)
+                    self._tracked_vars[var_id] = func
+                    self._var_names[var_id] = var_name
+                    self._error_count[var_id] = 0  # Initialize error count
+                    self.debug(f"Started tracking variable: {var_name}")
+            elif callable(var_func) and isinstance(name, str):
+                # Single variable tracking
+                func = var_func  # Explicitly narrow the type for mypy
+                var_id = id(func)
+                self._tracked_vars[var_id] = func
+                self._var_names[var_id] = name
+                self._error_count[var_id] = 0  # Initialize error count
+                self.debug(f"Started tracking variable: {name}")
+            else:
+                raise TypeError(
+                    "Invalid input: var_func and name must both be either single values or lists of equal length."
+                )
 
     def untrack_variable(self, var_func: Callable[[], Any]) -> None:
         """
