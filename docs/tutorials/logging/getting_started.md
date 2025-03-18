@@ -1,12 +1,12 @@
 # Getting Started with Logging
 
-The `opensourceleg` library provides a powerful logging system through the `Logger` class. This guide will introduce you to the basics of logging and help you get started.
+The `opensourceleg` library provides a powerful logging system through the `Logger` class, which is built on top of the native `logging` module. This guide will introduce you to the basics of logging and help you get started.
 
 ## Overview
 
 The Logger class offers:
 
-- Standard logging levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- Standard logging levels (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`)
 - CSV data logging for variables
 - File and console output
 - Thread-safe operation
@@ -44,27 +44,24 @@ logger = Logger(
 
 ## Core Concepts
 
-1. **Single Instance**
+- Logger uses a singleton pattern
+- All imports reference the same logger instance
+- Configuration changes affect all users of the logger
 
-   - Logger uses a singleton pattern
-   - All imports reference the same logger instance
-   - Configuration changes affect all users of the logger
+- Console output for immediate feedback
+- File output for permanent record
+- Different log levels can be set for each
 
-2. **Dual Output**
-
-   - Console output for immediate feedback
-   - File output for permanent record
-   - Different log levels can be set for each
-
-3. **Variable Tracking**
-   - Automatically log variable values over time
-   - CSV output for data analysis
-   - Buffer system for efficient writing
+- Automatically log variable values over time
+- CSV output for data analysis
+- Buffer system for efficient writing
 
 ## Next Steps
 
-For more detailed information, check out these specific guides:
+Choose a tutorial to get started:
 
 1. [Configuring the Logger](configuring_logger.md)
 2. [Logging Data](logging_data.md)
-3. [Debug Logging](debug_logging.md)
+3. [Read the API Reference](../../api/logging.md)
+
+Each tutorial walks you through specific use cases and best practices.

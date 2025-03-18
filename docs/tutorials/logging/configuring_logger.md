@@ -1,140 +1,69 @@
 # Configuring the Logger
 
-This guide covers the various ways to configure the Logger for your needs.
+This guide covers the various ways to configure the Logger for your needs. All examples can be found in the [`configuring_logger.py`](../tutorials/logging/configuring_logger.py) script.
 
 ## Initial Setup
 
 ### Basic Configuration
 
+The Logger can be initialized with several basic parameters that control its behavior. This configuration sets up both file and console logging, with different verbosity levels for each output. The `log_path` specifies where log files are stored, while `file_name` determines the base name for log files. The `buffer_size` parameter helps optimize performance by controlling how frequently logs are written to disk.
+
 ```python
-logger = Logger(
-    log_path="./logs",              # Log file directory
-    file_name="experiment_1",       # Base name for log files
-    log_format="[%(asctime)s] %(levelname)s: %(message)s",
-    file_level=LogLevel.DEBUG,      # Level for file logging
-    stream_level=LogLevel.INFO,     # Level for console output
-    buffer_size=1000,              # Entries before auto-flush
-    enable_csv_logging=True        # Enable/disable CSV logging
-)
+--8<-- "tutorials/logging/configuring_logger.py:8:17"
 ```
 
 ### Log Levels
 
-```python
-# Changing log levels after initialization
-logger.set_file_level(LogLevel.DEBUG)    # More detailed file logging
-logger.set_stream_level(LogLevel.INFO)   # Less console spam
+Log levels help you control the verbosity of your logging output. You can set different levels for file logging and console output, allowing you to have detailed logs in your files while keeping console output focused on more important messages.
 
-# Available log levels (in order of severity):
-# - LogLevel.DEBUG    - Detailed debugging information
-# - LogLevel.INFO     - General information
-# - LogLevel.WARNING  - Warning messages
-# - LogLevel.ERROR    - Error messages
-# - LogLevel.CRITICAL - Critical errors
+The levels range from `DEBUG` (most verbose) to `CRITICAL` (most severe), giving you fine-grained control over what gets logged.
+
+```python
+--8<-- "tutorials/logging/configuring_logger.py:22:32"
 ```
 
 ### File Management
 
-```python
-# Change log file name
-logger.set_file_name("new_experiment")
+The Logger includes built-in file management capabilities to help maintain your log files. You can configure file rotation based on size limits and specify how many backup files to keep. This prevents log files from growing too large and consuming excessive disk space while maintaining a history of recent logs.
 
-# Configure file rotation
-logger = Logger(
-    file_max_bytes=1024*1024,    # 1MB max file size
-    file_backup_count=5          # Keep 5 backup files
-)
+```python
+--8<-- "tutorials/logging/configuring_logger.py:38:43"
 ```
 
 ## Advanced Configuration
 
 ### Custom Formatting
 
-```python
-# Available format variables:
-# %(asctime)s     - Timestamp
-# %(levelname)s   - Log level
-# %(message)s     - Log message
-# %(filename)s    - Source filename
-# %(lineno)d     - Line number
-# %(funcName)s   - Function name
+The Logger supports customizable log message formatting, allowing you to include various pieces of information in each log entry. You can include timestamps, log levels, file names, line numbers, and function names in your log messages. This flexibility helps you create log outputs that match your debugging and monitoring needs.
 
-logger.set_format("[%(asctime)s][%(levelname)s] %(filename)s:%(lineno)d - %(message)s")
+```python
+--8<-- "tutorials/logging/configuring_logger.py:48:57"
 ```
 
 ### Buffer Management
 
+Buffer management allows you to optimize the Logger's performance by controlling when logs are written to disk. A larger buffer size reduces I/O operations but increases the amount of memory used. You can also manually flush the buffer when needed, ensuring critical logs are written immediately.
+
 ```python
-# Adjust buffer size
-logger.set_buffer_size(2000)
-
-# Manual buffer flush
-logger.flush_buffer()
-
-# Auto-flush settings
-logger = Logger(
-    buffer_size=500,              # Flush every 500 entries
-    enable_csv_logging=True       # Enable CSV output
-)
+--8<-- "tutorials/logging/configuring_logger.py:63:69"
 ```
-
-## Best Practices
-
-1. **Log File Organization**
-
-   ```python
-   logger = Logger(
-       log_path="./logs/experiment_1/",  # Organize by experiment
-       file_name="trial_001"             # Clear naming
-   )
-   ```
-
-2. **Error Handling**
-
-   ```python
-   # Set maximum errors before auto-untracking variables
-   logger.set_max_errors_before_untrack(3)
-   ```
-
-3. **Resource Management**
-   ```python
-   # Use context manager for automatic cleanup
-   with Logger(log_path="./logs") as logger:
-       # Your code here
-       pass  # Logger automatically closes
-   ```
 
 ## Common Configurations
 
 ### Debug Configuration
 
+This configuration is optimized for development and debugging scenarios. It enables detailed logging both to file and console, including source file information and line numbers. This helps developers track down issues and understand the flow of their application.
+
 ```python
-logger = Logger(
-    file_level=LogLevel.DEBUG,
-    stream_level=LogLevel.DEBUG,
-    log_format="[%(asctime)s][%(levelname)s] %(filename)s:%(lineno)d - %(message)s"
-)
+--8<-- "tutorials/logging/configuring_logger.py:75:80"
 ```
 
 ### Production Configuration
 
-```python
-logger = Logger(
-    file_level=LogLevel.INFO,
-    stream_level=LogLevel.WARNING,
-    file_max_bytes=1024*1024*10,  # 10MB
-    file_backup_count=5
-)
-```
-
-### Data Collection Configuration
+The production configuration is designed for deployed applications, with an emphasis on performance and stability. It uses more conservative log levels, larger file sizes, and includes rotation to manage disk usage. Console output is limited to warnings and above to reduce unnecessary output in production environments.
 
 ```python
-logger = Logger(
-    buffer_size=5000,
-    enable_csv_logging=True,
-    log_format="[%(asctime)s] %(message)s"
-)
+--8<-- "tutorials/logging/configuring_logger.py:86:92"
 ```
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).

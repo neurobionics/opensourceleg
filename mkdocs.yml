@@ -31,6 +31,8 @@ nav:
           - State Machine: tutorials/control/state_machine.md
       - Logging:
           - Getting Started: tutorials/logging/getting_started.md
+          - Configuring Logger: tutorials/logging/configuring_logger.md
+          - Logging Data: tutorials/logging/logging_data.md
       - Safety:
           - Getting Started: tutorials/safety/getting_started.md
       - Time:
