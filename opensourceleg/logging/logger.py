@@ -254,7 +254,7 @@ class Logger(logging.Logger):
             if not hasattr(self, "_file_handler"):
                 self._setup_file_handler()
 
-    def track_variable(
+    def track_function(
         self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]], name: Union[str, list[str]]
     ) -> None:
         """
@@ -274,7 +274,7 @@ class Logger(logging.Logger):
             ...     def __init__(self):
             ...         self.value = 42
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "value")
+            >>> LOGGER.track_function(lambda: obj.value, "value")
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
 
@@ -284,7 +284,7 @@ class Logger(logging.Logger):
             ...         self.value1 = 42
             ...         self.value2 = 84
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(
+            >>> LOGGER.track_function(
             ...     [lambda: obj.value1, lambda: obj.value2],
             ...     ["value1", "value2"]
             ... )

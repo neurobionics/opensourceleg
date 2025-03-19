@@ -29,8 +29,8 @@ def current_control():
 
         command_current = 0
 
-        current_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
-        current_logger.track_variable(lambda: command_current, "Command Current")
+        current_logger.track_function(lambda: actpack.motor_current, "Motor Current")
+        current_logger.track_function(lambda: command_current, "Command Current")
 
         for t in clock:
             if t > TIME_TO_STEP:

@@ -31,9 +31,9 @@ def position_control():
         current_position = actpack.output_position
         command_position = current_position
 
-        position_logger.track_variable(lambda: actpack.output_position, "Output Position")
-        position_logger.track_variable(lambda: command_position, "Command Position")
-        position_logger.track_variable(lambda: time.time(), "Time")
+        position_logger.track_function(lambda: actpack.output_position, "Output Position")
+        position_logger.track_function(lambda: command_position, "Command Position")
+        position_logger.track_function(lambda: time.time(), "Time")
 
         for t in clock:
             if t > TIME_TO_STEP:
