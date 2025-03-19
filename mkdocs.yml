@@ -37,6 +37,9 @@ nav:
           - Getting Started: tutorials/safety/getting_started.md
       - Time:
           - Getting Started: tutorials/time/getting_started.md
+          - Running Functions: tutorials/time/running_functions.md
+          - Using Iterators: tutorials/time/using_iterators.md
+          - Real-time Control: tutorials/time/realtime_control.md
   - Examples:
       - Getting Started: examples/getting_started.md
       - Open-Source Leg:

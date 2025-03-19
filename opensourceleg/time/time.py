@@ -333,7 +333,7 @@ if __name__ == "__main__":
     # Simple demonstration of the SRT loop with run method
     rt_loop = SoftRealtimeLoop(dt=0.1)  # 10Hz loop
 
-    def demo_function():
+    def demo_function() -> int:
         print("Hello from SoftRealtimeLoop!")
         return 0  # Stop after one iteration
 

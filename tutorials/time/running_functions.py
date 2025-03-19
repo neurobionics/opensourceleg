@@ -1,4 +1,5 @@
 import time
+from typing import Union
 
 from opensourceleg.time.time import SoftRealtimeLoop
 
@@ -8,7 +9,7 @@ def main():
     rt_loop = SoftRealtimeLoop(dt=0.001)
 
     # Example 1: Simple function that runs once
-    def basic_function():
+    def basic_function() -> int:
         print("Basic loop iteration")
         return 0  # Stop after one iteration
 
@@ -19,7 +20,7 @@ def main():
     print("\nRunning timed function for 3 seconds...")
     start_time = time.monotonic()
 
-    def timed_function():
+    def timed_function() -> Union[int, None]:
         elapsed = time.monotonic() - start_time
         print(f"Time elapsed: {elapsed:.2f} seconds")
         if elapsed > 3:
