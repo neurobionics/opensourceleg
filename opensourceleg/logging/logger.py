@@ -846,6 +846,49 @@ class Logger(logging.Logger):
         self._ensure_file_handler()
         super().log(level, msg, *args, **kwargs)
 
+    def track_attributes(self, obj: Any, attributes: Union[str, list[str]]) -> None:
+        """
+        Track one or more attributes in an object and log their values to a CSV file.
+
+        Args:
+            obj: The object whose attributes are to be tracked.
+            attributes: A single attribute name (str) or a list of attribute names (list[str]) to track.
+
+        Raises:
+            AttributeError: If any attribute in the list does not exist in the object.
+
+        Examples:
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value1 = 42
+            ...         self.value2 = 84
+            >>> obj = MyClass()
+            >>> LOGGER.track_attributes(obj, "value1")  # Single attribute
+            >>> LOGGER.track_attributes(obj, ["value1", "value2"])  # Multiple attributes
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+        """
+        with self._lock:
+            if isinstance(attributes, str):
+                attributes = [attributes]  # Convert single attribute to a list
+
+            obj_str = str(obj)  # Use str(obj) for a user-friendly representation
+            var_funcs = []
+            prefixed_attributes = [f"{obj_str}.{attr}" for attr in attributes]  # Prepend str(obj)
+
+            def create_getter(obj: Any, attr: str) -> Callable[[], Any]:
+                """Helper function to create a getter for an attribute."""
+                return lambda: getattr(obj, attr)
+
+            for attr in attributes:
+                if not hasattr(obj, attr):
+                    raise AttributeError(f"Object {obj} does not have attribute '{attr}'")
+                # Use the helper function to create the lambda
+                var_funcs.append(create_getter(obj, attr))
+
+            # Call track_function with the generated functions and prefixed attribute names
+            self.track_function(var_funcs, prefixed_attributes)
+
     @property
     def file_path(self) -> Optional[str]:
         """

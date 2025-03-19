@@ -316,6 +316,17 @@ def test_update(isolated_logger: Logger):
         isolated_logger._buffer[3] == ["18", "8"],
     ])
 
+    test_class2 = TestClass()
+    isolated_logger.track_attributes(test_class2, ["val1", "val2"])
+    isolated_logger.update()
+    test_class2.val1 = 88
+    isolated_logger.update()
+    assert all([
+        len(isolated_logger._buffer) == 6,
+        isolated_logger._buffer[4] == ["18", "8", "1", "2"],
+        isolated_logger._buffer[5] == ["18", "8", "88", "2"],
+    ])
+
 
 # Test update size exceeded
 def test_update_size_exceeded(isolated_logger: Logger):
