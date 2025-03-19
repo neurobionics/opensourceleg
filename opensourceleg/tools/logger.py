@@ -181,7 +181,7 @@ class Logger(logging.Logger):
 
         self._data.clear()
         self._header_data.clear()
-        self._file.flush()
+        # self._file.flush()
 
     def __del__(self) -> None:
         """
