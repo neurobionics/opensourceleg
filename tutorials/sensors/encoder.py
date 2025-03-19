@@ -11,7 +11,14 @@ if __name__ == "__main__":
         file_name="reading_encoder_data",
     )
     clock = SoftRealtimeLoop(dt=DT)
-    encoder = AS5048B(name="enoder1")
+    encoder = AS5048B(
+        bus=1,
+        A1_adr_pin=False,
+        A2_adr_pin=True,
+        name="encoder1",
+        zero_position=0,
+        enable_diagnostics=False,
+    )
     encoder_logger.track_variable(lambda: encoder.position, "Encoder Position")
 
     with encoder:
