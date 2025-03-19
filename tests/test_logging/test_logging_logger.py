@@ -189,6 +189,18 @@ def test_track_and_untrack_variable(isolated_logger: Logger):
     ])
 
 
+def test_track_attributes_nonexistent_attribute(isolated_logger: Logger):
+    class TestClass:
+        def __init__(self):
+            self.existing_attr = 42
+
+    test_obj = TestClass()
+
+    # Attempt to track a nonexistent attribute and assert that AttributeError is raised
+    with pytest.raises(AttributeError, match="Object .* does not have attribute 'nonexistent_attr'"):
+        isolated_logger.track_attributes(test_obj, "nonexistent_attr")
+
+
 # Test repr
 # def test_repr(test_logger: Logger):
 #     test_logger._file_path = "newpath"
