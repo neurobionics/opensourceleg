@@ -15,7 +15,7 @@ The Time module provides tools for creating soft real-time loops in Python, whic
 
 ## Basic Usage
 
-The simplest way to use the SoftRealtimeLoop is to create a loop with a specific time step and run a function. See the [Basic Usage Tutorial](basic_usage.md) tutorial for more details.
+The simplest way to use the SoftRealtimeLoop is to create a loop with a specific time step and run a function. See the [Running Functions](running_functions.md) tutorial for more details.
 
 ```python
 from opensourceleg.time import SoftRealtimeLoop
@@ -26,7 +26,7 @@ rt_loop.run(your_function)
 
 ## Iterator Interface
 
-The module provides an iterator interface for more flexible control. See the [Iterator Usage Tutorial](iterator_usage.md) tutorial for more details.
+The module provides an iterator interface for more flexible control. See the [Using Iterators](using_iterators.md) tutorial for more details.
 
 ```python
 rt_loop = SoftRealtimeLoop(dt=0.1)  # 10Hz loop
@@ -41,7 +41,7 @@ The module supports advanced features like:
 - Fade-out capabilities
 - Performance monitoring
 
-Check out the [Advanced Usage Tutorial](advanced_usage.md) tutorial for more details.
+Check out the [Real-time Control](realtime_control.md) tutorial for more details.
 
 ## Key Parameters
 
@@ -69,6 +69,6 @@ When reporting is enabled, the loop provides statistics on:
 
 ## Next Steps
 
-1. Start with the [Basic Usage Tutorial](basic_usage.md) to learn fundamental concepts
-2. Explore the [Iterator Usage Tutorial](iterator_usage.md) for more flexible control
-3. Check out the [Advanced Usage Tutorial](advanced_usage.md) for complex examples
+1. Start with the [Running Functions](running_functions.md) to learn fundamental concepts
+2. Explore the [Using Iterators](using_iterators.md) for more flexible control
+3. Check out the [Real-time Control](realtime_control.md) for complex examples
