@@ -72,7 +72,8 @@ Please follow these guidelines when following the `opensourceleg.actuators` tuto
 ## Troubleshooting Guide
 
 - Check device presence: `ls /dev/ttyACM*`
-- Verify USB permissions
+- Verify USB permissions, if you see `Permission denied` error, it is likely because the current user does not have permission to access the serial ports. You can add your user to the `dialout` group to fix this. If you are on a Linux system, you can run `sudo usermod -a -G dialout $USER` to add your user to the `dialout` group. Then you need to restart your system for the changes to take effect.
+
 - Try physical reconnection:
 
     1.  Unplug USB
