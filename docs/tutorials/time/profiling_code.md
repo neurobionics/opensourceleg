@@ -17,7 +17,7 @@ The `Profiler` class supports three main usage patterns:
 The `tic` and `toc` methods allow you to measure the duration of specific code blocks.
 
 ```python
---8<-- "tutorials/time/profiling_code.py:8:12"
+--8<-- "tutorials/time/profiling_code.py:10:14"
 ```
 
 ### Explanation
@@ -31,7 +31,7 @@ The `tic` and `toc` methods allow you to measure the duration of specific code b
 The `profile` method allows you to measure the execution time of an expression or a small block of code by passing it as a lambda function.
 
 ```python
---8<-- "tutorials/time/profiling_code.py:35:39"
+--8<-- "tutorials/time/profiling_code.py:37:41"
 ```
 
 ### Explanation
@@ -47,7 +47,7 @@ This pattern is particularly useful for profiling small, self-contained expressi
 The `decorate` method allows you to profile a function by simply adding a decorator.
 
 ```python
---8<-- "tutorials/time/profiling_code.py:19:28"
+--8<-- "tutorials/time/profiling_code.py:21:30"
 ```
 
 ### Explanation
