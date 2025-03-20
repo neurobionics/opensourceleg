@@ -2,7 +2,7 @@
 
 The `Profiler` class in the Time module is a powerful tool for measuring the execution time of code. It is particularly useful for identifying performance bottlenecks and optimizing real-time applications.
 
-This tutorial walks you through the key features of the `Profiler` class and explains the examples provided in the [`profiling_code.py`](../../../tutorials/time/profiling_code.py) script.
+This tutorial walks you through the key features of the `Profiler` class and explains the examples provided in the `profiling_code.py` example script.
 
 ## Key Features of the Profiler
 
@@ -58,7 +58,5 @@ The `decorate` method allows you to profile a function by simply adding a decora
 ## Summary
 
 The `Profiler` class provides flexible tools for measuring execution time in real-time applications. Whether you need to profile specific code blocks, repeated function calls, or entire functions, the `Profiler` class has you covered.
-
-For more details, refer to the [`profiling_code.py`](../../../tutorials/time/profiling_code.py) script or explore the [API documentation](../../../opensourceleg/time/profile.py).
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
