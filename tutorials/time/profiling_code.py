@@ -1,5 +1,7 @@
 import time
+
 from opensourceleg.time import Profiler
+
 
 def example_tic_toc():
     """
