@@ -1,9 +1,10 @@
 # Time Module Tutorial
 
-The Time module provides tools for creating soft real-time loops in Python, which is particularly useful for robotics and control applications. The module consists of two main classes:
+The Time module provides tools for creating soft real-time loops in Python, which is particularly useful for robotics and control applications. It also includes tools for profiling (timing) your code. The module consists of three main classes:
 
 - `LoopKiller`: Handles graceful shutdown of loops
 - `SoftRealtimeLoop`: Manages timing-precise execution of functions
+- `Profiler`: Provides various methods for timing code execution
 
 ## Core Features
 
@@ -12,6 +13,7 @@ The Time module provides tools for creating soft real-time loops in Python, whic
 - Fade-out capability for smooth transitions
 - Performance statistics reporting
 - Iterator-based interface
+- Code profiling for performance optimization
 
 ## Basic Usage
 
@@ -34,14 +36,38 @@ for t in rt_loop:
     print(f"Time: {t:.1f}s")
 ```
 
+## Profiling Code with the Profiler
+
+The `Profiler` class is a powerful tool for measuring the execution time of code. It is particularly useful for identifying performance bottlenecks and optimizing real-time applications. The `Profiler` supports three main usage patterns:
+
+1. **Tic-Toc Timing**: Measure the duration of specific code blocks.
+2. **Expression Profiling**: Profile the execution time of an expression using a lambda function.
+3. **Decorator**: Automatically profile a function by decorating it.
+
+### Example: Tic-Toc Timing
+
+```python
+from opensourceleg.time import Profiler
+import time
+
+profiler = Profiler("example")
+profiler.tic()
+time.sleep(0.1)  # Simulate some work
+duration = profiler.toc()
+print(f"Duration: {duration:.3f} seconds")
+```
+
+For more details, see the [Profiling Code](profiling_code.md) tutorial.
+
 ## Advanced Features
 
 The module supports advanced features like:
 
 - Fade-out capabilities
 - Performance monitoring
+- Code profiling with the `Profiler` class
 
-Check out the [Real-time Control](realtime_control.md) tutorial for more details.
+Check out the [Real-time Control](realtime_control.md) and [Profiling Code](profiling_code.md) tutorials for more details.
 
 ## Key Parameters
 
@@ -71,4 +97,5 @@ When reporting is enabled, the loop provides statistics on:
 
 1. Start with the [Running Functions](running_functions.md) to learn fundamental concepts
 2. Explore the [Using Iterators](using_iterators.md) for more flexible control
-3. Check out the [Real-time Control](realtime_control.md) for complex examples
+3. Learn how to optimize your code with the [Profiling Code](profiling_code.md) tutorial
+4. Check out the [Real-time Control](realtime_control.md) for complex examples
