@@ -8,7 +8,7 @@ from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyLegacyAct
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
-from opensourceleg.sensors.loadcell import SRILoadcell
+from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
 
 
 class OpenSourceLeg(RobotBase[TActuator, TSensor]):
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             "knee": DephyLegacyActuator("knee", offline=False, frequency=frequency, gear_ratio=9 * (83 / 18)),
         },
         sensors={
-            "loadcell": SRILoadcell(calibration_matrix=LOADCELL_MATRIX),
+            "loadcell": DephyLoadcellAmplifier(calibration_matrix=LOADCELL_MATRIX),
         },
     )
 
