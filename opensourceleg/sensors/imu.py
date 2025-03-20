@@ -13,11 +13,12 @@ Ensure that the required libraries are installed and that the library paths are 
 to PYTHONPATH or sys.path if necessary.
 """
 
-from typing import Any, Union
 import os
+from typing import Any, Union
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
+
 
 class LordMicrostrainIMU(IMUBase):
     """
@@ -58,16 +59,19 @@ class LordMicrostrainIMU(IMUBase):
         # Attempt to import the MSCL library and add its path.
         try:
             import sys
+
             sys.path.append("/usr/share/python3-mscl")
 
             import mscl
+
             self.mscl = mscl
         except ImportError:
-            print(
-                "Failed to import mscl. Please install the Python-MSCL library from Lord Microstrain and append the path "
+            LOGGER.warning(
+                "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
             )
+            exit(1)
 
         self._port = port
         self._baud_rate = baud_rate
@@ -472,10 +476,8 @@ class BNO055(IMUBase):
             self.board = board
             self.busio = busio
         except ImportError as e:
-            raise ImportError(
-                "BNO055IMU requires adafruit_bno055, board, and busio packages. "
-                f"Error: {e}"
-            )
+            LOGGER.error("BNO055IMU requires adafruit_bno055, board, and busio packages. " f"Error: {e}")
+            exit(1)
 
         self._address: int = addr
         self._gyro_data: list[float] = [0.0, 0.0, 0.0]
