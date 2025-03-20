@@ -40,6 +40,7 @@ nav:
           - Running Functions: tutorials/time/running_functions.md
           - Using Iterators: tutorials/time/using_iterators.md
           - Real-time Control: tutorials/time/realtime_control.md
+          - Profiling Code: tutorials/time/profiling_code.md
   - API:
       - Actuators:
           - Base: api/actuators/actuators.md
@@ -63,7 +64,9 @@ nav:
           - Base: api/robots/robots.md
           - OSL: api/robots/osl.md
       - Safety: api/safety.md
-      - Time: api/time.md
+      - Time:
+          - Time: api/time/time.md
+          - Profile: api/time/profile.md
   - Contributing: contributing.md
   - Security: security.md
   - License: license.md
