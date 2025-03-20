@@ -183,7 +183,6 @@ def test_track_variable(isolated_logger: Logger):
     ])
 
 
-
 # Test repr
 # def test_repr(test_logger: Logger):
 #     test_logger._file_path = "newpath"
