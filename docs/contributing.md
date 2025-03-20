@@ -61,13 +61,6 @@ git clone git@github.com:YOUR_NAME/opensourceleg.git
 ```bash
 cd opensourceleg
 ```
-
-If you are using `pyenv`, select a version to use locally. (See installed versions with `pyenv versions`)
-
-```bash
-pyenv local <x.y.z>
-```
-
 Then, install and activate the environment with:
 
 ```bash

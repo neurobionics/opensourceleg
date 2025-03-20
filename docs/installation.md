@@ -78,6 +78,28 @@ This section is for those who want to contribute to opensourceleg or need to mod
 
 - **Python 3.9+**: Same as above
 - **Poetry**: A modern dependency management tool, see [Poetry installation guide](https://python-poetry.org/docs/#installation)
+   - The quickest way to install poetry is to use pipx, run the following command:
+     ```bash
+     pip install pipx
+     ```
+     Now add pipx to your PATH:
+     ```bash
+     nano ~/.bashrc
+     ```
+     Add the following line to the end of the file:
+     ```bash
+     export PATH="$HOME/.local/bin:$PATH"
+     ```
+     Save (CTRL+O) and exit (CTRL+X) the editor.
+     Source the bashrc file to update your PATH:
+     ```bash
+     source ~/.bashrc
+     ```
+     Now you can install poetry using pipx:
+     ```bash
+     pipx install poetry
+     ```
+
 - **Git**: Version control system, see [Git installation guide](https://git-scm.com/downloads)
 
 #### Detailed Development Setup
@@ -104,7 +126,8 @@ This section is for those who want to contribute to opensourceleg or need to mod
    poetry install  # This might take a few minutes
 
    # Activate the Poetry environment
-   poetry shell
+   poetry shell # for older versions of poetry
+   eval $(poetry env activate)
 
    # Install pre-commit hooks for code quality
    make install
