@@ -12,7 +12,7 @@ if __name__ == "__main__":
     )
     clock = SoftRealtimeLoop(dt=DT)
     imu = LordMicrostrainIMU(
-        port=r"/dev/ttyUSB0",
+        port=r"/dev/serial0",  # For connection via uart0
         frequency=FREQUENCY,
     )
     imu_logger.track_variable(lambda: imu.roll, "Roll")
