@@ -30,7 +30,10 @@ class LoopKiller:
     def __init__(self, fade_time: float = 0.0):
         signal.signal(signal.SIGTERM, self.handle_signal)
         signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGHUP, self.handle_signal)
+
+        if hasattr(signal, "SIGHUP"):
+            signal.signal(signal.SIGHUP, self.handle_signal)
+
         self._fade_time: float = fade_time
         self._soft_kill_time: float = 0.0
 
@@ -218,8 +221,11 @@ class SoftRealtimeLoop:
             if ret == 0:
                 self.stop()
             while time.monotonic() < self.t1 and not self.killer.kill_now:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
-                    self.stop()
+                try:
+                    if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
+                        self.stop()
+                except AttributeError:
+                    pass
             self.t1 += dt
 
     def stop(self) -> None:
@@ -298,6 +304,45 @@ class SoftRealtimeLoop:
         self.ttarg += self.dt
         return self.t1 - self.t0
 
+    def reset(self) -> None:
+        """
+        Reset the loop state and signal handlers to their initial state.
+        This allows reusing the same loop instance instead of creating a new one.
+
+        Returns:
+            None
+
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.run(some_function)
+            >>> loop.reset()  # Reset for reuse
+            >>> loop.run(another_function)
+        """
+        self.t0 = time.monotonic()
+        self.t1 = self.t0
+        self.ttarg = None
+        self.sum_err = 0.0
+        self.sum_var = 0.0
+        self.sleep_t_agg = 0.0
+        self.n = 0
+
+        self.killer = LoopKiller(fade_time=self.killer._fade_time)
+
 
 if __name__ == "__main__":
-    pass
+    # Simple demonstration of the SRT loop with run method
+    rt_loop = SoftRealtimeLoop(dt=0.1)  # 10Hz loop
+
+    def demo_function() -> int:
+        print("Hello from SoftRealtimeLoop!")
+        return 0  # Stop after one iteration
+
+    rt_loop.run(demo_function)
+
+    rt_loop.reset()
+
+    # Simple demonstration of the SRT loop with iterator
+    for t in rt_loop:
+        print(f"Time: {t:.1f}s")
+        if t > 10.0:  # Auto-stop after 10 seconds if no Ctrl+C
+            rt_loop.stop()

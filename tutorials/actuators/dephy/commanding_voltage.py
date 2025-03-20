@@ -18,7 +18,11 @@ def voltage_control():
     )
 
     actpack = DephyActuator(
-        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
+        port="/dev/ttyACM0",
+        gear_ratio=GEAR_RATIO,
+        frequency=FREQUENCY,
+        debug_level=0,
+        dephy_log=False,
     )
 
     command_voltage = 0
@@ -40,9 +44,12 @@ def voltage_control():
 
             actpack.set_motor_voltage(value=command_voltage)
 
-            voltage_logger.info(f"Time: {t}; \
-                                 Motor Voltage: {actpack.motor_voltage}; \
-                                 Motor Current: {actpack.motor_current}")
+            voltage_logger.info(
+                f"Time: {t}; "
+                f"Command Voltage: {command_voltage}; "
+                f"Motor Voltage: {actpack.motor_voltage}; "
+                f"Motor Current: {actpack.motor_current}",
+            )
             voltage_logger.update()
 
 

@@ -23,81 +23,79 @@ An open-source software library for numerical computation, data acquisition, <br
 
 <br>
 
+## 🎯 Key Features
+
+This library solves common challenges in developing, testing, and deploying robotic algorithms:
+
+| Feature                         | Description                                                         |
+| ------------------------------- | ------------------------------------------------------------------- |
+| 📦 Standardized Interfaces      | Provides consistent interfaces for common actuators and sensors     |
+| 🔄 Ready-to-Use Implementations | Offers ready-to-use implementations for popular hardware components |
+| 🔍 Extensible Architecture      | Allows for easy integration of custom components                    |
+| 🧪 Comprehensive Benchmarks     | Includes comprehensive benchmarks for popular hardware components   |
+
+## 👥 Ideal for Roboticists Who
+
+- Want to develop robotic algorithms for the Open-Source Leg platform or any other robotic platform
+- Need a reliable and extensible framework for interfacing with various actuators and sensors
+- Are working on a robotic project and need a flexible and powerful software development kit
+- Are looking for benchmarks to pick the best hardware for their robotic project
+
+## Available Hardware Interfaces
+
+The library currently supports the following hardware components:
+
+| Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
+| ------------- | ---------- | -------------- | ---------- | ------------- |
+| Dephy Actpack | ✅         | ✅             | ⚠️         | ✅            |
+| Moteus        | ✅         | ⚠️             | ⚠️         | ✅            |
+| TMotor        | ✅         | ⚠️             | ❌         | ⚠️            |
+
+| Sensors              | Unit Tests | Hardware Tests | Benchmarks | Documentation |
+| -------------------- | ---------- | -------------- | ---------- | ------------- |
+| AS5048B Encoder      | ✅         | ✅             | ❌         | ✅            |
+| Lord Microstrain IMU | ✅         | ✅             | ❌         | ✅            |
+| SRI Loadcell         | ✅         | ✅             | ❌         | ✅            |
+
+> Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available
+
+> Hardware tests indicate successful testing on physical devices. Benchmarks include performance metrics such as response time and accuracy measurements. Documentation includes API reference and usage examples.
+
 ## Installation
 
-The easiest and quickest way to install the _opensourceleg_ library is via [pip](https://pip.pypa.io/en/stable/):
+The library is available on PyPI and can be installed using pip:
 
 ```bash
 pip install opensourceleg
 ```
 
-You can now use the library in your projects! Please refer to the [documentation](https://opensourceleg.readthedocs.io/en/latest/) for tutorials, examples, and more.
+For more details on the installation process, please refer to the [installation guide](https://neurobionics.github.io/opensourceleg/installation).
 
-### Developing and Contributing to the Library
+## Usage
 
-If you'd like to modify or contribute to the [opensourceleg](https://pypi.org/project/opensourceleg/) library, we recommend following these steps:
+Once the library is installed, you can import it in your projects and start using the modules:
 
-1. **Fork the repository** by clicking the "Fork" button at the top right of this [page](https://github.com/neurobionics/opensourceleg).
-
-2. **Clone your fork** to your local machine:
-
-   ```bash
-   git clone https://github.com/YOUR-USERNAME/opensourceleg.git
-   cd opensourceleg
-   ```
-
-3. **Set up the upstream remote** to keep your fork in sync with the main repository:
-
-   ```bash
-   git remote add upstream https://github.com/neurobionics/opensourceleg.git
-   ```
-
-4. **Install Poetry** if you haven't already. [Poetry](https://python-poetry.org) is a python packaging and dependency management tool. We use poetry to manage dependencies and build the library.
-
-5. **Install dependencies and activate the virtual environment**:
-
-   ```bash
-   poetry install
-   poetry shell
-   ```
-
-6. **Install pre-commit hooks**:
-
-   ```bash
-   make install
-   ```
-
-7. **Create a new branch** for your feature or bugfix:
-
-   ```bash
-   git checkout -b feature-or-bugfix-name
-   ```
-
-8. **Make your changes** and commit them with descriptive messages.
-
-9. **Run checks**. See [the contributing guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md) for more information.
-
-10. **Push your changes** to your fork:
-
-```bash
-git push origin feature-or-bugfix-name
+```python
+from opensourceleg.actuators import ActuatorBase
+from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.sensors import SensorBase
+from opensourceleg.sensors.encoder import AS5048B
+...
 ```
 
-11. **Create a Pull Request** by navigating to your fork on GitHub and clicking `New Pull Request`.
-
-Your changes will be reviewed by the maintainers, and if approved, they will be merged into the main repository.
+For more details on available modules, tutorials, and examples, please refer to the [documentation](https://neurobionics.github.io/opensourceleg/tutorials/getting_started).
 
 ## License
 
-The _opensourceleg_ library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
+The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
 
-- You are free to use the _opensourceleg_ library for any purpose.
-- You are free to modify the _opensourceleg_ library to suit your needs.
-- You can study how the _opensourceleg_ library works and change it.
-- You can distribute modified versions of the _opensourceleg_ library.
+- You are free to use the `opensourceleg` library for any purpose.
+- You are free to modify the `opensourceleg` library to suit your needs.
+- You can study how the `opensourceleg` library works and change it.
+- You can distribute modified versions of the `opensourceleg` library.
 
-The GPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
+The LGPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
 
 ## Contributing
 
-Contributions are welcome, and they are greatly appreciated! For more details, read our [contribution guidelines](CONTRIBUTING.md).
+Contributions are welcome, and they are greatly appreciated! For more details, read our [contribution guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md).
