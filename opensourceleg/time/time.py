@@ -32,7 +32,7 @@ class LoopKiller:
         signal.signal(signal.SIGINT, self.handle_signal)
 
         if hasattr(signal, "SIGHUP"):
-            signal.signal(signal.SIGHUP, self.handle_signal)  # type: ignore[attr-defined]
+            signal.signal(signal.SIGHUP, self.handle_signal)
 
         self._fade_time: float = fade_time
         self._soft_kill_time: float = 0.0
@@ -222,7 +222,7 @@ class SoftRealtimeLoop:
                 self.stop()
             while time.monotonic() < self.t1 and not self.killer.kill_now:
                 try:
-                    if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):  # type: ignore[attr-defined]
+                    if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
                         self.stop()
                 except AttributeError:
                     pass
@@ -284,7 +284,7 @@ class SoftRealtimeLoop:
 
         while time.monotonic() < self.t1 and not self.killer.kill_now:
             try:
-                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):  # type: ignore[attr-defined]
+                if signal.sigtimedwait([signal.SIGTERM, signal.SIGINT, signal.SIGHUP], 0):
                     self.stop()
             except AttributeError:
                 pass
