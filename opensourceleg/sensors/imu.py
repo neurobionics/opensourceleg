@@ -73,6 +73,24 @@ class LordMicrostrainIMU(IMUBase):
             )
             exit(1)
 
+        self._init_variables(
+            port=port,
+            baud_rate=baud_rate,
+            frequency=frequency,
+            update_timeout=update_timeout,
+            max_packets=max_packets,
+            return_packets=return_packets,
+        )
+
+    def _init_variables(
+        self,
+        port: str,
+        baud_rate: int,
+        frequency: int,
+        update_timeout: int,
+        max_packets: int,
+        return_packets: bool,
+    ) -> None:
         self._port = port
         self._baud_rate = baud_rate
         self._frequency = frequency
