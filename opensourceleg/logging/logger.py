@@ -96,6 +96,10 @@ class Logger(logging.Logger):
         - **critical**: Log a critical message.
         - **log**: Log a message at a specific log level.
 
+    Author:
+    - Senthur Ayyappan <senthura@umich.edu>
+    - Kevin Best <tkbest@umich.edu>
+
     Examples:
         >>> logger = Logger()
         >>> logger.info("This is an info message")
@@ -250,57 +254,127 @@ class Logger(logging.Logger):
             if not hasattr(self, "_file_handler"):
                 self._setup_file_handler()
 
-    def track_variable(self, var_func: Callable[[], Any], name: str) -> None:
+    def track_function(
+        self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]], name: Union[str, list[str]]
+    ) -> None:
         """
-        Record the value of a variable and log it to a CSV file.
+        Record the value of a variable (or multiple variables) and log it to a CSV file.
 
         Args:
-            var_func: A function that returns the value of the variable.
-            name: The name of the variable.
+            var_func: A function (or list of functions) that returns the value(s) of the variable(s).
+            name: The name (or list of names) of the variable(s).
+
+        Raises:
+            ValueError: If the lengths of `var_func` and `name` lists do not match.
+            TypeError: If `var_func` and `name` are not both single values or lists of equal length.
 
         Examples:
+            # Single variable tracking
             >>> class MyClass:
             ...     def __init__(self):
             ...         self.value = 42
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.track_function(lambda: obj.value, "value")
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+
+            # Multiple variable tracking
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value1 = 42
+            ...         self.value2 = 84
+            >>> obj = MyClass()
+            >>> LOGGER.track_function(
+            ...     [lambda: obj.value1, lambda: obj.value2],
+            ...     ["value1", "value2"]
+            ... )
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
         """
         with self._lock:
-            var_id = id(var_func)
-            self._tracked_vars[var_id] = var_func
-            self._var_names[var_id] = name
-            self._error_count[var_id] = 0  # Initialize error count
-            self.debug(f"Started tracking variable: {name}")
+            if isinstance(var_func, list) and isinstance(name, list):
+                # Ensure the lengths of var_func and name match
+                if len(var_func) != len(name):
+                    raise ValueError("The number of variable functions and names must match.")
+                for func, var_name in zip(var_func, name):
+                    var_id = id(func)
+                    self._tracked_vars[var_id] = func
+                    self._var_names[var_id] = var_name
+                    self._error_count[var_id] = 0  # Initialize error count
+                    self.debug(f"Started tracking variable: {var_name}")
+            elif callable(var_func) and isinstance(name, str):
+                # Single variable tracking
+                func = var_func  # Explicitly narrow the type for mypy
+                var_id = id(func)
+                self._tracked_vars[var_id] = func
+                self._var_names[var_id] = name
+                self._error_count[var_id] = 0  # Initialize error count
+                self.debug(f"Started tracking variable: {name}")
+            else:
+                raise TypeError(
+                    "Invalid input: var_func and name must both be either single values or lists of equal length."
+                )
 
-    def untrack_variable(self, var_func: Callable[[], Any]) -> None:
+    def untrack_variable(self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]]) -> None:
         """
-        Stop tracking a variable and remove it from the logger buffer.
+        Stop tracking a variable (or multiple variables) and remove it from the logger buffer.
 
         Args:
-            var_func: The function used to track the variable.
+            var_func: A function (or list of functions) used to track the variable(s).
 
         Examples:
+            # Single variable untracking
             >>> class MyClass:
             ...     def __init__(self):
             ...         self.value = 42
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.track_variable(lambda: obj.value, "value")
             >>> LOGGER.update()
             >>> LOGGER.flush_buffer()
             >>> LOGGER.untrack_variable(lambda: obj.value)
+
+            # Multiple variable untracking
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value1 = 42
+            ...         self.value2 = 84
+            >>> obj = MyClass()
+            >>> LOGGER.track_variable(
+            ...     [lambda: obj.value1, lambda: obj.value2],
+            ...     ["value1", "value2"]
+            ... )
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+            >>> LOGGER.untrack_variable([lambda: obj.value1, lambda: obj.value2])
         """
         with self._lock:
-            var_id = id(var_func)
-            if var_id in self._tracked_vars:
-                name = self._var_names.get(var_id, "unknown")
-                self._tracked_vars.pop(var_id, None)
-                self._var_names.pop(var_id, None)
-                self._error_count.pop(var_id, None)
-                self.debug(f"Stopped tracking variable: {name}")
+            if isinstance(var_func, list):
+                # Handle multiple variables
+                for func in var_func:
+                    var_id = id(func)
+                    if var_id in self._tracked_vars:
+                        name = self._var_names.get(var_id, "unknown")
+                        self._tracked_vars.pop(var_id, None)
+                        self._var_names.pop(var_id, None)
+                        self._error_count.pop(var_id, None)
+                        self.debug(f"Stopped tracking variable: {name}")
+                    else:
+                        self.warning("Attempted to untrack a variable that wasn't being tracked")
+            elif callable(var_func):
+                # Handle a single variable
+                var_id = id(var_func)
+                if var_id in self._tracked_vars:
+                    name = self._var_names.get(var_id, "unknown")
+                    self._tracked_vars.pop(var_id, None)
+                    self._var_names.pop(var_id, None)
+                    self._error_count.pop(var_id, None)
+                    self.debug(f"Stopped tracking variable: {name}")
+                else:
+                    self.warning("Attempted to untrack a variable that wasn't being tracked")
             else:
-                self.warning("Attempted to untrack a variable that wasn't being tracked")
+                raise TypeError("Invalid input: var_func must be either a single callable or a list of callables.")
 
     def get_tracked_variables(self) -> list[tuple[str, Any]]:
         """
@@ -771,6 +845,49 @@ class Logger(logging.Logger):
         """
         self._ensure_file_handler()
         super().log(level, msg, *args, **kwargs)
+
+    def track_attributes(self, obj: Any, attributes: Union[str, list[str]]) -> None:
+        """
+        Track one or more attributes in an object and log their values to a CSV file.
+
+        Args:
+            obj: The object whose attributes are to be tracked.
+            attributes: A single attribute name (str) or a list of attribute names (list[str]) to track.
+
+        Raises:
+            AttributeError: If any attribute in the list does not exist in the object.
+
+        Examples:
+            >>> class MyClass:
+            ...     def __init__(self):
+            ...         self.value1 = 42
+            ...         self.value2 = 84
+            >>> obj = MyClass()
+            >>> LOGGER.track_attributes(obj, "value1")  # Single attribute
+            >>> LOGGER.track_attributes(obj, ["value1", "value2"])  # Multiple attributes
+            >>> LOGGER.update()
+            >>> LOGGER.flush_buffer()
+        """
+        with self._lock:
+            if isinstance(attributes, str):
+                attributes = [attributes]  # Convert single attribute to a list
+
+            obj_str = str(obj)  # Use str(obj) for a user-friendly representation
+            var_funcs = []
+            prefixed_attributes = [f"{obj_str}.{attr}" for attr in attributes]  # Prepend str(obj)
+
+            def create_getter(obj: Any, attr: str) -> Callable[[], Any]:
+                """Helper function to create a getter for an attribute."""
+                return lambda: getattr(obj, attr)
+
+            for attr in attributes:
+                if not hasattr(obj, attr):
+                    raise AttributeError(f"Object {obj} does not have attribute '{attr}'")
+                # Use the helper function to create the lambda
+                var_funcs.append(create_getter(obj, attr))
+
+            # Call track_function with the generated functions and prefixed attribute names
+            self.track_function(var_funcs, prefixed_attributes)
 
     @property
     def file_path(self) -> Optional[str]:

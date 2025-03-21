@@ -19,8 +19,8 @@ if __name__ == "__main__":
         debug_level=0,
         dephy_log=False,
     )
-    sensor_logger.track_variable(lambda: actpack.motor_position, "Motor Position")
-    sensor_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
+    sensor_logger.track_function(lambda: actpack.motor_position, "Motor Position")
+    sensor_logger.track_function(lambda: actpack.motor_current, "Motor Current")
 
     with actpack:
         for t in clock:
