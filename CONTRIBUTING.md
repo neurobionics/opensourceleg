@@ -1,41 +1,127 @@
-# How to contribute
+# Contributing to `opensourceleg`
 
-## Installing dev dependencies
+Contributions are welcome, and they are greatly appreciated!
+Every little bit helps, and credit will always be given.
 
-To get started you would need to install [`python3.9`](https://www.python.org/downloads/) and [`poetry`](https://python-poetry.org/docs/#installing-with-the-official-installer). Please follow the instructions on their official websites.
+You can contribute in many ways:
 
-* We use *poetry* to manage our python [dependencies](https://github.com/python-poetry/poetry). Please make sure that *poetry* is added to your **PATH** variable after installation and you can run `poetry` command in your terminal or command prompt.
+# Types of Contributions
 
-* After cloning the *opensourceleg* repository, please activate your *virtualenv* by running `poetry shell` command. This will create an isolated virtual environment for development. 
+## Report Bugs
 
-* To install dependencies and prepare [`pre-commit`](https://pre-commit.com/) hooks you would need to run these commands from the root of the repository:
+Report bugs at https://github.com/neurobionics/opensourceleg/issues
 
-    ```bash
-    make install
-    make pre-commit-install
-    ```
+If you are reporting a bug, please include:
 
-## Submitting your code
+- Your operating system name and version.
+- Any details about your local setup that might be helpful in troubleshooting.
+- Detailed steps to reproduce the bug.
 
-Many checks are configured for this project. 
-* Command `make check-codestyle` will check black, isort and darglint.
-* Command `make lint` will check types, docstrings and security using [Mypy](https://pypi.org/project/mypy/), [Darglint](https://pypi.org/project/darglint/), [Pydocstyle](https://pypi.org/project/pydocstyle/)
-* Command `make check-safety` will look at the security of your code and dependencies using [Safety](https://pypi.org/project/safety/) and [Bandit](https://pypi.org/project/bandit/).
+## Fix Bugs
 
-Before submitting your code please do the following steps:
+Look through the GitHub issues for bugs.
+Anything tagged with "bug" and "help wanted" is open to whoever wants to implement a fix for it.
 
-1. Add any changes you want
-1. Add tests for the new changes
-1. Edit documentation if you have changed something significant
-1. Run `make codestyle` to format your changes.
-1. Run `make lint` to ensure that types, security and docstrings are okay.
-1. Run `make check-safety` to ensure that your code is secure.
+## Implement Features
 
-Your code will be checked by our CI/CD pipeline once you submit a pull request. Happy coding! 
+Look through the GitHub issues for features.
+Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
 
-## Other ways you can help
+## Write Documentation
 
-You can contribute by spreading a word about this library.
-It would also be a huge contribution to write
-a short article on how you are using this project.
-You can also share your best practices with us.
+The `opensourceleg` package could always use more documentation, whether as part of the official docs, in docstrings, or even on the web in blog posts, articles, and such.
+
+## Submit Feedback
+
+The best way to send feedback is to file an issue at [here](https://github.com/neurobionics/opensourceleg/issues).
+
+If you are proposing a new feature:
+
+- Explain in detail how it would work.
+- Keep the scope as narrow as possible, to make it easier to implement.
+- Remember that this is a volunteer-driven project, and that contributions
+  are welcome :)
+
+# Get Started!
+
+Ready to contribute? Here's how to set up `opensourceleg` for local development.
+Please note this documentation assumes you already have `poetry` and `Git` installed and ready to go.
+
+1. Fork the `opensourceleg` repo on GitHub.
+
+2. Clone your fork locally:
+
+```bash
+cd <directory_in_which_repo_should_be_created>
+git clone git@github.com:YOUR_NAME/opensourceleg.git
+```
+
+3. Now we need to install the environment. Navigate into the directory
+
+```bash
+cd opensourceleg
+```
+
+Then, install and activate the environment with:
+
+```bash
+poetry install
+poetry shell
+```
+
+4. Install pre-commit to run linters/formatters at commit time:
+
+```bash
+poetry run pre-commit install
+```
+
+5. Create a branch for local development:
+
+```bash
+git checkout -b name-of-your-bugfix-or-feature
+```
+
+Now you can make your changes locally.
+
+6. Don't forget to add test cases for your added functionality to the `tests` directory.
+
+7. When you're done making changes, check that your changes pass the formatting tests.
+
+```bash
+make check
+```
+
+Now, validate that all unit tests are passing:
+
+```bash
+make test
+```
+
+9. Before raising a pull request you should also run tox.
+   This will run the tests across different versions of Python:
+
+```bash
+tox
+```
+
+This requires you to have multiple versions of python installed.
+This step is also triggered in the CI/CD pipeline, so you could also choose to skip this step locally.
+
+10. Commit your changes and push your branch to GitHub:
+
+```bash
+git add .
+git commit -m "Your detailed description of your changes."
+git push origin name-of-your-bugfix-or-feature
+```
+
+11. Submit a pull request through the GitHub website.
+
+# Pull Request Guidelines
+
+Before you submit a pull request, check that it meets these guidelines:
+
+1. The pull request should include tests.
+
+2. If the pull request adds functionality, the docs should be updated.
+   Put your new functionality into a function with a docstring, and add the feature to the list in `README.md`.
