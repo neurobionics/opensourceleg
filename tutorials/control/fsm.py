@@ -1,11 +1,10 @@
 from opensourceleg.control.fsm import State, StateMachine
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.sensors.imu import LordMicrostrainIMU
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.time import SoftRealtimeLoop
-
+from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.logging.logger import Logger
 
 import numpy as np
@@ -208,12 +207,7 @@ if __name__ == "__main__":
     }
 
     sensors = {
-        "imu": LordMicrostrainIMU(
-            port=r"/dev/ttyS0",
-            frequency=FREQUENCY,
-        ),
         "loadcell": DephyLoadcellAmplifier(
-            frequency=FREQUENCY,
             calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
         ),
         "joint_encoder_knee": AS5048B(
@@ -236,7 +230,7 @@ if __name__ == "__main__":
 
     clock = SoftRealtimeLoop(dt=1/FREQUENCY)
     fsm_logger = Logger(
-        log_format="./logs",
+        log_path="./logs",
         file_name="fsm.log",
     )
 
@@ -248,16 +242,43 @@ if __name__ == "__main__":
 
     osl_fsm = create_simple_walking_fsm(osl)
 
-    with osl:
+    with osl, osl_fsm:
+        osl.update()
         osl.home()
+
+        input("Press Enter to continue...")
+        
+        #knee
+        osl.knee.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        osl.knee.set_impedance_gains()
+
+        #ankle
+        osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        osl.ankle.set_impedance_gains()
 
         for t in clock:
             osl.update()
             osl_fsm.update(osl=osl)
+            osl.knee.set_output_impedance(
+                k=osl_fsm.current_state.knee_stiffness,
+                b=osl_fsm.current_state.knee_damping,
+            )
+            osl.ankle.set_output_impedance(
+                k=osl_fsm.current_state.ankle_stiffness,
+                b=osl_fsm.current_state.ankle_damping,
+            )
+
+            osl.knee.set_output_position(np.deg2rad(osl_fsm.current_state.knee_theta))
+            osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
+
             fsm_logger.info(
                 f"T: {t:.3f}s, "
-                f"Current state: {osl_fsm.current_state.name}"
-                f"Loadcell Fz: {osl.loadcell.fz:.3f} N"
+                f"Current state: {osl_fsm.current_state.name}; "
+                f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "
+                f"Knee theta: {np.rad2deg(osl.knee.output_position):.3f} deg; "
+                f"Ankle theta: {np.rad2deg(osl.ankle.output_position):.3f} deg; "
+                f"Knee winding temperature: {osl.knee.winding_temperature:.3f} deg; "
+                f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} deg; "
             )
 
 
