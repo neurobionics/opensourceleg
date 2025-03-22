@@ -40,6 +40,7 @@ nav:
           - Running Functions: tutorials/time/running_functions.md
           - Using Iterators: tutorials/time/using_iterators.md
           - Real-time Control: tutorials/time/realtime_control.md
+      - Other Best Practices: tutorials/other_best_practices.md
   - API:
       - Actuators:
           - Base: api/actuators/actuators.md
