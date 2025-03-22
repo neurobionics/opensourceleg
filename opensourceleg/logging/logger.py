@@ -28,13 +28,14 @@ import csv
 import logging
 import os
 import threading
+from builtins import open  # noqa: UP029
 from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
 from typing import Any, Callable, Optional, Union
 
-__all__ = ["LOGGER", "LOG_LEVEL", "Logger"]
+__all__ = ["LOGGER", "LogLevel", "Logger"]
 
 
 class LogLevel(Enum):
@@ -85,7 +86,6 @@ class Logger(logging.Logger):
 
     Methods:
         - **track_variable**: Track a variable for logging.
-        - **untrack_variable**: Stop tracking a variable.
         - **flush_buffer**: Write the buffered log entries to the CSV file.
         - **reset**: Reset the logger state.
         - **close**: Close the logger and flush any remaining log entries.
@@ -273,34 +273,6 @@ class Logger(logging.Logger):
             self._var_names[var_id] = name
             self._error_count[var_id] = 0  # Initialize error count
             self.debug(f"Started tracking variable: {name}")
-
-    def untrack_variable(self, var_func: Callable[[], Any]) -> None:
-        """
-        Stop tracking a variable and remove it from the logger buffer.
-
-        Args:
-            var_func: The function used to track the variable.
-
-        Examples:
-            >>> class MyClass:
-            ...     def __init__(self):
-            ...         self.value = 42
-            >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "answer")
-            >>> LOGGER.update()
-            >>> LOGGER.flush_buffer()
-            >>> LOGGER.untrack_variable(lambda: obj.value)
-        """
-        with self._lock:
-            var_id = id(var_func)
-            if var_id in self._tracked_vars:
-                name = self._var_names.get(var_id, "unknown")
-                self._tracked_vars.pop(var_id, None)
-                self._var_names.pop(var_id, None)
-                self._error_count.pop(var_id, None)
-                self.debug(f"Stopped tracking variable: {name}")
-            else:
-                self.warning("Attempted to untrack a variable that wasn't being tracked")
 
     def get_tracked_variables(self) -> list[tuple[str, Any]]:
         """
@@ -609,6 +581,12 @@ class Logger(logging.Logger):
             print(f"Error generating file paths: {e}")  # Use print as logger might not be ready
             raise
 
+    def __del__(self) -> None:
+        """
+        Destructor for the Logger class.
+        """
+        self.close()
+
     def __enter__(self) -> "Logger":
         """
         Enter the runtime context related to this Logger instance.
@@ -771,6 +749,20 @@ class Logger(logging.Logger):
         """
         self._ensure_file_handler()
         super().log(level, msg, *args, **kwargs)
+
+    @property
+    def log_format(self) -> str:
+        """
+        Get the current log format.
+        """
+        return self._log_format
+
+    @property
+    def file_name(self) -> Optional[str]:
+        """
+        Get the current file name.
+        """
+        return self._user_file_name
 
     @property
     def file_path(self) -> Optional[str]:

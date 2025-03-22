@@ -169,8 +169,8 @@ def test_ensure_file_handler(isolated_logger: Logger):
     isolated_logger.reset()
 
 
-# Test track & untrack variable
-def test_track_and_untrack_variable(isolated_logger: Logger):
+# Test track variable
+def test_track_variable(isolated_logger: Logger):
     def test_func() -> list:
         return [1, 2, 3]
 
@@ -180,12 +180,6 @@ def test_track_and_untrack_variable(isolated_logger: Logger):
     assert all([
         test_func in list(isolated_logger._tracked_vars.values()),
         "Testing" in list(isolated_logger._var_names.values()),
-    ])
-
-    isolated_logger.untrack_variable(test_func)
-    assert all([
-        test_func not in list(isolated_logger._tracked_vars.values()),
-        "Testing" not in list(isolated_logger._var_names.values()),
     ])
 
 

@@ -83,6 +83,18 @@ class MockNode:
 
 # Creating a Mock LordMicrostrainIMU Class with patched functions for mscl
 class MockLordMicrostrainIMU(LordMicrostrainIMU):
+    def __init__(
+        self,
+        port: str = r"/dev/ttyUSB0",
+        baud_rate: int = 921600,
+        frequency: int = 200,
+        update_timeout: int = 500,
+        max_packets: int = 1,
+        return_packets: bool = False,
+    ):
+        LOGGER.info("Initializing MockLordMicrostrainIMU")
+        self._init_variables(port, baud_rate, frequency, update_timeout, max_packets, return_packets)
+
     def _configure_mip_channels(self):
         return [MockMipChannel(f"{i}", 200) for i in MockTypes]
 
