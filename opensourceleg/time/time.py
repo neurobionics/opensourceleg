@@ -141,40 +141,37 @@ class SoftRealtimeLoop:
     Soft Realtime Loop---a class designed to allow clean exits from infinite loops
     with the potential for post-loop cleanup operations executing.
 
-    The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI)
-    when it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
+    The Loop Killer object watches for the key shutdown signals on the UNIX operating system (which runs on the PI).
+    When it detects a shutdown signal, it sets a flag, which is used by the Soft Realtime Loop to stop iterating.
     Typically, it detects the CTRL-C from your keyboard, which sends a SIGTERM signal.
 
-    the function_in_loop argument to the Soft Realtime Loop's blocking_loop method is the function to be run every loop.
-    A typical usage would set function_in_loop to be a method of an object, so that the object could store
-    program state. See the 'ifmain' for two examples.
+    The `function_in_loop` argument to the Soft Realtime Loop's `run` method is the function to be run every loop.
+    A typical usage would set `function_in_loop` to be a method of an object, so that the object could store
+    program state. See the `if __name__ == "__main__"` section for examples.
 
-    This library will soon be hosted as a PIP module and added as a python dependency.
+    This library will soon be hosted as a PIP module and added as a Python dependency.
     https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
 
-    # Author: Gray C. Thomas, Ph.D
-    # https://github.com/GrayThomas, https://graythomas.github.io
-
+    Author:
+        - Gray C. Thomas, Ph.D <https://graythomas.github.io>
+        - José Montes Pérez <https://github.com/jmontp>
+        - Senthur Ayyappan <https://github.com/senthurayyappan>
+        - Kevin Best <https://github.com/tkevinbest>
     """
 
     def __init__(
         self, dt: float = 0.001, report: bool = True, fade: float = 0.0, maintain_original_phase: bool = False
     ):
         """
-        Parameters
-        ----------
-        dt : float
-                The time step of the loop in seconds.
-        report : bool
-                If True, the loop will print a report at the end of the loop.
-        fade : float
-                The time in seconds to fade out the loop when it is killed.
-        maintain_original_phase : bool
-                If True, the iterator object will try to keep the time elapsed equal
-                to (loop_number*dt). Therefore, if is strays too far from this number
-                it will run at full speed to catch up. If False, the iterator object
-                will only look at the difference between the current loop and the
-                previous loop. The default value is False.
+        Initializes the SoftRealtimeLoop.
+
+        Args:
+            dt (float): The time step of the loop in seconds. Default is 0.001 (1ms).
+            report (bool): If True, the loop will print a report at the end of the loop. Default is True.
+            fade (float): The time in seconds to fade out the loop when it is killed. Default is 0.0.
+            maintain_original_phase (bool): If True, the iterator will try to keep the time elapsed
+                equal to (loop_number * dt). If False, the iterator will only look at the difference
+                between the current loop and the previous loop. Default is False.
         """
         self._fade_time: float = fade
         self.dt: float = dt
@@ -190,16 +187,30 @@ class SoftRealtimeLoop:
         self.killer = LoopKiller(fade_time=self._fade_time)
 
     def __repr__(self) -> str:
+        """
+        Returns a string representation of the SoftRealtimeLoop.
+
+        Returns:
+            str: The string representation of the loop.
+        """
         return "SoftRealtimeLoop"
 
     def __del__(self) -> None:
+        """
+        Destructor for the SoftRealtimeLoop.
+        Prints the performance report if reporting is enabled.
+        """
         self.print_report()
 
     def print_report(self) -> None:
-        if self.report and self.n > 0:  # Only report if we have at least one cycle
+        """
+        Prints a performance report for the loop, including average error,
+        standard deviation of error, and percentage of time spent sleeping.
+        """
+        if self.report and self.n > 0:
             print("In %d cycles at %.2f Hz:" % (self.n, 1.0 / self.dt))
             print("\tavg error: %.3f milliseconds" % (1e3 * self.sum_err / self.n))
-            if self.n > 1:  # Need at least 2 samples for standard deviation
+            if self.n > 1:
                 print(
                     "\tstddev error: %.3f milliseconds"
                     % (1e3 * sqrt(max(0, (self.sum_var - self.sum_err**2 / self.n) / (self.n - 1))))
@@ -209,18 +220,15 @@ class SoftRealtimeLoop:
 
             total_time = self.time_since_start
             print(f"\ttotal time: {total_time:.1f} s")
-            if total_time > 0:  # Prevent division by zero
+            if total_time > 0:
                 print("\tpercent of time sleeping: %.1f %%" % (self.sleep_t_agg / total_time * 100.0))
             else:
                 print("\tpercent of time sleeping: N/A (total time is zero)")
 
     def reset(self) -> None:
         """
-        Reset the loop state and signal handlers to their initial state.
+        Resets the loop state and signal handlers to their initial state.
         This allows reusing the same loop instance instead of creating a new one.
-
-        Returns:
-            None
 
         Example:
             >>> loop = SoftRealtimeLoop()
@@ -237,10 +245,20 @@ class SoftRealtimeLoop:
         self.sum_var = 0.0
         self.sleep_t_agg = 0.0
         self.n = 0
-
         self.killer = LoopKiller(fade_time=self._fade_time)
 
     def run(self, function_to_run: Callable[[], int]) -> None:
+        """
+        Runs the loop with the specified function.
+
+        Args:
+            function_to_run (Callable[[], int]): The function to execute in each loop iteration.
+                The function should return 0 to stop the loop.
+
+        Example:
+            >>> loop = SoftRealtimeLoop()
+            >>> loop.run(some_function)
+        """
         for _t in self:
             result = function_to_run()
             if result == 0:
@@ -249,7 +267,7 @@ class SoftRealtimeLoop:
     @property
     def fade(self) -> float:
         """
-        Property to get the fade value.
+        Gets the fade value, which interpolates from 1 to 0 during a fade-out.
 
         Returns:
             float: The fade value.
@@ -262,24 +280,34 @@ class SoftRealtimeLoop:
 
     def stop(self) -> None:
         """
-        Method to stop the loop.
-
-        Returns:
-            None
+        Stops the loop by setting the kill flag.
 
         Example:
             >>> loop = SoftRealtimeLoop()
-            >>> loop.start()
-            ... Running loop ...
             >>> loop.stop()
         """
         self.killer.kill_now = True
 
     def __iter__(self) -> "SoftRealtimeLoop":
+        """
+        Resets the loop and returns the iterator object.
+
+        Returns:
+            SoftRealtimeLoop: The iterator object.
+        """
         self.reset()
         return self
 
     def __next__(self) -> float:
+        """
+        Advances the loop to the next iteration.
+
+        Returns:
+            float: The time since the loop started.
+
+        Raises:
+            StopIteration: If the loop is stopped.
+        """
         if self._maintain_original_phase:
             return self._next_original_phase()
         else:
@@ -287,13 +315,13 @@ class SoftRealtimeLoop:
 
     def _next_original_phase(self) -> float:
         """
-        This method will prioritize "catching up" on time lost in previous loops
-        by sleeping less in the current loop. In contrast, the
-        next_prev_loop_independent method will prioritize having a consistent dt
-        over each loop iteration.
+        Advances the loop using the maintain original phase method.
 
-        This iterator will return the time that we should be running at (i.e. not
-        the real time).
+        Returns:
+            float: The time since the loop started.
+
+        Raises:
+            StopIteration: If the loop is stopped.
         """
         if self.killer.kill_now:
             raise StopIteration
@@ -346,15 +374,14 @@ class SoftRealtimeLoop:
 
     def _next_consistent_dt(self) -> float:
         """
-        This method will prioritize having a consistent dt over each loop iteration.
-        In contrast, the _next_original_phase method will attempt to "catch up"
-        on time lost in previous loops by sleeping less in the current loop.
+        Advances the loop with a consistent time step.
 
-        This is the default mode.
+        Returns:
+            float: The time since the loop started.
 
-        This iterator will return the time since the loop started.
+        Raises:
+            StopIteration: If the loop is stopped.
         """
-
         if self.n == 0:
             self.n += 1
             return self.time_since_start
@@ -392,10 +419,22 @@ class SoftRealtimeLoop:
 
     @property
     def time_since_start(self) -> float:
+        """
+        Gets the time elapsed since the loop started.
+
+        Returns:
+            float: The time since the loop started.
+        """
         return self.current_time - self.loop_start_time
 
     @property
     def current_time(self) -> float:
+        """
+        Gets the current monotonic time.
+
+        Returns:
+            float: The current monotonic time.
+        """
         return time.monotonic()
 
 
