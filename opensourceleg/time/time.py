@@ -149,7 +149,7 @@ class SoftRealtimeLoop:
     A typical usage would set `function_in_loop` to be a method of an object, so that the object could store
     program state. See the `if __name__ == "__main__"` section for examples.
 
-    This library will soon be hosted as a PIP module and added as a Python dependency.
+    This library is based on the original implementation in:
     https://github.com/UM-LoCoLab/NeuroLocoMiddleware/blob/main/SoftRealtimeLoop.py
 
     Author:
