@@ -22,7 +22,7 @@ First, navigate to the directory `opensourceleg/tutorials/compiled_control/`. Th
 
 Next, we need to write a Python script to call our newly compiled library. First, we import the library. We also import `os` to get the path of the current directory.
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:1:3"
 ```
 
@@ -30,7 +30,7 @@ Then we'll make an instance of the ``CompiledController`` wrapper and have it lo
 We need to pass it both the name of the library (without an extension) and the directory in which to find the library.
 We also give it the name of our main function as well as any initialization and cleanup functions.
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:5:11"
 ```
 
@@ -46,7 +46,7 @@ We therefore can add `Vector3D` to the list of known types using the ``define_ty
 takes two arguments: (1) a name of the new type definition, and (2) a list of tuples where the first entry is the name
 of the field and the second entry is the type. For example, the code to define `Vector3D` is
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:13:20"
 ```
 
@@ -55,7 +55,7 @@ After all necessary types are defined, we need to define the input and output st
 These methods are similar to ``define_type()``, but are special because they tell the wrapper which objects to pass to and from
 the compiled library. We define the inputs as two `Vector3D` objects and the output as one double titled result.
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:21:22"
 ```
 
@@ -64,20 +64,20 @@ the compiled library. We define the inputs as two `Vector3D` objects and the out
 Now that the input structure has been defined, we can write to the inputs structure at ``my_linalg.inputs``.
 First, we declare two vectors and populate their fields with the appropriate values.
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:24:32"
 ```
 
 Then we can assign those vectors to the input structure.
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:34:35"
 ```
 
 Finally, we can run the dot product function and print the result from the output structure.
 As our input vectors were orthogonal, we get the expected result of zero.
 
-```cpp
+```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:37:40"
 ```
 
