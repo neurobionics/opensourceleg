@@ -81,7 +81,7 @@ As our input vectors were orthogonal, we get the expected result of zero.
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:37:40"
 ```
 
-We get the following output, showing that our compiled library successfully calculated the dot product between our two orthogonal vectors: 
+We get the following output, showing that our compiled library successfully calculated the dot product between our two orthogonal vectors:
 ```bash
 Dot product: 3.6549999999971154e-05
 ```
