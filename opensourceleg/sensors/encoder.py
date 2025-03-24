@@ -211,6 +211,11 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
     def velocity(self) -> float:
         """Calculate angular velocity in radians per second"""
         try:
+            # TODO: Add linearization logic here for the velocity attribute
+            LOGGER.warning(
+                "Velocity attribute does not use the linearization map. "
+                "Please calculate the velocity using the position attribute."
+            )
             encAngleDataOld = AS5048B._get_14bit(self._encdata_old[4:6])
             encAngleDataNew = AS5048B._get_14bit(self._encdata_new[4:6])
             # Timediff is converted from ns to s
