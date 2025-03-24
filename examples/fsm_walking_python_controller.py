@@ -66,7 +66,6 @@ KNEE_THETA_LSWING_TO_ESTANCE = np.deg2rad(30)
 
 # ---------------------------------------------------- #
 
-
 def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
     e_stance = State(
         name="e_stance",
