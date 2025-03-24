@@ -42,6 +42,7 @@ nav:
           - Real-time Control: tutorials/time/realtime_control.md
   - Examples: 
     - Basic Motion: examples/basic_motion.md
+    - Finite State Machine Walking Controller: examples/fsm_walking_controller.md
   - API:
       - Actuators:
           - Base: api/actuators/actuators.md
