@@ -1,3 +1,5 @@
+import numpy as np
+
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
@@ -35,9 +37,7 @@ def home_joint():
             homing_voltage=2000,
             homing_frequency=FREQUENCY,
             homing_direction=-1,
-            joint_direction=-1,
-            joint_position_offset=0.0,
-            motor_position_offset=0.0,
+            output_position_offset=0.0,
             current_threshold=5000,
             velocity_threshold=0.001,
         )
@@ -46,9 +46,7 @@ def home_joint():
             homing_voltage=2000,
             homing_frequency=FREQUENCY,
             homing_direction=-1,
-            joint_direction=-1,
-            joint_position_offset=0.0,
-            motor_position_offset=0.0,
+            output_position_offset=np.deg2rad(30.0),
             current_threshold=5000,
             velocity_threshold=0.001,
         )
@@ -62,15 +60,19 @@ def home_joint():
         knee.set_motor_current(0)
         ankle.set_motor_current(0)
 
-        homing_logger.set_stream_terminator("\r")
+        # homing_logger.set_stream_terminator("\r")
         for t in clock:
             knee.update()
             ankle.update()
 
             homing_logger.info(
-                f"Time: {t:.2f}; Knee Position: {knee.motor_position:.2f}; Ankle Position: {ankle.motor_position:.2f}; "
-                f"Knee Temp: {knee.winding_temperature:.2f}; Ankle Temp: {ankle.winding_temperature:.2f}; "
-                f"Knee Current: {knee.motor_current:.2f} mA; Ankle Current: {ankle.motor_current:.2f} mA;"
+                # f"Time: {t:.2f}; Knee Position: {knee.motor_position:.2f}; "
+                # f"Ankle Position: {ankle.motor_position:.2f}; "
+                f"Time: {t:.2f}; Knee Output Position: {np.rad2deg(knee.output_position):.2f}; "
+                f"Ankle Output Position: {np.rad2deg(ankle.output_position):.2f}; "
+                f"Knee Winding Temp: {knee.winding_temperature:.2f}; "
+                f"Ankle Winding Temp: {ankle.winding_temperature:.2f}; "
+                # f"Knee Current: {knee.motor_current:.2f} mA; Ankle Current: {ankle.motor_current:.2f} mA;"
             )
 
 

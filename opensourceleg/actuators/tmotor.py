@@ -534,7 +534,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.current = value
 
     # used for either current or MIT Mode to set current, based on desired torque
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
         Used for either current or MIT Mode to set current, based on desired torque.
         If a more complicated torque model is available for the motor, that will be used.

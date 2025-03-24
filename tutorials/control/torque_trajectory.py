@@ -78,7 +78,7 @@ if __name__ == "__main__":
     with actuator, encoder:
         actuator.set_control_mode(CONTROL_MODES.CURRENT)
         actuator.set_current_gains()
-        actuator.set_joint_torque(0)
+        actuator.set_output_torque(0)
 
         encoder.set_zero_position()
 
@@ -89,14 +89,14 @@ if __name__ == "__main__":
             encoder.update()
             torque_sp = get_torque(t, data)
             torque_logger.info(
-                f"t: {t}, torque_sp: {torque_sp}, output_torque: {actuator.joint_torque}, "
+                f"t: {t}, torque_sp: {torque_sp}, output_torque: {actuator.output_torque}, "
                 f"winding_temperature: {actuator.winding_temperature}"
             )
             plotting_data[0].append(t)
             plotting_data[1].append(torque_sp)
             plotting_data[2].append(np.rad2deg(encoder.position))
-            plotting_data[3].append(actuator.joint_torque)
+            plotting_data[3].append(actuator.output_torque)
 
-            actuator.set_joint_torque(torque_sp)
+            actuator.set_output_torque(torque_sp)
 
     plot_data(plotting_data)

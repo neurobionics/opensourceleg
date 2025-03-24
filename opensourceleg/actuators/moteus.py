@@ -296,9 +296,9 @@ class MoteusActuator(ActuatorBase, Controller):
             query=True,
         )
 
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
-        Set the joint torque of the joint.
+        Set the output torque of the actuator.
         This is the torque that is applied to the joint, not the motor.
 
         Args:

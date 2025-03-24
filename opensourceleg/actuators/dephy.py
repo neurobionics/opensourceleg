@@ -128,7 +128,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         >>> actuator = DephyActuator(port='/dev/ttyACM0', gear_ratio=2.0)
         >>> actuator.start()
         >>> actuator.set_motor_voltage(1500)
-        >>> print(f"Joint position: {actuator.joint_position:.2f} rad")
+        >>> print(f"Output position: {actuator.output_position:.2f} rad")
     """
 
     def __init__(
@@ -263,16 +263,15 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
-                    Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. "
+                f"Current Case Temperature: {self.case_temperature} C. Exiting."
             )
-            # self.stop()
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
-                    Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached."
+                f"Current Winding Temperature: {self.winding_temperature} C. Exiting."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
@@ -280,12 +279,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             # "Maximum Average Current" limit exceeded for "time at current limit,
             # review physical setup to ensure excessive torque is not normally applied
             # If issue persists, review "Maximum Average Current", "Current Limit", and
-            # "Time at current limit" settings for the ActPack Firmware
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] I2t limit exceeded. "
-                f"Current: {self.motor_current} mA. "
-                f"Time at current limit: {self._data['time_at_current_limit']} s."
-            )
+            # "Time at current limit" settings for the Dephy ActPack Firmware using the Plan GUI software
+            LOGGER.error(msg=f"[{str.upper(self.tag)}] I2t limit exceeded. " f"Current: {self.motor_current} mA. ")
             raise I2tLimitException()
 
     def home(
@@ -293,9 +288,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         homing_voltage: int = 2000,
         homing_frequency: Optional[int] = None,
         homing_direction: int = -1,
-        joint_direction: int = -1,
-        joint_position_offset: float = 0.0,
-        motor_position_offset: float = 0.0,
+        output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
     ) -> None:
@@ -305,13 +298,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         The zero position is defined as the position where the joint is fully extended. This method will
         also load the encoder map if it exists. The encoder map is a polynomial that maps the encoder counts
         to joint position in radians. This is useful for more accurate joint position estimation.
+
         Args:
             homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
             homing_frequency (int): Frequency in Hz to use for homing. Default is the actuator's frequency.
             homing_direction (int): Direction to move the actuator during homing. Default is -1.
-            joint_direction (int): Direction to move the joint during homing. Default is -1.
-            joint_position_offset (float): Offset in radians to add to the joint position. Default is 0.0.
-            motor_position_offset (float): Offset in radians to add to the motor position. Default is 0.0.
+            output_position_offset (float): Offset in radians to add to the output position. Default is 0.0.
             current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
                 This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
@@ -355,13 +347,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             LOGGER.error(msg=f"[{str.upper(self.tag)}] Homing failed: {e}")
             return
 
-        self.set_motor_zero_position(value=self.motor_position)
-        self.set_joint_zero_position(value=self.joint_position)
+        self.set_motor_zero_position(value=self.motor_position + output_position_offset * self.gear_ratio)
 
         time.sleep(0.1)
-        self.set_joint_direction(joint_direction)
-        self.set_motor_position_offset(motor_position_offset)
-        self.set_joint_position_offset(joint_position_offset)
 
         self._is_homed = True
         LOGGER.info(f"[{str.upper(self.tag)}] Homing complete.")
@@ -417,9 +405,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         time.sleep(0.1)
         self.set_current_gains()
 
-        self.set_joint_torque(value=0.0)
+        self.set_output_torque(value=0.0)
         time.sleep(0.1)
-        self.set_joint_torque(value=0.0)
+        self.set_output_torque(value=0.0)
 
         _joint_encoder_array = []
         _output_position_array = []
@@ -474,25 +462,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
         )
 
-    def set_joint_torque(self, value: float) -> None:
-        """
-        Set the joint torque of the joint.
-        This is the torque that is applied to the joint, not the motor.
-
-        Args:
-            value (float): torque in N_m
-
-        Returns:
-            None
-
-        Examples:
-            >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()
-            >>> actuator.set_joint_torque(0.1)
-        """
-        self.set_motor_torque(value=value / self.gear_ratio)
-
-    @deprecated_with_routing(alternative_func=set_joint_torque)
     def set_output_torque(self, value: float) -> None:
         """
         Set the output torque of the joint.
@@ -883,11 +852,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> print(f"Motor position: {actuator.motor_position} rad")
         """
         if self._data is not None:
-            return (
-                float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self.motor_zero_position
-                - self.motor_position_offset
-            )
+            return float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT) - self.motor_zero_position
         else:
             LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -909,27 +874,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         if self._data is not None:
             return int(self._data["mot_ang"])
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
-            )
-            return 0
-
-    @property
-    def joint_encoder_counts(self) -> int:
-        """
-        Raw reading from joint encoder in counts.
-
-        Returns:
-            int: Joint encoder counts.
-
-        Examples:
-            >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()
-            >>> print(f"Joint encoder counts: {actuator.joint_encoder_counts}")
-        """
-        if self._data is not None:
-            return int(self._data["ank_ang"])
         else:
             LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
@@ -1023,63 +967,17 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             return 0.0
 
     @property
-    def joint_position(self) -> float:
-        """
-        Joint position in radians.
-
-        Returns:
-            float: Joint position in radians.
-
-        Examples:
-            >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()
-            >>> print(f"Joint position: {actuator.joint_position} rad")
-        """
-        if self._data is not None:
-            return (
-                float(self._data["ank_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self.joint_zero_position
-                - self.joint_position_offset
-            ) * self.joint_direction
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_velocity(self) -> float:
-        """
-        Joint velocity in rad/s.
-
-        Returns:
-            float: Joint velocity in rad/s.
-
-        Examples:
-            >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()
-            >>> print(f"Joint velocity: {actuator.joint_velocity} rad/s")
-        """
-        if self._data is not None:
-            return float(self._data["ank_vel"] * RAD_PER_DEG) * self.joint_direction
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_torque(self) -> float:
+    def output_torque(self) -> float:
         """
         Torque at the joint output in Nm. This is calculated using motor current, k_t, and the gear ratio.
 
         Returns:
-            float: Joint torque in Nm.
+            float: Output torque in Nm.
 
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
-            >>> print(f"Joint torque: {actuator.joint_torque} Nm")
+            >>> print(f"Output torque: {actuator.output_torque} Nm")
         """
         return self.motor_torque * self.gear_ratio
 
@@ -1562,11 +1460,7 @@ class DephyLegacyActuator(DephyActuator):
         Motor position in radians.
         """
         if self._data is not None:
-            return (
-                float(self._data.mot_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self.motor_zero_position
-                - self.motor_position_offset
-            )
+            return float(self._data.mot_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT) - self.motor_zero_position
         else:
             LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -1578,17 +1472,6 @@ class DephyLegacyActuator(DephyActuator):
         """Raw reading from motor encoder in counts."""
         if self._data is not None:
             return int(self._data.mot_ang)
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
-            )
-            return 0
-
-    @property
-    def joint_encoder_counts(self) -> int:
-        """Raw reading from joint encoder in counts."""
-        if self._data is not None:
-            return int(self._data.ank_ang)
         else:
             LOGGER.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
@@ -1644,37 +1527,7 @@ class DephyLegacyActuator(DephyActuator):
             return 0.0
 
     @property
-    def joint_position(self) -> float:
-        """
-        Joint position in radians.
-        """
-        if self._data is not None:
-            return (
-                float(self._data.ank_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT)
-                - self.joint_zero_position
-                - self.joint_position_offset
-            ) * self.joint_direction
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_velocity(self) -> float:
-        """
-        Joint velocity in rad/s.
-        """
-        if self._data is not None:
-            return float(self._data.ank_vel * RAD_PER_DEG) * self.joint_direction
-        else:
-            LOGGER.debug(
-                msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
-            )
-            return 0.0
-
-    @property
-    def joint_torque(self) -> float:
+    def output_torque(self) -> float:
         """
         Torque at the joint output in Nm.
         This is calculated using motor current, k_t, and the gear ratio.
