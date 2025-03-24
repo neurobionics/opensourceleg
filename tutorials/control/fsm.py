@@ -1,15 +1,15 @@
-from opensourceleg.control.fsm import State, StateMachine
-from opensourceleg.robots.osl import OpenSourceLeg
-from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
-from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.time import SoftRealtimeLoop
-from opensourceleg.actuators.base import CONTROL_MODES
-from opensourceleg.logging.logger import Logger
-
 import numpy as np
 
-GEAR_RATIO = 9 * (83/18)
+from opensourceleg.actuators.base import CONTROL_MODES
+from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.control.fsm import State, StateMachine
+from opensourceleg.logging.logger import Logger
+from opensourceleg.robots.osl import OpenSourceLeg
+from opensourceleg.sensors.encoder import AS5048B
+from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
+from opensourceleg.time import SoftRealtimeLoop
+
+GEAR_RATIO = 9 * (83 / 18)
 FREQUENCY = 200
 
 # ------------- TUNABLE FSM PARAMETERS ---------------- #
@@ -56,19 +56,17 @@ KNEE_THETA_LSWING_TO_ESTANCE = np.deg2rad(30)
 
 # ---------------------------------------------------- #
 
-LOADCELL_CALIBRATION_MATRIX = np.array(
-    [
-        (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
-        (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
-        (-1047.16800, 8.63900, -1047.28200, -20.70000, -1073.08800, -8.92300),
-        (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
-        (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
-        (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
-    ]
-)
+LOADCELL_CALIBRATION_MATRIX = np.array([
+    (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
+    (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
+    (-1047.16800, 8.63900, -1047.28200, -20.70000, -1073.08800, -8.92300),
+    (20.57600, -0.04000, -0.24600, 0.55400, -21.40800, -0.47600),
+    (-12.13400, -1.10800, 24.36100, 0.02300, -12.14100, 0.79200),
+    (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
+])
+
 
 def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
-
     e_stance = State(
         name="e_stance",
         knee_theta=KNEE_THETA_ESTANCE,
@@ -114,18 +112,17 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         Transition from early stance to late stance when the loadcell
         reads a force greater than a threshold.
         """
-        assert osl.loadcell is not None
-        return bool(
-            osl.loadcell.fz < LOAD_LSTANCE
-            and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
-        )
+        if osl.loadcell is None:
+            raise ValueError("Loadcell is not connected")
+        return bool(osl.loadcell.fz < LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
 
     def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
         """
         Transition from late stance to early swing when the loadcell
         reads a force less than a threshold.
         """
-        assert osl.loadcell is not None
+        if osl.loadcell is None:
+            raise ValueError("Loadcell is not connected")
         return bool(osl.loadcell.fz > LOAD_ESWING)
 
     def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
@@ -134,7 +131,8 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         is greater than a threshold and the knee velocity is less than
         a threshold.
         """
-        assert osl.knee is not None
+        if osl.knee is None:
+            raise ValueError("Knee is not connected")
         return bool(
             osl.knee.output_position > KNEE_THETA_ESWING_TO_LSWING
             and osl.knee.output_velocity < KNEE_DTHETA_ESWING_TO_LSWING
@@ -146,11 +144,11 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         reads a force greater than a threshold or the knee angle is
         less than a threshold.
         """
-        assert osl.knee is not None and osl.loadcell is not None
-        return bool(
-            osl.loadcell.fz < LOAD_ESTANCE
-            or osl.knee.output_position < KNEE_THETA_LSWING_TO_ESTANCE
-        )
+        if osl.knee is None:
+            raise ValueError("Knee is not connected")
+        if osl.loadcell is None:
+            raise ValueError("Loadcell is not connected")
+        return bool(osl.loadcell.fz < LOAD_ESTANCE or osl.knee.output_position < KNEE_THETA_LSWING_TO_ESTANCE)
 
     fsm = StateMachine(
         states=[
@@ -187,6 +185,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         criteria=lswing_to_estance,
     )
     return fsm
+
 
 if __name__ == "__main__":
     actuators = {
@@ -228,7 +227,7 @@ if __name__ == "__main__":
         ),
     }
 
-    clock = SoftRealtimeLoop(dt=1/FREQUENCY)
+    clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
     fsm_logger = Logger(
         log_path="./logs",
         file_name="fsm.log",
@@ -247,12 +246,12 @@ if __name__ == "__main__":
         osl.home()
 
         input("Press Enter to continue...")
-        
-        #knee
+
+        # knee
         osl.knee.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
         osl.knee.set_impedance_gains()
 
-        #ankle
+        # ankle
         osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
         osl.ankle.set_impedance_gains()
 
@@ -280,8 +279,3 @@ if __name__ == "__main__":
                 f"Knee winding temperature: {osl.knee.winding_temperature:.3f} deg; "
                 f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} deg; "
             )
-
-
-
-
-    

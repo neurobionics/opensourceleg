@@ -10,8 +10,7 @@ import math
 from time import sleep
 from typing import Any, ClassVar, Optional
 
-import spidev
-
+from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import ADCBase
 
 
@@ -119,6 +118,15 @@ class ADS131M0x(ADCBase):
                         or if gain_error is provided and its length does not equal num_channels,
                         or if any gain is not a power of 2 between 1 and 128.
         """
+
+        try:
+            import spidev
+
+            self._spi = spidev.SpiDev()
+        except ImportError:
+            LOGGER.warning("spidev is not installed")
+            exit(1)
+
         if gain_error is None:
             gain_error = []
         if len(channel_gains) != num_channels:
@@ -139,7 +147,6 @@ class ADS131M0x(ADCBase):
 
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
-        self._spi = spidev.SpiDev()
         self._streaming = False
         self._words_per_frame = 2 + num_channels
 
