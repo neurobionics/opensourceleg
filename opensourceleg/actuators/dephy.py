@@ -326,18 +326,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         self.set_motor_voltage(value=homing_direction * homing_voltage)  # mV, negative for counterclockwise
 
-        _motor_encoder_array = []
-        _joint_encoder_array = []
-
         time.sleep(0.1)
 
         try:
             while is_homing:
                 self.update()
                 time.sleep(1 / homing_frequency)
-
-                _motor_encoder_array.append(self.motor_position)
-                _joint_encoder_array.append(self.joint_position)
 
                 if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
@@ -367,8 +361,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             coefficients = np.load(file=f"./{self.tag}_encoder_map.npy")
             self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
         else:
-            LOGGER.debug(
-                msg=f"[{self.__repr__()}] No encoder map found. Please call the make_encoder_map method \
+            LOGGER.warning(
+                msg=f"[{self.__repr__()}] No encoder map found. Please call the `make_encoder_map` method \
                     to create one. The encoder map is used to estimate joint position more accurately."
             )
 
