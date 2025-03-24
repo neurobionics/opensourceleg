@@ -25,7 +25,7 @@ from opensourceleg.logging.decorators import (
 )
 from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.math import ThermalModel
-from opensourceleg.safety import ThermalLimitException
+from opensourceleg.safety import I2tLimitException, ThermalLimitException
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -237,6 +237,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         self._is_streaming = False
         self._is_open = False
+        self.stop_streaming()
         self.close()
 
     def update(self) -> None:
@@ -276,8 +277,16 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
-            self.stop()
-            raise RuntimeError("Actpack Thermal Limit Tripped")
+            # "Maximum Average Current" limit exceeded for "time at current limit,
+            # review physical setup to ensure excessive torque is not normally applied
+            # If issue persists, review "Maximum Average Current", "Current Limit", and
+            # "Time at current limit" settings for the ActPack Firmware
+            LOGGER.error(
+                msg=f"[{str.upper(self.tag)}] I2t limit exceeded. "
+                f"Current: {self.motor_current} mA. "
+                f"Time at current limit: {self._data['time_at_current_limit']} s."
+            )
+            raise I2tLimitException()
 
     def home(
         self,
@@ -317,7 +326,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         homing_frequency = homing_frequency if homing_frequency is not None else self.frequency
 
         LOGGER.info(
-            f"[{self.__repr__()}] Homing {self.tag} joint."
+            f"[{str.upper(self.tag)}] Homing {self.tag} joint. "
             "Please make sure the joint is free to move and press Enter to continue."
         )
         input()
@@ -339,11 +348,11 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         except KeyboardInterrupt:
             self.set_motor_voltage(value=0)
-            LOGGER.info(msg=f"[{self.__repr__()}] Homing interrupted.")
+            LOGGER.info(msg=f"[{str.upper(self.tag)}] Homing interrupted.")
             return
         except Exception as e:
             self.set_motor_voltage(value=0)
-            LOGGER.error(msg=f"[{self.__repr__()}] Homing failed: {e}")
+            LOGGER.error(msg=f"[{str.upper(self.tag)}] Homing failed: {e}")
             return
 
         self.set_motor_zero_position(value=self.motor_position)
@@ -355,15 +364,15 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.set_joint_position_offset(joint_position_offset)
 
         self._is_homed = True
-        LOGGER.info(f"[{self.__repr__()}] Homing complete.")
+        LOGGER.info(f"[{str.upper(self.tag)}] Homing complete.")
 
         if os.path.isfile(path=f"./{self.tag}_encoder_map.npy"):
             coefficients = np.load(file=f"./{self.tag}_encoder_map.npy")
             self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=coefficients))
         else:
             LOGGER.warning(
-                msg=f"[{self.__repr__()}] No encoder map found. Please call the `make_encoder_map` method \
-                    to create one. The encoder map is used to estimate joint position more accurately."
+                f"[{str.upper(self.tag)}] No encoder map found. Please call the `make_encoder_map` method "
+                "to create one. The encoder map is used to estimate joint position more accurately."
             )
 
     def make_encoder_map(self, overwrite: bool = False) -> None:
@@ -394,11 +403,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
 
         if not self.is_homed:
-            LOGGER.warning(msg=f"[{self.__repr__()}] Please home the {self.tag} joint before making the encoder map.")
+            LOGGER.warning(
+                msg=f"[{str.upper(self.tag)}] Please home the {self.tag} joint before making the encoder map."
+            )
             return None
 
         if os.path.exists(f"./{self.tag}_encoder_map.npy") and not overwrite:
-            LOGGER.info(msg=f"[{self.__repr__()}] Encoder map exists. Skipping encoder map creation.")
+            LOGGER.info(msg=f"[{str.upper(self.tag)}] Encoder map exists. Skipping encoder map creation.")
             return None
 
         self.set_control_mode(mode=CONTROL_MODES.CURRENT)
@@ -414,7 +425,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         _output_position_array = []
 
         LOGGER.info(
-            msg=f"[{self.__repr__()}] Please manually move the {self.tag} joint numerous times through \
+            msg=f"[{str.upper(self.tag)}] Please manually move the {self.tag} joint numerous times through \
                 its full range of motion for 10 seconds. \n{input('Press any key when you are ready to start.')}"
         )
 
@@ -423,7 +434,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         try:
             while time.time() - _start_time < 10:
                 LOGGER.info(
-                    msg=f"[{self.__repr__()}] Mapping the {self.tag} \
+                    msg=f"[{str.upper(self.tag)}] Mapping the {self.tag} \
                         joint encoder: {10 - time.time() + _start_time} seconds left."
                 )
                 self.update()
@@ -435,7 +446,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             LOGGER.warning(msg="Encoder map interrupted.")
             return None
 
-        LOGGER.info(msg=f"[{self.__repr__()}] You may now stop moving the {self.tag} joint.")
+        LOGGER.info(msg=f"[{str.upper(self.tag)}] You may now stop moving the {self.tag} joint.")
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
@@ -445,7 +456,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
 
         np.save(file=f"./{self.tag}_encoder_map.npy", arr=_coeffs)
-        LOGGER.info(msg=f"[{self.__repr__()}] Encoder map saved to './{self.tag}_encoder_map.npy'.")
+        LOGGER.info(msg=f"[{str.upper(self.tag)}] Encoder map saved to './{self.tag}_encoder_map.npy'.")
 
     def set_motor_torque(self, value: float) -> None:
         """
@@ -1432,6 +1443,9 @@ class DephyLegacyActuator(DephyActuator):
 
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
         time.sleep(0.1)
+        self._is_streaming = False
+        self._is_open = False
+        self.stop_streaming()
         self.close()
 
     def update(self) -> None:
@@ -1444,23 +1458,23 @@ class DephyLegacyActuator(DephyActuator):
         )
         if self.case_temperature >= self.max_case_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. \
-                    Stopping motor."
+                f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. "
+                f"Current case temperature: {self.case_temperature}. Stopping motor."
             )
             raise ThermalLimitException()
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
-                    Stopping motor."
+                f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. "
+                f"Current winding temperature: {self.winding_temperature}. Stopping motor."
             )
             raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
 
         if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; \
-                    Case temperature: {self.case_temperature}."
+                f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; "
+                f"Case temperature: {self.case_temperature}."
             )
             raise ThermalLimitException("Internal thermal limit tripped.")
 
