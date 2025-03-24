@@ -190,6 +190,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
 if __name__ == "__main__":
     actuators = {
         "knee": DephyActuator(
+            tag="knee",
             port="/dev/ttyACM0",
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
@@ -197,6 +198,7 @@ if __name__ == "__main__":
             dephy_log=False,
         ),
         "ankle": DephyActuator(
+            tag="ankle",
             port="/dev/ttyACM1",
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
