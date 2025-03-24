@@ -340,7 +340,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         return self._data
 
     def __repr__(self) -> str:
-        return f"\n\tAngle: {self.position:.3f} rad\n\tVelocity: {self.velocity:.3f} rad/s"
+        return f"{self.name}[AS5048B]"
 
 
 if __name__ == "__main__":
