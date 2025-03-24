@@ -40,6 +40,8 @@ nav:
           - Running Functions: tutorials/time/running_functions.md
           - Using Iterators: tutorials/time/using_iterators.md
           - Real-time Control: tutorials/time/realtime_control.md
+  - Examples: 
+    - Basic Motion: examples/basic_motion.md
   - API:
       - Actuators:
           - Base: api/actuators/actuators.md
