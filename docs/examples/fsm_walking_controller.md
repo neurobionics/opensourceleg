@@ -6,7 +6,6 @@ The library ships with three example implementations of the same finite state ma
 
 ![A diagram of the finite state machine](./assets/FSM_Diagram.svg)
 
-
 The first implementation is entirely in Python and uses the `StateMachine` class from the control subpackage of this library. If you plan to write your controllers exclusively in Python, this example is a good starting point.
 
 The library also supports using compiled `C` and `C++` library functions via the `CompiledController` class. You can see a basic example of this module on the [tutorials page](/opensourceleg/tutorials/control/compiled_controller/), which may be helpful to review before starting with this example. We've duplicated the FSM behavior in both `C++` and `MATLAB`. The source code for these control implementations is available in [this repository](https://github.com/neurobionics/OSL_CompiledControllers_Source). Refer to the documentation in that repository for instructions on compiling both the `C++` and the `MATLAB` source code. 
@@ -15,7 +14,56 @@ The library also supports using compiled `C` and `C++` library functions via the
 
 ## Python Implementation
 
-Documentation coming soon!
+### Setup and Configuration
+
+First, we'll perform some standard imports:
+
+```python
+--8<-- "examples/fsm_walking_python_controller.py:1:23"
+```
+
+Next, we'll define all the tunable FSM parameters. These include the impedance parameters for each state as well as the transitions between states:
+
+```python
+--8<-- "examples/fsm_walking_python_controller.py:25:67"
+```
+
+> **Note**:  
+> These parameters were roughly tuned for a moderately paced walking gait. You may want to tune them to better suit your intended use case.
+
+Next, we create a function that returns an instance of the `StateMachine` class. We start by making `State` objects for each of our four states and the include the impedance parameters in each. We also define transition criteria functions that determine when to move between states. We add the states and transition functions to an instance of the `StateMachine` class, specifiying that the initial state is `e_stance`. 
+
+```python
+--8<-- "examples/fsm_walking_python_controller.py:69:188"
+```
+
+> **Note**:  
+> If instantiating the OSL hardware and sensors is unfamiliar, check out the [the tutorials pages](/opensourceleg/tutorials/actuators/getting_started/).
+
+
+Next, we initialize the standard actuators, sensors, logger, and loop classes for the OSL: 
+```python
+--8<-- "examples/fsm_walking_python_controller.py:190:240"
+```
+
+We then call the FSM definition function we made above and initialize/home the hardware: 
+```python
+--8<-- "examples/fsm_walking_python_controller.py:242:256"
+```
+
+### Main Loop
+
+Now that everything is set up, we enter the main loop. During each iteration of the main loop, we call the update method for both the OSL and the FSM. We then write the current impedance parameters for each joint to the hardware. A print statement and logging are also included for debugging:
+
+```python
+--8<-- "examples/fsm_walking_python_controller.py:258:281"
+```
+
+### Full Code for The Python Implementation
+```python
+--8<-- "examples/fsm_walking_python_controller.py"
+```
+
 
 ---
 
@@ -77,7 +125,7 @@ After configuration, home the OSL joints, calibrate the loadcell, set the joints
 
 ---
 
-### Full Code for This Example
+### Full Code for The Compiled Controller Implementation
 
 ```python
 --8<-- "examples/fsm_walking_compiled_controller.py"
