@@ -371,7 +371,6 @@ class ActuatorBase(ABC):
         motor_constants: MOTOR_CONSTANTS,
         frequency: int = 1000,
         offline: bool = False,
-        *args: Any,
         **kwargs: Any,
     ) -> None:
         """
@@ -383,7 +382,6 @@ class ActuatorBase(ABC):
             motor_constants (MOTOR_CONSTANTS): Motor constant configuration parameters.
             frequency (int, optional): Control frequency in Hz. Defaults to 1000.
             offline (bool, optional): Flag indicating if the actuator operates in offline mode. Defaults to False.
-            *args (Any): Additional positional arguments.
             **kwargs (Any): Additional keyword arguments.
 
         Examples:

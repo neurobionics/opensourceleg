@@ -87,10 +87,12 @@ class DephyLoadcellAmplifier(LoadcellBase):
     def __init__(
         self,
         calibration_matrix: npt.NDArray[np.double],
+        tag: str = "DephyLoadcellAmplifier",
         amp_gain: float = 125.0,
         exc: float = 5.0,
         bus: int = 1,
         i2c_address: int = 0x66,
+        offline: bool = False,
     ) -> None:
         """
         Initialize the Dephy loadcell amplifier.
@@ -109,6 +111,8 @@ class DephyLoadcellAmplifier(LoadcellBase):
             TypeError: If calibration_matrix is not a 6x6 array.
             ValueError: If amp_gain or exc are not greater than 0.
         """
+        self.__init__(tag=tag, offline=offline)
+
         # Validate input parameters.
         if calibration_matrix.shape != (6, 6):
             LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")

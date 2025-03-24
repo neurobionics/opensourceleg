@@ -54,6 +54,15 @@ class SensorBase(ABC):
     updating, and streaming status.
     """
 
+    def __init__(
+        self,
+        tag: str,
+        offline: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        self._tag = tag
+        self._is_offline: bool = offline
+
     def __repr__(self) -> str:
         """
         Return a string representation of the sensor.
@@ -61,7 +70,7 @@ class SensorBase(ABC):
         Returns:
             str: A string identifying the sensor class.
         """
-        return "SensorBase"
+        return f"{self.tag}[{self.__class__.__name__}]"
 
     @property
     @abstractmethod
@@ -137,6 +146,30 @@ class SensorBase(ABC):
         """
         pass
 
+    @property
+    def tag(self) -> str:
+        """
+        Get the sensor tag.
+
+        Returns:
+            str: The unique identifier for the sensor.
+
+        Examples:
+            >>> sensor.tag
+            "sensor1"
+        """
+        return self._tag
+
+    @property
+    def is_offline(self) -> bool:
+        """
+        Get the offline status of the sensor.
+
+        Returns:
+            bool: True if the sensor is offline, False otherwise.
+        """
+        return self._is_offline
+
 
 class ADCBase(SensorBase, ABC):
     """
@@ -184,11 +217,16 @@ class EncoderBase(SensorBase, ABC):
     Encoders are used to measure position and velocity.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        tag: str,
+        offline: bool = False,
+        **kwargs: Any,
+    ) -> None:
         """
         Initialize the encoder sensor.
         """
-        super().__init__()
+        super().__init__(tag=tag, offline=offline, **kwargs)
 
     def __repr__(self) -> str:
         """
