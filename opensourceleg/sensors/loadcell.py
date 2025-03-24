@@ -111,7 +111,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
             TypeError: If calibration_matrix is not a 6x6 array.
             ValueError: If amp_gain or exc are not greater than 0.
         """
-        self.__init__(tag=tag, offline=offline)
+        super().__init__(tag=tag, offline=offline)
 
         # Validate input parameters.
         if calibration_matrix.shape != (6, 6):

@@ -97,7 +97,7 @@ class LordMicrostrainIMU(IMUBase):
         return_packets: bool,
         offline: bool,
     ) -> None:
-        self.__init__(tag=tag, offline=offline)
+        super().__init__(tag=tag, offline=offline)
         self._port = port
         self._baud_rate = baud_rate
         self._frequency = frequency

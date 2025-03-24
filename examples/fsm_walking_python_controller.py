@@ -21,7 +21,7 @@ LOADCELL_CALIBRATION_MATRIX = np.array([
 ])
 
 # ------------- TUNABLE FSM PARAMETERS ---------------- #
-BODY_WEIGHT = 60 * 9.8
+BODY_WEIGHT = 30 * 9.8
 
 # STATE 1: EARLY STANCE
 KNEE_K_ESTANCE = 99.372
@@ -30,7 +30,7 @@ KNEE_THETA_ESTANCE = 5
 ANKLE_K_ESTANCE = 19.874
 ANKLE_B_ESTANCE = 0
 ANKLE_THETA_ESTANCE = -2
-LOAD_LSTANCE: float = -1.0 * BODY_WEIGHT * 0.25
+LOAD_LSTANCE: float = 1.0 * BODY_WEIGHT * 0.25
 ANKLE_THETA_ESTANCE_TO_LSTANCE = np.deg2rad(6.0)
 
 # STATE 2: LATE STANCE
@@ -40,7 +40,7 @@ KNEE_THETA_LSTANCE = 8
 ANKLE_K_LSTANCE = 79.498
 ANKLE_B_LSTANCE = 0.063
 ANKLE_THETA_LSTANCE = -20
-LOAD_ESWING: float = -1.0 * BODY_WEIGHT * 0.15
+LOAD_ESWING: float = 1.0 * BODY_WEIGHT * 0.15
 
 # STATE 3: EARLY SWING
 KNEE_K_ESWING = 39.749
@@ -59,7 +59,7 @@ KNEE_THETA_LSWING = 5
 ANKLE_K_LSWING = 7.949
 ANKLE_B_LSWING = 0.0
 ANKLE_THETA_LSWING = 15
-LOAD_ESTANCE: float = -1.0 * BODY_WEIGHT * 0.4
+LOAD_ESTANCE: float = 1.0 * BODY_WEIGHT * 0.4
 KNEE_THETA_LSWING_TO_ESTANCE = np.deg2rad(30)
 
 # ---------------------------------------------------- #
@@ -113,7 +113,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         """
         if osl.loadcell is None:
             raise ValueError("Loadcell is not connected")
-        return bool(osl.loadcell.fz < LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
+        return bool(osl.loadcell.fz > LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
 
     def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
         """
@@ -122,7 +122,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         """
         if osl.loadcell is None:
             raise ValueError("Loadcell is not connected")
-        return bool(osl.loadcell.fz > LOAD_ESWING)
+        return bool(osl.loadcell.fz < LOAD_ESWING)
 
     def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
         """
@@ -147,7 +147,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
             raise ValueError("Knee is not connected")
         if osl.loadcell is None:
             raise ValueError("Loadcell is not connected")
-        return bool(osl.loadcell.fz < LOAD_ESTANCE or osl.knee.output_position < KNEE_THETA_LSWING_TO_ESTANCE)
+        return bool(osl.loadcell.fz > LOAD_ESTANCE or osl.knee.output_position < KNEE_THETA_LSWING_TO_ESTANCE)
 
     fsm = StateMachine(
         states=[
@@ -211,18 +211,18 @@ if __name__ == "__main__":
             calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
         ),
         "joint_encoder_knee": AS5048B(
+            tag="joint_encoder_knee",
             bus=1,
             A1_adr_pin=True,
             A2_adr_pin=False,
-            name="knee_encoder",
             zero_position=0,
             enable_diagnostics=False,
         ),
         "joint_encoder_ankle": AS5048B(
+            tag="joint_encoder_ankle",
             bus=1,
             A1_adr_pin=False,
             A2_adr_pin=True,
-            name="ankle_encoder",
             zero_position=0,
             enable_diagnostics=False,
         ),
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         osl.update()
         osl.home()
 
-        input("Press Enter to continue...")
+        input("Press Enter to start walking...")
 
         # knee
         osl.knee.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
@@ -277,6 +277,6 @@ if __name__ == "__main__":
                 f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "
                 f"Knee theta: {np.rad2deg(osl.knee.output_position):.3f} deg; "
                 f"Ankle theta: {np.rad2deg(osl.ankle.output_position):.3f} deg; "
-                f"Knee winding temperature: {osl.knee.winding_temperature:.3f} deg; "
-                f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} deg; "
+                f"Knee winding temperature: {osl.knee.winding_temperature:.3f} c; "
+                f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} c; "
             )

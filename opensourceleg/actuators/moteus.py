@@ -461,11 +461,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @property
     def motor_position(self) -> float:
         if self._data is not None:
-            return (
-                float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi)
-                - self.motor_zero_position
-                - self.motor_position_offset
-            )
+            return float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi) - self.motor_zero_position
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."

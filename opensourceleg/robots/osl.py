@@ -58,7 +58,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
             velocity_threshold: The velocity threshold to apply to the actuators during homing. Default is 0.001.
         """
         if output_position_offset is None:
-            output_position_offset = {"knee": 0.0, "ankle": 30.0}
+            output_position_offset = {"knee": 0.0, "ankle": np.deg2rad(30.0)}
         if homing_direction is None:
             homing_direction = {"knee": -1, "ankle": -1}
         for actuator in self.actuators.values():

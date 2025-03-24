@@ -31,6 +31,7 @@ if __name__ == "__main__":
     clock = SoftRealtimeLoop(dt=DT)
     loadcell = DephyLoadcellAmplifier(
         calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
+        tag="loadcell",
         amp_gain=125,
         exc=5,
         bus=1,

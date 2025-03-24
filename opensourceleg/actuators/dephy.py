@@ -451,15 +451,11 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         # TODO: New Dephy API splits impedance equilibrium position and position control into separate methods
         if self.mode == CONTROL_MODES.POSITION:
             self.command_motor_position(
-                value=int(
-                    (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-                ),
+                value=int((value + self.motor_zero_position) / self.MOTOR_CONSTANTS.RAD_PER_COUNT),
             )
         elif self.mode == CONTROL_MODES.IMPEDANCE:
             self.command_motor_impedance(
-                value=int(
-                    (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-                ),
+                value=int((value + self.motor_zero_position) / self.MOTOR_CONSTANTS.RAD_PER_COUNT),
             )
         else:
             raise ControlModeException(tag=self._tag, attribute="set_motor_position", mode=self._mode.name)
@@ -1287,9 +1283,7 @@ class DephyLegacyActuator(DephyActuator):
         """
         self.send_motor_command(
             ctrl_mode=c_int(self.mode.value),
-            value=int(
-                (value + self.motor_zero_position + self.motor_position_offset) / self.MOTOR_CONSTANTS.RAD_PER_COUNT
-            ),
+            value=int((value + self.motor_zero_position) / self.MOTOR_CONSTANTS.RAD_PER_COUNT),
         )
 
     @property

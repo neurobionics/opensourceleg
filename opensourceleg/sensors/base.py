@@ -178,11 +178,11 @@ class ADCBase(SensorBase, ABC):
     ADC sensors are used to convert analog signals into digital data.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
         Initialize the ADC sensor.
         """
-        super().__init__()
+        super().__init__(tag=tag, offline=offline, **kwargs)
 
     def __repr__(self) -> str:
         """
@@ -267,11 +267,11 @@ class LoadcellBase(SensorBase, ABC):
     Load cells are used to measure forces and moments.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
         Initialize the load cell sensor.
         """
-        pass
+        super().__init__(tag=tag, offline=offline, **kwargs)
 
     def __repr__(self) -> str:
         """
@@ -385,11 +385,11 @@ class IMUBase(SensorBase, ABC):
     IMUs typically provide acceleration and gyroscopic data.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
         Initialize the IMU sensor.
         """
-        pass
+        super().__init__(tag=tag, offline=offline, **kwargs)
 
     def __repr__(self) -> str:
         """

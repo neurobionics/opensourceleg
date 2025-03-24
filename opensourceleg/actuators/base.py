@@ -788,20 +788,6 @@ class ActuatorBase(ABC):
         """
         self._motor_zero_position = value
 
-    def set_motor_position_offset(self, value: float) -> None:
-        """
-        Set the motor position offset.
-
-        Args:
-            value (float): The motor position offset in radians.
-
-        Examples:
-            >>> actuator.set_motor_position_offset(0.1)
-            >>> actuator.motor_position_offset
-            0.1
-        """
-        self._motor_position_offset = value
-
     @property
     @abstractmethod
     def motor_position(self) -> float:
@@ -1101,21 +1087,6 @@ class ActuatorBase(ABC):
             0.0
         """
         return self._motor_zero_position
-
-    @property
-    def motor_position_offset(self) -> float:
-        """
-        Get the motor position offset.
-
-        Returns:
-            float: The motor position offset in radians.
-
-        Examples:
-            >>> actuator.set_motor_position_offset(0.1)
-            >>> actuator.motor_position_offset
-            0.1
-        """
-        return self._motor_position_offset
 
     @property
     def is_open(self) -> bool:

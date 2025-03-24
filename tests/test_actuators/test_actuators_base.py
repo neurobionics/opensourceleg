@@ -504,9 +504,6 @@ def test_set_and_get_positions(mock_actuator: MockActuator):
     mock_actuator.set_motor_zero_position(1.0)
     assert mock_actuator.motor_zero_position == 1.0
 
-    mock_actuator.set_motor_position_offset(2.0)
-    assert mock_actuator.motor_position_offset == 2.0
-
 
 def test_output_position_and_velocity(mock_actuator: MockActuator):
     with patch.object(MockActuator, "motor_position", new_callable=Mock(return_value=10.0)):
