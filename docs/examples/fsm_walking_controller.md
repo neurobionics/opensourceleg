@@ -43,12 +43,12 @@ Next, we create a function that returns an instance of the `StateMachine` class.
 
 Next, we initialize the standard actuators, sensors, logger, and loop classes for the OSL: 
 ```python
---8<-- "examples/fsm_walking_python_controller.py:190:240"
+--8<-- "examples/fsm_walking_python_controller.py:190:242"
 ```
 
 We then call the FSM definition function we made above and initialize/home the hardware: 
 ```python
---8<-- "examples/fsm_walking_python_controller.py:242:256"
+--8<-- "examples/fsm_walking_python_controller.py:244:258"
 ```
 
 ### Main Loop
@@ -56,7 +56,7 @@ We then call the FSM definition function we made above and initialize/home the h
 Now that everything is set up, we enter the main loop. During each iteration of the main loop, we call the update method for both the OSL and the FSM. We then write the current impedance parameters for each joint to the hardware. A print statement and logging are also included for debugging:
 
 ```python
---8<-- "examples/fsm_walking_python_controller.py:258:281"
+--8<-- "examples/fsm_walking_python_controller.py:260:283"
 ```
 
 ### Full Code for The Python Implementation
