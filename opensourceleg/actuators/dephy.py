@@ -142,7 +142,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         debug_level: int = 4,
         dephy_log: bool = False,
         offline: bool = False,
-        stop_motor_on_disconnect: bool = False,
+        stop_motor_on_disconnect: bool = True,
     ) -> None:
         ActuatorBase.__init__(
             self,
@@ -180,7 +180,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self._mode = CONTROL_MODES.IDLE
 
     def __repr__(self) -> str:
-        return f"{self.tag}[DephyLegacyActuator]"
+        return f"{self.tag}[DephyActuator]"
 
     @property
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
@@ -1402,7 +1402,7 @@ class DephyLegacyActuator(DephyActuator):
         self._mode = CONTROL_MODES.IDLE
 
     def __repr__(self) -> str:
-        return f"{self.tag}[DephyActuator]"
+        return f"{self.tag}[DephyLegacyActuator]"
 
     @property
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
