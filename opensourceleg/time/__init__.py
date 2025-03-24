@@ -1,3 +1,4 @@
+from opensourceleg.time.profile import Profiler
 from opensourceleg.time.time import SoftRealtimeLoop
 
 """
@@ -13,4 +14,4 @@ Key Classes:
 	It also handles signal interruptions gracefully.
 """
 
-__all__ = ["SoftRealtimeLoop"]
+__all__ = ["SoftRealtimeLoop", "Profiler"]
