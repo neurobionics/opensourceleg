@@ -1,6 +1,6 @@
 # opensourceleg
 
-[![Build status](https://github.com/neurobionics/opensourceleg/workflows/build/badge.svg)](https://github.com/neurobionics/opensourceleg/actions?query=workflow%3Abuild)
+[![Build status](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml/badge.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 [![Documentation Status](https://github.com/neurobionics/opensourceleg/actions/workflows/pages/pages-build-deployment/badge.svg)](https://neurobionics.github.io/opensourceleg/)
 [![Python Version](https://img.shields.io/pypi/pyversions/opensourceleg.svg)](https://pypi.org/project/opensourceleg/)
 [![Dependencies Status](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg)](https://github.com/neurobionics/opensourceleg/pulls?utf8=%E2%9C%93&q=is%3Apr%20author%3Aapp%2Fdependabot)
@@ -9,13 +9,13 @@
 [![Security: bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/neurobionics/opensourceleg/blob/main/.pre-commit-config.yaml)
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
-![Coverage Report](https://github.com/neurobionics/opensourceleg/blob/main/assets/images/coverage.svg)
+[![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 
-An open-source Software Development Kit (SDK) for robotics development, testing, and deployment. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile enough for any robotic platform utilizing similar components.
+An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
 
 > We are currently testing the new version of the library (main branch), and the PyPI release will be updated soon. If you are looking for the source behind the existing PyPI release, please refer to the [legacy branch](https://github.com/neurobionics/opensourceleg/tree/legacy).
 
-<img src="https://github.com/neurobionics/opensourceleg/blob/66ad4289ef9ba8701fac9337778f87b657286484/assets/images/banner.gif?raw=true" width="800" title="Open-Source Leg">
+<img src="https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/banner.gif" width="800" title="Open-Source Leg">
 
 ## 🎯 Key Features
 
@@ -35,21 +35,22 @@ This library solves common challenges in developing, testing, and deploying robo
 - Are working on a robotic project and need a flexible and powerful software development kit
 - Are looking for benchmarks to pick the best hardware for their robotic project
 
-## Available Hardware Interfaces
+## ⚙️ Available Hardware Interfaces
 
 The library currently supports the following hardware components:
-
-| Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
-| ------------- | ---------- | -------------- | ---------- | ------------- |
-| Dephy Actpack | ✅         | ✅             | ⚠️         | ✅            |
-| Moteus        | ✅         | ⚠️             | ⚠️         | ✅            |
-| TMotor        | ✅         | ⚠️             | ❌         | ⚠️            |
 
 | Sensors              | Unit Tests | Hardware Tests | Benchmarks | Documentation |
 | -------------------- | ---------- | -------------- | ---------- | ------------- |
 | AS5048B Encoder      | ✅         | ✅             | ❌         | ✅            |
 | Lord Microstrain IMU | ✅         | ✅             | ❌         | ✅            |
 | SRI Loadcell         | ✅         | ✅             | ❌         | ✅            |
+
+| Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
+| ------------- | ---------- | -------------- | ---------- | ------------- |
+| Dephy Actpack | ⚠️         | ✅             | ⚠️         | ✅            |
+| Moteus        | ⚠️          | ⚠️             | ⚠️         | ✅            |
+| TMotor        | ❌          | ⚠️             | ❌         | ❌            |
+
 
 > Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available
 
