@@ -46,11 +46,11 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
 
         Args:
-            bus (str): Path to the i2c bus ex. '/dev/i2c-1'
-            A1_adr_pin (int): State of the adress pin A1 on the AS5048A module
-            A2_adr_pin (int): State of the adress pin A1 on the AS5048A module
-            name (str): Tag name for the encoder
-            zero_position (int): The zero position of the encoder
+            bus: Path to the i2c bus ex. '/dev/i2c-1'
+            A1_adr_pin: State of the adress pin A1 on the AS5048A module
+            A2_adr_pin: State of the adress pin A1 on the AS5048A module
+            name: Tag name for the encoder
+            zero_position: The zero position of the encoder
 
         Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se),
                 Senthur Ayyappan (senthura@umich.edu)
@@ -109,10 +109,10 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """
         Convert a 14bit integer to bytes <msb[13:6]><lsb[5:0]>
 
-        Args
-            intToParse (int): The integer to convert to bytes
+        Args:
+            intToParse: The integer to convert to bytes
 
-        Raises
+        Raises:
             OverflowError: If intToParse >= 2^14
         """
         if intToParse >= AS5048B.ENC_RESOLUTION:
@@ -170,22 +170,33 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
     @property
     def position(self) -> float:
-        """Get the current angular position in radians"""
+        """
+        Get the current angular position in radians.
+
+        Returns:
+            The current angular position in radians.
+        """
         signed_output = from_twos_complement(self.encoder_output, 14)
         return signed_output * self._scale_factor
 
     @property
     def encoder_output(self) -> int:
-        """Get the raw encoder output as counts of full scale output.
+        """
+        Get the raw encoder output as counts of full scale output.
 
         Returns:
-            int: Encoder output in counts [0, FS]
+            Encoder output in counts [0, FS].
         """
         return AS5048B._get_14bit(self._encdata_new[4:6])
 
     @property
     def velocity(self) -> float:
-        """Calculate angular velocity in radians per second"""
+        """
+        Calculate angular velocity in radians per second.
+
+        Returns:
+            The angular velocity in radians per second.
+        """
         try:
             encAngleDataOld = AS5048B._get_14bit(self._encdata_old[4:6])
             encAngleDataNew = AS5048B._get_14bit(self._encdata_new[4:6])
@@ -202,7 +213,12 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
     @property
     def abs_ang(self) -> float:
-        """Get absolute angular position accounting for rotations"""
+        """
+        Get the absolute angle in radians.
+
+        Returns:
+            The absolute angle in radians.
+        """
         try:
             encAngleDataOld = AS5048B._get_14bit(self._encdata_old[4:6])
             encAngleDataNew = AS5048B._get_14bit(self._encdata_new[4:6])
@@ -223,24 +239,25 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
     @property
     def zero_position(self) -> int:
-        """Reads the content of the Zero position registers of the Encoder
+        """
+        Get the zero position of the encoder.
 
         Returns:
-            int: The 14 bit value stored in the Zero offset OTP registers
+            The zero position in encoder counts.
         """
         registers = self._read_registers(AS5048B.OTP_ZERO_POSITION_HIGH, 2)
         return AS5048B._get_14bit(registers)
 
     @zero_position.setter
     def zero_position(self, value: int) -> None:
-        """Sets the zero position OTP registers (but does not burn them)
+        """
+        Set the zero position of the encoder.
 
         Args:
-            value (int): The content of the Zero offset registers
+            value: The new zero position in encoder counts.
 
         Raises:
-            OverflowError: If value >= 2^14
-            ValueError: If value is negative or too large
+            ValueError: If the value is not within the valid range.
         """
         if not (0 <= value < (AS5048B.ENC_RESOLUTION - 1)):
             raise ValueError(f"Zero position must be between 0 and {AS5048B.ENC_RESOLUTION - 2}")
@@ -253,8 +270,9 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
     def set_zero_position(self) -> None:
         """
-        Calculates the midpoint between the current endpoints and sets it as
-        the zero position.
+        Set the current position as the zero position.
+
+        This method reads the current encoder position and sets it as the new zero position.
         """
         input("Set joint in lower position and press enter")
 
@@ -272,67 +290,60 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
     @property
     def diag_compH(self) -> bool:
         """
-        COMP high, indicated a weak magnetic field. It is
-        recommended to monitor the magnitude value.
+        Check if the magnetic field compensation for high field is triggered.
 
         Returns:
-            Status of COMP_H diagnostics flag
+            True if high field compensation is triggered, False otherwise.
         """
         return bool(self._encdata_new[1] & AS5048B.FLAG_COMP_H)
 
     @property
     def diag_compL(self) -> bool:
         """
-        COMP low, indicates a high magnetic field. It is
-        recommended to monitor in addition the magnitude
-        value.
+        Check if the magnetic field compensation for low field is triggered.
 
         Returns:
-            Status of COMP_L diagnostics flag
+            True if low field compensation is triggered, False otherwise.
         """
         return bool(self._encdata_new[1] & AS5048B.FLAG_COMP_L)
 
     @property
     def diag_COF(self) -> bool:
         """
-        COF (CORDIC Overflow), logic high indicates an out of
-        range error in the CORDIC part. When this bit is set, the
-        angle and magnitude data is invalid. The absolute output
-        maintains the last valid angular value.
+        Check if a CORDIC overflow has occurred.
+
         Returns:
-            Status of COF diagnostics flag
+            True if a CORDIC overflow has occurred, False otherwise.
         """
         return bool(self._encdata_new[1] & AS5048B.FLAG_COF)
 
     @property
     def diag_OCF(self) -> bool:
         """
-        OCF (Offset Compensation Finished), logic high indicates
-        the finished Offset Compensation Algorithm. After power
-        up the flag remains always to logic high.
+        Check if the data is valid (no overflow).
 
         Returns:
-            Status of OCF diagnostics flag
+            True if the data is valid, False otherwise.
         """
         return bool(self._encdata_new[1] & AS5048B.FLAG_OCF)
 
     @property
     def is_streaming(self) -> bool:
         """
-        Check if the encoder is currently streaming.
+        Check if the encoder is currently streaming data.
 
         Returns:
-            bool: True if the encoder is streaming, False otherwise.
+            True if the encoder is streaming, False otherwise.
         """
         return self._is_streaming
 
     @property
     def data(self) -> bytes:
         """
-        Get the raw data from the encoder
+        Get the raw encoder data.
 
         Returns:
-            bytes: The latest raw data from the encoder.
+            The raw encoder data as bytes.
         """
         if self._data is None:
             return b""  # Return empty bytes if no data available

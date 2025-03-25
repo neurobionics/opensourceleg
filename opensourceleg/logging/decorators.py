@@ -26,10 +26,10 @@ def deprecated(func: Callable) -> Callable:
     is deprecated, and then the original function is executed with the provided arguments.
 
     Args:
-        func (Callable): The function to be marked as deprecated.
+        func: The function to be marked as deprecated.
 
     Returns:
-        Callable: A wrapped version of the original function that logs a deprecation warning.
+        A wrapped version of the original function that logs a deprecation warning.
     """
 
     @wraps(func)
@@ -48,10 +48,10 @@ def deprecated_with_suggestion(alternative_func: Callable) -> Callable:
     and suggesting that the alternative function should be used instead. The deprecated function is then executed.
 
     Args:
-        alternative_func (Callable): The alternative function that should be used instead.
+        alternative_func: The alternative function that should be used instead.
 
     Returns:
-        Callable: A decorator which, when applied to a function, marks it as deprecated with a suggestion.
+        A decorator which, when applied to a function, marks it as deprecated with a suggestion.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -76,10 +76,10 @@ def deprecated_with_routing(alternative_func: Callable) -> Callable:
     with the provided arguments.
 
     Args:
-        alternative_func (Callable): The function that will be called instead of the deprecated function.
+        alternative_func: The function that will be called instead of the deprecated function.
 
     Returns:
-        Callable: A decorator which, when applied to a function, replaces its behavior with that of the alternative.
+        A decorator which, when applied to a function, replaces its behavior with that of the alternative.
     """
 
     def decorator(func: Callable) -> Callable:

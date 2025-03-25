@@ -72,7 +72,7 @@ class MOTOR_CONSTANTS:
         Calculate the radians per count.
 
         Returns:
-            float: Radians per count.
+            Radians per count.
 
         Examples:
             >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
@@ -87,7 +87,7 @@ class MOTOR_CONSTANTS:
         Convert NM per amp to NM per milliamp.
 
         Returns:
-            float: NM per milliamp.
+            NM per milliamp.
 
         Examples:
             >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
@@ -141,10 +141,10 @@ class ControlModeConfig:
     Configuration for a control mode.
 
     Attributes:
-        entry_callback (Callable[[Any], None]): Callback to execute when entering this mode.
-        exit_callback (Callable[[Any], None]): Callback to execute when exiting this mode.
-        has_gains (bool): Indicates if the control mode utilizes control gains.
-        max_gains (Union[ControlGains, None]): The maximum allowable control gains (if applicable).
+        entry_callback: Callback to execute when entering this mode.
+        exit_callback: Callback to execute when exiting this mode.
+        has_gains: Indicates if the control mode utilizes control gains.
+        max_gains: The maximum allowable control gains (if applicable).
 
     Examples:
         >>> def enter(actuator):
@@ -172,13 +172,13 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
     Named tuple containing control mode configurations.
 
     Attributes:
-        IDLE (Optional[ControlModeConfig]): Configuration for IDLE mode.
-        POSITION (Optional[ControlModeConfig]): Configuration for POSITION mode.
-        CURRENT (Optional[ControlModeConfig]): Configuration for CURRENT mode.
-        VOLTAGE (Optional[ControlModeConfig]): Configuration for VOLTAGE mode.
-        IMPEDANCE (Optional[ControlModeConfig]): Configuration for IMPEDANCE mode.
-        VELOCITY (Optional[ControlModeConfig]): Configuration for VELOCITY mode.
-        TORQUE (Optional[ControlModeConfig]): Configuration for TORQUE mode.
+        IDLE: Configuration for IDLE mode.
+        POSITION: Configuration for POSITION mode.
+        CURRENT: Configuration for CURRENT mode.
+        VOLTAGE: Configuration for VOLTAGE mode.
+        IMPEDANCE: Configuration for IMPEDANCE mode.
+        VELOCITY: Configuration for VELOCITY mode.
+        TORQUE: Configuration for TORQUE mode.
 
     Examples:
         >>> idle_config = ControlModeConfig(
@@ -225,7 +225,7 @@ class MethodWithRequiredModes(Protocol):
     Protocol for methods that define required control modes.
 
     Attributes:
-        _required_modes (set[CONTROL_MODES]): A set of control modes in which the method is permitted.
+        _required_modes: A set of control modes in which the method is permitted.
 
     Examples:
         >>> class Dummy:
@@ -241,23 +241,20 @@ def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
     """
     Decorator to specify required control modes for a method.
 
-    The decorator attaches a set of required modes to the function,
-    ensuring that the function is only active in the specified control modes.
-
     Args:
-        *modes (CONTROL_MODES): One or more control modes required for the method.
-
-    Raises:
-        TypeError: If any argument is not an instance of CONTROL_MODES.
+        *modes: One or more control modes required for the method.
 
     Returns:
-        Callable[[T], T]: The decorated function with an attached `_required_modes` attribute.
+        The decorated method.
+
+    Raises:
+        ControlModeException: If the method is called in an invalid control mode.
 
     Examples:
-        >>> @requires(CONTROL_MODES.POSITION, CONTROL_MODES.TORQUE)
-        ... def some_method(self, value):
-        ...     return value
-        >>> some_method._required_modes  # May output: {<CONTROL_MODES.POSITION: 0>, <CONTROL_MODES.TORQUE: 5>}
+        >>> class MyActuator(ActuatorBase):
+        ...     @requires(CONTROL_MODES.POSITION)
+        ...     def some_method(self, value):
+        ...         print(f"Value: {value}")
     """
 
     def decorator(func: T) -> T:
@@ -354,14 +351,10 @@ class ActuatorBase(ABC):
     _METHOD_REQUIRED_MODES: ClassVar[dict[str, set[CONTROL_MODES]]] = {
         "set_motor_voltage": {CONTROL_MODES.VOLTAGE},
         "set_motor_current": {CONTROL_MODES.CURRENT},
-        "set_motor_position": {CONTROL_MODES.POSITION, CONTROL_MODES.IMPEDANCE},
-        "set_output_position": {CONTROL_MODES.POSITION, CONTROL_MODES.IMPEDANCE},
-        "set_motor_impedance": {CONTROL_MODES.IMPEDANCE},
-        "set_output_impedance": {CONTROL_MODES.IMPEDANCE},
-        "set_motor_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
-        "set_joint_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
-        "set_output_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
-        "set_current_gains": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
+        "set_motor_position": {CONTROL_MODES.POSITION},
+        "set_motor_torque": {CONTROL_MODES.TORQUE},
+        "set_joint_torque": {CONTROL_MODES.TORQUE},
+        "set_current_gains": {CONTROL_MODES.CURRENT},
         "set_position_gains": {CONTROL_MODES.POSITION},
         "set_impedance_gains": {CONTROL_MODES.IMPEDANCE},
     }
@@ -377,157 +370,100 @@ class ActuatorBase(ABC):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize an actuator.
+        Initialize the actuator.
 
         Args:
-            tag (str): A unique identifier for the actuator.
-            gear_ratio (float): The gear ratio of the actuator.
-            motor_constants (MOTOR_CONSTANTS): Motor constant configuration parameters.
-            frequency (int, optional): Control frequency in Hz. Defaults to 1000.
-            offline (bool, optional): Flag indicating if the actuator operates in offline mode. Defaults to False.
-            *args (Any): Additional positional arguments.
-            **kwargs (Any): Additional keyword arguments.
-
-        Examples:
-            >>> actuator = DummyActuator(
-            ...     tag="act1",
-            ...     gear_ratio=100,
-            ...     motor_constants=MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
-            ... )
+            tag: A unique identifier for the actuator.
+            gear_ratio: The gear ratio of the actuator.
+            motor_constants: The motor constants for the actuator.
+            frequency: The control frequency in Hz. Defaults to 1000.
+            offline: Whether the actuator is in offline mode. Defaults to False.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
         """
-        self._MOTOR_CONSTANTS: MOTOR_CONSTANTS = motor_constants
-        self._gear_ratio: float = gear_ratio
-        self._tag: str = tag
-        self._frequency: int = frequency
-        self._data: Any = None
-        self._is_offline: bool = offline
-        self._is_homed: bool = False
-
-        self._mode: CONTROL_MODES = CONTROL_MODES.IDLE
-
-        self._motor_zero_position: float = 0.0
-        self._motor_position_offset: float = 0.0
-
-        self._joint_zero_position: float = 0.0
-        self._joint_position_offset: float = 0.0
-        self._joint_direction: int = 1
-
-        self._is_open: bool = False
-        self._is_streaming: bool = False
-
-        self._original_methods: dict[str, MethodWithRequiredModes] = {}
+        self._tag = tag
+        self._gear_ratio = gear_ratio
+        self._motor_constants = motor_constants
+        self._frequency = frequency
+        self._offline = offline
+        self._mode = CONTROL_MODES.IDLE
+        self._is_homed = False
+        self._is_open = False
+        self._is_streaming = False
+        self._motor_zero_position = 0.0
+        self._motor_position_offset = 0.0
+        self._joint_zero_position = 0.0
+        self._joint_position_offset = 0.0
+        self._joint_direction = 1
+        self._original_methods: dict[str, Callable] = {}
+        self._mutated_methods: dict[str, Callable] = {}
 
         self._set_original_methods()
         self._set_mutated_methods()
 
     def __enter__(self) -> "ActuatorBase":
         """
-        Enter the runtime context related to this actuator.
-
-        Starts the actuator and returns the instance.
+        Context manager entry.
 
         Returns:
-            ActuatorBase: The actuator instance.
-
-        Examples:
-            >>> with actuator as a:
-            ...     print("Inside context")
-            Started
-            Inside context
-            Stopped
+            The actuator instance.
         """
         self.start()
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, exc_traceback: Any) -> None:
         """
-        Exit the runtime context and stop the actuator.
+        Context manager exit.
 
         Args:
-            exc_type (Any): Exception type, if any.
-            exc_value (Any): Exception value, if any.
-            exc_traceback (Any): Exception traceback, if any.
-
-        Examples:
-            >>> try:
-            ...     with actuator:
-            ...         raise ValueError("Test error")
-            ... except ValueError:
-            ...     pass  # actuator.stop() was automatically called
+            exc_type: The type of the exception, if any.
+            exc_value: The value of the exception, if any.
+            exc_traceback: The traceback of the exception, if any.
         """
         self.stop()
 
     def _restricted_method(self, method_name: str, *args: Any, **kwargs: Any) -> None:
         """
-        Fallback method for restricted operations.
-
-        Logs an error indicating that the requested method is not available
-        in the current control mode.
+        Check if a method can be called in the current control mode.
 
         Args:
-            method_name (str): Name of the restricted method.
-            *args (Any): Positional arguments passed to the method.
-            **kwargs (Any): Keyword arguments passed to the method.
+            method_name: The name of the method to check.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
-        Examples:
-            >>> actuator._restricted_method("set_motor_voltage")
-            # (Logs an error message and returns None)
+        Raises:
+            ControlModeException: If the method cannot be called in the current mode.
         """
-        raise ControlModeException(tag=self._tag, attribute=method_name, mode=self._mode.name)
+        if method_name in self._METHOD_REQUIRED_MODES:
+            required_modes = self._METHOD_REQUIRED_MODES[method_name]
+            if self._mode not in required_modes:
+                raise ControlModeException(
+                    f"Method {method_name} requires control mode(s) {required_modes}, but current mode is {self._mode}"
+                )
+        self._mutated_methods[method_name](*args, **kwargs)
 
     def _set_original_methods(self) -> None:
-        """
-        Store the original methods that require specific control modes.
-
-        Uses a class-level mapping of methods to their required control modes
-        to ensure proper inheritance of restrictions in derived classes.
-
-        Examples:
-            >>> print(actuator._original_methods)  # Dictionary of method names to methods
-        """
-        # Get the method-to-required-modes mapping for this class
-        method_modes_map = getattr(self.__class__, "_METHOD_REQUIRED_MODES", {})
-
-        for method_name, required_modes in method_modes_map.items():
-            try:
-                method = getattr(self, method_name)
-                if callable(method):
-                    self._original_methods[method_name] = method
-                    LOGGER.debug(
-                        msg=f"[{self.tag}] {method_name}() is available in modes: "
-                        f"{[mode.name for mode in required_modes]}"
-                    )
-            except AttributeError:
-                LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.__class__.__name__}.")
+        """Store original method implementations."""
+        for name, method in self.__class__.__dict__.items():
+            if callable(method):
+                self._original_methods[name] = method
 
     def _set_mutated_methods(self) -> None:
-        """
-        Update actuator methods based on the current control mode.
-
-        For each method stored in `_original_methods`, if the current control mode
-        is permitted, the original method is used; otherwise, a restricted version
-        that logs an error is assigned.
-
-        Examples:
-            >>> actuator._set_mutated_methods()
-        """
-        for method_name, method in self._original_methods.items():
-            if self._mode in self._METHOD_REQUIRED_MODES[method_name]:
-                setattr(self, method_name, method)
+        """Create mutated method implementations with mode restrictions."""
+        for name, method in self._original_methods.items():
+            if name in self._METHOD_REQUIRED_MODES:
+                self._mutated_methods[name] = partial(self._restricted_method, name)
             else:
-                setattr(self, method_name, partial(self._restricted_method, method_name))
+                self._mutated_methods[name] = method
 
     @property
     @abstractmethod
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
         """
-        Abstract property to obtain control mode configurations.
+        Get the control mode configurations.
 
         Returns:
-            CONTROL_MODE_CONFIGS: The configuration settings for each control mode.
-
-        Examples:
-            >>> config = actuator._CONTROL_MODE_CONFIGS  # Implemented in subclass
+            The control mode configurations.
         """
         pass
 
@@ -535,12 +471,6 @@ class ActuatorBase(ABC):
     def start(self) -> None:
         """
         Start the actuator.
-
-        Must be implemented by subclasses to initialize and activate the actuator.
-
-        Examples:
-            >>> actuator.start()
-            Started
         """
         pass
 
@@ -548,77 +478,53 @@ class ActuatorBase(ABC):
     def stop(self) -> None:
         """
         Stop the actuator.
-
-        Must be implemented by subclasses to safely deactivate the actuator.
-
-        Examples:
-            >>> actuator.stop()
-            Stopped
         """
         pass
 
     @abstractmethod
     def update(self) -> None:
         """
-        Update the actuator's state.
-
-        Must be implemented by subclasses to refresh or recalculate state values.
-
-        Examples:
-            >>> actuator.update()
-            Updated
+        Update the actuator state.
         """
         pass
 
     def _get_control_mode_config(self, mode: CONTROL_MODES) -> Optional[ControlModeConfig]:
         """
-        Retrieve the control mode configuration for a specified mode.
+        Get the configuration for a control mode.
 
         Args:
-            mode (CONTROL_MODES): The control mode for which to retrieve the configuration.
+            mode: The control mode to get the configuration for.
 
         Returns:
-            Optional[ControlModeConfig]: The configuration if it exists; otherwise, None.
-
-        Examples:
-            >>> config = actuator._get_control_mode_config(CONTROL_MODES.IDLE)
-            >>> print(config)
-            None
+            The control mode configuration, if it exists.
         """
-        return cast(
-            Optional[ControlModeConfig],
-            getattr(self._CONTROL_MODE_CONFIGS, mode.name),
-        )
+        configs = self._CONTROL_MODE_CONFIGS
+        return getattr(configs, mode.name, None)
 
     def set_control_mode(self, mode: CONTROL_MODES) -> None:
         """
-        Set the actuator's control mode.
-
-        If the mode is changing, the exit callback for the current mode and
-        the entry callback for the new mode are executed, and methods are updated
-        to reflect any restrictions imposed by the new mode.
+        Set the control mode of the actuator.
 
         Args:
-            mode (CONTROL_MODES): The new control mode to be set.
+            mode: The control mode to set.
 
-        Examples:
-            >>> actuator.set_control_mode(CONTROL_MODES.POSITION)
+        Raises:
+            ControlModeException: If the control mode is not supported.
         """
-        if self.mode == mode:
-            LOGGER.debug(msg=f"[{self.tag}] Already in {self.mode.name} control mode.")
+        if mode == self._mode:
             return
 
-        current_config = self._get_control_mode_config(self.mode)
-        if current_config:
+        # Exit current mode
+        current_config = self._get_control_mode_config(self._mode)
+        if current_config and current_config.exit_callback:
             current_config.exit_callback(self)
 
-        self._mode = mode
-
-        new_config = self._get_control_mode_config(self.mode)
-        if new_config:
+        # Enter new mode
+        new_config = self._get_control_mode_config(mode)
+        if new_config and new_config.entry_callback:
             new_config.entry_callback(self)
 
-        self._set_mutated_methods()
+        self._mode = mode
 
     @abstractmethod
     def set_motor_voltage(self, value: float) -> None:
@@ -626,12 +532,7 @@ class ActuatorBase(ABC):
         Set the motor voltage.
 
         Args:
-            value (float): The voltage value to be applied to the motor.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_motor_voltage(12.0)
+            value: The voltage to set.
         """
         pass
 
@@ -641,12 +542,7 @@ class ActuatorBase(ABC):
         Set the motor current.
 
         Args:
-            value (float): The current value to be applied to the motor.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_motor_current(1.5)
+            value: The current to set.
         """
         pass
 
@@ -656,32 +552,19 @@ class ActuatorBase(ABC):
         Set the motor position.
 
         Args:
-            value (float): The target motor position in radians.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_motor_position(0.5)
+            value: The position to set.
         """
         pass
 
     def set_output_position(self, value: float) -> None:
         """
-        Set the output position of the actuator.
-
-        Converts the desired output position (in radians) to a motor position by
-        applying the gear ratio, then delegates to `set_motor_position`.
+        Set the output position.
 
         Args:
-            value (float): The desired output position in radians.
-
-        Examples:
-            >>> # Assuming gear_ratio is 100, this will set the motor position to 100 * value.
-            >>> actuator.set_motor_position = lambda value: print(f"Motor position set to {value}")
-            >>> actuator.set_output_position(1.0)
-            Motor position set to 100.0
+            value: The position to set.
         """
-        self.set_motor_position(value=value * self.gear_ratio)
+        motor_value = value * self._gear_ratio
+        self.set_motor_position(motor_value)
 
     @abstractmethod
     def set_motor_torque(self, value: float) -> None:
@@ -689,12 +572,7 @@ class ActuatorBase(ABC):
         Set the motor torque.
 
         Args:
-            value (float): The torque value to be applied to the motor.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_motor_torque(5.0)
+            value: The torque to set.
         """
         pass
 
@@ -704,12 +582,7 @@ class ActuatorBase(ABC):
         Set the joint torque.
 
         Args:
-            value (float): The torque value to be applied to the joint.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_joint_torque(5.0)
+            value: The torque to set.
         """
         pass
 
@@ -719,15 +592,10 @@ class ActuatorBase(ABC):
         Set the current control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
-            ff (float): Feed-forward gain.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_current_gains(1.0, 0.1, 0.01, 0.0)
+            kp: The proportional gain.
+            ki: The integral gain.
+            kd: The derivative gain.
+            ff: The feedforward gain.
         """
         pass
 
@@ -737,15 +605,10 @@ class ActuatorBase(ABC):
         Set the position control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
-            ff (float): Feed-forward gain.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_position_gains(1.0, 0.1, 0.01, 0.0)
+            kp: The proportional gain.
+            ki: The integral gain.
+            kd: The derivative gain.
+            ff: The feedforward gain.
         """
         pass
 
@@ -755,17 +618,12 @@ class ActuatorBase(ABC):
         Set the impedance control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
-            k (float): Stiffness coefficient.
-            b (float): Damping coefficient.
-            ff (float): Feed-forward gain.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.set_impedance_gains(1.0, 0.1, 0.01, 0.5, 0.05, 0.0)
+            kp: The proportional gain.
+            ki: The integral gain.
+            kd: The derivative gain.
+            k: The stiffness gain.
+            b: The damping gain.
+            ff: The feedforward gain.
         """
         pass
 
@@ -773,13 +631,6 @@ class ActuatorBase(ABC):
     def home(self) -> None:
         """
         Home the actuator.
-
-        Aligns the actuator to a known reference position.
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> actuator.home()
-            Homed
         """
         pass
 
@@ -788,12 +639,7 @@ class ActuatorBase(ABC):
         Set the motor zero position.
 
         Args:
-            value (float): The motor zero position in radians.
-
-        Examples:
-            >>> actuator.set_motor_zero_position(0.0)
-            >>> actuator.motor_zero_position
-            0.0
+            value: The zero position to set.
         """
         self._motor_zero_position = value
 
@@ -802,12 +648,7 @@ class ActuatorBase(ABC):
         Set the motor position offset.
 
         Args:
-            value (float): The motor position offset in radians.
-
-        Examples:
-            >>> actuator.set_motor_position_offset(0.1)
-            >>> actuator.motor_position_offset
-            0.1
+            value: The position offset to set.
         """
         self._motor_position_offset = value
 
@@ -816,12 +657,7 @@ class ActuatorBase(ABC):
         Set the joint zero position.
 
         Args:
-            value (float): The joint zero position in radians.
-
-        Examples:
-            >>> actuator.set_joint_zero_position(0.0)
-            >>> actuator.joint_zero_position
-            0.0
+            value: The zero position to set.
         """
         self._joint_zero_position = value
 
@@ -830,12 +666,7 @@ class ActuatorBase(ABC):
         Set the joint position offset.
 
         Args:
-            value (float): The joint position offset in radians.
-
-        Examples:
-            >>> actuator.set_joint_position_offset(0.1)
-            >>> actuator.joint_position_offset
-            0.1
+            value: The position offset to set.
         """
         self._joint_position_offset = value
 
@@ -844,13 +675,10 @@ class ActuatorBase(ABC):
         Set the joint direction.
 
         Args:
-            value (int): The joint direction, expected to be either 1 or -1.
-
-        Examples:
-            >>> actuator.set_joint_direction(-1)
-            >>> actuator.joint_direction
-            -1
+            value: The direction to set.
         """
+        if value not in [-1, 1]:
+            raise ValueError("Joint direction must be either 1 or -1")
         self._joint_direction = value
 
     @property
@@ -860,14 +688,7 @@ class ActuatorBase(ABC):
         Get the motor position.
 
         Returns:
-            float: The current motor position in radians.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> pos = actuator.motor_position
-            >>> print(pos)
-            100.0
+            The motor position.
         """
         pass
 
@@ -877,15 +698,9 @@ class ActuatorBase(ABC):
         Get the output position.
 
         Returns:
-            float: The output position in radians, calculated by dividing the motor
-                   position by the gear ratio. Note that this does not account for SEA compliance.
-
-        Examples:
-            >>> # If motor_position is 100.0 and gear_ratio is 100, output_position will be 1.0
-            >>> actuator.output_position
-            1.0
+            The output position.
         """
-        return self.motor_position / self.gear_ratio
+        return self.motor_position / self._gear_ratio
 
     @property
     @abstractmethod
@@ -894,14 +709,7 @@ class ActuatorBase(ABC):
         Get the motor velocity.
 
         Returns:
-            float: The current motor velocity in radians per second.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> velocity = actuator.motor_velocity
-            >>> print(velocity)
-            10.0
+            The motor velocity.
         """
         pass
 
@@ -911,15 +719,9 @@ class ActuatorBase(ABC):
         Get the output velocity.
 
         Returns:
-            float: The output velocity in radians per second, calculated by dividing the motor
-                   velocity by the gear ratio. Note that this does not account for SEA compliance.
-
-        Examples:
-            >>> # If motor_velocity is 10.0 and gear_ratio is 100, output_velocity will be 0.1
-            >>> actuator.output_velocity
-            0.1
+            The output velocity.
         """
-        return self.motor_velocity / self.gear_ratio
+        return self.motor_velocity / self._gear_ratio
 
     @property
     @abstractmethod
@@ -928,14 +730,7 @@ class ActuatorBase(ABC):
         Get the motor voltage.
 
         Returns:
-            float: The current motor voltage.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> voltage = actuator.motor_voltage
-            >>> print(voltage)
-            24.0
+            The motor voltage.
         """
         pass
 
@@ -946,14 +741,7 @@ class ActuatorBase(ABC):
         Get the motor current.
 
         Returns:
-            float: The current motor current.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> current = actuator.motor_current
-            >>> print(current)
-            0.5
+            The motor current.
         """
         pass
 
@@ -964,31 +752,19 @@ class ActuatorBase(ABC):
         Get the motor torque.
 
         Returns:
-            float: The current motor torque.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> torque = actuator.motor_torque
-            >>> print(torque)
-            2.0
+            The motor torque.
         """
         pass
 
     @property
     def MOTOR_CONSTANTS(self) -> MOTOR_CONSTANTS:
         """
-        Get the motor constants configuration.
+        Get the motor constants.
 
         Returns:
-            MOTOR_CONSTANTS: The motor constants.
-
-        Examples:
-            >>> constants = actuator.MOTOR_CONSTANTS
-            >>> constants.MAX_CASE_TEMPERATURE
-            80.0
+            The motor constants.
         """
-        return self._MOTOR_CONSTANTS
+        return self._motor_constants
 
     @property
     def mode(self) -> CONTROL_MODES:
@@ -996,11 +772,7 @@ class ActuatorBase(ABC):
         Get the current control mode.
 
         Returns:
-            CONTROL_MODES: The actuator's current control mode.
-
-        Examples:
-            >>> actuator.mode
-            <CONTROL_MODES.IDLE: -1>
+            The current control mode.
         """
         return self._mode
 
@@ -1010,55 +782,39 @@ class ActuatorBase(ABC):
         Get the actuator tag.
 
         Returns:
-            str: The unique identifier for the actuator.
-
-        Examples:
-            >>> actuator.tag
-            "act1"
+            The actuator tag.
         """
         return self._tag
 
     @property
     def is_homed(self) -> bool:
         """
-        Check if the actuator has been homed.
+        Check if the actuator is homed.
 
         Returns:
-            bool: True if the actuator is homed; otherwise, False.
-
-        Examples:
-            >>> actuator.is_homed
-            False
+            True if the actuator is homed, False otherwise.
         """
         return self._is_homed
 
     @property
     def frequency(self) -> int:
         """
-        Get the actuator's control frequency.
+        Get the control frequency.
 
         Returns:
-            int: The control frequency in Hz.
-
-        Examples:
-            >>> actuator.frequency
-            1000
+            The control frequency in Hz.
         """
         return self._frequency
 
     @property
     def is_offline(self) -> bool:
         """
-        Check if the actuator is in offline mode.
+        Check if the actuator is offline.
 
         Returns:
-            bool: True if offline; otherwise, False.
-
-        Examples:
-            >>> actuator.is_offline
-            False
+            True if the actuator is offline, False otherwise.
         """
-        return self._is_offline
+        return self._offline
 
     @property
     def gear_ratio(self) -> float:
@@ -1066,43 +822,28 @@ class ActuatorBase(ABC):
         Get the gear ratio.
 
         Returns:
-            float: The gear ratio of the actuator.
-
-        Examples:
-            >>> actuator.gear_ratio
-            100
+            The gear ratio.
         """
         return self._gear_ratio
 
     @property
     def max_case_temperature(self) -> float:
         """
-        Get the maximum allowed case temperature.
+        Get the maximum case temperature.
 
         Returns:
-            float: The maximum case temperature defined in motor constants.
-
-        Examples:
-            >>> actuator.max_case_temperature
-            80.0
+            The maximum case temperature.
         """
-        return self._MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
+        return self._motor_constants.MAX_CASE_TEMPERATURE
 
     @property
     @abstractmethod
     def case_temperature(self) -> float:
         """
-        Get the current case temperature.
+        Get the case temperature.
 
         Returns:
-            float: The current case temperature.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> temp = actuator.case_temperature
-            >>> print(temp)
-            70.0
+            The case temperature.
         """
         pass
 
@@ -1110,33 +851,22 @@ class ActuatorBase(ABC):
     @abstractmethod
     def winding_temperature(self) -> float:
         """
-        Get the current winding temperature.
+        Get the winding temperature.
 
         Returns:
-            float: The current winding temperature.
-
-        Must be implemented by subclasses.
-
-        Examples:
-            >>> temp = actuator.winding_temperature
-            >>> print(temp)
-            90.0
+            The winding temperature.
         """
         pass
 
     @property
     def max_winding_temperature(self) -> float:
         """
-        Get the maximum allowed winding temperature.
+        Get the maximum winding temperature.
 
         Returns:
-            float: The maximum winding temperature defined in motor constants.
-
-        Examples:
-            >>> actuator.max_winding_temperature
-            120.0
+            The maximum winding temperature.
         """
-        return self._MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE
+        return self._motor_constants.MAX_WINDING_TEMPERATURE
 
     @property
     def motor_zero_position(self) -> float:
@@ -1144,12 +874,7 @@ class ActuatorBase(ABC):
         Get the motor zero position.
 
         Returns:
-            float: The motor zero position in radians.
-
-        Examples:
-            >>> actuator.set_motor_zero_position(0.0)
-            >>> actuator.motor_zero_position
-            0.0
+            The motor zero position.
         """
         return self._motor_zero_position
 
@@ -1159,12 +884,7 @@ class ActuatorBase(ABC):
         Get the motor position offset.
 
         Returns:
-            float: The motor position offset in radians.
-
-        Examples:
-            >>> actuator.set_motor_position_offset(0.1)
-            >>> actuator.motor_position_offset
-            0.1
+            The motor position offset.
         """
         return self._motor_position_offset
 
@@ -1174,12 +894,7 @@ class ActuatorBase(ABC):
         Get the joint zero position.
 
         Returns:
-            float: The joint zero position in radians.
-
-        Examples:
-            >>> actuator.set_joint_zero_position(0.0)
-            >>> actuator.joint_zero_position
-            0.0
+            The joint zero position.
         """
         return self._joint_zero_position
 
@@ -1189,12 +904,7 @@ class ActuatorBase(ABC):
         Get the joint position offset.
 
         Returns:
-            float: The joint position offset in radians.
-
-        Examples:
-            >>> actuator.set_joint_position_offset(0.1)
-            >>> actuator.joint_position_offset
-            0.1
+            The joint position offset.
         """
         return self._joint_position_offset
 
@@ -1204,12 +914,7 @@ class ActuatorBase(ABC):
         Get the joint direction.
 
         Returns:
-            int: The joint direction (1 or -1).
-
-        Examples:
-            >>> actuator.set_joint_direction(-1)
-            >>> actuator.joint_direction
-            -1
+            The joint direction.
         """
         return self._joint_direction
 
@@ -1219,26 +924,16 @@ class ActuatorBase(ABC):
         Check if the actuator is open.
 
         Returns:
-            bool: True if open; otherwise, False.
-
-        Examples:
-            >>> actuator._is_open = True
-            >>> actuator.is_open
-            True
+            True if the actuator is open, False otherwise.
         """
         return self._is_open
 
     @property
     def is_streaming(self) -> bool:
         """
-        Check if the actuator is streaming data.
+        Check if the actuator is streaming.
 
         Returns:
-            bool: True if streaming; otherwise, False.
-
-        Examples:
-            >>> actuator._is_streaming = True
-            >>> actuator.is_streaming
-            True
+            True if the actuator is streaming, False otherwise.
         """
         return self._is_streaming

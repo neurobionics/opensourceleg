@@ -34,7 +34,7 @@ class LoadcellNotRespondingException(Exception):
     Exception raised when the load cell fails to respond.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str = "Load cell unresponsive.") -> None:
@@ -42,7 +42,7 @@ class LoadcellNotRespondingException(Exception):
         Initialize the LoadcellNotRespondingException.
 
         Args:
-            message (str, optional): Error message. Defaults to "Load cell unresponsive.".
+            message: Error message. Defaults to "Load cell unresponsive.".
         """
         super().__init__(message)
 
@@ -77,8 +77,8 @@ class DephyLoadcellAmplifier(LoadcellBase):
     based on a provided calibration matrix and hardware configuration.
 
     Class Attributes:
-        ADC_RANGE (int): The maximum ADC value (2**12 - 1).
-        OFFSET (float): The ADC mid-scale offset (half of 2**12).
+        ADC_RANGE: The maximum ADC value (2**12 - 1).
+        OFFSET: The ADC mid-scale offset (half of 2**12).
     """
 
     ADC_RANGE = 2**12 - 1
@@ -99,11 +99,11 @@ class DephyLoadcellAmplifier(LoadcellBase):
         acquisition, calibration, and streaming.
 
         Args:
-            calibration_matrix (npt.NDArray[np.double]): A 6x6 calibration matrix.
-            amp_gain (float, optional): Amplifier gain; must be greater than 0. Defaults to 125.0.
-            exc (float, optional): Excitation voltage; must be greater than 0. Defaults to 5.0.
-            bus (int, optional): I2C bus number to use. Defaults to 1.
-            i2c_address (int, optional): I2C address of the strain amplifier. Defaults to 0x66.
+            calibration_matrix: A 6x6 calibration matrix.
+            amp_gain: Amplifier gain; must be greater than 0. Defaults to 125.0.
+            exc: Excitation voltage; must be greater than 0. Defaults to 5.0.
+            bus: I2C bus number to use. Defaults to 1.
+            i2c_address: I2C address of the strain amplifier. Defaults to 0x66.
 
         Raises:
             TypeError: If calibration_matrix is not a 6x6 array.
@@ -170,10 +170,8 @@ class DephyLoadcellAmplifier(LoadcellBase):
         and excitation voltage, and subtracts any calibration offset.
 
         Args:
-            calibration_offset (Optional[npt.NDArray[np.double]], optional):
-                An offset to subtract from the processed data. If None, uses the current calibration offset.
-            data_callback (Optional[Callable[..., npt.NDArray[np.uint8]]], optional):
-                A callback function to provide raw data. If not provided, the sensor's internal method is used.
+            calibration_offset: An offset to subtract from the processed data. If None, uses the current calibration offset.
+            data_callback: A callback function to provide raw data. If not provided, the sensor's internal method is used.
         """
         data = data_callback() if data_callback else self._read_compressed_strain()
 
@@ -200,12 +198,9 @@ class DephyLoadcellAmplifier(LoadcellBase):
         is displayed.
 
         Args:
-            number_of_iterations (int, optional): Number of iterations to average for calibration.
-                Defaults to 2000.
-            reset (bool, optional): If True, forces recalibration by resetting the current calibration.
-                Defaults to False.
-            data_callback (Optional[Callable[[], npt.NDArray[np.uint8]]], optional): Optional callback
-                to provide raw data. Defaults to None.
+            number_of_iterations: Number of iterations to average for calibration.
+            reset: If True, forces recalibration by resetting the current calibration.
+            data_callback: Optional callback function to provide raw data. If not provided, the sensor's internal method is used.
         """
         if not self.is_calibrated:
             LOGGER.info(
@@ -248,14 +243,10 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
     def _read_compressed_strain(self) -> Any:
         """
-        Read and unpack compressed strain data from the sensor.
-
-        This method reads a block of data from the sensor via I2C and then unpacks it
-        using the compressed strain format. If multiple read attempts fail, a
-        LoadcellNotRespondingException is raised.
+        Read raw strain data from the load cell via I2C.
 
         Returns:
-            Any: The unpacked strain data.
+            Raw strain data from the load cell.
         """
         try:
             data = self._smbus.read_i2c_block_data(self._i2c_address, DEPHY_AMPLIFIER_MEMORY_CHANNELS.CH1_H, 10)
@@ -271,15 +262,13 @@ class DephyLoadcellAmplifier(LoadcellBase):
     @staticmethod
     def _unpack_uncompressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
         """
-        Unpack raw ADC data using the uncompressed format.
-
-        This method is used for older versions of the strain amplifier firmware (pre-2017).
+        Unpack uncompressed strain data from raw bytes.
 
         Args:
-            data (npt.NDArray[np.uint8]): Raw data read from the sensor.
+            data: Raw data read from the sensor.
 
         Returns:
-            npt.NDArray[np.uint16]: An array containing the unpacked values for 6 channels.
+            Unpacked strain data.
         """
         ch1 = (data[0] << 8) | data[1]
         ch2 = (data[2] << 8) | data[3]
@@ -292,15 +281,13 @@ class DephyLoadcellAmplifier(LoadcellBase):
     @staticmethod
     def _unpack_compressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
         """
-        Unpack raw ADC data using the compressed format.
-
-        This method is used for more recent versions of the strain amplifier firmware.
+        Unpack compressed strain data from raw bytes.
 
         Args:
-            data (npt.NDArray[np.uint8]): Raw data read from the sensor.
+            data: Raw data read from the sensor.
 
         Returns:
-            npt.NDArray[np.uint16]: An array containing the unpacked values for 6 channels.
+            Unpacked strain data.
         """
         return np.array(
             object=[
@@ -316,10 +303,10 @@ class DephyLoadcellAmplifier(LoadcellBase):
     @property
     def is_calibrated(self) -> bool:
         """
-        Indicates whether the load cell has been calibrated (zeroed).
+        Check if the load cell has been calibrated.
 
         Returns:
-            bool: True if the calibration routine has been successfully completed; otherwise, False.
+            True if the load cell has been calibrated, False otherwise.
         """
         return self._is_calibrated
 
@@ -329,90 +316,77 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Check if the load cell is currently streaming data.
 
         Returns:
-            bool: True if streaming; otherwise, False.
+            True if the load cell is streaming data, False otherwise.
         """
         return self._is_streaming
 
     @property
     def fx(self) -> float:
         """
-        Get the latest force in the x (medial/lateral) direction in Newtons.
-
-        For the standard OSL setup, this value is positive towards the user's right.
+        Get the force in the x-direction.
 
         Returns:
-            float: Force (N) along the x-axis.
+            Force in the x-direction in Newtons.
         """
         return self.data[0]
 
     @property
     def fy(self) -> float:
         """
-        Get the latest force in the y (anterior/posterior) direction in Newtons.
-
-        For the standard OSL setup, this value is positive in the posterior direction.
+        Get the force in the y-direction.
 
         Returns:
-            float: Force (N) along the y-axis.
+            Force in the y-direction in Newtons.
         """
         return self.data[1]
 
     @property
     def fz(self) -> float:
         """
-        Get the latest force in the z (vertical) direction in Newtons.
-
-        For the standard OSL setup, this value is positive downwards. In quiet standing,
-        a negative Fz value is expected.
+        Get the force in the z-direction.
 
         Returns:
-            float: Force (N) along the z-axis.
+            Force in the z-direction in Newtons.
         """
         return self.data[2]
 
     @property
     def mx(self) -> float:
         """
-        Get the latest moment about the x (medial/lateral) axis in Nm.
-
-        For the standard OSL setup, this moment is positive towards the user's right.
+        Get the moment about the x-axis.
 
         Returns:
-            float: Moment (Nm) about the x-axis.
+            Moment about the x-axis in Newton-meters.
         """
         return self.data[3]
 
     @property
     def my(self) -> float:
         """
-        Get the latest moment about the y (anterior/posterior) axis in Nm.
-
-        For the standard OSL setup, this moment is positive in the posterior direction.
+        Get the moment about the y-axis.
 
         Returns:
-            float: Moment (Nm) about the y-axis.
+            Moment about the y-axis in Newton-meters.
         """
         return self.data[4]
 
     @property
     def mz(self) -> float:
         """
-        Get the latest moment about the z (vertical) axis in Nm.
-
-        For the standard OSL setup, this moment is positive towards the ground.
+        Get the moment about the z-axis.
 
         Returns:
-            float: Moment (Nm) about the z-axis.
+            Moment about the z-axis in Newton-meters.
         """
         return self.data[5]
 
     @property
     def data(self) -> list[float]:
         """
-        Get the latest processed load cell data.
+        Get all force and moment data as a list.
 
         Returns:
-            list[float]: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where forces are in Newtons and moments in Nm.
+            List containing [Fx, Fy, Fz, Mx, My, Mz] in Newtons and Newton-meters.
         """
         if self._data is not None:
             return list(map(float, self._data[0].tolist()))

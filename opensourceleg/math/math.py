@@ -34,12 +34,12 @@ class ThermalModel:
         3: The model can also be used to scale the torque based on the temperature of the winding and the case.
 
     Args:
-        ambient (float): Ambient temperature in Celsius. Defaults to 21.
-        params (dict): Dictionary of parameters. Defaults to dict().
-        temp_limit_windings (float): Maximum temperature of the windings in Celsius. Defaults to 115.
-        soft_border_C_windings (float): Soft border of the windings in Celsius. Defaults to 15.
-        temp_limit_case (float): Maximum temperature of the case in Celsius. Defaults to 80.
-        soft_border_C_case (float): Soft border of the case in Celsius. Defaults to 5.
+        ambient: Ambient temperature in Celsius. Defaults to 21.
+        params: Dictionary of parameters. Defaults to dict().
+        temp_limit_windings: Maximum temperature of the windings in Celsius. Defaults to 115.
+        soft_border_C_windings: Soft border of the windings in Celsius. Defaults to 15.
+        temp_limit_case: Maximum temperature of the case in Celsius. Defaults to 80.
+        soft_border_C_case: Soft border of the case in Celsius. Defaults to 5.
 
 
     """
@@ -84,8 +84,8 @@ class ThermalModel:
         Updates the temperature of the winding and the case based on the current and the ambient temperature.
 
         Args:
-            dt (float): Time step in seconds. Defaults to 1/200.
-            motor_current (float): Motor current in mA. Defaults to 0.
+            dt: Time step in seconds. Defaults to 1/200.
+            motor_current: Motor current in mA. Defaults to 0.
 
         Dynamics:
             1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
@@ -109,12 +109,12 @@ class ThermalModel:
         the ambient temperature and returns the scale factor for the torque.
 
         Args:
-            dt (float): Time step in seconds.
-            motor_current (float): Motor current in mA. Defaults to 0.
-            FOS (float): Factor of safety. Defaults to 3.0.
+            dt: Time step in seconds.
+            motor_current: Motor current in mA. Defaults to 0.
+            FOS: Factor of safety. Defaults to 3.0.
 
         Returns:
-            float: Scale factor for the torque.
+            Scale factor for the torque.
 
         Dynamics:
             1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
@@ -198,9 +198,11 @@ class SaturatingRamp:
 
     def __init__(self, loop_frequency: float = 100, ramp_time: float = 1.0) -> None:
         """
+        Initialize the saturating ramp.
+
         Args:
-            loop_frequency (int, optional): Rate in Hz (default 100 Hz). Defaults to 100.
-            ramp_time (float, optional): Time to complete the ramp. Defaults to 1.0.
+            loop_frequency: Rate in Hz (default 100 Hz). Defaults to 100.
+            ramp_time: Time to complete the ramp. Defaults to 1.0.
         """
         self.delta_per_update = 1.0 / (loop_frequency * ramp_time)
         self.value = 0.0
@@ -210,18 +212,13 @@ class SaturatingRamp:
 
     def update(self, enable_ramp: bool = False) -> float:
         """
-        Updates the ramp value and returns it as a float.
-        If enable_ramp is true, ramp value increases
-        Otherwise decreases.
-
-        Example usage:
-            torque = torque * ramp.update(enable_ramp)
+        Update the ramp value.
 
         Args:
-            enable_ramp (bool, optional): If enable_ramp is true, ramp value increases. Defaults to False.
+            enable_ramp: If enable_ramp is true, ramp value increases. Defaults to False.
 
         Returns:
-            value (float): Scalar between 0 and 1.
+            Scalar between 0 and 1.
         """
         delta = self.delta_per_update if enable_ramp else -1 * self.delta_per_update
         self.value += delta
