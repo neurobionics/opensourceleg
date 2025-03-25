@@ -2,7 +2,7 @@ import numpy as np
 
 from opensourceleg.logging.logger import Logger
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 200
 DT = 1 / FREQUENCY

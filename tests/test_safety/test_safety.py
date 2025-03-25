@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opensourceleg.safety.safety import (
+from opensourceleg.extras.safety import (
     SafetyDecorators,
     SafetyManager,
     ThermalLimitException,

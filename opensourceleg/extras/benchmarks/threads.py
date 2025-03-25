@@ -1,7 +1,7 @@
 import threading
 import time
 
-from opensourceleg.benchmarks.decorators import profile_time
+from opensourceleg.extras.benchmarks.decorators import profile_time
 
 counter = 0
 PROFILING_ITERATIONS = 1000

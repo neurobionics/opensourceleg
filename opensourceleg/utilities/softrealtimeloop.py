@@ -10,6 +10,8 @@ from typing import Any, Callable
 python_version = sys.version_info.minor
 PRECISION_OF_SLEEP = 1e-09 if python_version >= 11 else 1e-06
 
+__all__ = ["LoopKiller", "SoftRealtimeLoop"]
+
 
 class LoopKiller:
     """

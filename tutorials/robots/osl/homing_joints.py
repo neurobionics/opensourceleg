@@ -5,7 +5,7 @@ from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 200

@@ -18,7 +18,7 @@ The Time module provides tools for creating soft real-time loops in Python, whic
 The simplest way to use the SoftRealtimeLoop is to create a loop with a specific time step and run a function. See the [Running Functions](running_functions.md) tutorial for more details.
 
 ```python
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 rt_loop = SoftRealtimeLoop(dt=0.001)  # 1ms time step
 rt_loop.run(your_function)

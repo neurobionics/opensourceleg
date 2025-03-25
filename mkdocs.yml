@@ -30,11 +30,12 @@ nav:
           - Getting Started: tutorials/logging/getting_started.md
           - Configuring Logger: tutorials/logging/configuring_logger.md
           - Logging Data: tutorials/logging/logging_data.md
-      - Time:
-          - Getting Started: tutorials/time/getting_started.md
-          - Running Functions: tutorials/time/running_functions.md
-          - Using Iterators: tutorials/time/using_iterators.md
-          - Real-time Control: tutorials/time/realtime_control.md
+      - Utilities:
+          - SoftRealtimeLoop:
+              - Getting Started: tutorials/utilities/softrealtimeloop/getting_started.md
+              - Running Functions: tutorials/utilities/softrealtimeloop/running_functions.md
+              - Using Iterators: tutorials/utilities/softrealtimeloop/using_iterators.md
+              - Real-time Control: tutorials/utilities/softrealtimeloop/realtime_control.md
   - Examples:
       - Basic Motion: examples/basic_motion.md
       - Finite State Machine Walking Controller: examples/fsm_walking_controller.md
@@ -44,13 +45,18 @@ nav:
           - Dephy: api/actuators/dephy.md
           - Moteus: api/actuators/moteus.md
           - TMotor: api/actuators/tmotor.md
-      - Collections:
-          - Validators: api/collections/validators.md
+      - Extras:
+          - Collections:
+              - Validators: api/extras/collections/validators.md
+          - Safety:
+              - Safety: api/extras/safety/safety.md
       - Control:
           - Compiled Controller: api/control/compiled.md
           - State Machine: api/control/fsm.md
       - Logging:
           - Logger: api/logging.md
+      - Math:
+          - Math: api/math/math.md
       - Sensors:
           - Base: api/sensors/sensors_base.md
           - IMU: api/sensors/imu.md
@@ -60,8 +66,8 @@ nav:
       - Robots:
           - Base: api/robots/robots.md
           - OSL: api/robots/osl.md
-      - Safety: api/safety.md
-      - Time: api/time.md
+      - Utilities:
+          - SoftRealtimeLoop: api/utilities/softrealtimeloop.md
   - Contributing: contributing.md
   - Security: security.md
   - License: license.md

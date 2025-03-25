@@ -1,6 +1,6 @@
 from opensourceleg.logging.logger import Logger
 from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 1000
 DT = 1 / FREQUENCY

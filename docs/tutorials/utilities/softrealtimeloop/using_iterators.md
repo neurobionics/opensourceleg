@@ -7,7 +7,7 @@ This tutorial demonstrates how to use SoftRealtimeLoop as an iterator.
 The iterator interface provides a more Pythonic way to work with the loop:
 
 ```python
---8<-- "tutorials/time/using_iterators.py:5:13"
+--8<-- "tutorials/utilities/using_iterators.py:5:13"
 ```
 
 ## Key Concepts

@@ -1,7 +1,7 @@
 import time
 from typing import Union
 
-from opensourceleg.time.time import SoftRealtimeLoop
+from opensourceleg.utilities.softrealtimeloop import SoftRealtimeLoop
 
 
 def main():

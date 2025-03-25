@@ -5,9 +5,9 @@ import numpy as np
 from smbus2 import SMBus
 
 from opensourceleg.logging import LOGGER
+from opensourceleg.math import from_twos_complement, to_twos_complement
 from opensourceleg.sensors.base import EncoderBase
-from opensourceleg.time import SoftRealtimeLoop
-from opensourceleg.utilities.utilities import from_twos_complement, to_twos_complement
+from opensourceleg.utilities import SoftRealtimeLoop
 
 
 class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name change A-- uses SPI, B uses I2C

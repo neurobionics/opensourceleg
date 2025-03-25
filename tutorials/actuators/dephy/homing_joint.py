@@ -3,7 +3,7 @@ import numpy as np
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 200
 DT = 1 / FREQUENCY

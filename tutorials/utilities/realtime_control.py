@@ -1,7 +1,7 @@
 import time
 from math import pi, sin
 
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 
 class SimpleSensorSimulator:

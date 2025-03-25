@@ -1,6 +1,6 @@
 from opensourceleg.logging.logger import Logger
 from opensourceleg.sensors.imu import LordMicrostrainIMU
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 200
 DT = 1 / FREQUENCY

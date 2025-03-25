@@ -7,7 +7,7 @@ This tutorial covers advanced features of SoftRealtimeLoop
 Example of reading from a simulated sensor at precise intervals:
 
 ```python
---8<-- "tutorials/time/realtime_control.py:7:35"
+--8<-- "tutorials/utilities/realtime_control.py:7:35"
 ```
 
 ## Graceful Shutdown with Fade-out
@@ -15,7 +15,7 @@ Example of reading from a simulated sensor at precise intervals:
 Demonstration of the fade-out feature for a smooth shutdown:
 
 ```python
---8<-- "tutorials/time/realtime_control.py:38:57"
+--8<-- "tutorials/utilities/realtime_control.py:38:57"
 ```
 
 ## Understanding Performance Statistics

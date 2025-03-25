@@ -7,7 +7,7 @@ This tutorial explains the fundamental usage of the SoftRealtimeLoop class.
 The most basic usage is running a function once in the loop. The function returns 0 to stop the loop:
 
 ```python
---8<-- "tutorials/time/running_functions.py:7:16"
+--8<-- "tutorials/utilities/running_functions.py:7:16"
 ```
 
 ## Timed Execution
@@ -15,7 +15,7 @@ The most basic usage is running a function once in the loop. The function return
 You can run a function for a specific duration by tracking elapsed time:
 
 ```python
---8<-- "tutorials/time/running_functions.py:20:29"
+--8<-- "tutorials/utilities/running_functions.py:20:29"
 ```
 
 ## Key Concepts
