@@ -1,23 +1,21 @@
 site_name: opensourceleg
 repo_url: https://github.com/neurobionics/opensourceleg
 site_url: https://neurobionics.github.io/opensourceleg
-site_description: An open-source software library for numerical computation, data acquisition, and control of lower-limb robotic prostheses.
+site_description: An open-source SDK for developing and testing algorithms on commonly used robotic hardware.
 site_author: Open-Source Leg
 edit_uri: edit/main/docs/
 repo_name: neurobionics/opensourceleg
-copyright: Maintained by <a href="https://github.com/senthurayyappan">Senthur Ayyappan</a>.
+copyright: Maintained by <a href="https://www.opensourceleg.org/">The Open-Source Leg Team</a>.
 
 nav:
   - Overview: index.md
   - Installation: installation.md
   - Tutorials:
-      - Getting Started: tutorials/getting_started.md
       - Sensors:
           - Getting Started: tutorials/sensors/getting_started.md
           - Reading Encoder Data: tutorials/sensors/reading_encoder_data.md
           - Reading IMU Data: tutorials/sensors/reading_imu_data.md
           - Reading Loadcell Data: tutorials/sensors/reading_loadcell_data.md
-          - Reading ADC Data: tutorials/sensors/reading_adc_data.md
       - Actuators:
           - Getting Started: tutorials/actuators/getting_started.md
           - Reading Sensor Data: tutorials/actuators/reading_sensor_data.md
@@ -26,20 +24,18 @@ nav:
           - Commanding Position: tutorials/actuators/commanding_position.md
           - Commanding Impedance: tutorials/actuators/commanding_impedance.md
       - Control:
-          - Getting Started: tutorials/control/getting_started.md
           - Compiled Controller: tutorials/control/compiled_controller.md
           - State Machine: tutorials/control/state_machine.md
       - Logging:
           - Getting Started: tutorials/logging/getting_started.md
           - Configuring Logger: tutorials/logging/configuring_logger.md
           - Logging Data: tutorials/logging/logging_data.md
-      - Safety:
-          - Getting Started: tutorials/safety/getting_started.md
-      - Time:
-          - Getting Started: tutorials/time/getting_started.md
-          - Running Functions: tutorials/time/running_functions.md
-          - Using Iterators: tutorials/time/using_iterators.md
-          - Real-time Control: tutorials/time/realtime_control.md
+      - Utilities:
+          - SoftRealtimeLoop:
+              - Getting Started: tutorials/utilities/softrealtimeloop/getting_started.md
+              - Running Functions: tutorials/utilities/softrealtimeloop/running_functions.md
+              - Using Iterators: tutorials/utilities/softrealtimeloop/using_iterators.md
+              - Real-time Control: tutorials/utilities/softrealtimeloop/realtime_control.md
   - Examples:
       - Basic Motion: examples/basic_motion.md
       - Finite State Machine Walking Controller: examples/fsm_walking_controller.md
@@ -49,13 +45,18 @@ nav:
           - Dephy: api/actuators/dephy.md
           - Moteus: api/actuators/moteus.md
           - TMotor: api/actuators/tmotor.md
-      - Collections:
-          - Validators: api/collections/validators.md
+      - Extras:
+          - Collections:
+              - Validators: api/extras/collections/validators.md
+          - Safety:
+              - Safety: api/extras/safety/safety.md
       - Control:
           - Compiled Controller: api/control/compiled.md
           - State Machine: api/control/fsm.md
       - Logging:
           - Logger: api/logging.md
+      - Math:
+          - Math: api/math/math.md
       - Sensors:
           - Base: api/sensors/sensors_base.md
           - IMU: api/sensors/imu.md
@@ -65,8 +66,8 @@ nav:
       - Robots:
           - Base: api/robots/robots.md
           - OSL: api/robots/osl.md
-      - Safety: api/safety.md
-      - Time: api/time.md
+      - Utilities:
+          - SoftRealtimeLoop: api/utilities/softrealtimeloop.md
   - Contributing: contributing.md
   - Security: security.md
   - License: license.md
@@ -83,6 +84,8 @@ theme:
   feature:
     tabs: true
   highlightjs: true
+  features:
+    - content.code.copy
   hljs_languages:
     - python
     - yaml
@@ -117,7 +120,12 @@ extra:
 markdown_extensions:
   - attr_list
   - pymdownx.snippets
-  - pymdownx.highlight # For syntax highlighting
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.superfences
 
   - toc:

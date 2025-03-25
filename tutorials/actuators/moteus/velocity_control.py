@@ -8,7 +8,7 @@ from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.logging.logger import LOGGER
 
 # import time
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 200

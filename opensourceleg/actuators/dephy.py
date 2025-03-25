@@ -19,13 +19,13 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
+from opensourceleg.extras.safety import I2tLimitException, ThermalLimitException
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
     deprecated_with_routing,
 )
 from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.math import ThermalModel
-from opensourceleg.safety import I2tLimitException, ThermalLimitException
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 

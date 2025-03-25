@@ -12,7 +12,7 @@ from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging import LOGGER, Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 ANKLE_TRAJECTORY_PATH = "./ankle.pkl"
 KNEE_TRAJECTORY_PATH = "./knee.pkl"

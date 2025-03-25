@@ -1,6 +1,6 @@
 from opensourceleg.control.fsm import State, StateMachine
 from opensourceleg.logging.logger import Logger
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 
 # Transition criteria functions

@@ -1,10 +1,11 @@
 import numpy as np
 
+from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 200
@@ -72,29 +73,18 @@ def home_joints():
             velocity_threshold=0.001,
         )
 
-        osl.make_encoder_linearization_map(overwrite=True)
+        osl.knee.set_control_mode(CONTROL_MODES.CURRENT)
+        osl.knee.set_current_gains()
 
-        # osl.knee.set_control_mode(CONTROL_MODES.CURRENT)
-        # osl.knee.set_current_gains()
+        osl.ankle.set_control_mode(CONTROL_MODES.CURRENT)
+        osl.ankle.set_current_gains()
 
-        # osl.ankle.set_control_mode(CONTROL_MODES.CURRENT)
-        # osl.ankle.set_current_gains()
-
-        # osl.knee.set_output_torque(0)
-        # osl.ankle.set_output_torque(0)
+        osl.knee.set_output_torque(0)
+        osl.ankle.set_output_torque(0)
 
         # homing_logger.set_stream_terminator("\r")
         for t in clock:
             osl.update()
-
-            # homing_logger.info(
-            #     f"Time: {t:.2f}; Knee Output Position: {np.rad2deg(osl.knee.output_position):.2f}; "
-            #     f"Ankle Output Position: {np.rad2deg(osl.ankle.output_position):.2f}; "
-            #     f"Knee Winding Temp: {osl.knee.winding_temperature:.2f}; "
-            #     f"Ankle Winding Temp: {osl.ankle.winding_temperature:.2f}; "
-            #     f"Knee Current: {osl.knee.motor_current:.2f} mA; "
-            #     f"Ankle Current: {osl.ankle.motor_current:.2f} mA;"
-            # )
 
             homing_logger.info(
                 f"Time: {t:.2f}; Knee Output Position: {np.rad2deg(osl.knee.output_position):.2f}; "

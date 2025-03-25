@@ -7,7 +7,7 @@ from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 GEAR_RATIO = 9 * (83 / 18)
 FREQUENCY = 200
