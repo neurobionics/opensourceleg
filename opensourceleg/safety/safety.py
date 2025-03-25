@@ -11,6 +11,12 @@ class ThermalLimitException(Exception):
         super().__init__(self.message)
 
 
+class I2tLimitException(Exception):
+    def __init__(self, message: str = "Dephy Actpack I2t limit exceeded. Exiting.") -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 def is_changing(
     attribute_name: str,
     max_points: int = 10,

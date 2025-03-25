@@ -12,10 +12,10 @@ if __name__ == "__main__":
     )
     clock = SoftRealtimeLoop(dt=DT)
     encoder = AS5048B(
+        tag="encoder1",
         bus=1,
         A1_adr_pin=False,
         A2_adr_pin=True,
-        name="encoder1",
         zero_position=0,
         enable_diagnostics=False,
     )
