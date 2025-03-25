@@ -4,9 +4,9 @@ just to provide a reference for how a torque trajectory can be loaded and comman
 """
 
 import pickle
-
 import numpy as np
-
+import argparse
+import matplotlib.pyplot as plt
 from opensourceleg.actuators import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging import LOGGER, Logger
@@ -17,29 +17,31 @@ from opensourceleg.utilities import SoftRealtimeLoop
 ANKLE_TRAJECTORY_PATH = "./ankle.pkl"
 KNEE_TRAJECTORY_PATH = "./knee.pkl"
 
-TRAJECTORY_LEN = 150
 
-# DO NOT EXCEED 20 KG
-USER_MASS = 0  # kg
-GEAR_RATIO = 9 * (83 / 18)
+def get_torque(t: float, data: list, user_mass: float, stride_time: float, trajectory_len: int) -> int:
+    """Calculate the torque setpoint for a given time point in the trajectory.
 
-FREQUENCY = 200
-STRIDE_TIME = 1  # sec
+    Args:
+        t (float): Current time in seconds
+        data (list): List containing the torque trajectory data points
+        user_mass (float): The mass of the user in kg
+        stride_time (float): The stride time in seconds
+        trajectory_len (int): The length of the trajectory
 
+    Returns:
+        int: Torque setpoint scaled by user mass
 
-def get_torque(t: float, data: list) -> int:
-    walking_time = t % STRIDE_TIME
-    index = int(walking_time * TRAJECTORY_LEN)
-    return USER_MASS * data[index]
+    The function:
+    1. Calculates walking_time by taking modulo of current time with stride_time
+    2. Converts walking_time to trajectory index based on trajectory_len
+    3. Returns torque value at that index scaled by user_mass
+    """
+    walking_time = t % stride_time
+    index = int(walking_time * trajectory_len) 
+    return user_mass * data[index]
 
 
 def plot_data(plotting_data: list) -> None:
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        LOGGER.warning("matplotlib is not installed")
-        return
-
     # plot the data using matplotlib
     plt.figure(figsize=(12, 10))
 
@@ -80,6 +82,27 @@ def plot_data(plotting_data: list) -> None:
 
 
 if __name__ == "__main__":
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Torque trajectory control for Open Source Leg')
+    parser.add_argument('--mass', type=float, default=1.0,
+                      help='User mass in kg (default: 1.0)',required=False)
+    parser.add_argument('--stride-time', type=float, default=1,
+                      help='Stride time in seconds (default: 1)', required=False)  
+    parser.add_argument('--frequency', type=float, default=200.0,
+                      help='Control loop frequency in Hz (default: 200.0)', required=False)
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Set global parameters from arguments
+    USER_MASS = args.mass
+    STRIDE_TIME = args.stride_time 
+    FREQUENCY = args.frequency
+
+    # Fixed parameters
+    TRAJECTORY_LEN = 150
+    GEAR_RATIO = 9 * (83 / 18)
+
     torque_logger = Logger(log_path="./logs", file_name="torque_trajectory")
     clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
 
@@ -157,8 +180,8 @@ if __name__ == "__main__":
         for t in clock:
             osl.update()
 
-            ankle_torque_sp = get_torque(t, ankle_data)
-            knee_torque_sp = get_torque(t, knee_data)
+            ankle_torque_sp = get_torque(t, ankle_data, USER_MASS, STRIDE_TIME, TRAJECTORY_LEN)
+            knee_torque_sp = get_torque(t, knee_data, USER_MASS, STRIDE_TIME, TRAJECTORY_LEN)
 
             osl.ankle.set_output_torque(ankle_torque_sp)
             osl.knee.set_output_torque(knee_torque_sp)
