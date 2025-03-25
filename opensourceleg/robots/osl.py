@@ -73,10 +73,10 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
         LOGGER.info(
             "OSL homing complete. If you'd like to create or load encoder maps to "
-            "correct for nonlinearities, call `create_joint_mappings()` method."
+            "correct for nonlinearities, call `make_encoder_linearization_map()` method."
         )
 
-    def create_joint_mappings(
+    def make_encoder_linearization_map(
         self,
         overwrite: bool = False,
     ) -> None:

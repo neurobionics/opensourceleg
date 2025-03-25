@@ -72,7 +72,7 @@ def home_joints():
             velocity_threshold=0.001,
         )
 
-        osl.create_joint_mappings(overwrite=True)
+        osl.make_encoder_linearization_map(overwrite=True)
 
         # osl.knee.set_control_mode(CONTROL_MODES.CURRENT)
         # osl.knee.set_current_gains()
