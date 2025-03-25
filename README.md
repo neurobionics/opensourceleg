@@ -35,7 +35,7 @@ This library solves common challenges in developing, testing, and deploying robo
 - Are working on a robotic project and need a flexible and powerful software development kit
 - Are looking for benchmarks to pick the best hardware for their robotic project
 
-## ⚙️ Available Hardware Interfaces
+## 🔄 Available Hardware Interfaces
 
 The library currently supports the following hardware components:
 
@@ -55,7 +55,7 @@ The library currently supports the following hardware components:
 
 > Hardware tests indicate successful testing on physical devices. Benchmarks include performance metrics such as response time and accuracy measurements. Documentation includes API reference and usage examples.
 
-## Installation
+## 📦 Installation
 
 The library is available on PyPI and can be installed using pip:
 
@@ -65,21 +65,19 @@ pip install opensourceleg
 
 For more details on the installation process, please refer to the [installation guide](https://neurobionics.github.io/opensourceleg/installation).
 
-## Usage
+## 📚 Usage
 
 Once the library is installed, you can import it in your projects and start using the modules:
 
 ```python
-from opensourceleg.actuators import ActuatorBase
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.sensors import SensorBase
 from opensourceleg.sensors.encoder import AS5048B
 ...
 ```
 
-For more details on available modules, tutorials, and examples, please refer to the [documentation](https://neurobionics.github.io/opensourceleg/tutorials/getting_started).
+For more details on available modules, tutorials, and examples, please refer to the [documentation](https://neurobionics.github.io/opensourceleg/tutorials/sensors/getting_started).
 
-## License
+## 📝 License
 
 The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
 
@@ -90,6 +88,6 @@ The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 licens
 
 The LGPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome, and they are greatly appreciated! For more details, read our [contribution guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md).
