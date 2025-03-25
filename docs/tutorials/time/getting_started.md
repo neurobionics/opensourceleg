@@ -50,6 +50,7 @@ When creating a `SoftRealtimeLoop`, you can specify:
 - `dt`: Time step in seconds (default: 0.001)
 - `report`: Enable/disable performance reporting (default: True)
 - `fade`: Fade-out duration in seconds (default: 0.0)
+- `maintain_original_phase`: Flag to try to maintain the original loop schedule created at startup (default: False)
 
 ## Interrupt Handling
 
@@ -66,6 +67,36 @@ When reporting is enabled, the loop provides statistics on:
 - Average timing error
 - Standard deviation of timing error
 - Percentage of time spent sleeping
+
+## Note on Maintaining Original Phase
+
+The `SoftRealtimeLoop` can operate in two modes, controlled by the `maintain_original_phase` parameter:
+
+1. **Consistent Time Step (`maintain_original_phase=False` (default))**:
+    - In this mode, the loop focuses on maintaining a consistent time step between iterations, regardless of any delays or errors in previous iterations.
+    - This mode can be helpful in real-time control where you don't want previous loop errors to impact the current execution rate.
+    - Example:
+      ```python
+      rt_loop = SoftRealtimeLoop(dt=0.01, maintain_original_phase=False)
+      for t in rt_loop:
+          print(f"Time: {t:.3f}s")
+      ```
+2. **Maintain Original Phase (`maintain_original_phase=True`)**:
+    - In this mode, the loop attempts to ensure that the time elapsed since the start of the loop aligns with the expected schedule `(loop_number * dt)`.
+    - This is useful for applications where precise timing relative to the start of the loop is critical, such as synchronized control systems where the total time is important to maintain.
+    - If the loop falls behind schedule, it will attempt to catch up by reducing sleep time in subsequent iterations.
+    - Example:
+      ```python
+      rt_loop = SoftRealtimeLoop(dt=0.01, maintain_original_phase=True)
+      for t in rt_loop:
+          print(f"Time: {t:.3f}s")
+      ```
+
+### Key Differences:
+- **Original Phase Mode**: Prioritizes alignment with the overall schedule, even if it means adjusting the timing of individual iterations.
+- **Consistent Time Step Mode**: Prioritizes uniform spacing between iterations, even if it deviates from the overall schedule.
+
+Choose the mode that best suits your application's requirements. Most often, we use the default mode for OSL controllers.
 
 ## Next Steps
 
