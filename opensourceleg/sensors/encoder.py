@@ -47,10 +47,10 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
 
         Args:
+            tag (str): Tag name for the encoder
             bus (str): Path to the i2c bus ex. '/dev/i2c-1'
             A1_adr_pin (int): State of the adress pin A1 on the AS5048A module
             A2_adr_pin (int): State of the adress pin A1 on the AS5048A module
-            name (str): Tag name for the encoder
             zero_position (int): The zero position of the encoder
 
         Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se),

@@ -8,7 +8,7 @@ The library ships with three example implementations of the same finite state ma
 
 The first implementation is entirely in Python and uses the `StateMachine` class from the control subpackage of this library. If you plan to write your controllers exclusively in Python, this example is a good starting point.
 
-The library also supports using compiled `C` and `C++` library functions via the `CompiledController` class. You can see a basic example of this module on the [tutorials page](/opensourceleg/tutorials/control/compiled_controller/), which may be helpful to review before starting with this example. We've duplicated the FSM behavior in both `C++` and `MATLAB`. The source code for these control implementations is available in [this repository](https://github.com/neurobionics/OSL_CompiledControllers_Source). Refer to the documentation in that repository for instructions on compiling both the `C++` and the `MATLAB` source code.
+The library also supports using compiled `C` and `C++` library functions via the `CompiledController` class. You can see a basic example of this module on the [tutorials page](../tutorials/control/compiled_controller.md), which may be helpful to review before starting with this example. We've duplicated the FSM behavior in both `C++` and `MATLAB`. The source code for these control implementations is available in [this repository](https://github.com/neurobionics/OSL_CompiledControllers_Source). Refer to the documentation in that repository for instructions on compiling both the `C++` and the `MATLAB` source code.
 
 ---
 
@@ -38,7 +38,7 @@ Next, we create a function that returns an instance of the `StateMachine` class.
 ```
 
 > **Note**:
-> If instantiating the OSL hardware and sensors is unfamiliar, check out the [the tutorials pages](/opensourceleg/tutorials/actuators/getting_started/).
+> If instantiating the OSL hardware and sensors is unfamiliar, check out the [the tutorials pages](../tutorials/actuators/getting_started.md).
 
 
 Next, we initialize the standard actuators, sensors, logger, and loop classes for the OSL:
@@ -82,7 +82,7 @@ First, perform standard imports, handle paths, and set up the hardware for the O
 ```
 
 > **Note**:
-> If instantiating the OSL hardware and sensors is unfamiliar, check out the [the tutorials pages](/opensourceleg/tutorials/actuators/getting_started/).
+> If instantiating the OSL hardware and sensors is unfamiliar, check out the [the tutorials pages](../tutorials/actuators/getting_started.md).
 
 Next, instantiate a `CompiledController` wrapper object:
 

@@ -783,7 +783,6 @@ class ActuatorBase(ABC):
             output_position_offset (float): Offset to add to the output position.
             current_threshold (int): Current threshold to stop homing.
             velocity_threshold (float): Velocity threshold to stop homing.
-            **kwargs (Any): Additional keyword arguments.
 
         Examples:
             >>> actuator.home()
