@@ -65,7 +65,7 @@ You can access timing statistics programmatically:
 rt_loop = SoftRealtimeLoop(dt=0.001)
 # ... run your loop ...
 avg_error = rt_loop.sum_err / rt_loop.n if rt_loop.n > 0 else 0
-sleep_percentage = (rt_loop.sleep_t_agg / rt_loop.time()) * 100 if rt_loop.time() > 0 else 0
+sleep_percentage = (rt_loop.sleep_t_agg / rt_loop.time_since_start) * 100 if rt_loop.time_since_start > 0 else 0
 ```
 
 By monitoring these statistics, you can ensure your real-time applications maintain precise timing and reliable performance. The statistics help identify when your loop needs tuning or when system resources are becoming constrained.
