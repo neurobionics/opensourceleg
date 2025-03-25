@@ -1,6 +1,12 @@
 """
-This example is not meant to be used as a walking controller but
-just to provide a reference for how a torque trajectory can be loaded and commanded.
+This example demonstrates how torque trajectories can be loaded and commanded on the Open Source Leg (OSL).
+This is not a walking controller.
+
+Authors: Senthur Raj Ayyappan <senthura@umich.edu>, Varun Satyadev Shetty <vashetty@umich.edu>
+Neurobionics Lab
+Robotics Department
+University of Michigan
+March 25th, 2025
 """
 
 import argparse

@@ -1,6 +1,11 @@
 # Torque Trajectory Control Tutorial
 
-This tutorial demonstrates how to control the Open Source Leg (OSL) using torque trajectories for both the knee and ankle joints.
+This `opensourceleg.control` module provides functiionality for doing torque control. This tutorial demonstrates how to control the Open Source Leg (OSL) using torque trajectories for both the knee and ankle joints.
+## Warnings:
+
+1. This example is not meant to be used as a walking controller. The goal of this example is to provide a reference for how a torque trajectory can be loaded and commanded.
+2. While runnig this script make sure to have load on the actuators.
+3. Please be cautious while changing mass parameters.
 
 ## Overview
 
@@ -147,4 +152,8 @@ The script generates:
       - Actual vs. commanded torques
       - Joint position data in degrees
 
+## Full Script for this tutorial
+```python
+--8<-- "tutorials/control/torque_trajectory/torque_trajectory.py:1:212"
+```
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
