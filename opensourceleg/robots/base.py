@@ -61,7 +61,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Returns:
             RobotBase: The current robot instance.
 
-        Example:
+        Examples:
             >>> with MyRobot() as robot:
             ...     robot.update()
         """
@@ -92,7 +92,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Returns:
             None
 
-        Example:
+        Examples:
             >>> robot = MyRobot()
             >>> robot.start()
         """
@@ -115,7 +115,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Returns:
             None
 
-        Example:
+        Examples:
             >>> robot = MyRobot()
             >>> robot.start()
             ... # Do something with the robot
@@ -139,7 +139,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Returns:
             None
 
-        Example:
+        Examples:
             >>> robot = MyRobot()
             >>> robot.start()
             >>> robot.update()
@@ -158,7 +158,7 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Returns:
             str: The robot's tag.
 
-        Example:
+        Examples:
             >>> robot = MyRobot()
             >>> robot.tag
             "my_robot"

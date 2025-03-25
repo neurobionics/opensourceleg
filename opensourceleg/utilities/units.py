@@ -103,7 +103,7 @@ def convert_to_default(value: float, from_unit: float) -> float:
     Returns:
         float: Converted value in default units.
 
-    Example:
+    Examples:
         >>> convert_to_default(2, units.Current.A)
         2000 # returns value in mA, which is the default unit for current
 
@@ -127,7 +127,7 @@ def convert_from_default(value: float, to_unit: float) -> float:
     Returns:
         float: Converted value in desired unit.
 
-    Example:
+    Examples:
 
         >>> convert_from_default(2000, units.Current.A)
         2.0 # A

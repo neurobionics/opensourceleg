@@ -381,7 +381,7 @@ class SafetyManager:
         """
         Applies all decorators to the properties of the objects in the safe_objects dictionary.
 
-        Example:
+        Examples:
         >>> safety_manager = SafetyManager()
         >>> safety_manager.add_safety(sensor, "value", SafetyDecorators.is_changing("value"))
         >>> safety_manager.add_safety(sensor, "a", SafetyDecorators.is_positive())
@@ -407,7 +407,7 @@ class SafetyManager:
         """
         Accesses the properties of the objects in the safe_objects dictionary, thereby triggering the decorators.
 
-        Example:
+        Examples:
         TODO: Add example
         """
         for container, safe_attributes in self.safe_objects.items():

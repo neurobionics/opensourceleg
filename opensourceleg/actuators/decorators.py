@@ -60,7 +60,7 @@ def check_actuator_open(func: Callable) -> Callable:
     Raises:
         ActuatorConnectionException: If the actuator is not open.
 
-    Example:
+    Examples:
         >>> class MyActuator(ActuatorBase):
         ...     @check_actuator_open
         ...     def my_method(self):
@@ -97,7 +97,7 @@ def check_actuator_stream(func: Callable) -> Callable:
     Raises:
         ActuatorStreamException: If the actuator is not streaming.
 
-    Example:
+    Examples:
         >>> class MyActuator(ActuatorBase):
         ...     @check_actuator_stream
         ...     def my_method(self):

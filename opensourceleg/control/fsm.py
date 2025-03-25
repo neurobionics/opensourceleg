@@ -45,7 +45,7 @@ class State:
             exit_callbacks: List of functions to call when exiting the state.
             **kwargs: Additional attributes to set on the state
 
-        Example:
+        Examples:
             >>> state = State(
             ...     name="idle",
             ...     minimum_time_in_state=2.0,
@@ -82,7 +82,7 @@ class State:
         Args:
             time: Minimum time spent in the state in seconds
 
-        Example:
+        Examples:
             >>> state.set_minimum_time_spent_in_state(2.0)
         """
         self._min_time_in_state = time
@@ -94,7 +94,7 @@ class State:
         Args:
             callback: Function to be called when entering the state
 
-        Example:
+        Examples:
             >>> state.add_entry_callback(lambda: if t > 0: print("Entering idle state"))
         """
         self._entry_callbacks.append(callback)
@@ -106,7 +106,7 @@ class State:
         Args:
             callback: Function to be called when exiting the state
 
-        Example:
+        Examples:
             >>> state.add_exit_callback(lambda: if t > 1: print("Exiting idle state"))
         """
         self._exit_callbacks.append(callback)
@@ -119,7 +119,7 @@ class State:
             *args: Arguments to pass to the entry callbacks
             **kwargs: Keyword arguments to pass to the entry callbacks
 
-        Example:
+        Examples:
             >>> state.enter(x=1)
         """
         self._time_entered = time.monotonic()
@@ -134,7 +134,7 @@ class State:
             *args: Arguments to pass to the exit callbacks
             **kwargs: Keyword arguments to pass to the exit callbacks
 
-        Example:
+        Examples:
             >>> state.exit(x=1)
         """
         self._time_exited = time.monotonic()
@@ -191,7 +191,7 @@ class Event:
         Args:
             name: The name of the event.
 
-        Example:
+        Examples:
             >>> event = Event("walk")
         """
         self._name: str = name
@@ -238,7 +238,7 @@ class Transition:
             criteria: Optional function that returns True if transition should occur
             action: Optional function to execute during transition
 
-        Example:
+        Examples:
             >>> transition = Transition(
             ...     event=Event("walk"),
             ...     source=State("idle"),
@@ -300,7 +300,7 @@ class Transition:
         Args:
             callback: Function that returns True if transition should occur
 
-        Example:
+        Examples:
             >>> transition.add_criteria(lambda: if t > 0: True)
         """
         self._criteria = callback
@@ -312,7 +312,7 @@ class Transition:
         Args:
             callback: Function to execute during transition
 
-        Example:
+        Examples:
             >>> transition.add_action(lambda: print("Walking"))
         """
         self._action = callback
@@ -365,7 +365,7 @@ class StateMachine:
             states: List of states to add to the state machine
             initial_state_name: Name of the initial state to set
 
-        Example:
+        Examples:
             >>> sm = StateMachine(states=[State("idle"), State("walking"), State("running")],
             ...     initial_state_name="idle")
         """
@@ -391,7 +391,7 @@ class StateMachine:
             states: List of states to add
             initial_state_name: Name of the state to set as initial state
 
-        Example:
+        Examples:
             >>> sm.add_states([State("idle"), State("walking"), State("running")], initial_state_name="idle")
         """
         for state in states:
@@ -420,7 +420,7 @@ class StateMachine:
         Args:
             events: List of events to add
 
-        Example:
+        Examples:
             >>> sm.add_events([Event("walk"), Event("run"), Event("stop")])
         """
         for event in events:
@@ -440,7 +440,7 @@ class StateMachine:
         Returns:
             State: The created state
 
-        Example:
+        Examples:
             >>> sm.create_state(
             ...     name="idle",
             ...     minimum_time_spent_in_state=2.0,
@@ -462,7 +462,7 @@ class StateMachine:
         Returns:
             Event: The created event
 
-        Example:
+        Examples:
             >>> sm.create_event("walk")
         """
         event = Event(name=name)
@@ -491,7 +491,7 @@ class StateMachine:
         Returns:
             Optional[Transition]: The created transition, or None if the transition couldn't be created
 
-        Example:
+        Examples:
             >>> sm.add_transition(
             ...     source=State("idle"),
             ...     destination=State("walking"),
@@ -529,7 +529,7 @@ class StateMachine:
         Args:
             **kwargs: Named arguments to pass to transition criteria and actions
 
-        Example:
+        Examples:
             >>> sm.update(t=t)
         """
         if not self._current_state:
@@ -564,7 +564,7 @@ class StateMachine:
             *args: Arguments to pass to the initial state
             **kwargs: Keyword arguments to pass to the initial state
 
-        Example:
+        Examples:
             >>> sm.start(x=1)
         """
         if not self._initial_state:
@@ -583,7 +583,7 @@ class StateMachine:
             *args: Arguments to pass to the exit state
             **kwargs: Keyword arguments to pass to the exit state
 
-        Example:
+        Examples:
             >>> sm.stop(x=1)
         """
         if not self._current_state:
@@ -598,7 +598,7 @@ class StateMachine:
         Returns:
             StateMachine: The state machine
 
-        Example:
+        Examples:
             >>> with sm:
             ...     # Use the state machine
             ...     pass
@@ -614,7 +614,7 @@ class StateMachine:
             *args: Arguments to pass to the exit state
             **kwargs: Keyword arguments to pass to the exit state
 
-        Example:
+        Examples:
             >>> with sm:
             ...     # Use the state machine
             ...     pass

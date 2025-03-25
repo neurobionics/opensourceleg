@@ -62,7 +62,7 @@ class LoopKiller:
         Returns:
             None
 
-        Example:
+        Examples:
             >>> killer = LoopKiller()
             >>> killer.handle_signal(signal.SIGTERM, None)
         """
@@ -75,7 +75,7 @@ class LoopKiller:
         Returns:
             float: The fade value.
 
-        Example:
+        Examples:
             >>> killer = LoopKiller()
             >>> killer.get_fade()
         """
@@ -99,7 +99,7 @@ class LoopKiller:
         Returns:
             bool: The kill_now value.
 
-        Example:
+        Examples:
             >>> killer = LoopKiller()
             >>> killer.kill_now
         """
@@ -232,7 +232,7 @@ class SoftRealtimeLoop:
         Resets the loop state and signal handlers to their initial state.
         This allows reusing the same loop instance instead of creating a new one.
 
-        Example:
+        Examples:
             >>> loop = SoftRealtimeLoop()
             >>> loop.run(some_function)
             >>> loop.reset()  # Reset for reuse
