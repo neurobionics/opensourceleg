@@ -1,6 +1,7 @@
 import time
 import warnings
 from math import isfinite
+from typing import Optional
 
 import can
 import numpy as np
@@ -189,7 +190,15 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         print("Turning off control for device: " + self.device_info_string())
         self.power_off()
 
-    def home(self):
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ):
         pass
 
     def update(self):  # noqa: C901

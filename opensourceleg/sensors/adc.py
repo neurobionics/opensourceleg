@@ -129,7 +129,7 @@ class ADS131M0x(ADCBase):
             LOGGER.warning("spidev is not installed")
             exit(1)
 
-        self.__init__(tag=tag, offline=offline)
+        super().__init__(tag=tag, offline=offline)
 
         if gain_error is None:
             gain_error = []

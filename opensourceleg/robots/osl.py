@@ -5,10 +5,10 @@ from typing import Optional, Union
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
-from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyLegacyActuator
+from opensourceleg.actuators.dephy import DEFAULT_CURRENT_GAINS, DEFAULT_POSITION_GAINS, DephyLegacyActuator
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
-from opensourceleg.sensors.base import EncoderBase, LoadcellBase, SensorBase
+from opensourceleg.sensors.base import LoadcellBase, SensorBase
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
 
 
@@ -114,7 +114,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         overwrite: bool = False,
     ) -> None:
         _actuator: ActuatorBase = self.actuators[actuator_key]
-        _encoder: EncoderBase = self.sensors[encoder_key]
+        _encoder: SensorBase = self.sensors[encoder_key]
 
         if not _actuator.is_homed:
             LOGGER.warning(
@@ -124,14 +124,19 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
         if os.path.exists(f"./{_encoder.tag}_linearization_map.npy") and not overwrite:
             LOGGER.info(msg=f"[{str.upper(_encoder.tag)}] Encoder map exists. Skipping encoder map creation.")
-            _encoder.set_encoder_map(np.load(f"./{_encoder.tag}_linearization_map.npy"))
+            _encoder.set_encoder_map(np.load(f"./{_encoder.tag}_linearization_map.npy"))  # type: ignore[attr-defined]
             LOGGER.info(
                 msg=f"[{str.upper(_encoder.tag)}] Encoder map loaded from " f"'./{_encoder.tag}_linearization_map.npy'."
             )
             return None
 
         _actuator.set_control_mode(mode=CONTROL_MODES.CURRENT)
-        _actuator.set_current_gains()
+        _actuator.set_current_gains(
+            kp=DEFAULT_CURRENT_GAINS.kp,
+            ki=DEFAULT_CURRENT_GAINS.ki,
+            kd=DEFAULT_CURRENT_GAINS.kd,
+            ff=DEFAULT_CURRENT_GAINS.ff,
+        )
 
         time.sleep(0.1)
 
@@ -158,7 +163,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 _actuator.update()
                 _encoder.update()
 
-                _joint_encoder_array.append(_encoder.position)
+                _joint_encoder_array.append(_encoder.position)  # type: ignore[attr-defined]
                 _output_position_array.append(_actuator.output_position)
                 time.sleep(1 / _actuator.frequency)
 
@@ -173,7 +178,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         _beta = np.linalg.lstsq(_a_mat, _output_position_array, rcond=None)
         _coeffs = _beta[0]
 
-        _encoder.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))
+        _encoder.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))  # type: ignore[attr-defined]
 
         np.save(file=f"./{_encoder.tag}_linearization_map.npy", arr=_coeffs)
 

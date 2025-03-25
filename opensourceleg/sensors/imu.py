@@ -497,7 +497,7 @@ class BNO055(IMUBase):
             LOGGER.error("BNO055IMU requires adafruit_bno055, board, and busio packages. " f"Error: {e}")
             exit(1)
 
-        self.__init__(tag=tag, offline=offline)
+        super().__init__(tag=tag, offline=offline)
         self._address: int = addr
         self._gyro_data: list[float] = [0.0, 0.0, 0.0]
         self._acc_data: list[float] = [0.0, 0.0, 0.0]

@@ -274,7 +274,15 @@ class MoteusActuator(ActuatorBase, Controller):
 
         self._command = self.make_query()
 
-    def home(self) -> None:
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
         # TODO: implement homing
         LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
 

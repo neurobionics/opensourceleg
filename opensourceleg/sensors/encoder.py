@@ -114,7 +114,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
             >>> actuator.start()
             >>> actuator.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=[1, 2, 3, 4, 5]))
         """
-        self._encoder_map: np.polynomial.polynomial.Polynomial = encoder_map
+        self._encoder_map = encoder_map
 
     # def apply_state(self, state: Encoder.State) -> None:
     # raise NotImplementedError(f"apply_state not implemented for {self.__class__}")
@@ -392,7 +392,7 @@ if __name__ == "__main__":
     frequency = 200
 
     knee_enc = AS5048B(
-        name="knee",
+        tag="knee",
         bus="/dev/i2c-1",
         A1_adr_pin=True,
         A2_adr_pin=False,
@@ -400,7 +400,7 @@ if __name__ == "__main__":
     )
 
     ankle_enc = AS5048B(
-        name="ankle",
+        tag="ankle",
         bus="/dev/i2c-1",
         A1_adr_pin=False,
         A2_adr_pin=True,

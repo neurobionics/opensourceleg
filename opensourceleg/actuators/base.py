@@ -761,12 +761,29 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    def home(self) -> None:
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
         """
         Home the actuator.
 
         Aligns the actuator to a known reference position.
         Must be implemented by subclasses.
+
+        Args:
+            homing_voltage (int): Voltage to use for homing.
+            homing_frequency (Optional[int]): Frequency to use for homing.
+            homing_direction (int): Direction to move the actuator during homing.
+            output_position_offset (float): Offset to add to the output position.
+            current_threshold (int): Current threshold to stop homing.
+            velocity_threshold (float): Velocity threshold to stop homing.
+            **kwargs (Any): Additional keyword arguments.
 
         Examples:
             >>> actuator.home()
