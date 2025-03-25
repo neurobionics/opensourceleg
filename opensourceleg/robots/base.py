@@ -44,9 +44,9 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         Initialize the RobotBase instance.
 
         Args:
-            tag (str): A unique identifier for the robot.
-            actuators (dict[str, TActuator]): A dictionary of actuators keyed by their names.
-            sensors (dict[str, TSensor]): A dictionary of sensors keyed by their names.
+            tag: A unique identifier for the robot.
+            actuators: A dictionary of actuators keyed by their names.
+            sensors: A dictionary of sensors keyed by their names.
         """
         self._tag = tag
         self.actuators: dict[str, TActuator] = actuators

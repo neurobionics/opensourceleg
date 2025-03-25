@@ -16,7 +16,7 @@ def check_actuator_connection(func: Callable) -> Callable:
     offline, it raises an ActuatorConnectionException using the actuator's tag.
 
     Args:
-        func (Callable): The method to wrap. It is expected to be an instance method of ActuatorBase.
+        func: The method to wrap. It is expected to be an instance method of ActuatorBase.
 
     Returns:
         Callable: The wrapped method that executes only if the actuator is online.
@@ -52,7 +52,7 @@ def check_actuator_open(func: Callable) -> Callable:
     it raises an ActuatorConnectionException with the actuator's tag.
 
     Args:
-        func (Callable): The method to wrap. It is expected to be an instance method of ActuatorBase.
+        func: The method to wrap. It is expected to be an instance method of ActuatorBase.
 
     Returns:
         Callable: The wrapped method that executes only if the actuator is open.
@@ -89,7 +89,7 @@ def check_actuator_stream(func: Callable) -> Callable:
     is not streaming, it raises an ActuatorStreamException using the actuator's tag.
 
     Args:
-        func (Callable): The method to wrap. It is expected to be an instance method of ActuatorBase.
+        func: The method to wrap. It is expected to be an instance method of ActuatorBase.
 
     Returns:
         Callable: The wrapped method that executes only if the actuator is streaming.

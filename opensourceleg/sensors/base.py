@@ -15,7 +15,7 @@ class SensorNotStreamingException(Exception):
         Initialize the SensorNotStreamingException.
 
         Args:
-            sensor_name (str, optional): The name or identifier of the sensor. Defaults to "Sensor".
+            sensor_name: The name or identifier of the sensor. Defaults to "Sensor".
         """
         super().__init__(
             f"{sensor_name} is not streaming, please ensure that the connections are intact, "
@@ -30,7 +30,7 @@ def check_sensor_stream(func: Callable) -> Callable:
     If the sensor is not streaming, a SensorNotStreamingException is raised.
 
     Args:
-        func (Callable): The sensor method to be wrapped.
+        func: The sensor method to be wrapped.
 
     Returns:
         Callable: The wrapped method that checks streaming status before execution.
@@ -140,9 +140,9 @@ class SensorBase(ABC):
         This method calls stop() to shut down the sensor.
 
         Args:
-            exc_type (Any): Exception type if raised.
-            exc_value (Any): Exception value if raised.
-            traceback (Any): Traceback if an exception occurred.
+            exc_type: Exception type if raised.
+            exc_value: Exception value if raised.
+            traceback: Traceback if an exception occurred.
         """
         self.stop()
 

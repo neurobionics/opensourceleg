@@ -244,7 +244,7 @@ def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
     ensuring that the function is only active in the specified control modes.
 
     Args:
-        *modes (CONTROL_MODES): One or more control modes required for the method.
+        *modes: One or more control modes required for the method.
 
     Raises:
         TypeError: If any argument is not an instance of CONTROL_MODES.
@@ -264,7 +264,7 @@ def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
         Attach required control modes to the decorated function.
 
         Args:
-            func (T): The function to be decorated.
+            func: The function to be decorated.
 
         Returns:
             T: The same function with an updated `_required_modes` attribute.
@@ -377,12 +377,12 @@ class ActuatorBase(ABC):
         Initialize an actuator.
 
         Args:
-            tag (str): A unique identifier for the actuator.
-            gear_ratio (float): The gear ratio of the actuator.
-            motor_constants (MOTOR_CONSTANTS): Motor constant configuration parameters.
-            frequency (int, optional): Control frequency in Hz. Defaults to 1000.
-            offline (bool, optional): Flag indicating if the actuator operates in offline mode. Defaults to False.
-            **kwargs (Any): Additional keyword arguments.
+            tag: A unique identifier for the actuator.
+            gear_ratio: The gear ratio of the actuator.
+            motor_constants: Motor constant configuration parameters.
+            frequency: Control frequency in Hz. Defaults to 1000.
+            offline: Flag indicating if the actuator operates in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments.
 
         Examples:
             >>> actuator = DummyActuator(
@@ -435,9 +435,9 @@ class ActuatorBase(ABC):
         Exit the runtime context and stop the actuator.
 
         Args:
-            exc_type (Any): Exception type, if any.
-            exc_value (Any): Exception value, if any.
-            exc_traceback (Any): Exception traceback, if any.
+            exc_type: Exception type, if any.
+            exc_value: Exception value, if any.
+            exc_traceback: Exception traceback, if any.
 
         Examples:
             >>> try:
@@ -456,9 +456,9 @@ class ActuatorBase(ABC):
         in the current control mode.
 
         Args:
-            method_name (str): Name of the restricted method.
-            *args (Any): Positional arguments passed to the method.
-            **kwargs (Any): Keyword arguments passed to the method.
+            method_name: Name of the restricted method.
+            *args: Positional arguments passed to the method.
+            **kwargs: Keyword arguments passed to the method.
 
         Examples:
             >>> actuator._restricted_method("set_motor_voltage")
@@ -566,7 +566,7 @@ class ActuatorBase(ABC):
         Retrieve the control mode configuration for a specified mode.
 
         Args:
-            mode (CONTROL_MODES): The control mode for which to retrieve the configuration.
+            mode: The control mode for which to retrieve the configuration.
 
         Returns:
             Optional[ControlModeConfig]: The configuration if it exists; otherwise, None.
@@ -590,7 +590,7 @@ class ActuatorBase(ABC):
         to reflect any restrictions imposed by the new mode.
 
         Args:
-            mode (CONTROL_MODES): The new control mode to be set.
+            mode: The new control mode to be set.
 
         Examples:
             >>> actuator.set_control_mode(CONTROL_MODES.POSITION)
@@ -617,7 +617,7 @@ class ActuatorBase(ABC):
         Set the motor voltage.
 
         Args:
-            value (float): The voltage value to be applied to the motor.
+            value: The voltage value to be applied to the motor.
 
         Must be implemented by subclasses.
 
@@ -632,7 +632,7 @@ class ActuatorBase(ABC):
         Set the motor current.
 
         Args:
-            value (float): The current value to be applied to the motor.
+            value: The current value to be applied to the motor.
 
         Must be implemented by subclasses.
 
@@ -647,7 +647,7 @@ class ActuatorBase(ABC):
         Set the motor position.
 
         Args:
-            value (float): The target motor position in radians.
+            value: The target motor position in radians.
 
         Must be implemented by subclasses.
 
@@ -664,7 +664,7 @@ class ActuatorBase(ABC):
         applying the gear ratio, then delegates to `set_motor_position`.
 
         Args:
-            value (float): The desired output position in radians.
+            value: The desired output position in radians.
 
         Examples:
             >>> # Assuming gear_ratio is 100, this will set the motor position to 100 * value.
@@ -680,7 +680,7 @@ class ActuatorBase(ABC):
         Set the motor torque.
 
         Args:
-            value (float): The torque value to be applied to the motor.
+            value: The torque value to be applied to the motor.
 
         Must be implemented by subclasses.
 
@@ -695,7 +695,7 @@ class ActuatorBase(ABC):
         Set the output torque.
 
         Args:
-            value (float): The torque value to be applied to the joint.
+            value: The torque value to be applied to the joint.
 
         Must be implemented by subclasses.
 
@@ -710,10 +710,10 @@ class ActuatorBase(ABC):
         Set the current control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
-            ff (float): Feed-forward gain.
+            kp: Proportional gain.
+            ki: Integral gain.
+            kd: Derivative gain.
+            ff: Feed-forward gain.
 
         Must be implemented by subclasses.
 
@@ -728,10 +728,10 @@ class ActuatorBase(ABC):
         Set the position control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
-            ff (float): Feed-forward gain.
+            kp: Proportional gain.
+            ki: Integral gain.
+            kd: Derivative gain.
+            ff: Feed-forward gain.
 
         Must be implemented by subclasses.
 
@@ -746,12 +746,12 @@ class ActuatorBase(ABC):
         Set the impedance control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
-            k (float): Stiffness coefficient.
-            b (float): Damping coefficient.
-            ff (float): Feed-forward gain.
+            kp: Proportional gain.
+            ki: Integral gain.
+            kd: Derivative gain.
+            k: Stiffness coefficient.
+            b: Damping coefficient.
+            ff: Feed-forward gain.
 
         Must be implemented by subclasses.
 
@@ -777,12 +777,12 @@ class ActuatorBase(ABC):
         Must be implemented by subclasses.
 
         Args:
-            homing_voltage (int): Voltage to use for homing.
-            homing_frequency (Optional[int]): Frequency to use for homing.
-            homing_direction (int): Direction to move the actuator during homing.
-            output_position_offset (float): Offset to add to the output position.
-            current_threshold (int): Current threshold to stop homing.
-            velocity_threshold (float): Velocity threshold to stop homing.
+            homing_voltage: Voltage to use for homing.
+            homing_frequency: Frequency to use for homing.
+            homing_direction: Direction to move the actuator during homing.
+            output_position_offset: Offset to add to the output position.
+            current_threshold: Current threshold to stop homing.
+            velocity_threshold: Velocity threshold to stop homing.
 
         Examples:
             >>> actuator.home()
@@ -795,7 +795,7 @@ class ActuatorBase(ABC):
         Set the motor zero position.
 
         Args:
-            value (float): The motor zero position in radians.
+            value: The motor zero position in radians.
 
         Examples:
             >>> actuator.set_motor_zero_position(0.0)
