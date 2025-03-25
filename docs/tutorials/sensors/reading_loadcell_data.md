@@ -4,94 +4,137 @@ This tutorial demonstrates how to use the Dephy Loadcell Amplifier with the Open
 
 ## Hardware Setup
 
-1. Connect the Dephy Loadcell Amplifier via I2C
+1. Connect the loadcell to the Dephy Loadcell Amplifier and the amplifier to the Raspberry Pi via I2C
 2. Verify proper power supply connections
 3. Ensure proper grounding
 4. Mount the loadcell securely
 
-## Code Example
+This example shows how to:
 
-The complete code can be found in ```1:63:tutorials/sensors/loadcell.py```. Here's how to use the loadcell:
+- Initialize and configure a Dephy Loadcell Amplifier
+- Read forces and moments (6-axis measurements)
+- Log loadcell measurements
 
-## Code Explanation
+## Code Structure
 
-Let's break down the key components:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/loadcell.py) is organized into several main sections:
 
-1. **Configuration and Constants** (```1:9:tutorials/sensors/loadcell.py```):
-   ```python
-   FREQUENCY = 200  # 200Hz sampling rate
-   DT = 1 / FREQUENCY
+### 1. Initialization
+
+```python
+--8<-- "tutorials/sensors/loadcell.py:1:40"
+```
+
+This section:
+
+- Sets up constants and configuration parameters
+- Defines the calibration matrix
+- Creates a data logger for recording measurements
+- Sets up a real-time loop for consistent timing
+- Initializes the DephyLoadcellAmplifier with specified parameters
+
+### 2. Main Loop
+
+```python
+--8<-- "tutorials/sensors/loadcell.py:48:55"
+```
+
+The main loop:
+
+1. Updates the loadcell to get the latest reading
+2. Logs the time and current force/torque values
+3. Updates the logger
+
+## Loadcell Parameters
+
+When initializing the DephyLoadcellAmplifier, several important parameters can be configured:
+
+```python
+--8<-- "tutorials/sensors/loadcell.py:32:40"
+```
+
+### Parameter Details
+
+1. **calibration_matrix** (np.array):
+      - 6x6 matrix that converts raw sensor values to physical units
+      - Specific to each loadcell and must be provided for accurate measurements
+      - Obtained from manufacturer after calibration procedure
+
+2. **tag** (str):
+      - Unique identifier for the loadcell instance
+      - Useful when using multiple sensors
+
+3. **amp_gain** (float):
+      - Amplifier gain setting
+      - Typically 125 for the Dephy amplifier
+      - Affects sensitivity and measurement range
+
+4. **exc** (float):
+      - Excitation voltage in volts
+      - Typically 5V for the Dephy amplifier
+      - Must match the hardware configuration
+
+5. **bus** (int):
+      - I2C bus number
+      - Typically 1 on Raspberry Pi
+      - Use `i2cdetect -y 1` to verify
+
+6. **i2c_address** (int):
+      - Device address on the I2C bus
+      - Default is 102 (0x66 in hexadecimal)
+      - Can be configured on some amplifiers
+
+## Available Properties
+
+The DephyLoadcellAmplifier provides six measurement properties:
+
+1. **Forces** (fx, fy, fz):
+      - Linear forces in Newtons (N)
+      - Three orthogonal directions
+      ```python
+      loadcell.fx  # Force in X direction
+      loadcell.fy  # Force in Y direction
+      loadcell.fz  # Force in Z direction
+      ```
+
+2. **Moments** (mx, my, mz):
+      - Torques/moments in Newton-meters (Nm)
+      - Rotation around three orthogonal axes
+      ```python
+      loadcell.mx  # Moment around X axis
+      loadcell.my  # Moment around Y axis
+      loadcell.mz  # Moment around Z axis
+      ```
+
+## Running the Example
+
+1. Navigate to the tutorial directory:
+   ```bash
+   cd tutorials/sensors
    ```
 
-2. **Calibration Matrix** (```10:23:tutorials/sensors/loadcell.py```):
-   ```python
-   LOADCELL_CALIBRATION_MATRIX = np.array([
-       (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
-       (-8.61600, 1041.14900, 18.86100, -2098.82200, 31.79400, 1058.6230),
-       # ... additional rows ...
-   ])
+2. Run the script:
+   ```bash
+   python loadcell.py
    ```
-   This matrix converts raw sensor readings to calibrated force/torque measurements.
 
-3. **Logger and Device Setup** (```25:35:tutorials/sensors/loadcell.py```):
-   ```python
-   loadcell = DephyLoadcellAmplifier(
-       calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
-       amp_gain=125,
-       exc=5,
-       bus=1,
-       i2c_address=102,
-   )
-   ```
-   Key parameters:
-   - `amp_gain`: Amplifier gain (typically 125)
-   - `exc`: Excitation voltage (5V)
-   - `bus`: I2C bus number
-   - `i2c_address`: Device address on I2C bus
-
-4. **Data Tracking** (```37:44:tutorials/sensors/loadcell.py```):
-   - Tracks six measurements:
-     - Forces (Fx, Fy, Fz)
-     - Moments (Mx, My, Mz)
-
-5. **Main Loop** (```46:63:tutorials/sensors/loadcell.py```):
-   - Uses context manager for safe resource handling
-   - Continuously reads and logs force/torque data
-   - Updates at specified frequency
-
-## Expected Output
-
-The script outputs six values:
-- Forces (N): Fx, Fy, Fz
-- Moments (Nm): Mx, My, Mz
+3. Expected behavior:
+      - Loadcell begins reading force/torque data continuously at 200Hz
+      - Data is logged to `./logs/reading_loadcell_data.csv`
+      - Force and moment values update as you apply loads to the sensor
 
 ## Common Issues
 
-1. **I2C Communication Errors**
-   - Verify connections:
-     ```bash
-     i2cdetect -y 1
-     ```
-   - Check address matches configuration
-   - Verify proper wiring
+- **I2C Communication Errors**: Verify connections with `i2cdetect -y 1`
+- **Permission Denied**: Add user to i2c group: `sudo usermod -a -G i2c $USER`
+- **Incorrect Readings**: Check calibration matrix and amplifier settings
+- **Noise in Measurements**: Verify grounding and power supply stability
+- **Drift in Readings**: The loadcell might have to be re-calibrated by the manufacturer
 
-2. **Incorrect Readings**
-   - Verify calibration matrix
-   - Check amplifier gain setting
-   - Ensure proper excitation voltage
-   - Zero/tare the loadcell when unloaded
-
-3. **Noise in Measurements**
-   - Check grounding
-   - Verify power supply stability
-   - Consider adding mechanical isolation
-   - Implement digital filtering
-
-## Advanced Usage
-
-### Calibration
+## Calibration
 
 The calibration matrix is crucial for accurate measurements. The provided matrix:
+
 ```python
 LOADCELL_CALIBRATION_MATRIX = np.array([
     (-38.72600, -1817.74700, 9.84900, 43.37400, -44.54000, 1824.67000),
@@ -103,20 +146,13 @@ Should be replaced with your specific loadcell's calibration values.
 ## Best Practices
 
 1. **Before Each Use**
-   - Zero the loadcell when unloaded
-   - Verify all connections
-   - Check mounting security
 
-2. **During Operation**
-   - Monitor for overload conditions
-   - Watch for temperature effects
-   - Log any anomalies
+      - Verify all connections
 
-3. **Maintenance**
-   - Regular calibration checks
-   - Clean connections
-   - Monitor for drift
+2. **Maintenance**
 
-For more detailed information, refer to:
-- [Loadcell API Documentation](../../api/sensors/loadcell.md)
-- [Dephy Documentation](https://dephy.com/documentation)
+      - Regular calibration checks
+      - Clean connections
+      - Monitor for drift
+
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
