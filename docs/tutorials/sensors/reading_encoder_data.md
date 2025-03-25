@@ -53,9 +53,9 @@ When initializing the AS5048B encoder, several important parameters can be confi
       - Unique identifier for the encoder instance
       - Useful when using multiple encoders
 
-2. **bus** (int or str):
+2. **bus** (str):
       - Specifies the I2C bus to use
-      - Can be a number (e.g., `1`) or a path (e.g., `"/dev/i2c-1"`)
+      - Should be a path (e.g., `"/dev/i2c-1"`)
       - Default bus on Raspberry Pi is typically `1`
 
 3. **A1_adr_pin** and **A2_adr_pin** (bool):
