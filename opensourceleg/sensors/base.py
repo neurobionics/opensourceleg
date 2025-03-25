@@ -391,15 +391,6 @@ class IMUBase(SensorBase, ABC):
         """
         super().__init__(tag=tag, offline=offline, **kwargs)
 
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the IMU sensor.
-
-        Returns:
-            str: "IMU"
-        """
-        return "IMU"
-
     @property
     @abstractmethod
     def acc_x(self) -> float:
