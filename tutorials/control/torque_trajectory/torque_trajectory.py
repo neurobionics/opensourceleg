@@ -3,13 +3,14 @@ This example is not meant to be used as a walking controller but
 just to provide a reference for how a torque trajectory can be loaded and commanded.
 """
 
-import pickle
-import numpy as np
 import argparse
-import matplotlib.pyplot as plt
+import pickle
+
+import numpy as np
+
 from opensourceleg.actuators import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.logging import LOGGER, Logger
+from opensourceleg.logging import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.utilities import SoftRealtimeLoop
@@ -37,11 +38,17 @@ def get_torque(t: float, data: list, user_mass: float, stride_time: float, traje
     3. Returns torque value at that index scaled by user_mass
     """
     walking_time = t % stride_time
-    index = int(walking_time * trajectory_len) 
+    index = int(walking_time * trajectory_len)
     return user_mass * data[index]
 
 
 def plot_data(plotting_data: list) -> None:
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("matplotlib is not installed, skipping plot")
+        return
+
     # plot the data using matplotlib
     plt.figure(figsize=(12, 10))
 
@@ -83,20 +90,21 @@ def plot_data(plotting_data: list) -> None:
 
 if __name__ == "__main__":
     # Set up argument parser
-    parser = argparse.ArgumentParser(description='Torque trajectory control for Open Source Leg')
-    parser.add_argument('--mass', type=float, default=1.0,
-                      help='User mass in kg (default: 1.0)',required=False)
-    parser.add_argument('--stride-time', type=float, default=1,
-                      help='Stride time in seconds (default: 1)', required=False)  
-    parser.add_argument('--frequency', type=float, default=200.0,
-                      help='Control loop frequency in Hz (default: 200.0)', required=False)
+    parser = argparse.ArgumentParser(description="Torque trajectory control for Open Source Leg")
+    parser.add_argument("--mass", type=float, default=1.0, help="User mass in kg (default: 1.0)", required=False)
+    parser.add_argument(
+        "--stride-time", type=float, default=1, help="Stride time in seconds (default: 1)", required=False
+    )
+    parser.add_argument(
+        "--frequency", type=float, default=200.0, help="Control loop frequency in Hz (default: 200.0)", required=False
+    )
 
     # Parse arguments
     args = parser.parse_args()
 
     # Set global parameters from arguments
     USER_MASS = args.mass
-    STRIDE_TIME = args.stride_time 
+    STRIDE_TIME = args.stride_time
     FREQUENCY = args.frequency
 
     # Fixed parameters
