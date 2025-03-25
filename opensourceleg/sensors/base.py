@@ -60,6 +60,17 @@ class SensorBase(ABC):
         offline: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initialize a base sensor.
+
+        Args:
+            tag: Unique identifier for the sensor.
+            offline: Whether to run in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments passed to derived classes.
+
+        Examples:
+            >>> sensor = SensorBase(tag="imu1", offline=False)
+        """
         self._tag = tag
         self._is_offline: bool = offline
 
@@ -180,7 +191,15 @@ class ADCBase(SensorBase, ABC):
 
     def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
-        Initialize the ADC sensor.
+        Initialize an ADC (Analog-to-Digital Converter) sensor.
+
+        Args:
+            tag: Unique identifier for the ADC sensor.
+            offline: Whether to run in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments passed to the base class.
+
+        Examples:
+            >>> adc = ADCBase(tag="adc1", offline=False)
         """
         super().__init__(tag=tag, offline=offline, **kwargs)
 
@@ -224,7 +243,15 @@ class EncoderBase(SensorBase, ABC):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize the encoder sensor.
+        Initialize an encoder sensor.
+
+        Args:
+            tag: Unique identifier for the encoder sensor.
+            offline: Whether to run in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments passed to the base class.
+
+        Examples:
+            >>> encoder = EncoderBase(tag="encoder1", offline=False)
         """
         super().__init__(tag=tag, offline=offline, **kwargs)
 

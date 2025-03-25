@@ -482,7 +482,12 @@ class BNO055(IMUBase):
         Initialize the BNO055 sensor.
 
         Args:
-            addr (int, optional): I2C address of the BNO055 sensor. Defaults to 40.
+            tag: Unique identifier for the sensor. Defaults to "BNO055".
+            addr: I2C address of the sensor. Defaults to 40.
+            offline: Whether to run in offline mode. Defaults to False.
+
+        Examples:
+            >>> imu = BNO055(tag="imu1", addr=40)
         """
         # Attempt to import the required libraries.
         try:
