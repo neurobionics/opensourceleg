@@ -12,8 +12,14 @@ if __name__ == "__main__":
     )
     clock = SoftRealtimeLoop(dt=DT)
     imu = LordMicrostrainIMU(
+        tag="LordMicrostrainIMU",
         port=r"/dev/ttyS0",
+        baud_rate=921600,
         frequency=FREQUENCY,
+        update_timeout=500,
+        max_packets=1,
+        return_packets=False,
+        offline=False,
     )
     imu_logger.track_variable(lambda: imu.roll, "Roll")
     imu_logger.track_variable(lambda: imu.pitch, "Pitch")
