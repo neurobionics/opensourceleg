@@ -1,6 +1,6 @@
-# Time Module Tutorial
+# Soft Realtime Loop Module Tutorial
 
-The Time module provides tools for creating soft real-time loops in Python, which is particularly useful for robotics and control applications. The module consists of two main classes:
+The `softrealtimeloop` module provides tools for creating soft real-time loops in Python, which is particularly useful for robotics and control applications. The module consists of two main classes:
 
 - `LoopKiller`: Handles graceful shutdown of loops
 - `SoftRealtimeLoop`: Manages timing-precise execution of functions
