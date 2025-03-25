@@ -19,7 +19,11 @@ def impedance_control():
         file_name="impedance_control",
     )
     actpack = DephyActuator(
-        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
+        port="/dev/ttyACM0",
+        gear_ratio=GEAR_RATIO,
+        frequency=FREQUENCY,
+        debug_level=0,
+        dephy_log=False,
     )
     clock = SoftRealtimeLoop(dt=DT)
 

@@ -8,8 +8,8 @@ GEAR_RATIO = 1.0
 
 if __name__ == "__main__":
     sensor_logger = Logger(
-        log_path="./",
-        file_name="sensor_reading.log",
+        log_path="./logs",
+        file_name="reading_sensor_data",
     )
     clock = SoftRealtimeLoop(dt=DT)
     actpack = DephyActuator(

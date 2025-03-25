@@ -10,8 +10,7 @@ import math
 from time import sleep
 from typing import Any, ClassVar, Optional
 
-import spidev
-
+from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import ADCBase
 
 
@@ -89,6 +88,7 @@ class ADS131M0x(ADCBase):
 
     def __init__(
         self,
+        tag: str = "ADS131M0x",
         spi_bus: int = 0,
         spi_chip: int = 0,
         num_channels: int = 6,
@@ -96,6 +96,7 @@ class ADS131M0x(ADCBase):
         channel_gains: list[int] = [32, 128] * 3,
         voltage_reference: float = 1.2,
         gain_error: Optional[list[int]] = None,
+        offline: bool = False,
     ):
         """
         Initializes the ADS131M0x instance.
@@ -119,6 +120,17 @@ class ADS131M0x(ADCBase):
                         or if gain_error is provided and its length does not equal num_channels,
                         or if any gain is not a power of 2 between 1 and 128.
         """
+
+        try:
+            import spidev
+
+            self._spi = spidev.SpiDev()
+        except ImportError:
+            LOGGER.warning("spidev is not installed")
+            exit(1)
+
+        super().__init__(tag=tag, offline=offline)
+
         if gain_error is None:
             gain_error = []
         if len(channel_gains) != num_channels:
@@ -139,7 +151,6 @@ class ADS131M0x(ADCBase):
 
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
-        self._spi = spidev.SpiDev()
         self._streaming = False
         self._words_per_frame = 2 + num_channels
 
@@ -148,15 +159,6 @@ class ADS131M0x(ADCBase):
             self._ready_status |= 1 << i
 
         self._data = [0.0] * num_channels
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the ADS131M0x instance.
-
-        Returns:
-            str: The string "ADS131M0x".
-        """
-        return "ADS131M0x"
 
     def start(self) -> None:
         """

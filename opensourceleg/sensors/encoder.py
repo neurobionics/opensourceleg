@@ -1,5 +1,5 @@
 import time
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 from smbus2 import SMBus
@@ -32,12 +32,13 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
     def __init__(
         self,
+        tag: str = "AS5048B",
         bus: str = "/dev/i2c",
         A1_adr_pin: bool = False,
         A2_adr_pin: bool = False,
-        name: str = "AS5048B",
         zero_position: int = 0,
         enable_diagnostics: bool = False,
+        offline: bool = False,
     ) -> None:
         """
         Class for the AS5048B encoder, implements the Encoder interface
@@ -46,20 +47,19 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
 
         Args:
+            tag (str): Tag name for the encoder
             bus (str): Path to the i2c bus ex. '/dev/i2c-1'
             A1_adr_pin (int): State of the adress pin A1 on the AS5048A module
             A2_adr_pin (int): State of the adress pin A1 on the AS5048A module
-            name (str): Tag name for the encoder
             zero_position (int): The zero position of the encoder
 
         Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se),
                 Senthur Ayyappan (senthura@umich.edu)
         """
-        self.name = name
         self.bus = bus
         self.enable_diagnostics = enable_diagnostics
 
-        super().__init__()
+        super().__init__(tag=tag, offline=offline)
 
         self.addr = AS5048B.I2C_BASE_ADR_7BIT | ((bool(A2_adr_pin)) << 1) | ((bool(A1_adr_pin)) << 0)
         self._reset_data()
@@ -74,8 +74,10 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         self._two_pi = 2 * np.pi
         self._scale_factor = self._two_pi / AS5048B.ENC_RESOLUTION
 
+        self._encoder_map: Union[np.polynomial.polynomial.Polynomial, None] = None
+
     def start(self) -> None:
-        LOGGER.info(f"Opening encoder communication: {self.__class__.__name__} - {self.name}")
+        LOGGER.info(f"Opening encoder communication: {self.__repr__()}")
         self._SMBus = SMBus(self.bus)
         self.update()  # Use public method instead of _update
         if self.zero_position != self._zero_to_set:
@@ -96,6 +98,23 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         if self.enable_diagnostics:
             self._check_diagnostics()
+
+    def set_encoder_map(self, encoder_map: np.polynomial.polynomial.Polynomial) -> None:
+        """
+        Sets the encoder map to correct for nonlinearities in the encoder
+
+        Args:
+            encoder_map (np.polynomial.polynomial.Polynomial): The encoder map to set
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=[1, 2, 3, 4, 5]))
+        """
+        self._encoder_map = encoder_map
 
     # def apply_state(self, state: Encoder.State) -> None:
     # raise NotImplementedError(f"apply_state not implemented for {self.__class__}")
@@ -171,11 +190,16 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
     @property
     def position(self) -> float:
         """Get the current angular position in radians"""
-        signed_output = from_twos_complement(self.encoder_output, 14)
-        return signed_output * self._scale_factor
+        signed_output = from_twos_complement(self.counts, 14)
+        raw_position = signed_output * self._scale_factor
+
+        if self._encoder_map is not None:
+            raw_position = self._encoder_map(raw_position)
+
+        return raw_position
 
     @property
-    def encoder_output(self) -> int:
+    def counts(self) -> int:
         """Get the raw encoder output as counts of full scale output.
 
         Returns:
@@ -187,6 +211,11 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
     def velocity(self) -> float:
         """Calculate angular velocity in radians per second"""
         try:
+            # TODO: Add linearization logic here for the velocity attribute
+            LOGGER.warning(
+                "Velocity attribute does not use the linearization map. "
+                "Please calculate the velocity using the position attribute."
+            )
             encAngleDataOld = AS5048B._get_14bit(self._encdata_old[4:6])
             encAngleDataNew = AS5048B._get_14bit(self._encdata_new[4:6])
             # Timediff is converted from ns to s
@@ -260,11 +289,11 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         self.zero_position = 0
         self.update()
-        min_value = from_twos_complement(self.encoder_output, 14)
+        min_value = from_twos_complement(self.counts, 14)
 
         input("Set joint in upper position and press enter")
         self.update()
-        max_value = from_twos_complement(self.encoder_output, 14)
+        max_value = from_twos_complement(self.counts, 14)
         mid_value = (min_value + max_value) // 2
         self.zero_position = to_twos_complement(mid_value, 14)
         LOGGER.info(f"[SET] Zero registers: {self.zero_position}")
@@ -339,15 +368,31 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         return self._data
 
-    def __repr__(self) -> str:
-        return f"\n\tAngle: {self.position:.3f} rad\n\tVelocity: {self.velocity:.3f} rad/s"
+    @property
+    def encoder_map(self) -> Optional[np.polynomial.polynomial.Polynomial]:
+        """
+        Polynomial coefficients defining the encoder map from counts to radians.
+
+        Returns:
+            Optional[np.polynomial.polynomial.Polynomial]: The encoder map
+
+        Examples:
+            >>> encoder = AS5048B(port='/dev/ttyACM0')
+            >>> encoder.start()
+            >>> print(encoder.encoder_map)
+        """
+        if self._encoder_map is not None:
+            return self._encoder_map
+        else:
+            LOGGER.warning(msg="Encoder map is not set. Please create one using a rbot")
+            return None
 
 
 if __name__ == "__main__":
     frequency = 200
 
     knee_enc = AS5048B(
-        name="knee",
+        tag="knee",
         bus="/dev/i2c-1",
         A1_adr_pin=True,
         A2_adr_pin=False,
@@ -355,7 +400,7 @@ if __name__ == "__main__":
     )
 
     ankle_enc = AS5048B(
-        name="ankle",
+        tag="ankle",
         bus="/dev/i2c-1",
         A1_adr_pin=False,
         A2_adr_pin=True,
@@ -371,8 +416,8 @@ if __name__ == "__main__":
         knee_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
         ankle_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
 
-        knee_enc.zero_position = knee_enc.encoder_output  # sets the current position to 0 rad
-        ankle_enc.zero_position = ankle_enc.encoder_output  # sets the current position to 0 rad
+        knee_enc.zero_position = knee_enc.counts  # sets the current position to 0 rad
+        ankle_enc.zero_position = ankle_enc.counts  # sets the current position to 0 rad
 
         for _t in clock:
             knee_enc.update()

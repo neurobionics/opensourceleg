@@ -429,9 +429,6 @@ class MockActuator(ActuatorBase):
     def set_output_impedance(self, value):
         pass
 
-    def set_joint_torque(self, value):
-        pass
-
     def set_current_gains(self, kp, ki, kd, ff):
         pass
 
@@ -506,23 +503,6 @@ def test_set_control_mode(mock_actuator: MockActuator):
 def test_set_and_get_positions(mock_actuator: MockActuator):
     mock_actuator.set_motor_zero_position(1.0)
     assert mock_actuator.motor_zero_position == 1.0
-
-    mock_actuator.set_motor_position_offset(2.0)
-    assert mock_actuator.motor_position_offset == 2.0
-
-    mock_actuator.set_joint_zero_position(3.0)
-    assert mock_actuator.joint_zero_position == 3.0
-
-    mock_actuator.set_joint_position_offset(4.0)
-    assert mock_actuator.joint_position_offset == 4.0
-
-
-def test_set_joint_direction(mock_actuator: MockActuator):
-    mock_actuator.set_joint_direction(1)
-    assert mock_actuator.joint_direction == 1
-
-    mock_actuator.set_joint_direction(-1)
-    assert mock_actuator.joint_direction == -1
 
 
 def test_output_position_and_velocity(mock_actuator: MockActuator):
