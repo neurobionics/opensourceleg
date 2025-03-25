@@ -85,6 +85,7 @@ class MockNode:
 class MockLordMicrostrainIMU(LordMicrostrainIMU):
     def __init__(
         self,
+        tag: str = "MockIMULordMicrostrain",
         port: str = r"/dev/ttyUSB0",
         baud_rate: int = 921600,
         frequency: int = 200,
@@ -93,7 +94,7 @@ class MockLordMicrostrainIMU(LordMicrostrainIMU):
         return_packets: bool = False,
     ):
         LOGGER.info("Initializing MockLordMicrostrainIMU")
-        self._init_variables(port, baud_rate, frequency, update_timeout, max_packets, return_packets)
+        self._init_variables(tag, port, baud_rate, frequency, update_timeout, max_packets, return_packets, offline=True)
 
     def _configure_mip_channels(self):
         return [MockMipChannel(f"{i}", 200) for i in MockTypes]
@@ -274,7 +275,7 @@ def test_update(sample_imu: MockLordMicrostrainIMU):
 
 # Test LordMicrostrainIMU repr
 def test_lord_microstrain_imu_repr(sample_imu: MockLordMicrostrainIMU):
-    assert sample_imu.__repr__() == "IMULordMicrostrain"
+    assert sample_imu.__repr__() == "MockIMULordMicrostrain[MockLordMicrostrainIMU]"
 
 
 # Test port
