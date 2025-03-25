@@ -15,12 +15,12 @@ This example shows how to:
 
 ## Code Structure
 
-The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/encoder.py) is organized into several main sections:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_encoder_data.py) is organized into several main sections:
 
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/sensors/encoder.py:1:21"
+--8<-- "tutorials/sensors/reading_encoder_data.py:1:21"
 ```
 
 This section:
@@ -31,7 +31,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/sensors/encoder.py:24:28"
+--8<-- "tutorials/sensors/reading_encoder_data.py:24:28"
 ```
 
 The main loop:
@@ -44,7 +44,7 @@ The main loop:
 When initializing the AS5048B encoder, several important parameters can be configured:
 
 ```python
---8<-- "tutorials/sensors/encoder.py:14:19"
+--8<-- "tutorials/sensors/reading_encoder_data.py:14:19"
 ```
 
 ### Parameter Details
@@ -62,10 +62,6 @@ When initializing the AS5048B encoder, several important parameters can be confi
       - Controls the I2C address of the encoder
       - Corresponds to the physical address pins on the AS5048B
       - Used to connect multiple encoders on the same I2C bus
-      - The encoder's address is calculated as:
-      ```python
-      --8<-- "opensourceleg/sensors/encoder.py:39:39"
-      ```
       - Base address is `0b1000000` (0x40)
 
 4. **zero_position** (int):

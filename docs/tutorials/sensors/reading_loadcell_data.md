@@ -17,12 +17,12 @@ This example shows how to:
 
 ## Code Structure
 
-The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/loadcell.py) is organized into several main sections:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_loadcell_data.py) is organized into several main sections:
 
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/sensors/loadcell.py:1:40"
+--8<-- "tutorials/sensors/reading_loadcell_data.py:1:40"
 ```
 
 This section:
@@ -36,7 +36,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/sensors/loadcell.py:48:55"
+--8<-- "tutorials/sensors/reading_loadcell_data.py:48:55"
 ```
 
 The main loop:
@@ -50,7 +50,7 @@ The main loop:
 When initializing the DephyLoadcellAmplifier, several important parameters can be configured:
 
 ```python
---8<-- "tutorials/sensors/loadcell.py:32:40"
+--8<-- "tutorials/sensors/reading_loadcell_data.py:32:40"
 ```
 
 ### Parameter Details
