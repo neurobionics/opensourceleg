@@ -16,14 +16,14 @@ class CompiledController:
     See examples folder of repo for examples.
 
     Args:
-        library_name (string): The name of the compiled library file, without the *.so
-        library_path (string): The path to the directory containing the library.
+        library_name: The name of the compiled library file, without the *.so
+        library_path: The path to the directory containing the library.
             See examples for how to get working directory of parent script.
-        main_function_name (string): Name of the main function to call within the library.
-            This is the function that will get called via the run() method initialization_function_name (string): Name
-            of an initialization function for your library. This gets called only once when the library is loaded. If
+        main_function_name: Name of the main function to call within the library.
+            This is the function that will get called via the run() method
+        initialization_function_name: Name of an initialization function for your library. This gets called only once when the library is loaded. If
             you don't have an initialization function, pass None.
-        cleanup_function_name (string): Name of a cleanup function for your library.
+        cleanup_function_name: Name of a cleanup function for your library.
             This gets called when the CompiledController class has gone out of scope and is garbage collected.
             Again, pass None if you don't need this functionality.
 
@@ -90,13 +90,12 @@ class CompiledController:
         This method defines the input structure to your function.
         See example folder and tutorials for help on using this method.
 
-        Parameters
-        -----------
-        input_list: Input parameters given as a list of [('field_name', field_type)...]
-            field_name is a string you choose as the title of the field.
-            field_type is a type either given by a native c_types value or
-                a custom type defined via the define_type() method.
-                All types can be accessed as CompiledController.types.(type_name)
+        Args:
+            input_list: Input parameters given as a list of [('field_name', field_type)...]
+                field_name is a string you choose as the title of the field.
+                field_type is a type either given by a native c_types value or
+                    a custom type defined via the define_type() method.
+                    All types can be accessed as CompiledController.types.(type_name)
         """
         self._input_type = self.define_type("inputs", input_list)
 
@@ -110,13 +109,12 @@ class CompiledController:
         This method defines the output structure to your function.
         See example folder and tutorials for help on using this method.
 
-        Parameters
-        ------------
-        output_list: Output parameters given as a list of [('field_name', field_type)...]
-            field_name is a string you choose as the title of the field.
-            field_type is a type either given by a native c_types value or
-                a custom type defined via the define_type() method.
-                All types can be accessed as CompiledController.types.(type_name)
+        Args:
+            output_list: Output parameters given as a list of [('field_name', field_type)...]
+                field_name is a string you choose as the title of the field.
+                field_type is a type either given by a native c_types value or
+                    a custom type defined via the define_type() method.
+                    All types can be accessed as CompiledController.types.(type_name)
         """
         self._output_type = self.define_type("outputs", output_list)
 
@@ -132,17 +130,15 @@ class CompiledController:
         available in my_controller.types.type_name for use.
         See example folder and tutorials for help on using this method.
 
-        Parameters
-        ------------
-        type_name : A string defining the name of your new datatype
-        parameter_list: A list of [('field_name', field_type)...]
-            field_name is a string you choose as the title of the field.
-            field_type is a type either given by a native c_types value or
-                a custom type defined via the define_type() method.
-                All types can be accessed as CompiledController.types.(type_name)
+        Args:
+            type_name: A string defining the name of your new datatype
+            parameter_list: A list of [('field_name', field_type)...]
+                field_name is a string you choose as the title of the field.
+                field_type is a type either given by a native c_types value or
+                    a custom type defined via the define_type() method.
+                    All types can be accessed as CompiledController.types.(type_name)
 
-        Example Usage
-        ------------
+        Example Usage:
             my_controller.DefineType('vector3D', [('x', my_controller.types.c_double),
                                                   ('y', my_controller.types.c_double),
                                                   ('z', my_controller.types.c_double)])
@@ -163,8 +159,6 @@ class CompiledController:
         This method calls the main controller function of the library.
         Under the hood, it calls library_name.main_function_name(*inputs, *outputs),
         where library_name and main_function_name were given in the constructor.
-
-        Parameters -> None
 
         Returns:
             The output structure as defined by the define_outputs() method.

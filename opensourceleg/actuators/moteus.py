@@ -283,7 +283,7 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the motor torque in Nm.
 
         Args:
-            value (float): The torque to set in Nm.
+            value: The torque to set in Nm.
         """
         self._command = self.make_position(
             position=math.nan,
@@ -302,7 +302,7 @@ class MoteusActuator(ActuatorBase, Controller):
         This is the torque that is applied to the joint, not the motor.
 
         Args:
-            value (float): torque in N_m
+            value: torque in N_m
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
@@ -325,7 +325,7 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the motor voltage in mV.
 
         Args:
-            value (float): The voltage to set in mV.
+            value: The voltage to set in mV.
         """
         LOGGER.info("Voltage Mode Not Implemented")
 
@@ -335,7 +335,7 @@ class MoteusActuator(ActuatorBase, Controller):
         If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
-            value (float): The position to set
+            value: The position to set
         """
         self._command = self.make_position(
             position=float((value) / (2 * np.pi)),  # TODO: Verify this conversion, are we converting from rad to rev?
@@ -352,8 +352,8 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the position gains in arbitrary Moteus units.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
+            kp: The proportional gain
+            ki: The integral gain
         """
         await self._stream.command(f"conf set servo.pid_dq.kp {kp}".encode())
         await self._stream.command(f"conf set servo.pid_dq.ki {ki}".encode())
@@ -369,10 +369,10 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the position gains in arbitrary Moteus units.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
-            ff (float): The feedforward gain
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            ff: The feedforward gain
         """
         await self._stream.command(f"conf set servo.pid_position.kp {kp}".encode())
         await self._stream.command(f"conf set servo.pid_position.ki {ki}".encode())
@@ -389,10 +389,10 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the position gains in arbitrary Moteus units.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
-            ff (float): The feedforward gain
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            ff: The feedforward gain
         """
         await self._stream.command(f"conf set servo.pid_position.kp {kp}".encode())
         await self._stream.command(f"conf set servo.pid_position.ki {ki}".encode())
@@ -409,10 +409,10 @@ class MoteusActuator(ActuatorBase, Controller):
         Sets the current gains in arbitrary Moteus units.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
-            ff (float): The feedforward gain
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            ff: The feedforward gain
         """
         LOGGER.info(msg=f"[{self.__repr__()}] Current mode not implemented.")
 
@@ -425,6 +425,17 @@ class MoteusActuator(ActuatorBase, Controller):
         b: float = DEFAULT_IMPEDANCE_GAINS.b,
         ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
+        """
+        Sets the impedance gains in arbitrary Moteus units.
+
+        Args:
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            k: The stiffness gain
+            b: The damping gain
+            ff: The feedforward gain
+        """
         LOGGER.info(msg=f"[{self.__repr__()}] Impedance mode not implemented.")
 
     @property

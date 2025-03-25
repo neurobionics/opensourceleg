@@ -28,8 +28,8 @@ class Validator(ABC):
         to the attribute being managed by the validator.
 
         Args:
-            owner (Any): The owner class where the descriptor is defined.
-            name (str): The name of the attribute.
+            owner: The owner class where the descriptor is defined.
+            name: The name of the attribute.
         """
         self.private_name = f"_{name}"
 
@@ -38,11 +38,11 @@ class Validator(ABC):
         Retrieve the value of the managed attribute.
 
         Args:
-            instance (Any): The instance from which the attribute is accessed.
-            objtype (Any, optional): The type of the owner class. Defaults to None.
+            instance: The instance from which the attribute is accessed.
+            objtype: The type of the owner class. Defaults to None.
 
         Returns:
-            Any: The current value of the attribute.
+            The current value of the attribute.
         """
         return getattr(instance, self.private_name)
 
@@ -55,8 +55,8 @@ class Validator(ABC):
         private attribute name.
 
         Args:
-            instance (Any): The instance on which the attribute is being set.
-            value (Any): The new value to set.
+            instance: The instance on which the attribute is being set.
+            value: The new value to set.
 
         Raises:
             Any: Any exception raised by the validate() method.
@@ -72,7 +72,7 @@ class Validator(ABC):
         Subclasses must implement this method to enforce specific validation rules.
 
         Args:
-            value (Any): The value to validate.
+            value: The value to validate.
 
         Raises:
             Exception: If the value does not meet the validation criteria.
@@ -97,9 +97,9 @@ class Number(Validator):
         Initialize the Number validator.
 
         Args:
-            min_value (Optional[Union[int, float]]): The minimum acceptable value (inclusive).
+            min_value: The minimum acceptable value (inclusive).
                 Defaults to None, meaning no lower bound.
-            max_value (Optional[Union[int, float]]): The maximum acceptable value (inclusive).
+            max_value: The maximum acceptable value (inclusive).
                 Defaults to None, meaning no upper bound.
         """
         self.min_value: Optional[Union[int, float]] = min_value
@@ -110,7 +110,7 @@ class Number(Validator):
         Validate that the value is a number and within the specified range.
 
         Args:
-            value (Union[int, float]): The number to validate.
+            value: The number to validate.
 
         Raises:
             TypeError: If the value is not an int or float.
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             Initialize the Gains instance.
 
             Args:
-                kp_value (int): The gain value to be validated and assigned to 'kp'.
+                kp_value: The gain value to be validated and assigned to 'kp'.
             """
             self.kp = kp_value
 
