@@ -26,6 +26,7 @@ nav:
       - Control:
           - Compiled Controller: tutorials/control/compiled_controller.md
           - State Machine: tutorials/control/state_machine.md
+          - Torque Trajectory: tutorials/control/torque_trajectory.md
       - Logging:
           - Getting Started: tutorials/logging/getting_started.md
           - Configuring Logger: tutorials/logging/configuring_logger.md
