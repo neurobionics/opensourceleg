@@ -669,6 +669,8 @@ class Logger(logging.Logger):
         """
         Log a debug message.
 
+        Ensures that the file handler is set up before logging.
+
         Args:
             msg: The message to log.
             *args: Additional arguments.
@@ -680,6 +682,8 @@ class Logger(logging.Logger):
     def info(self, msg: object, *args: object, **kwargs: Any) -> None:
         """
         Log an info message.
+
+        Ensures that the file handler is set up before logging.
 
         Args:
             msg: The message to log.
@@ -693,6 +697,8 @@ class Logger(logging.Logger):
         """
         Log a warning message.
 
+        Ensures that the file handler is set up before logging.
+
         Args:
             msg: The message to log.
             *args: Additional arguments.
@@ -704,6 +710,8 @@ class Logger(logging.Logger):
     def error(self, msg: object, *args: object, **kwargs: Any) -> None:
         """
         Log an error message.
+
+        Ensures that the file handler is set up before logging.
 
         Args:
             msg: The message to log.
@@ -717,6 +725,8 @@ class Logger(logging.Logger):
         """
         Log a critical message.
 
+        Ensures that the file handler is set up before logging.
+
         Args:
             msg: The message to log.
             *args: Additional arguments.
@@ -728,6 +738,8 @@ class Logger(logging.Logger):
     def log(self, level: int, msg: object, *args: object, **kwargs: Any) -> None:
         """
         Log a message with a specific log level.
+
+        Ensures that the file handler is set up before logging.
 
         Args:
             level: The log level.

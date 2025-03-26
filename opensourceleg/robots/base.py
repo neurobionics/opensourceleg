@@ -30,8 +30,8 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
     can be used within a with-statement to automatically start and stop its components.
 
     Attributes:
-        actuators (dict[str, TActuator]): A dictionary mapping actuator names to actuator instances.
-        sensors (dict[str, TSensor]): A dictionary mapping sensor names to sensor instances.
+        actuators: A dictionary mapping actuator names to actuator instances.
+        sensors: A dictionary mapping sensor names to sensor instances.
     """
 
     def __init__(
@@ -75,9 +75,9 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
         This method stops all actuators and sensors.
 
         Args:
-            exc_type (Any): The exception type, if an exception occurred.
-            exc_val (Any): The exception value, if an exception occurred.
-            exc_tb (Any): The traceback, if an exception occurred.
+            exc_type: The exception type, if an exception occurred.
+            exc_val: The exception value, if an exception occurred.
+            exc_tb: The traceback, if an exception occurred.
         """
         self.stop()
 
