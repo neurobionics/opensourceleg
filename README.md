@@ -13,8 +13,6 @@
 
 An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
 
-> We are currently testing the new version of the library (main branch), and the PyPI release will be updated soon. If you are looking for the source behind the existing PyPI release, please refer to the [legacy branch](https://github.com/neurobionics/opensourceleg/tree/legacy).
-
 <img src="https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/banner.gif" width="800" title="Open-Source Leg">
 
 ## 🎯 Key Features
@@ -51,9 +49,11 @@ The library currently supports the following hardware components:
 | Moteus        | ⚠️         | ⚠️             | ⚠️         | ✅            |
 | TMotor        | ❌         | ⚠️             | ❌         | ❌            |
 
-> Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available
+> Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available;
 
-> Hardware tests indicate successful testing on physical devices. Benchmarks include performance metrics such as response time and accuracy measurements. Documentation includes API reference and usage examples.
+Hardware tests indicate successful testing on physical devices.
+Benchmarks include performance metrics such as response time and accuracy measurements.
+Documentation includes API reference and usage examples.
 
 ## 📦 Installation
 
