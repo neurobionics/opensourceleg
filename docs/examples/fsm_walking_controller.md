@@ -34,7 +34,7 @@ Next, we'll define all the tunable FSM parameters. These include the impedance p
 Next, we create a function that returns an instance of the `StateMachine` class. We start by making `State` objects for each of our four states and the include the impedance parameters in each. We also define transition criteria functions that determine when to move between states. We add the states and transition functions to an instance of the `StateMachine` class, specifiying that the initial state is `e_stance`.
 
 ```python
---8<-- "examples/fsm_walking_python_controller.py:71:190"
+--8<-- "examples/fsm_walking_python_controller.py:68:187"
 ```
 
 > **Note**:
@@ -43,12 +43,12 @@ Next, we create a function that returns an instance of the `StateMachine` class.
 
 Next, we initialize the standard actuators, sensors, logger, and loop classes for the OSL:
 ```python
---8<-- "examples/fsm_walking_python_controller.py:192:244"
+--8<-- "examples/fsm_walking_python_controller.py:189:241"
 ```
 
 We then call the FSM definition function we made above and initialize/home the hardware:
 ```python
---8<-- "examples/fsm_walking_python_controller.py:246:260"
+--8<-- "examples/fsm_walking_python_controller.py:243:257"
 ```
 
 ### Main Loop
@@ -56,7 +56,7 @@ We then call the FSM definition function we made above and initialize/home the h
 Now that everything is set up, we enter the main loop. During each iteration of the main loop, we call the update method for both the OSL and the FSM. We then write the current impedance parameters for each joint to the hardware. A print statement and logging are also included for debugging:
 
 ```python
---8<-- "examples/fsm_walking_python_controller.py:262:285"
+--8<-- "examples/fsm_walking_python_controller.py:259:283"
 ```
 
 ### Full Code for The Python Implementation
@@ -87,7 +87,7 @@ First, perform standard imports, handle paths, and set up the hardware for the O
 Next, instantiate a `CompiledController` wrapper object:
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:61:68"
+--8<-- "examples/fsm_walking_compiled_controller.py:60:67"
 ```
 
 ---
@@ -97,7 +97,7 @@ Next, instantiate a `CompiledController` wrapper object:
 Define the data structures used in the controller. These must match the size and order of the structures used to create the library.
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:70:121"
+--8<-- "examples/fsm_walking_compiled_controller.py:69:120"
 ```
 
 ---
@@ -107,7 +107,7 @@ Define the data structures used in the controller. These must match the size and
 Configure the impedance and transition parameters based on predefined tuning. Adjust these values to achieve the desired behavior:
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:124:159"
+--8<-- "examples/fsm_walking_compiled_controller.py:123:158"
 ```
 
 ---
@@ -117,7 +117,7 @@ Configure the impedance and transition parameters based on predefined tuning. Ad
 After configuration, home the OSL joints, calibrate the loadcell, set the joints to impedance mode, and begin running the controller. During each loop iteration, update the inputs, call the `run()` method, and write outputs to the hardware:
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:161:209"
+--8<-- "examples/fsm_walking_compiled_controller.py:160:210"
 ```
 
 > **Note**:
