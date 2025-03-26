@@ -15,7 +15,7 @@ class SensorNotStreamingException(Exception):
         Initialize the SensorNotStreamingException.
 
         Args:
-            sensor_name (str, optional): The name or identifier of the sensor. Defaults to "Sensor".
+            sensor_name: The name or identifier of the sensor. Defaults to "Sensor".
         """
         super().__init__(
             f"{sensor_name} is not streaming, please ensure that the connections are intact, "
@@ -30,7 +30,7 @@ def check_sensor_stream(func: Callable) -> Callable:
     If the sensor is not streaming, a SensorNotStreamingException is raised.
 
     Args:
-        func (Callable): The sensor method to be wrapped.
+        func: The sensor method to be wrapped.
 
     Returns:
         Callable: The wrapped method that checks streaming status before execution.
@@ -60,6 +60,17 @@ class SensorBase(ABC):
         offline: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initialize a base sensor.
+
+        Args:
+            tag: Unique identifier for the sensor.
+            offline: Whether to run in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments passed to derived classes.
+
+        Examples:
+            >>> sensor = SensorBase(tag="imu1", offline=False)
+        """
         self._tag = tag
         self._is_offline: bool = offline
 
@@ -129,9 +140,9 @@ class SensorBase(ABC):
         This method calls stop() to shut down the sensor.
 
         Args:
-            exc_type (Any): Exception type if raised.
-            exc_value (Any): Exception value if raised.
-            traceback (Any): Traceback if an exception occurred.
+            exc_type: Exception type if raised.
+            exc_value: Exception value if raised.
+            traceback: Traceback if an exception occurred.
         """
         self.stop()
 
@@ -180,7 +191,15 @@ class ADCBase(SensorBase, ABC):
 
     def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
-        Initialize the ADC sensor.
+        Initialize an ADC (Analog-to-Digital Converter) sensor.
+
+        Args:
+            tag: Unique identifier for the ADC sensor.
+            offline: Whether to run in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments passed to the base class.
+
+        Examples:
+            >>> adc = ADCBase(tag="adc1", offline=False)
         """
         super().__init__(tag=tag, offline=offline, **kwargs)
 
@@ -224,7 +243,15 @@ class EncoderBase(SensorBase, ABC):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize the encoder sensor.
+        Initialize an encoder sensor.
+
+        Args:
+            tag: Unique identifier for the encoder sensor.
+            offline: Whether to run in offline mode. Defaults to False.
+            **kwargs: Additional keyword arguments passed to the base class.
+
+        Examples:
+            >>> encoder = EncoderBase(tag="encoder1", offline=False)
         """
         super().__init__(tag=tag, offline=offline, **kwargs)
 

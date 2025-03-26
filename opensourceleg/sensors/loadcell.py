@@ -174,9 +174,9 @@ class DephyLoadcellAmplifier(LoadcellBase):
         and excitation voltage, and subtracts any calibration offset.
 
         Args:
-            calibration_offset (Optional[npt.NDArray[np.double]], optional):
+            calibration_offset:
                 An offset to subtract from the processed data. If None, uses the current calibration offset.
-            data_callback (Optional[Callable[..., npt.NDArray[np.uint8]]], optional):
+            data_callback:
                 A callback function to provide raw data. If not provided, the sensor's internal method is used.
         """
         data = data_callback() if data_callback else self._read_compressed_strain()
@@ -204,12 +204,11 @@ class DephyLoadcellAmplifier(LoadcellBase):
         is displayed.
 
         Args:
-            number_of_iterations (int, optional): Number of iterations to average for calibration.
+            number_of_iterations: Number of iterations to average for calibration.
                 Defaults to 2000.
-            reset (bool, optional): If True, forces recalibration by resetting the current calibration.
+            reset: If True, forces recalibration by resetting the current calibration.
                 Defaults to False.
-            data_callback (Optional[Callable[[], npt.NDArray[np.uint8]]], optional): Optional callback
-                to provide raw data. Defaults to None.
+            data_callback: Optional callback to provide raw data. Defaults to None.
         """
         if not self.is_calibrated:
             LOGGER.info(
@@ -280,7 +279,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         This method is used for older versions of the strain amplifier firmware (pre-2017).
 
         Args:
-            data (npt.NDArray[np.uint8]): Raw data read from the sensor.
+            data: Raw data read from the sensor.
 
         Returns:
             npt.NDArray[np.uint16]: An array containing the unpacked values for 6 channels.
@@ -301,7 +300,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         This method is used for more recent versions of the strain amplifier firmware.
 
         Args:
-            data (npt.NDArray[np.uint8]): Raw data read from the sensor.
+            data: Raw data read from the sensor.
 
         Returns:
             npt.NDArray[np.uint16]: An array containing the unpacked values for 6 channels.

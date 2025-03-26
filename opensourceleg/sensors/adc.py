@@ -22,31 +22,31 @@ class ADS131M0x(ADCBase):
     read out the ADC values in units of millivolts.
 
     Class Attributes:
-        _MAX_CHANNELS (int): Maximum number of channels supported.
-        _BYTES_PER_WORD (int): Number of bytes per word in SPI communication.
-        _RESOLUTION (int): ADC resolution in bits.
-        _SPI_MODE (int): SPI mode used for communication.
-        _BLANK_WORD (ClassVar[list[int]]): Blank word for SPI messages.
-        _RESET_WORD (ClassVar[list[int]]): SPI command for resetting the ADC.
-        _STANDBY_WORD (ClassVar[list[int]]): SPI command for putting the ADC in standby.
-        _WAKEUP_WORD (ClassVar[list[int]]): SPI command for waking up the ADC.
-        _RREG_PREFIX (int): Prefix for read register commands.
-        _WREG_PREFIX (int): Prefix for write register commands.
-        _ID_REG (int): Address of the ID register.
-        _STATUS_REG (int): Address of the status register.
-        _MODE_REG (int): Address of the mode register.
-        _CLOCK_REG (int): Address of the clock register.
-        _GAIN1_REG (int): Address of the first gain register.
-        _GAIN2_REG (int): Address of the second gain register.
-        _CFG_REG (int): Address of the configuration register.
-        _DISABLE_CHANNELS_CLOCK (int): Value to disable channel clocks.
-        _ENABLE_CHANNELS_CLOCK (int): Value to enable channel clocks.
-        _MODE_CFG (int): Mode configuration value.
-        _OCAL_MSB_ADDRS (ClassVar[list[int]]): List of MSB addresses for offset calibration.
-        _OCAL_LSB_ADDRS (ClassVar[list[int]]): List of LSB addresses for offset calibration.
-        _GCAL_MSB_ADDRS (ClassVar[list[int]]): List of MSB addresses for gain calibration.
-        _GCAL_LSB_ADDRS (ClassVar[list[int]]): List of LSB addresses for gain calibration.
-        _CHANNEL_CFG_ADDRS (ClassVar[list[int]]): List of addresses for channel configuration.
+        _MAX_CHANNELS: Maximum number of channels supported.
+        _BYTES_PER_WORD: Number of bytes per word in SPI communication.
+        _RESOLUTION: ADC resolution in bits.
+        _SPI_MODE: SPI mode used for communication.
+        _BLANK_WORD: Blank word for SPI messages.
+        _RESET_WORD: SPI command for resetting the ADC.
+        _STANDBY_WORD: SPI command for putting the ADC in standby.
+        _WAKEUP_WORD: SPI command for waking up the ADC.
+        _RREG_PREFIX: Prefix for read register commands.
+        _WREG_PREFIX: Prefix for write register commands.
+        _ID_REG: Address of the ID register.
+        _STATUS_REG: Address of the status register.
+        _MODE_REG: Address of the mode register.
+        _CLOCK_REG: Address of the clock register.
+        _GAIN1_REG: Address of the first gain register.
+        _GAIN2_REG: Address of the second gain register.
+        _CFG_REG: Address of the configuration register.
+        _DISABLE_CHANNELS_CLOCK: Value to disable channel clocks.
+        _ENABLE_CHANNELS_CLOCK: Value to enable channel clocks.
+        _MODE_CFG: Mode configuration value.
+        _OCAL_MSB_ADDRS: List of MSB addresses for offset calibration.
+        _OCAL_LSB_ADDRS: List of LSB addresses for offset calibration.
+        _GCAL_MSB_ADDRS: List of MSB addresses for gain calibration.
+        _GCAL_LSB_ADDRS: List of LSB addresses for gain calibration.
+        _CHANNEL_CFG_ADDRS: List of addresses for channel configuration.
         _GCAL_STEP_SIZE (float): Step size used in gain calibration.
     """
 
@@ -105,15 +105,16 @@ class ADS131M0x(ADCBase):
         channel gains, and calibration.
 
         Args:
-            spi_bus (int): SPI bus number where the ADC is connected. Default is 0.
-            spi_chip (int): Chip select (CS) signal number for the ADC. Default is 0.
-            num_channels (int): Number of active channels on the ADC. Default is 6.
-            max_speed_hz (int): Maximum SPI clock speed in hertz. Default is 8192000.
-            channel_gains (list[int]): List of gains for each channel's programmable gain amplifier.
+            spi_bus: SPI bus number where the ADC is connected. Default is 0.
+            spi_chip: Chip select (CS) signal number for the ADC. Default is 0.
+            num_channels: Number of active channels on the ADC. Default is 6.
+            max_speed_hz: Maximum SPI clock speed in hertz. Default is 8192000.
+            channel_gains: List of gains for each channel's programmable gain amplifier.
                 Default is [32, 128] repeated 3 times (for 6 channels).
-            voltage_reference (float): Reference voltage used by the ADC. Default is 1.2 V.
-            gain_error (Optional[list[int]]): Optional user-calculated gain error corrections per channel.
+            voltage_reference: Reference voltage used by the ADC. Default is 1.2 V.
+            gain_error: Optional user-calculated gain error corrections per channel.
                 Default is an empty list.
+            offline: Whether to run the ADC in offline mode. Default is False.
 
         Raises:
             ValueError: If the length of channel_gains does not equal num_channels,
@@ -220,7 +221,7 @@ class ADS131M0x(ADCBase):
         Read the value stored in the register at the specified address.
 
         Args:
-            address (int): The address of the register to read.
+            address: The address of the register to read.
 
         Returns:
             int: The value stored at the register.
@@ -235,8 +236,8 @@ class ADS131M0x(ADCBase):
         Write a specific value to the register at the designated address.
 
         Args:
-            address (int): The address of the register to write.
-            reg_val (int): The value to be written to the register.
+            address: The address of the register to write.
+            reg_val: The value to be written to the register.
         """
         addr_msg = (address << 7) | (self._WREG_PREFIX << 13)
         addr_bytes = self._message_to_word(addr_msg)
@@ -278,7 +279,7 @@ class ADS131M0x(ADCBase):
         Send an SPI message to the ADS131M0x and read the response.
 
         Args:
-            message (list[int]): The message to be sent, split into individual bytes.
+            message: The message to be sent, split into individual bytes.
 
         Returns:
             list[int]: The response from the device, representing the entire frame.
@@ -387,7 +388,7 @@ class ADS131M0x(ADCBase):
         Convert an integer message into a list of bytes (word) for SPI transmission.
 
         Args:
-            msg (int): The integer message to convert.
+            msg: The integer message to convert.
 
         Returns:
             list[int]: A list containing the individual bytes of the message.
@@ -444,8 +445,8 @@ class ADS131M0x(ADCBase):
         Convert an unsigned integer to a signed integer using two's complement representation.
 
         Args:
-            num (int): The unsigned integer.
-            bits (int): The number of bits used to represent the number.
+            num: The unsigned integer.
+            bits: The number of bits used to represent the number.
 
         Returns:
             int: The signed integer value.

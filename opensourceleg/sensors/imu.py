@@ -51,12 +51,12 @@ class LordMicrostrainIMU(IMUBase):
         Initialize the LordMicrostrainIMU sensor.
 
         Args:
-            port (str, optional): Serial port for the IMU. Defaults to "/dev/ttyUSB0".
-            baud_rate (int, optional): Baud rate for the serial connection. Defaults to 921600.
-            frequency (int, optional): Data streaming frequency in Hz. Defaults to 200.
-            update_timeout (int, optional): Timeout for data packet retrieval in milliseconds. Defaults to 500.
-            max_packets (int, optional): Maximum number of data packets to retrieve. Defaults to 1.
-            return_packets (bool, optional): If True, returns the raw data packets. Defaults to False.
+            port: Serial port for the IMU. Defaults to "/dev/ttyUSB0".
+            baud_rate: Baud rate for the serial connection. Defaults to 921600.
+            frequency: Data streaming frequency in Hz. Defaults to 200.
+            update_timeout: Timeout for data packet retrieval in milliseconds. Defaults to 500.
+            max_packets: Maximum number of data packets to retrieve. Defaults to 1.
+            return_packets: If True, returns the raw data packets. Defaults to False.
         """
         # Attempt to import the MSCL library and add its path.
         try:
@@ -482,7 +482,12 @@ class BNO055(IMUBase):
         Initialize the BNO055 sensor.
 
         Args:
-            addr (int, optional): I2C address of the BNO055 sensor. Defaults to 40.
+            tag: Unique identifier for the sensor. Defaults to "BNO055".
+            addr: I2C address of the sensor. Defaults to 40.
+            offline: Whether to run in offline mode. Defaults to False.
+
+        Examples:
+            >>> imu = BNO055(tag="imu1", addr=40)
         """
         # Attempt to import the required libraries.
         try:

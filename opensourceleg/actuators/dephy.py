@@ -300,13 +300,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         to joint position in radians. This is useful for more accurate joint position estimation.
 
         Args:
-            homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
-            homing_frequency (int): Frequency in Hz to use for homing. Default is the actuator's frequency.
-            homing_direction (int): Direction to move the actuator during homing. Default is -1.
-            output_position_offset (float): Offset in radians to add to the output position. Default is 0.0.
-            current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
+            homing_voltage: Voltage in mV to use for homing. Default is 2000 mV.
+            homing_frequency: Frequency in Hz to use for homing. Default is the actuator's frequency.
+            homing_direction: Direction to move the actuator during homing. Default is -1.
+            output_position_offset: Offset in radians to add to the output position. Default is 0.0.
+            current_threshold: Current threshold in mA to stop homing the joint or actuator.
                 This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
-            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
+            velocity_threshold: Velocity threshold in rad/s to stop homing the joint or actuator.
                 This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
@@ -358,7 +358,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
         Args:
-            value (float): The torque to set in Nm.
+            value: The torque to set in Nm.
         Returns:
             None
         Examples:
@@ -376,7 +376,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         This is the torque that is applied to the joint, not the motor.
 
         Args:
-            value (float): torque in N_m
+            value: torque in N_m
 
         Returns:
             None
@@ -396,7 +396,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Sets the motor current in mA.
 
         Args:
-            value (float): The current to set in mA.
+            value: The current to set in mA.
         Returns:
             None
 
@@ -416,7 +416,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Sets the motor voltage in mV.
 
         Args:
-            value (float): The voltage to set in mV.
+            value: The voltage to set in mV.
 
         Returns:
             None
@@ -438,7 +438,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
-            value (float): The position to set
+            value: The position to set
 
         Returns:
             None
@@ -471,10 +471,10 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Sets the position gains in arbitrary Dephy units.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
-            ff (float): The feedforward gain
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            ff: The feedforward gain
 
         Returns:
             None
@@ -504,10 +504,10 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Sets the current gains in arbitrary Dephy units.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
-            ff (float): The feedforward gain
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            ff: The feedforward gain
 
         Returns:
             None
@@ -544,12 +544,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             B_motor = B_joint / (gear_ratio ** 2)
 
         Args:
-            kp (float): Proportional gain. Defaults to 40.
-            ki (float): Integral gain. Defaults to 400.
-            kd (float): Derivative gain. Defaults to 0.
-            k (float): Spring constant. Defaults to 100 Nm/rad.
-            b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
-            ff (float): Feedforward gain. Defaults to 128.
+            kp: Proportional gain. Defaults to 40.
+            ki: Integral gain. Defaults to 400.
+            kd: Derivative gain. Defaults to 0.
+            k: Spring constant. Defaults to 100 Nm/rad.
+            b: Damping constant. Defaults to 3.0 Nm/rad/s.
+            ff: Feedforward gain. Defaults to 128.
 
         Returns:
             None
@@ -582,12 +582,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
-            k (float): The spring constant
-            b (float): The damping constant
-            ff (float): The feedforward gain
+            kp: The proportional gain
+            ki: The integral gain
+            kd: The derivative gain
+            k: The spring constant
+            b: The damping constant
+            ff: The feedforward gain
 
         Returns:
             None
@@ -619,12 +619,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
 
         Args:
-            kp (float): Proportional gain. Defaults to 40.
-            ki (float): Integral gain. Defaults to 400.
-            kd (float): Derivative gain. Defaults to 0.
-            k (float): Spring constant. Defaults to 0.08922 Nm/rad.
-            b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
-            ff (float): Feedforward gain. Defaults to 128.
+            kp: Proportional gain. Defaults to 40.
+            ki: Integral gain. Defaults to 400.
+            kd: Derivative gain. Defaults to 0.
+            k: Spring constant. Defaults to 0.08922 Nm/rad.
+            b: Damping constant. Defaults to 0.0038070 Nm/rad/s.
+            ff: Feedforward gain. Defaults to 128.
 
         Returns:
             None
@@ -1252,7 +1252,7 @@ class DephyLegacyActuator(DephyActuator):
         Sets the motor current in mA.
 
         Args:
-            value (float): The current to set in mA.
+            value: The current to set in mA.
         """
         self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
 
@@ -1265,7 +1265,7 @@ class DephyLegacyActuator(DephyActuator):
         Sets the motor voltage in mV.
 
         Args:
-            value (float): The voltage to set in mV.
+            value: The voltage to set in mV.
         """
         self.send_motor_command(ctrl_mode=c_int(self.mode.value), value=int(value))
 
@@ -1279,7 +1279,7 @@ class DephyLegacyActuator(DephyActuator):
         If in impedance mode, this sets the equilibrium angle in radians.
 
         Args:
-            value (float): The position to set
+            value: The position to set
         """
         self.send_motor_command(
             ctrl_mode=c_int(self.mode.value),

@@ -56,13 +56,13 @@ class LoopKiller:
         The signal is typically a shutdown signal, such as SIGTERM, SIGINT, or SIGHUP.
 
         Args:
-            signum (Any): The signal number.
-            frame (Any): The frame object.
+            signum: The signal number.
+            frame: The frame object.
 
         Returns:
             None
 
-        Example:
+        Examples:
             >>> killer = LoopKiller()
             >>> killer.handle_signal(signal.SIGTERM, None)
         """
@@ -75,7 +75,7 @@ class LoopKiller:
         Returns:
             float: The fade value.
 
-        Example:
+        Examples:
             >>> killer = LoopKiller()
             >>> killer.get_fade()
         """
@@ -99,7 +99,7 @@ class LoopKiller:
         Returns:
             bool: The kill_now value.
 
-        Example:
+        Examples:
             >>> killer = LoopKiller()
             >>> killer.kill_now
         """
@@ -118,7 +118,7 @@ class LoopKiller:
         Setter for the kill_now value. If true is set twice, then the loop will stop iterating immediately.
 
         Args:
-            val (bool): The value to set the kill_now value to.
+            val: The value to set the kill_now value to.
 
         Returns:
             None
@@ -168,10 +168,10 @@ class SoftRealtimeLoop:
         Initializes the SoftRealtimeLoop.
 
         Args:
-            dt (float): The time step of the loop in seconds. Default is 0.001 (1ms).
-            report (bool): If True, the loop will print a report at the end of the loop. Default is True.
-            fade (float): The time in seconds to fade out the loop when it is killed. Default is 0.0.
-            maintain_original_phase (bool): If True, the iterator will try to keep the time elapsed
+            dt: The time step of the loop in seconds. Default is 0.001 (1ms).
+            report: If True, the loop will print a report at the end of the loop. Default is True.
+            fade: The time in seconds to fade out the loop when it is killed. Default is 0.0.
+            maintain_original_phase: If True, the iterator will try to keep the time elapsed
                 equal to (loop_number * dt). If False, the iterator will only look at the difference
                 between the current loop and the previous loop. Default is False.
         """
@@ -232,7 +232,7 @@ class SoftRealtimeLoop:
         Resets the loop state and signal handlers to their initial state.
         This allows reusing the same loop instance instead of creating a new one.
 
-        Example:
+        Examples:
             >>> loop = SoftRealtimeLoop()
             >>> loop.run(some_function)
             >>> loop.reset()  # Reset for reuse
@@ -254,7 +254,7 @@ class SoftRealtimeLoop:
         Runs the loop with the specified function.
 
         Args:
-            function_to_run (Callable[[], int]): The function to execute in each loop iteration.
+            function_to_run: The function to execute in each loop iteration.
                 The function should return 0 to stop the loop.
 
         Example:

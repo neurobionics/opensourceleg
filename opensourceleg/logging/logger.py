@@ -64,15 +64,15 @@ class Logger(logging.Logger):
     options.
 
     Args:
-        log_path (str): The path to save log files.
-        log_format (str): The log message format.
-        file_level (LogLevel): The log level for file output.
-        stream_level (LogLevel): The log level for console output.
-        file_max_bytes (int): The maximum size of the log file in bytes before rotation.
-        file_backup_count (int): The number of backup log files to keep.
-        file_name (Union[str, None]): The base name for the log file.
-        buffer_size (int): The maximum number of log entries to buffer before writing to the CSV file.
-        enable_csv_logging (bool): Whether to enable CSV logging.
+        log_path: The path to save log files.
+        log_format: The log message format.
+        file_level: The log level for file output.
+        stream_level: The log level for console output.
+        file_max_bytes: The maximum size of the log file in bytes before rotation.
+        file_backup_count: The number of backup log files to keep.
+        file_name: The base name for the log file.
+        buffer_size: The maximum number of log entries to buffer before writing to the CSV file.
+        enable_csv_logging: Whether to enable CSV logging.
 
     Properties:
         - **file_path**: The path to the log file.
@@ -143,15 +143,15 @@ class Logger(logging.Logger):
         Sets up logging paths, format, handler levels, and internal buffers for tracking variables.
 
         Args:
-            log_path (str): Directory path where log files will be stored.
-            log_format (str): Format string for log messages.
-            file_level (LogLevel): Logging level for file handler.
-            stream_level (LogLevel): Logging level for stream (console) handler.
-            file_max_bytes (int): Maximum size (in bytes) for log file rotation.
-            file_backup_count (int): Number of backup log files to keep.
-            file_name (Union[str, None]): Optional user-specified file name prefix.
-            buffer_size (int): Maximum number of log records to buffer before writing to CSV.
-            enable_csv_logging (bool): Whether to enable CSV logging.
+            log_path: The path to save log files.
+            log_format: The log message format.
+            file_level: The log level for file output.
+            stream_level: The log level for console output.
+            file_max_bytes: The maximum size of the log file in bytes before rotation.
+            file_backup_count: The number of backup log files to keep.
+            file_name: The base name for the log file.
+            buffer_size: The maximum number of log entries to buffer before writing to the CSV file.
+            enable_csv_logging: Whether to enable CSV logging.
         """
         with self._lock:
             if not hasattr(self, "_initialized"):
@@ -442,7 +442,7 @@ class Logger(logging.Logger):
         Set the maximum number of errors before a variable is automatically untracked.
 
         Args:
-            max_errors (int): Maximum number of errors before untracking.
+            max_errors: Maximum number of errors before untracking.
         """
         with self._lock:
             if max_errors < 0:
@@ -601,9 +601,9 @@ class Logger(logging.Logger):
         Exit the runtime context and close the Logger.
 
         Args:
-            exc_type (Any): The exception type if an exception occurred.
-            exc_val (Any): The exception value if an exception occurred.
-            exc_tb (Any): The traceback if an exception occurred.
+            exc_type: The exception type if an exception occurred.
+            exc_val: The exception value if an exception occurred.
+            exc_tb: The traceback if an exception occurred.
         """
         self.close()
 
@@ -672,9 +672,9 @@ class Logger(logging.Logger):
         Ensures that the file handler is set up before logging.
 
         Args:
-            msg (object): The message to log.
-            *args (object): Additional arguments.
-            **kwargs (Any): Additional keyword arguments.
+            msg: The message to log.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         self._ensure_file_handler()
         super().debug(msg, *args, **kwargs)
@@ -686,9 +686,9 @@ class Logger(logging.Logger):
         Ensures that the file handler is set up before logging.
 
         Args:
-            msg (object): The message to log.
-            *args (object): Additional arguments.
-            **kwargs (Any): Additional keyword arguments.
+            msg: The message to log.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         self._ensure_file_handler()
         super().info(msg, *args, **kwargs)
@@ -700,9 +700,9 @@ class Logger(logging.Logger):
         Ensures that the file handler is set up before logging.
 
         Args:
-            msg (object): The message to log.
-            *args (object): Additional arguments.
-            **kwargs (Any): Additional keyword arguments.
+            msg: The message to log.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         self._ensure_file_handler()
         super().warning(msg, *args, **kwargs)
@@ -714,9 +714,9 @@ class Logger(logging.Logger):
         Ensures that the file handler is set up before logging.
 
         Args:
-            msg (object): The message to log.
-            *args (object): Additional arguments.
-            **kwargs (Any): Additional keyword arguments.
+            msg: The message to log.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         self._ensure_file_handler()
         super().error(msg, *args, **kwargs)
@@ -728,9 +728,9 @@ class Logger(logging.Logger):
         Ensures that the file handler is set up before logging.
 
         Args:
-            msg (object): The message to log.
-            *args (object): Additional arguments.
-            **kwargs (Any): Additional keyword arguments.
+            msg: The message to log.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         self._ensure_file_handler()
         super().critical(msg, *args, **kwargs)
@@ -742,10 +742,10 @@ class Logger(logging.Logger):
         Ensures that the file handler is set up before logging.
 
         Args:
-            level (int): The log level.
-            msg (object): The message to log.
-            *args (object): Additional arguments.
-            **kwargs (Any): Additional keyword arguments.
+            level: The log level.
+            msg: The message to log.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         self._ensure_file_handler()
         super().log(level, msg, *args, **kwargs)

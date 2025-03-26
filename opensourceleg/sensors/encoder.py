@@ -47,11 +47,11 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
 
         Args:
-            tag (str): Tag name for the encoder
-            bus (str): Path to the i2c bus ex. '/dev/i2c-1'
-            A1_adr_pin (int): State of the adress pin A1 on the AS5048A module
-            A2_adr_pin (int): State of the adress pin A1 on the AS5048A module
-            zero_position (int): The zero position of the encoder
+            tag: Tag name for the encoder
+            bus: Path to the i2c bus ex. '/dev/i2c-1'
+            A1_adr_pin: State of the adress pin A1 on the AS5048A module
+            A2_adr_pin: State of the adress pin A1 on the AS5048A module
+            zero_position: The zero position of the encoder
 
         Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se),
                 Senthur Ayyappan (senthura@umich.edu)
@@ -104,7 +104,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         Sets the encoder map to correct for nonlinearities in the encoder
 
         Args:
-            encoder_map (np.polynomial.polynomial.Polynomial): The encoder map to set
+            encoder_map: The encoder map to set
 
         Returns:
             None
@@ -128,10 +128,10 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """
         Convert a 14bit integer to bytes <msb[13:6]><lsb[5:0]>
 
-        Args
-            intToParse (int): The integer to convert to bytes
+        Args:
+            intToParse: The integer to convert to bytes
 
-        Raises
+        Raises:
             OverflowError: If intToParse >= 2^14
         """
         if intToParse >= AS5048B.ENC_RESOLUTION:
@@ -265,7 +265,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """Sets the zero position OTP registers (but does not burn them)
 
         Args:
-            value (int): The content of the Zero offset registers
+            value: The content of the Zero offset registers
 
         Raises:
             OverflowError: If value >= 2^14

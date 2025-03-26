@@ -43,12 +43,12 @@ class ThermalModel:
         3: The model can also be used to scale the torque based on the temperature of the winding and the case.
 
     Args:
-        ambient (float): Ambient temperature in Celsius. Defaults to 21.
-        params (dict): Dictionary of parameters. Defaults to dict().
-        temp_limit_windings (float): Maximum temperature of the windings in Celsius. Defaults to 115.
-        soft_border_C_windings (float): Soft border of the windings in Celsius. Defaults to 15.
-        temp_limit_case (float): Maximum temperature of the case in Celsius. Defaults to 80.
-        soft_border_C_case (float): Soft border of the case in Celsius. Defaults to 5.
+        ambient: Ambient temperature in Celsius. Defaults to 21.
+        params: Dictionary of parameters. Defaults to dict().
+        temp_limit_windings: Maximum temperature of the windings in Celsius. Defaults to 115.
+        soft_border_C_windings: Soft border of the windings in Celsius. Defaults to 15.
+        temp_limit_case: Maximum temperature of the case in Celsius. Defaults to 80.
+        soft_border_C_case: Soft border of the case in Celsius. Defaults to 5.
 
 
     """
@@ -93,8 +93,8 @@ class ThermalModel:
         Updates the temperature of the winding and the case based on the current and the ambient temperature.
 
         Args:
-            dt (float): Time step in seconds. Defaults to 1/200.
-            motor_current (float): Motor current in mA. Defaults to 0.
+            dt: Time step in seconds. Defaults to 1/200.
+            motor_current: Motor current in mA. Defaults to 0.
 
         Dynamics:
             1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
@@ -118,9 +118,9 @@ class ThermalModel:
         the ambient temperature and returns the scale factor for the torque.
 
         Args:
-            dt (float): Time step in seconds.
-            motor_current (float): Motor current in mA. Defaults to 0.
-            FOS (float): Factor of safety. Defaults to 3.0.
+            dt: Time step in seconds.
+            motor_current: Motor current in mA. Defaults to 0.
+            FOS: Factor of safety. Defaults to 3.0.
 
         Returns:
             float: Scale factor for the torque.
@@ -208,8 +208,8 @@ class SaturatingRamp:
     def __init__(self, loop_frequency: float = 100, ramp_time: float = 1.0) -> None:
         """
         Args:
-            loop_frequency (int, optional): Rate in Hz (default 100 Hz). Defaults to 100.
-            ramp_time (float, optional): Time to complete the ramp. Defaults to 1.0.
+            loop_frequency: Rate in Hz (default 100 Hz). Defaults to 100.
+            ramp_time: Time to complete the ramp. Defaults to 1.0.
         """
         self.delta_per_update = 1.0 / (loop_frequency * ramp_time)
         self.value = 0.0
@@ -227,7 +227,7 @@ class SaturatingRamp:
             torque = torque * ramp.update(enable_ramp)
 
         Args:
-            enable_ramp (bool, optional): If enable_ramp is true, ramp value increases. Defaults to False.
+            enable_ramp: If enable_ramp is true, ramp value increases. Defaults to False.
 
         Returns:
             value (float): Scalar between 0 and 1.
@@ -246,7 +246,7 @@ def clamp_within_vector_range(
     This function ensures that input_value remains within the range spanned by the input_vector.
     If the input_value falls outside the vector's bounds, it'll return the appropriate max or min value from the vector.
 
-    Example:
+    Examples:
         clamp_within_vector_range(10, [0,1,2,3]) = 3
         clamp_within_vector_range(-10, [0,1,2,3]) = 0
 
@@ -264,8 +264,8 @@ def to_twos_complement(value: int, bit_length: int) -> int:
     as an unsigned integer
 
     Args:
-        value (int): Signed integer to convert
-        bit_length (int): Number of bits of 2's complement representation
+        value: Signed integer to convert
+        bit_length: Number of bits of 2's complement representation
 
     Returns:
         int: Unsigned integer 2's complement
@@ -293,8 +293,8 @@ def from_twos_complement(value: int, bit_length: int) -> int:
     """Converts a 2's complement integer to a signed integer
 
     Args:
-        value (int): 2's complement integer
-        bit_length (int): Number of bits of 2's complement representation
+        value: 2's complement integer
+        bit_length: Number of bits of 2's complement representation
 
     Returns:
         int: Signed integer

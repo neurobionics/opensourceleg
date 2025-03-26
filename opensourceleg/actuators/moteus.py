@@ -131,6 +131,11 @@ class MoteusInterface:
         return cls._instance
 
     def __init__(self):
+        """
+        Initialize the MoteusInterface singleton.
+        This class serves as a communication portal between Moteus Controller and Moteus PiHat.
+        The singleton pattern ensures only one instance manages all Moteus communications.
+        """
         pass
 
     def __repr__(self):
@@ -169,6 +174,21 @@ class MoteusActuator(ActuatorBase, Controller):
         offline: bool = False,
         query: Optional[MoteusQueryResolution] = None,
     ) -> None:
+        """
+        Initialize a Moteus actuator.
+
+        Args:
+            tag: Unique identifier for the actuator. Defaults to "Moteus".
+            servo_id: ID of the Moteus servo. Defaults to 0.
+            bus_id: ID of the CAN bus. Defaults to 0.
+            gear_ratio: Gear ratio of the actuator. Defaults to 1.0.
+            frequency: Control loop frequency in Hz. Defaults to 500.
+            offline: Whether to run in offline mode. Defaults to False.
+            query: Query resolution settings. Defaults to None.
+
+        Examples:
+            >>> actuator = MoteusActuator(tag="knee", servo_id=1, bus_id=1, gear_ratio=9.0)
+        """
         if query is None:
             query = MoteusQueryResolution()
 
