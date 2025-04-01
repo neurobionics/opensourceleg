@@ -5,7 +5,7 @@ import numpy as np
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 1000
@@ -19,7 +19,11 @@ def impedance_control():
         file_name="impedance_control",
     )
     actpack = DephyActuator(
-        port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
+        port="/dev/ttyACM0",
+        gear_ratio=GEAR_RATIO,
+        frequency=FREQUENCY,
+        debug_level=0,
+        dephy_log=False,
     )
     clock = SoftRealtimeLoop(dt=DT)
 

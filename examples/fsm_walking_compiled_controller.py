@@ -16,8 +16,7 @@ import numpy as np
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.control.compiled import CompiledController
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
-from opensourceleg.time import SoftRealtimeLoop
-from opensourceleg.units import units
+from opensourceleg.utilities import SoftRealtimeLoop, units
 
 use_offline_mode = False
 FREQUENCY = 200

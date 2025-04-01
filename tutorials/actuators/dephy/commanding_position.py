@@ -5,7 +5,7 @@ import numpy as np
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 1000

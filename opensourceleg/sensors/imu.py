@@ -38,12 +38,14 @@ class LordMicrostrainIMU(IMUBase):
 
     def __init__(
         self,
+        tag: str = "LordMicrostrainIMU",
         port: str = r"/dev/ttyUSB0",
         baud_rate: int = 921600,
         frequency: int = 200,
         update_timeout: int = 500,
         max_packets: int = 1,
         return_packets: bool = False,
+        offline: bool = False,
     ) -> None:
         """
         Initialize the LordMicrostrainIMU sensor.
@@ -73,6 +75,29 @@ class LordMicrostrainIMU(IMUBase):
             )
             exit(1)
 
+        self._init_variables(
+            tag=tag,
+            port=port,
+            baud_rate=baud_rate,
+            frequency=frequency,
+            update_timeout=update_timeout,
+            max_packets=max_packets,
+            return_packets=return_packets,
+            offline=offline,
+        )
+
+    def _init_variables(
+        self,
+        tag: str,
+        port: str,
+        baud_rate: int,
+        frequency: int,
+        update_timeout: int,
+        max_packets: int,
+        return_packets: bool,
+        offline: bool,
+    ) -> None:
+        super().__init__(tag=tag, offline=offline)
         self._port = port
         self._baud_rate = baud_rate
         self._frequency = frequency
@@ -206,15 +231,6 @@ class LordMicrostrainIMU(IMUBase):
             return data_packets
         else:
             return None
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the LordMicrostrainIMU sensor.
-
-        Returns:
-            str: "IMULordMicrostrain"
-        """
-        return "IMULordMicrostrain"
 
     @property
     def port(self) -> str:
@@ -458,7 +474,9 @@ class BNO055(IMUBase):
 
     def __init__(
         self,
+        tag: str = "BNO055",
         addr: int = 40,
+        offline: bool = False,
     ) -> None:
         """
         Initialize the BNO055 sensor.
@@ -479,19 +497,11 @@ class BNO055(IMUBase):
             LOGGER.error("BNO055IMU requires adafruit_bno055, board, and busio packages. " f"Error: {e}")
             exit(1)
 
+        super().__init__(tag=tag, offline=offline)
         self._address: int = addr
         self._gyro_data: list[float] = [0.0, 0.0, 0.0]
         self._acc_data: list[float] = [0.0, 0.0, 0.0]
         self._is_streaming = False
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the BNO055 sensor.
-
-        Returns:
-            str: "BNO055_IMU"
-        """
-        return "BNO055_IMU"
 
     def start(self) -> None:
         """
