@@ -96,7 +96,7 @@ class Profiler:
             time.sleep(0.1)
             profiler.toc()
         """
-        self._t0 = time.time()
+        self._t0 = time.perf_counter()
 
     def toc(self) -> float:
         """
@@ -112,7 +112,7 @@ class Profiler:
             duration = profiler.toc()
         """
         if self._t0 is not None:
-            t: float = time.time() - self._t0
+            t: float = time.perf_counter() - self._t0
             self._N += 1
             self._agg += t
             self._aggvar += t**2
