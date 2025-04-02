@@ -8,26 +8,33 @@ __all__ = ["Profiler"]
 
 
 class Profiler:
+    """
+    A class to profile the execution speed of real-time code.
+
+    Can use in three ways:
+        1. tic/toc
+        2. lambda
+        3. decorator
+
+    See examples in the main block of this file.
+
+    Based on original implementation in https://github.com/UM-LoCoLab/NeuroLocoMiddleware
+
+    **Note**:
+        This profiler bases its calculation on the system time and includes in its calculations
+        any time spent waiting for user input, interfacing with I/O, etc.
+        Use caution when profiling any code with such components, as differences in user response
+        or external systems can affect the result.
+
+    Author:
+        - Dr. Gray Cortright Thomas <gthomas@tamu.edu>
+        - Kevin Best <tkevinbest@gmail.com>
+
+    Args:
+        name (str): The name of the profiler instance.
+    """
+
     def __init__(self, name: str):
-        """
-        A class to profile the execution speed of real-time code.
-
-        Can use in three ways:
-            1. tic/toc
-            2. lambda
-            3. decorator
-
-        See examples in the main block of the file.
-
-        Based on original implementation in https://github.com/UM-LoCoLab/NeuroLocoMiddleware
-
-        Author:
-            - Dr. Gray Cortright Thomas <gthomas@tamu.edu>
-            - Kevin Best <tkevinbest@gmail.com>
-
-        Args:
-            name (str): The name of the profiler instance.
-        """
         self._N: int = 0
         self._agg: float = 0.0
         self._aggvar: float = 0.0
