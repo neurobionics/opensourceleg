@@ -1,6 +1,6 @@
 import time
 
-from opensourceleg.time import Profiler
+from opensourceleg.utilities import Profiler
 
 
 def example_tic_toc():
@@ -41,6 +41,21 @@ def example_lambda():
     print(f"Total runs: {profiler.N}, Total time: {profiler.agg:.3f} seconds")
 
 
+def example_context():
+    """
+    Example demonstrating the use of the Profiler with a context manager.
+    """
+    profiler = Profiler("context_example")
+    with profiler:
+        time.sleep(0.1)  # Simulate some work
+    with profiler:
+        time.sleep(0.2)  # Simulate some more work
+
+    print(f"Total runs: {profiler.N}, Total time: {profiler.agg:.3f} seconds")
+    print(f"Average time per run: {profiler.agg / profiler.N:.3f} seconds")
+    print(f"Variance: {profiler.aggvar:.3f}")
+
+
 if __name__ == "__main__":
     print("Running tic-toc example:")
     example_tic_toc()
@@ -50,3 +65,6 @@ if __name__ == "__main__":
 
     print("\nRunning lambda example:")
     example_lambda()
+
+    print("\nRunning context manager example:")
+    example_context()

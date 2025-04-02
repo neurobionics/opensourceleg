@@ -74,3 +74,12 @@ def test_multiple_tic_toc():
     assert profiler.N == 10
     assert profiler.agg > 0.9 and profiler.agg < 1.1
     assert profiler.aggvar > 0.09 and profiler.aggvar < 0.11
+
+
+def test_context():
+    p = Profiler("context")
+    with p:
+        time.sleep(0.1)
+
+    assert p.N == 1
+    assert p.agg > 0.09 and p.agg < 0.11

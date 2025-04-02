@@ -6,18 +6,19 @@ This tutorial walks you through the key features of the `Profiler` class and exp
 
 ## Key Features of the Profiler
 
-The `Profiler` class supports three main usage patterns:
+The `Profiler` class supports four main usage patterns:
 
 1. **Tic-Toc Timing**: Measure the duration of specific code blocks that are wrapped in `Tic()` and `Toc()` commands.
 2. **Expression Profiling**: Profile the execution time of an expression by passing it to the profiler wrapped in a lambda function.
 3. **Decorator**: Automatically profile a function by decorating it.
+4. **Context Manager**: Use the profiler as a context manager to measure the execution time of a block of code.
 
 ## Example 1: Tic-Toc Timing
 
 The `tic` and `toc` methods allow you to measure the duration of specific code blocks.
 
 ```python
---8<-- "tutorials/utilities/profiling_code.py:10:14"
+--8<-- "tutorials/utilities/profiling_code.py:6:14"
 ```
 
 ### Explanation
@@ -31,7 +32,7 @@ The `tic` and `toc` methods allow you to measure the duration of specific code b
 The `profile` method allows you to measure the execution time of an expression or a small block of code by passing it as a lambda function.
 
 ```python
---8<-- "tutorials/utilities/profiling_code.py:37:41"
+--8<-- "tutorials/utilities/profiling_code.py:33:41"
 ```
 
 ### Explanation
@@ -47,13 +48,29 @@ This pattern is particularly useful for profiling small, self-contained expressi
 The `decorate` method allows you to profile a function by simply adding a decorator.
 
 ```python
---8<-- "tutorials/utilities/profiling_code.py:21:30"
+--8<-- "tutorials/utilities/profiling_code.py:17:30"
 ```
 
 ### Explanation
 
 - `@profiler.decorate`: Automatically profiles the decorated function.
 - This pattern is useful for profiling functions without modifying their code.
+
+## Example 4: Using the Profiler as a Context Manager
+
+The `Profiler` class can also be used as a context manager to measure the execution time of a block of code.
+
+```python
+--8<-- "tutorials/utilities/profiling_code.py:44:56"
+```
+
+### Explanation
+
+- `with profiler`: Uses the profiler instance to measure the execution time of the code inside the `with` block.
+- `N`: The number of times the profiler has been used.
+- `agg`: The total time spent in all profiled blocks.
+
+This pattern provides an alternative to the `tic()` `toc()` usage that may produce cleaner code.
 
 ## Summary
 

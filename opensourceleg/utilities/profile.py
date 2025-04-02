@@ -11,10 +11,11 @@ class Profiler:
     """
     A class to profile the execution speed of real-time code.
 
-    Can use in three ways:
+    Can use in four ways:
         1. tic/toc
         2. lambda
         3. decorator
+        4. context manager
 
     See examples in the main block of this file.
 
@@ -55,6 +56,12 @@ class Profiler:
             f"Profiler Results - {self.name}: N = {self.N}, avg: {mean * 1e3} ms, "
             f"stddev: {stddev * 1e3} ms, total: {self.agg} s"
         )
+
+    def __enter__(self) -> None:
+        self.tic()
+
+    def __exit__(self, *args: Any) -> None:
+        self.toc()
 
     @property
     def N(self) -> int:
@@ -193,3 +200,10 @@ if __name__ == "__main__":
         A = np.random.random((5, 5))
         f = lambda local_A=A: np.linalg.eig(local_A)
         Profiler("lambda_example").profile(f)
+
+    # Example with context usage
+    with Profiler("context_example") as p:
+        A = np.random.random((5, 5))
+        np.linalg.eig(A)
+        A = np.random.random((5, 5))
+        np.linalg.eig(A)
