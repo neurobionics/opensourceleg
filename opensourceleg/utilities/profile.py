@@ -2,6 +2,8 @@ import time
 from math import sqrt
 from typing import Any, Callable, Union
 
+import numpy as np
+
 __all__ = ["Profiler"]
 
 
@@ -160,22 +162,27 @@ class Profiler:
 
 if __name__ == "__main__":
     # Example tic toc usage
+    A = np.random.random((5, 5))
     profiler_tt = Profiler("tic_toc_example")
     profiler_tt.tic()
-    time.sleep(0.1)
+    result = np.linalg.eig(A)
     profiler_tt.toc()
     profiler_tt.tic()
-    time.sleep(0.1)
+    A = np.random.random((5, 5))
+    result = np.linalg.eig(A)
     t = profiler_tt.toc()
 
     # Example decorator usage
     @Profiler("decorator_example").decorate
     def my_decorated_function() -> None:
-        time.sleep(0.01)
+        A = np.random.random((5, 5))
+        np.linalg.eig(A)
 
     for _i in range(100):
         my_decorated_function()
 
     # Example lambda usage
     for _i in range(3):
-        Profiler("lambda_example").profile(lambda: time.sleep(0.1))
+        A = np.random.random((5, 5))
+        f = lambda local_A=A: np.linalg.eig(local_A)
+        Profiler("lambda_example").profile(f)
