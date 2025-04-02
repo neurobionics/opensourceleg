@@ -1,14 +1,10 @@
-﻿from typing import Any, Union
-
 import math
 import os
-import time
-from dataclasses import dataclass
+from typing import ClassVar, Optional
 
 import numpy as np
-from moteus import Command, Controller
+from moteus import Command, Controller, Stream
 from moteus import Register as MoteusRegister
-from moteus import Stream
 from moteus import multiplex as mp
 
 from opensourceleg.actuators.base import (
@@ -56,7 +52,6 @@ MOTEUS_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
 
 
 class MoteusQueryResolution:
-
     mode = mp.INT8
     position = mp.F32
     velocity = mp.F32
@@ -79,7 +74,7 @@ class MoteusQueryResolution:
     aux1_gpio = mp.IGNORE
     aux2_gpio = mp.IGNORE
 
-    _extra = {
+    _extra: ClassVar = {
         MoteusRegister.COMMAND_POSITION: mp.F32,
         MoteusRegister.COMMAND_VELOCITY: mp.F32,
         MoteusRegister.COMMAND_FEEDFORWARD_TORQUE: mp.F32,
@@ -139,11 +134,10 @@ class MoteusInterface:
         pass
 
     def __repr__(self):
-        return f"MoteusInterface"
+        return "MoteusInterface"
 
     def _add2map(self, servo_id, bus_id) -> None:
-
-        if bus_id in self.bus_map.keys():
+        if bus_id in self.bus_map:
             self.bus_map[bus_id].append(servo_id)
         else:
             self.bus_map[bus_id] = [servo_id]
@@ -173,8 +167,11 @@ class MoteusActuator(ActuatorBase, Controller):
         gear_ratio: float = 1.0,
         frequency: int = 500,
         offline: bool = False,
-        query: MoteusQueryResolution = MoteusQueryResolution(),
+        query: Optional[MoteusQueryResolution] = None,
     ) -> None:
+        if query is None:
+            query = MoteusQueryResolution()
+
         self._servo_id = servo_id
         self._bus_id = bus_id
         super().__init__(
@@ -227,10 +224,11 @@ class MoteusActuator(ActuatorBase, Controller):
             self._is_open = True
             self._is_streaming = True
 
-        except OSError as e:
+        except OSError:
             print("\n")
             LOGGER.error(
-                msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\nPlease run the script with 'sudo' command or add the user to the dialout group.\n"
+                msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\n \
+                    Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
             os._exit(status=1)
 
@@ -239,9 +237,7 @@ class MoteusActuator(ActuatorBase, Controller):
             default_mode_config.entry_callback(self)
 
         if (await self._interface.transport.cycle([self.make_stop(query=True)])) == []:
-            LOGGER.error(
-                msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection."
-            )
+            LOGGER.error(msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection.")
             self._is_streaming = False
             self._is_open = False
         # Keep the default command as query -- reading sensor data
@@ -256,7 +252,6 @@ class MoteusActuator(ActuatorBase, Controller):
         self._command = self.make_query()
 
     async def update(self):
-
         self._data = await self._interface.transport.cycle([self._command])
 
         self._thermal_model.T_c = self.case_temperature
@@ -272,13 +267,22 @@ class MoteusActuator(ActuatorBase, Controller):
 
         if self.winding_temperature >= self.max_winding_temperature:
             LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. Stopping motor."
+                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
+                Stopping motor."
             )
             raise ThermalLimitException()
 
         self._command = self.make_query()
 
-    def home(self):
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
         # TODO: implement homing
         LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
 
@@ -300,9 +304,9 @@ class MoteusActuator(ActuatorBase, Controller):
             query=True,
         )
 
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
-        Set the joint torque of the joint.
+        Set the output torque of the actuator.
         This is the torque that is applied to the joint, not the motor.
 
         Args:
@@ -313,16 +317,13 @@ class MoteusActuator(ActuatorBase, Controller):
     def set_motor_current(
         self,
         value: float,
-    ):
-        LOGGER.info(f"Current Mode Not Implemented")
+    ) -> None:
+        LOGGER.info("Current Mode Not Implemented")
 
     def set_motor_velocity(self, value: float) -> None:
         self._command = self.make_position(
             position=math.nan,
-            velocity=value
-            / (
-                np.pi * 2
-            ),  # TODO: Verify this conversion, are we converting from rad/s to rev/s?
+            velocity=value / (np.pi * 2),  # TODO: Verify this conversion, are we converting from rad/s to rev/s?
             query=True,
             watchdog_timeout=math.nan,
         )
@@ -334,7 +335,7 @@ class MoteusActuator(ActuatorBase, Controller):
         Args:
             value (float): The voltage to set in mV.
         """
-        LOGGER.info(f"Voltage Mode Not Implemented")
+        LOGGER.info("Voltage Mode Not Implemented")
 
     def set_motor_position(self, value: float) -> None:
         """
@@ -345,9 +346,7 @@ class MoteusActuator(ActuatorBase, Controller):
             value (float): The position to set
         """
         self._command = self.make_position(
-            position=float(
-                (value) / (2 * np.pi)
-            ),  # TODO: Verify this conversion, are we converting from rad to rev?
+            position=float((value) / (2 * np.pi)),  # TODO: Verify this conversion, are we converting from rad to rev?
             query=True,
             watchdog_timeout=math.nan,
         )
@@ -460,10 +459,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @property
     def motor_torque(self) -> float:
         if self._data is not None:
-            return (
-                float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
-                / self.gear_ratio
-            )
+            return float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP) / self.gear_ratio
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -473,11 +469,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @property
     def motor_position(self) -> float:
         if self._data is not None:
-            return (
-                float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi)
-                - self.motor_zero_position
-                - self.motor_position_offset
-            )
+            return float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi) - self.motor_zero_position
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
@@ -549,7 +541,8 @@ class MoteusActuator(ActuatorBase, Controller):
     def thermal_scaling_factor(self) -> float:
         """
         Scale factor to use in torque control, in [0,1].
-        If you scale the torque command by this factor, the motor temperature will never exceed max allowable temperature.
+        If you scale the torque command by this factor, the motor temperature will
+        never exceed max allowable temperature.
         For a proof, see paper referenced in thermal model.
         """
         return self._thermal_scale

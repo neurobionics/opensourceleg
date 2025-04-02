@@ -48,21 +48,21 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
        pass
    ```
 
-   Index from `class ControlModesBase` is needed if constructing the Actuator Object from `base.ActuatorBase`. For example: 
-    ```Python
-    @dataclass(init=False)
-    class ActuatorControlModes(ControlModesBase):
+   Index from `class ControlModesBase` is needed if constructing the Actuator Object from `base.ActuatorBase`. For example:
 
-    def __init__(self, actuator: "Actuator") -> None:
+   ```Python
+   @dataclass(init=False)
+   class ActuatorControlModes(ControlModesBase):
 
-        self.VOLTAGE = VoltageMode(actuator=actuator)
-        self.CURRENT = CurrentMode(actuator=actuator)
-        self.POSITION = PositionMode(actuator=actuator)
-        self.IMPEDANCE = ImpedanceMode(actuator=actuator)
+   def __init__(self, actuator: "Actuator") -> None:
+
+       self.VOLTAGE = VoltageMode(actuator=actuator)
+       self.CURRENT = CurrentMode(actuator=actuator)
+       self.POSITION = PositionMode(actuator=actuator)
+       self.IMPEDANCE = ImpedanceMode(actuator=actuator)
    ```
 
 3. Customize the actuator object from `base.ActuatorBase`
-
 
    ```Python
    class Motor(base.ActuatorBase):
@@ -132,7 +132,6 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
 
 ![](./images/Class%20Diagram%20Base%20Lib.svg)
 
-
 ### [DephyActpack](./dephy.py) Support
 
 #### Known Issues
@@ -141,7 +140,7 @@ The documentation mainly focus on how to develop a custom **actuator module**. S
 
 ### [Moteus Controller](./moteus.py) Support
 
-#### Known Issues [Check [Issue Page](https://github.com/neurobionics/opensourceleg/issues) for Details] 
+#### Known Issues [Check [Issue Page](https://github.com/neurobionics/opensourceleg/issues) for Details]
 
 - Missing Joint Properties (e.g. `homing`)
 

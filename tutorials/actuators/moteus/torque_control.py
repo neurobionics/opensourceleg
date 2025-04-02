@@ -1,13 +1,11 @@
-﻿import asyncio
-import math
+import asyncio
 
-import numpy as np
 import pandas as pd
 from moteus import Register
 
 from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.logging.logger import LOGGER
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
 FREQUENCY = 200
@@ -22,13 +20,11 @@ async def main():
         bus_id=3,
         gear_ratio=9.0,
     )
-    torque_data = pd.DataFrame(
-        {
-            "Time": [],
-            "Output_Torque": [],
-            "Command_Torque": [],
-        }
-    )
+    torque_data = pd.DataFrame({
+        "Time": [],
+        "Output_Torque": [],
+        "Command_Torque": [],
+    })
 
     clock = SoftRealtimeLoop(dt=DT)
 
@@ -44,7 +40,6 @@ async def main():
         await mc1.update()
 
         for t in clock:
-
             # current_time = time.monotonic()
             if t > TIME_TO_STEP:
                 mc1.set_motor_torque(
@@ -52,29 +47,18 @@ async def main():
                 )
                 await mc1.update()
 
-            print(f"######")
-            LOGGER.info(
-                "".join(
-                    f"Output Torque: {mc1._data[0].values[Register.TORQUE] * mc1.gear_ratio}\t"
-                )
-            )
+            print("######")
+            LOGGER.info("".join(f"Output Torque: {mc1._data[0].values[Register.TORQUE] * mc1.gear_ratio}\t"))
 
-            print(f"------")
+            print("------")
             torque_data = pd.concat(
                 [
                     torque_data,
-                    pd.DataFrame(
-                        {
-                            "Time": [t],
-                            "Output_Torque": [
-                                mc1._data[0].values[Register.TORQUE] * mc1.gear_ratio
-                            ],
-                            "Command_Torque": [
-                                mc1._data[0].values[Register.COMMAND_FEEDFORWARD_TORQUE]
-                                * mc1.gear_ratio
-                            ],
-                        }
-                    ),
+                    pd.DataFrame({
+                        "Time": [t],
+                        "Output_Torque": [mc1._data[0].values[Register.TORQUE] * mc1.gear_ratio],
+                        "Command_Torque": [mc1._data[0].values[Register.COMMAND_FEEDFORWARD_TORQUE] * mc1.gear_ratio],
+                    }),
                 ],
                 ignore_index=True,
             )
