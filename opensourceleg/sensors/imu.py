@@ -78,12 +78,12 @@ class LordMicrostrainIMU(IMUBase):
         Initialize the LordMicrostrainIMU sensor.
 
         Args:
-            port (str, optional): Serial port for the IMU. Defaults to "/dev/ttyUSB0".
-            baud_rate (int, optional): Baud rate for the serial connection. Defaults to 921600.
-            frequency (int, optional): Data streaming frequency in Hz. Defaults to 200.
-            update_timeout (int, optional): Timeout for data packet retrieval in milliseconds. Defaults to 500.
-            max_packets (int, optional): Maximum number of data packets to retrieve. Defaults to 1.
-            return_packets (bool, optional): If True, returns the raw data packets. Defaults to False.
+            port: Serial port for the IMU. Defaults to "/dev/ttyUSB0".
+            baud_rate: Baud rate for the serial connection. Defaults to 921600.
+            frequency: Data streaming frequency in Hz. Defaults to 200.
+            update_timeout: Timeout for data packet retrieval in milliseconds. Defaults to 500.
+            max_packets: Maximum number of data packets to retrieve. Defaults to 1.
+            return_packets: If True, returns the raw data packets. Defaults to False.
         """
         self._port = port
         self._baud_rate = baud_rate
@@ -106,7 +106,7 @@ class LordMicrostrainIMU(IMUBase):
           - GPS timestamp
 
         Returns:
-            Any: A configured MipChannels object for the MSCL InertialNode.
+            A configured MipChannels object for the MSCL InertialNode.
         """
         channels = mscl.MipChannels()
         channels.append(
@@ -219,54 +219,57 @@ class LordMicrostrainIMU(IMUBase):
         Return a string representation of the LordMicrostrainIMU sensor.
 
         Returns:
-            str: "IMULordMicrostrain"
+            A string identifying the sensor.
         """
         return "IMULordMicrostrain"
 
     @property
     def port(self) -> str:
         """
-        Get the serial port used by the sensor.
+        Get the serial port for the IMU.
 
         Returns:
-            str: The serial port.
+            The serial port string.
         """
         return self._port
 
     @property
     def baud_rate(self) -> int:
         """
-        Get the baud rate used for the sensor connection.
+        Get the baud rate for the serial connection.
 
         Returns:
-            int: The baud rate.
+            The baud rate in Hz.
         """
         return self._baud_rate
 
     @property
     def frequency(self) -> int:
         """
-        Get the data streaming frequency of the sensor.
+        Get the data streaming frequency.
 
         Returns:
-            int: The streaming frequency in Hz.
+            The frequency in Hz.
         """
         return self._frequency
 
     @property
     def is_streaming(self) -> bool:
         """
-        Check if the sensor is currently streaming data.
+        Check if the sensor is currently streaming.
 
         Returns:
-            bool: True if streaming; otherwise, False.
+            True if the sensor is streaming, False otherwise.
         """
         return self._is_streaming
 
     @property
     def update_timeout(self) -> int:
         """
-        Get the update timeout for the sensor.
+        Get the update timeout for data packet retrieval.
+
+        Returns:
+            The timeout in milliseconds.
         """
         return self._update_timeout
 
@@ -274,6 +277,9 @@ class LordMicrostrainIMU(IMUBase):
     def max_packets(self) -> int:
         """
         Get the maximum number of packets to retrieve.
+
+        Returns:
+            The maximum number of packets.
         """
         return self._max_packets
 
@@ -281,120 +287,119 @@ class LordMicrostrainIMU(IMUBase):
     def return_packets(self) -> bool:
         """
         Get the return packets flag.
+
+        Returns:
+            True if raw data packets should be returned, False otherwise.
         """
         return self._return_packets
 
     @property
     def data(self) -> dict[str, float]:
         """
-        Get the latest sensor data.
+        Get the current sensor data.
 
         Returns:
-            dict[str, float]: A dictionary mapping channel names to their float values.
+            A dictionary containing the current sensor data.
         """
         return self._data
 
     @property
     def roll(self) -> float:
         """
-        Get the estimated roll angle in radians.
+        Get the roll angle.
 
         Returns:
-            float: Roll angle (rad).
+            The roll angle in radians.
         """
         return self._data["estRoll"]
 
     @property
     def pitch(self) -> float:
         """
-        Get the estimated pitch angle in radians.
+        Get the pitch angle.
 
         Returns:
-            float: Pitch angle (rad).
+            The pitch angle in radians.
         """
         return self._data["estPitch"]
 
     @property
     def yaw(self) -> float:
         """
-        Get the estimated yaw angle in radians.
+        Get the yaw angle.
 
         Returns:
-            float: Yaw angle (rad).
+            The yaw angle in radians.
         """
         return self._data["estYaw"]
 
     @property
     def vel_x(self) -> float:
         """
-        Get the estimated angular velocity about the x-axis in rad/s.
+        Get the angular velocity in the x-axis.
 
         Returns:
-            float: Angular velocity (rad/s) about the x-axis.
+            The angular velocity in rad/s.
         """
         return self._data["estAngularRateX"]
 
     @property
     def vel_y(self) -> float:
         """
-        Get the estimated angular velocity about the y-axis in rad/s.
+        Get the angular velocity in the y-axis.
 
         Returns:
-            float: Angular velocity (rad/s) about the y-axis.
+            The angular velocity in rad/s.
         """
         return self._data["estAngularRateY"]
 
     @property
     def vel_z(self) -> float:
         """
-        Get the estimated angular velocity about the z-axis in rad/s.
+        Get the angular velocity in the z-axis.
 
         Returns:
-            float: Angular velocity (rad/s) about the z-axis.
+            The angular velocity in rad/s.
         """
         return self._data["estAngularRateZ"]
 
     @property
     def acc_x(self) -> float:
         """
-        Get the estimated linear acceleration along the x-axis in m/s².
+        Get the linear acceleration in the x-axis.
 
         Returns:
-            float: Linear acceleration (m/s²) along the x-axis.
+            The linear acceleration in m/s^2.
         """
         return self._data["estLinearAccelX"]
 
     @property
     def acc_y(self) -> float:
         """
-        Get the estimated linear acceleration along the y-axis in m/s².
+        Get the linear acceleration in the y-axis.
 
         Returns:
-            float: Linear acceleration (m/s²) along the y-axis.
+            The linear acceleration in m/s^2.
         """
         return self._data["estLinearAccelY"]
 
     @property
     def acc_z(self) -> float:
         """
-        Get the estimated linear acceleration along the z-axis in m/s².
+        Get the linear acceleration in the z-axis.
 
         Returns:
-            float: Linear acceleration (m/s²) along the z-axis.
+            The linear acceleration in m/s^2.
         """
         return self._data["estLinearAccelZ"]
 
     @property
     def gyro_x(self) -> float:
         """
-        Get the measured gyroscopic value for the x-axis.
-
-        Note:
-            Gyro data is not available for the Lord Microstrain IMU, so this returns 0.0
-            and logs a warning.
+        Get the gyroscope reading in the x-axis.
 
         Returns:
-            float: 0.0
+            The gyroscope reading in rad/s.
         """
         LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
         return 0.0
@@ -402,14 +407,10 @@ class LordMicrostrainIMU(IMUBase):
     @property
     def gyro_y(self) -> float:
         """
-        Get the measured gyroscopic value for the y-axis.
-
-        Note:
-            Gyro data is not available for the Lord Microstrain IMU, so this returns 0.0
-            and logs a warning.
+        Get the gyroscope reading in the y-axis.
 
         Returns:
-            float: 0.0
+            The gyroscope reading in rad/s.
         """
         LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
         return 0.0
@@ -417,14 +418,10 @@ class LordMicrostrainIMU(IMUBase):
     @property
     def gyro_z(self) -> float:
         """
-        Get the measured gyroscopic value for the z-axis.
-
-        Note:
-            Gyro data is not available for the Lord Microstrain IMU, so this returns 0.0
-            and logs a warning.
+        Get the gyroscope reading in the z-axis.
 
         Returns:
-            float: 0.0
+            The gyroscope reading in rad/s.
         """
         LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
         return 0.0
@@ -432,10 +429,10 @@ class LordMicrostrainIMU(IMUBase):
     @property
     def timestamp(self) -> float:
         """
-        Get the timestamp of the latest data packet in seconds.
+        Get the GPS timestamp.
 
         Returns:
-            float: Timestamp (s) from the sensor data.
+            The GPS timestamp in seconds.
         """
         return self._data["estFilterGpsTimeTow"]
 
@@ -471,7 +468,7 @@ class BNO055(IMUBase):
         Initialize the BNO055 sensor.
 
         Args:
-            addr (int, optional): I2C address of the BNO055 sensor. Defaults to 40.
+            addr: I2C address of the BNO055 sensor. Defaults to 40.
         """
         self._address: int = addr
         self._gyro_data: list[float] = [0.0, 0.0, 0.0]
@@ -483,7 +480,7 @@ class BNO055(IMUBase):
         Return a string representation of the BNO055 sensor.
 
         Returns:
-            str: "BNO055_IMU"
+            A string identifying the sensor.
         """
         return "BNO055_IMU"
 

@@ -15,7 +15,7 @@ class SensorNotStreamingException(Exception):
         Initialize the SensorNotStreamingException.
 
         Args:
-            sensor_name (str, optional): The name or identifier of the sensor. Defaults to "Sensor".
+            sensor_name: The name or identifier of the sensor. Defaults to "Sensor".
         """
         super().__init__(
             f"{sensor_name} is not streaming, please ensure that the connections are intact, "
@@ -30,10 +30,10 @@ def check_sensor_stream(func: Callable) -> Callable:
     If the sensor is not streaming, a SensorNotStreamingException is raised.
 
     Args:
-        func (Callable): The sensor method to be wrapped.
+        func: The sensor method to be wrapped.
 
     Returns:
-        Callable: The wrapped method that checks streaming status before execution.
+        The wrapped method that checks streaming status before execution.
     """
 
     @wraps(func)
@@ -59,7 +59,7 @@ class SensorBase(ABC):
         Return a string representation of the sensor.
 
         Returns:
-            str: A string identifying the sensor class.
+            A string identifying the sensor class.
         """
         return "SensorBase"
 
@@ -70,7 +70,7 @@ class SensorBase(ABC):
         Get the sensor data.
 
         Returns:
-            Any: The current data from the sensor.
+            The current data from the sensor.
         """
         pass
 
@@ -120,9 +120,9 @@ class SensorBase(ABC):
         This method calls stop() to shut down the sensor.
 
         Args:
-            exc_type (Any): Exception type if raised.
-            exc_value (Any): Exception value if raised.
-            traceback (Any): Traceback if an exception occurred.
+            exc_type: Exception type if raised.
+            exc_value: Exception value if raised.
+            traceback: Traceback if an exception occurred.
         """
         self.stop()
 
@@ -133,7 +133,7 @@ class SensorBase(ABC):
         Check if the sensor is currently streaming.
 
         Returns:
-            bool: True if the sensor is streaming, False otherwise.
+            True if the sensor is streaming, False otherwise.
         """
         pass
 
@@ -156,7 +156,7 @@ class ADCBase(SensorBase, ABC):
         Return a string representation of the ADC sensor.
 
         Returns:
-            str: "ADCBase"
+            "ADCBase"
         """
         return "ADCBase"
 
@@ -195,7 +195,7 @@ class EncoderBase(SensorBase, ABC):
         Return a string representation of the encoder sensor.
 
         Returns:
-            str: "EncoderBase"
+            "EncoderBase"
         """
         return "EncoderBase"
 
