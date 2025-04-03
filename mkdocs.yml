@@ -37,6 +37,7 @@ nav:
               - Running Functions: tutorials/utilities/softrealtimeloop/running_functions.md
               - Using Iterators: tutorials/utilities/softrealtimeloop/using_iterators.md
               - Real-time Control: tutorials/utilities/softrealtimeloop/realtime_control.md
+          - Profiler: tutorials/utilities/profiler/profiling_code.md
   - Examples:
       - Basic Motion: examples/basic_motion.md
       - Finite State Machine Walking Controller: examples/fsm_walking_controller.md
@@ -69,6 +70,7 @@ nav:
           - OSL: api/robots/osl.md
       - Utilities:
           - SoftRealtimeLoop: api/utilities/softrealtimeloop.md
+          - Profiler: api/utilities/profile.md
   - Contributing: contributing.md
   - Security: security.md
   - License: license.md
