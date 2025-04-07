@@ -70,8 +70,7 @@ def basic_variable_tracking():
             self.velocity = 0.0
 
     robot = Robot()
-    logger.track_function(lambda: robot.position, "position")
-    logger.track_function(lambda: robot.velocity, "velocity")
+    logger.track_attributes(robot, ["position", "velocity"])
 
     # Update logged values
     logger.update()  # Records current values to buffer
