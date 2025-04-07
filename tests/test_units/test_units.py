@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from opensourceleg.units import (
+from opensourceleg.utilities.units import (
     Acceleration,
     Current,
     Damping,
