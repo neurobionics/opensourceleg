@@ -169,8 +169,8 @@ def test_ensure_file_handler(isolated_logger: Logger):
     isolated_logger.reset()
 
 
-# Test track & untrack variable
-def test_track_and_untrack_variable(isolated_logger: Logger):
+# Test track function
+def test_track_function(isolated_logger: Logger):
     def test_func() -> list:
         return [1, 2, 3]
 
@@ -180,12 +180,6 @@ def test_track_and_untrack_variable(isolated_logger: Logger):
     assert all([
         test_func in list(isolated_logger._tracked_vars.values()),
         "Testing" in list(isolated_logger._var_names.values()),
-    ])
-
-    isolated_logger.untrack_variable(test_func)
-    assert all([
-        test_func not in list(isolated_logger._tracked_vars.values()),
-        "Testing" not in list(isolated_logger._var_names.values()),
     ])
 
 
@@ -320,23 +314,19 @@ def test_update(isolated_logger: Logger):
         == [("first", 18), ("second", 8), ("third", 1), ("fourth", 2), ("fifth", 3)],
         len(isolated_logger._buffer) == 3,
     ])
-    isolated_logger.untrack_variable(val1_func)
-    isolated_logger.untrack_variable([val2_func, val3_func])
-    isolated_logger.update()
-    assert all([
-        len(isolated_logger._buffer) == 4,
-        isolated_logger._buffer[3] == ["18", "8"],
-    ])
 
     test_class2 = TestClass()
     isolated_logger.track_attributes(test_class2, ["val1", "val2"])
     isolated_logger.update()
+    assert all([
+        len(isolated_logger._buffer) == 4,
+        isolated_logger._buffer[3] == ["18", "8", "1", "2", "3", "1", "2"],
+    ])
     test_class2.val1 = 88
     isolated_logger.update()
     assert all([
-        len(isolated_logger._buffer) == 6,
-        isolated_logger._buffer[4] == ["18", "8", "1", "2"],
-        isolated_logger._buffer[5] == ["18", "8", "88", "2"],
+        len(isolated_logger._buffer) == 5,
+        isolated_logger._buffer[4] == ["18", "8", "1", "2", "3", "88", "2"],
     ])
 
 

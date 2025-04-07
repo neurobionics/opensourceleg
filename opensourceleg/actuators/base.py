@@ -201,7 +201,6 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
 
 CONTROL_MODE_METHODS: list[str] = [
     "set_motor_torque",
-    "set_joint_torque",
     "set_output_torque",
     "set_motor_current",
     "set_current",
@@ -310,8 +309,8 @@ class ActuatorBase(ABC):
         ...         print(f"Motor position set to {value}")
         ...     def set_motor_torque(self, value: float) -> None:
         ...         print(f"Motor torque set to {value}")
-        ...     def set_joint_torque(self, value: float) -> None:
-        ...         print(f"Joint torque set to {value}")
+        ...     def set_output_torque(self, value: float) -> None:
+        ...         print(f"Output torque set to {value}")
         ...     def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         ...         print("Current gains set")
         ...     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
@@ -359,7 +358,6 @@ class ActuatorBase(ABC):
         "set_motor_impedance": {CONTROL_MODES.IMPEDANCE},
         "set_output_impedance": {CONTROL_MODES.IMPEDANCE},
         "set_motor_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
-        "set_joint_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_output_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_current_gains": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_position_gains": {CONTROL_MODES.POSITION},
@@ -373,7 +371,6 @@ class ActuatorBase(ABC):
         motor_constants: MOTOR_CONSTANTS,
         frequency: int = 1000,
         offline: bool = False,
-        *args: Any,
         **kwargs: Any,
     ) -> None:
         """
@@ -385,7 +382,6 @@ class ActuatorBase(ABC):
             motor_constants (MOTOR_CONSTANTS): Motor constant configuration parameters.
             frequency (int, optional): Control frequency in Hz. Defaults to 1000.
             offline (bool, optional): Flag indicating if the actuator operates in offline mode. Defaults to False.
-            *args (Any): Additional positional arguments.
             **kwargs (Any): Additional keyword arguments.
 
         Examples:
@@ -406,11 +402,6 @@ class ActuatorBase(ABC):
         self._mode: CONTROL_MODES = CONTROL_MODES.IDLE
 
         self._motor_zero_position: float = 0.0
-        self._motor_position_offset: float = 0.0
-
-        self._joint_zero_position: float = 0.0
-        self._joint_position_offset: float = 0.0
-        self._joint_direction: int = 1
 
         self._is_open: bool = False
         self._is_streaming: bool = False
@@ -488,15 +479,15 @@ class ActuatorBase(ABC):
         # Get the method-to-required-modes mapping for this class
         method_modes_map = getattr(self.__class__, "_METHOD_REQUIRED_MODES", {})
 
-        for method_name, required_modes in method_modes_map.items():
+        for method_name, _required_modes in method_modes_map.items():
             try:
                 method = getattr(self, method_name)
                 if callable(method):
                     self._original_methods[method_name] = method
-                    LOGGER.debug(
-                        msg=f"[{self.tag}] {method_name}() is available in modes: "
-                        f"{[mode.name for mode in required_modes]}"
-                    )
+                    # LOGGER.debug(
+                    #     msg=f"[{self.tag}] {method_name}() is available in modes: "
+                    #     f"{[mode.name for mode in required_modes]}"
+                    # )
             except AttributeError:
                 LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.__class__.__name__}.")
 
@@ -699,9 +690,9 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
-        Set the joint torque.
+        Set the output torque.
 
         Args:
             value (float): The torque value to be applied to the joint.
@@ -709,7 +700,7 @@ class ActuatorBase(ABC):
         Must be implemented by subclasses.
 
         Examples:
-            >>> actuator.set_joint_torque(5.0)
+            >>> actuator.set_output_torque(5.0)
         """
         pass
 
@@ -770,12 +761,28 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    def home(self) -> None:
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
         """
         Home the actuator.
 
         Aligns the actuator to a known reference position.
         Must be implemented by subclasses.
+
+        Args:
+            homing_voltage (int): Voltage to use for homing.
+            homing_frequency (Optional[int]): Frequency to use for homing.
+            homing_direction (int): Direction to move the actuator during homing.
+            output_position_offset (float): Offset to add to the output position.
+            current_threshold (int): Current threshold to stop homing.
+            velocity_threshold (float): Velocity threshold to stop homing.
 
         Examples:
             >>> actuator.home()
@@ -796,62 +803,6 @@ class ActuatorBase(ABC):
             0.0
         """
         self._motor_zero_position = value
-
-    def set_motor_position_offset(self, value: float) -> None:
-        """
-        Set the motor position offset.
-
-        Args:
-            value (float): The motor position offset in radians.
-
-        Examples:
-            >>> actuator.set_motor_position_offset(0.1)
-            >>> actuator.motor_position_offset
-            0.1
-        """
-        self._motor_position_offset = value
-
-    def set_joint_zero_position(self, value: float) -> None:
-        """
-        Set the joint zero position.
-
-        Args:
-            value (float): The joint zero position in radians.
-
-        Examples:
-            >>> actuator.set_joint_zero_position(0.0)
-            >>> actuator.joint_zero_position
-            0.0
-        """
-        self._joint_zero_position = value
-
-    def set_joint_position_offset(self, value: float) -> None:
-        """
-        Set the joint position offset.
-
-        Args:
-            value (float): The joint position offset in radians.
-
-        Examples:
-            >>> actuator.set_joint_position_offset(0.1)
-            >>> actuator.joint_position_offset
-            0.1
-        """
-        self._joint_position_offset = value
-
-    def set_joint_direction(self, value: int) -> None:
-        """
-        Set the joint direction.
-
-        Args:
-            value (int): The joint direction, expected to be either 1 or -1.
-
-        Examples:
-            >>> actuator.set_joint_direction(-1)
-            >>> actuator.joint_direction
-            -1
-        """
-        self._joint_direction = value
 
     @property
     @abstractmethod
@@ -1152,66 +1103,6 @@ class ActuatorBase(ABC):
             0.0
         """
         return self._motor_zero_position
-
-    @property
-    def motor_position_offset(self) -> float:
-        """
-        Get the motor position offset.
-
-        Returns:
-            float: The motor position offset in radians.
-
-        Examples:
-            >>> actuator.set_motor_position_offset(0.1)
-            >>> actuator.motor_position_offset
-            0.1
-        """
-        return self._motor_position_offset
-
-    @property
-    def joint_zero_position(self) -> float:
-        """
-        Get the joint zero position.
-
-        Returns:
-            float: The joint zero position in radians.
-
-        Examples:
-            >>> actuator.set_joint_zero_position(0.0)
-            >>> actuator.joint_zero_position
-            0.0
-        """
-        return self._joint_zero_position
-
-    @property
-    def joint_position_offset(self) -> float:
-        """
-        Get the joint position offset.
-
-        Returns:
-            float: The joint position offset in radians.
-
-        Examples:
-            >>> actuator.set_joint_position_offset(0.1)
-            >>> actuator.joint_position_offset
-            0.1
-        """
-        return self._joint_position_offset
-
-    @property
-    def joint_direction(self) -> int:
-        """
-        Get the joint direction.
-
-        Returns:
-            int: The joint direction (1 or -1).
-
-        Examples:
-            >>> actuator.set_joint_direction(-1)
-            >>> actuator.joint_direction
-            -1
-        """
-        return self._joint_direction
 
     @property
     def is_open(self) -> bool:

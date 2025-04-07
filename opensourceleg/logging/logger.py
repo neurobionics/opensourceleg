@@ -18,7 +18,7 @@ Usage Guide:
 1. Create an instance of the `Logger` class.
 2. Optionally, set the logging levels for file and stream handlers using
    `set_file_level` and `set_stream_level` methods.
-3. Add class instances and attributes to log using the `track_variable` method.
+3. Add class instances and attributes to log using either the `track_function` or `track_attributes` methods.
 4. Start logging data using the `update` method.
 5. PLEASE call the `close` method before exiting the program to ensure all data is written to the log file.
 """
@@ -28,13 +28,14 @@ import csv
 import logging
 import os
 import threading
+from builtins import open  # noqa: UP029
 from collections import deque
 from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
 from typing import Any, Callable, Optional, Union
 
-__all__ = ["LOGGER", "LOG_LEVEL", "Logger"]
+__all__ = ["LOGGER", "LogLevel", "Logger"]
 
 
 class LogLevel(Enum):
@@ -84,8 +85,8 @@ class Logger(logging.Logger):
         - **tracked_variable_count**: The number of currently tracked variables.
 
     Methods:
-        - **track_variable**: Track a variable for logging.
-        - **untrack_variable**: Stop tracking a variable.
+        - **track_function**: Track the output of a function for logging.
+        - **track_attributes**: Track the attributes of an object for logging.
         - **flush_buffer**: Write the buffered log entries to the CSV file.
         - **reset**: Reset the logger state.
         - **close**: Close the logger and flush any remaining log entries.
@@ -107,7 +108,7 @@ class Logger(logging.Logger):
         >>> logger.debug("This is a debug message")
         [2022-01-01 12:00:00] DEBUG: This is a debug message
 
-        >>> logger.track_variable(lambda: 42, "answer")
+        >>> logger.track_function(lambda: 42, "answer")
         >>> logger.update()
         >>> logger.flush_buffer()
     """
@@ -258,7 +259,7 @@ class Logger(logging.Logger):
         self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]], name: Union[str, list[str]]
     ) -> None:
         """
-        Record the value of a variable (or multiple variables) and log it to a CSV file.
+        Record the value of returned from a function (or multiple functions) and log it to a CSV file.
 
         Args:
             var_func: A function (or list of functions) that returns the value(s) of the variable(s).
@@ -316,65 +317,6 @@ class Logger(logging.Logger):
                 raise TypeError(
                     "Invalid input: var_func and name must both be either single values or lists of equal length."
                 )
-
-    def untrack_variable(self, var_func: Union[Callable[[], Any], list[Callable[[], Any]]]) -> None:
-        """
-        Stop tracking a variable (or multiple variables) and remove it from the logger buffer.
-
-        Args:
-            var_func: A function (or list of functions) used to track the variable(s).
-
-        Examples:
-            # Single variable untracking
-            >>> class MyClass:
-            ...     def __init__(self):
-            ...         self.value = 42
-            >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "value")
-            >>> LOGGER.update()
-            >>> LOGGER.flush_buffer()
-            >>> LOGGER.untrack_variable(lambda: obj.value)
-
-            # Multiple variable untracking
-            >>> class MyClass:
-            ...     def __init__(self):
-            ...         self.value1 = 42
-            ...         self.value2 = 84
-            >>> obj = MyClass()
-            >>> LOGGER.track_variable(
-            ...     [lambda: obj.value1, lambda: obj.value2],
-            ...     ["value1", "value2"]
-            ... )
-            >>> LOGGER.update()
-            >>> LOGGER.flush_buffer()
-            >>> LOGGER.untrack_variable([lambda: obj.value1, lambda: obj.value2])
-        """
-        with self._lock:
-            if isinstance(var_func, list):
-                # Handle multiple variables
-                for func in var_func:
-                    var_id = id(func)
-                    if var_id in self._tracked_vars:
-                        name = self._var_names.get(var_id, "unknown")
-                        self._tracked_vars.pop(var_id, None)
-                        self._var_names.pop(var_id, None)
-                        self._error_count.pop(var_id, None)
-                        self.debug(f"Stopped tracking variable: {name}")
-                    else:
-                        self.warning("Attempted to untrack a variable that wasn't being tracked")
-            elif callable(var_func):
-                # Handle a single variable
-                var_id = id(var_func)
-                if var_id in self._tracked_vars:
-                    name = self._var_names.get(var_id, "unknown")
-                    self._tracked_vars.pop(var_id, None)
-                    self._var_names.pop(var_id, None)
-                    self._error_count.pop(var_id, None)
-                    self.debug(f"Stopped tracking variable: {name}")
-                else:
-                    self.warning("Attempted to untrack a variable that wasn't being tracked")
-            else:
-                raise TypeError("Invalid input: var_func must be either a single callable or a list of callables.")
 
     def get_tracked_variables(self) -> list[tuple[str, Any]]:
         """
@@ -561,7 +503,7 @@ class Logger(logging.Logger):
             ...     def __init__(self):
             ...         self.value = 42
             >>> obj = MyClass()
-            >>> LOGGER.track_variable(lambda: obj.value, "answer")
+            >>> LOGGER.track_function(lambda: obj.value, "answer")
             >>> LOGGER.update()
         """
         if not self._tracked_vars or not self._enable_csv_logging:
@@ -682,6 +624,12 @@ class Logger(logging.Logger):
         except Exception as e:
             print(f"Error generating file paths: {e}")  # Use print as logger might not be ready
             raise
+
+    def __del__(self) -> None:
+        """
+        Destructor for the Logger class.
+        """
+        self.close()
 
     def __enter__(self) -> "Logger":
         """

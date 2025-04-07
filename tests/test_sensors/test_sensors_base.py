@@ -32,8 +32,9 @@ def test_actuator_stream_exception():
 
 # Creating a Mock Sensor Base Class
 class MockSensor(SensorBase):
-    def __init__(self):
+    def __init__(self, tag: str = "MockSensor", **kwargs):
         self._is_streaming = False
+        super().__init__(tag=tag, **kwargs)
 
     def data(self):
         pass
@@ -79,7 +80,7 @@ def test_check_sensor_stream(mock_sensor: MockSensor):
 
 # Test SensorBase repr
 def test_sensor_base_repr(mock_sensor: MockSensor):
-    assert mock_sensor.__repr__() == "SensorBase"
+    assert mock_sensor.__repr__() == "MockSensor[MockSensor]"
 
 
 # Test SensorBase enter
@@ -101,6 +102,9 @@ def test_sensor_base_exit(mock_sensor: MockSensor):
 
 # Creating a Mock Encoder Base Class
 class MockEncoder(EncoderBase, MockSensor):
+    def __init__(self, tag: str):
+        super().__init__(tag=tag)
+
     @property
     def position(self):
         pass
@@ -112,15 +116,7 @@ class MockEncoder(EncoderBase, MockSensor):
 
 @pytest.fixture
 def mock_encoder():
-    return MockEncoder()
-
-
-# Test EncoderBase init
-def test_encoder_base_int(mock_encoder: MockEncoder):
-    MockSensor.__init__ = Mock()
-    MockSensor.__init__.assert_not_called()
-    mock_encoder.__init__()
-    MockSensor.__init__.assert_called_once()
+    return MockEncoder(tag="MockEncoder")
 
 
 # Test EncoderBase repr
@@ -130,6 +126,9 @@ def test_encoder_base_repr(mock_encoder: MockEncoder):
 
 # Creating a Mock Loadcell Class
 class MockLoadcell(LoadcellBase, MockSensor):
+    def __init__(self, tag: str):
+        super().__init__(tag=tag)
+
     def calibrate(self):
         pass
 
@@ -167,7 +166,7 @@ class MockLoadcell(LoadcellBase, MockSensor):
 
 @pytest.fixture
 def mock_loadcell():
-    return MockLoadcell()
+    return MockLoadcell(tag="MockLoadcell")
 
 
 # Test LoadcellBase repr
@@ -204,9 +203,9 @@ class MockIMU(IMUBase, MockSensor):
 
 @pytest.fixture
 def mock_imu():
-    return MockIMU()
+    return MockIMU(tag="MockIMU")
 
 
 # Test IMUBase repr
 def test_imu_base_repr(mock_imu: MockIMU):
-    assert mock_imu.__repr__() == "IMU"
+    assert mock_imu.__repr__() == "MockIMU[MockIMU]"

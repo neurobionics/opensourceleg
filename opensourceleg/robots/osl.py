@@ -1,10 +1,11 @@
+import os
 import time
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
-from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyLegacyActuator
+from opensourceleg.actuators.dephy import DEFAULT_CURRENT_GAINS, DEFAULT_POSITION_GAINS, DephyLegacyActuator
 from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
@@ -34,22 +35,159 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         """
         super().update()
 
-    def home(self) -> None:
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: int = 200,
+        homing_direction: Optional[dict[str, int]] = None,
+        output_position_offset: Optional[dict[str, float]] = None,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
         """
         Call the home method for all actuators.
-        """
-        for actuator in self.actuators.values():
-            actuator.home()
 
-    def make_encoder_maps(self) -> None:
+        Args:
+            homing_voltage: The voltage to apply to the actuators during homing.
+            homing_frequency: The frequency to apply to the actuators during homing.
+            homing_direction: The direction to apply to the actuators during homing.
+                Default is -1 for knee and ankle.
+            output_position_offset: The offset to apply to the actuators during homing.
+                Default is 0.0 for knee and 30.0 for ankle.
+            current_threshold: The current threshold to apply to the actuators during homing. Default is 5000.
+            velocity_threshold: The velocity threshold to apply to the actuators during homing. Default is 0.001.
         """
-        Make encoder maps for all actuators.
-        """
+        if output_position_offset is None:
+            output_position_offset = {"knee": 0.0, "ankle": np.deg2rad(30.0)}
+        if homing_direction is None:
+            homing_direction = {"knee": -1, "ankle": -1}
         for actuator in self.actuators.values():
-            if hasattr(actuator, "make_encoder_map"):
-                actuator.make_encoder_map()
+            actuator.home(
+                homing_voltage=homing_voltage,
+                homing_frequency=homing_frequency,
+                homing_direction=homing_direction[actuator.tag],
+                output_position_offset=output_position_offset[actuator.tag],
+                current_threshold=current_threshold,
+                velocity_threshold=velocity_threshold,
+            )
+
+        LOGGER.info(
+            "OSL homing complete. If you'd like to create or load encoder maps to "
+            "correct for nonlinearities, call `make_encoder_linearization_map()` method."
+        )
+
+    def make_encoder_linearization_map(
+        self,
+        overwrite: bool = False,
+    ) -> None:
+        """
+        This method makes a lookup table to calculate the position measured by the joint encoder.
+        This is necessary because the magnetic output encoders are nonlinear.
+        By making the map while the joint is unloaded, joint position calculated by motor position * gear ratio
+        should be the same as the true joint position. Output from this function is a file containing a_i values
+        parameterizing the map.
+
+        Eqn:
+            position = sum from i=0^5 (a_i*counts^i)
+
+        Author:
+            Kevin Best (tkbest@umich.edu),
+            Senthur Ayyappan (senthura@umich.edu)
+        """
+        for actuator_key in self.actuators:
+            if f"joint_encoder_{actuator_key}" in self.sensors:
+                self._create_linear_joint_mapping(
+                    actuator_key=actuator_key,
+                    encoder_key=f"joint_encoder_{actuator_key}",
+                    overwrite=overwrite,
+                )
             else:
-                LOGGER.warning(f"[{actuator.__repr__()}] No encoder map method found. Skipping.")
+                LOGGER.warning(
+                    f"[{actuator_key}] No joint encoder found. Skipping. "
+                    f"Encoder tags should be of the form 'joint_encoder_{actuator_key}'."
+                )
+
+    def _create_linear_joint_mapping(
+        self,
+        actuator_key: str,
+        encoder_key: str,
+        overwrite: bool = False,
+    ) -> None:
+        _actuator: ActuatorBase = self.actuators[actuator_key]
+        _encoder: SensorBase = self.sensors[encoder_key]
+
+        if not _actuator.is_homed:
+            LOGGER.warning(
+                msg=f"[{str.upper(_actuator.tag)}] Please home the {_actuator.tag} joint before making the encoder map."
+            )
+            return None
+
+        if os.path.exists(f"./{_encoder.tag}_linearization_map.npy") and not overwrite:
+            LOGGER.info(msg=f"[{str.upper(_encoder.tag)}] Encoder map exists. Skipping encoder map creation.")
+            _encoder.set_encoder_map(np.load(f"./{_encoder.tag}_linearization_map.npy"))  # type: ignore[attr-defined]
+            LOGGER.info(
+                msg=f"[{str.upper(_encoder.tag)}] Encoder map loaded from " f"'./{_encoder.tag}_linearization_map.npy'."
+            )
+            return None
+
+        _actuator.set_control_mode(mode=CONTROL_MODES.CURRENT)
+        _actuator.set_current_gains(
+            kp=DEFAULT_CURRENT_GAINS.kp,
+            ki=DEFAULT_CURRENT_GAINS.ki,
+            kd=DEFAULT_CURRENT_GAINS.kd,
+            ff=DEFAULT_CURRENT_GAINS.ff,
+        )
+
+        time.sleep(0.1)
+
+        _actuator.set_output_torque(value=0.0)
+
+        _joint_encoder_array = []
+        _output_position_array = []
+
+        LOGGER.info(
+            msg=f"[{str.upper(_actuator.tag)}] Please manually move the {_actuator.tag} joint numerous times through "
+            f"its full range of motion for 10 seconds."
+        )
+        input("Press any key when you are ready to start.")
+
+        _start_time: float = time.time()
+
+        # TODO: Switch to SoftRealtimeLoop since it has reset method now
+        while time.time() - _start_time < 10:
+            try:
+                LOGGER.info(
+                    msg=f"[{str.upper(_actuator.tag)}] Mapping the {_actuator.tag} "
+                    f"joint encoder: {(10 - time.time() + _start_time):.2f} seconds left."
+                )
+                _actuator.update()
+                _encoder.update()
+
+                _joint_encoder_array.append(_encoder.position)  # type: ignore[attr-defined]
+                _output_position_array.append(_actuator.output_position)
+                time.sleep(1 / _actuator.frequency)
+
+            except KeyboardInterrupt:
+                LOGGER.warning(msg="Encoder map interrupted.")
+                return None
+
+        LOGGER.info(msg=f"[{str.upper(_actuator.tag)}] You may now stop moving the {_actuator.tag} joint.")
+
+        _power = np.arange(4.0)
+        _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
+        _beta = np.linalg.lstsq(_a_mat, _output_position_array, rcond=None)
+        _coeffs = _beta[0]
+
+        _encoder.set_encoder_map(np.polynomial.polynomial.Polynomial(coef=_coeffs))  # type: ignore[attr-defined]
+
+        np.save(file=f"./{_encoder.tag}_linearization_map.npy", arr=_coeffs)
+
+        _actuator.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
+        _actuator.set_motor_voltage(value=0.0)
+
+        LOGGER.info(
+            msg=f"[{str.upper(_encoder.tag)}] Encoder map saved to './{_encoder.tag}_linearization_map.npy' and loaded."
+        )
 
     @property
     def knee(self) -> Union[TActuator, ActuatorBase]:
