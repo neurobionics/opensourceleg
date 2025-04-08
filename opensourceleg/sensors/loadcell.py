@@ -1,13 +1,14 @@
 """
-Module for interfacing with SRI Loadcell sensors.
+Module for interfacing with Loadcell amplifiers.
 
-This module provides an implementation of a load cell sensor (DephyLoadcellAmplifier) that
-inherits from LoadcellBase. It uses an I2C interface via SMBus to communicate with
-a strain amplifier and processes raw ADC data to compute forces and moments.
+This module provides an implementation of a load cell amplifier (DephyLoadcellAmplifier) that
+inherits from LoadcellBase. It uses either an I2C interface via SMBus or direct communication with an ActPack
+to communicate with a strain amplifier and processes raw ADC data to compute forces and moments.
 
 Classes:
     LoadcellNotRespondingException: Exception raised when the load cell does not respond.
-    MEMORY_CHANNELS: Enum representing memory channel addresses for load cell readings.
+    DEPHY_AMPLIFIER_MEMORY_CHANNELS: Enum representing memory channel addresses for load cell readings.
+    DEPHY_AMPLIFIER_CONNECTION_MODES: Enum representing connection modes for the load cell amplifier.
     DephyLoadcellAmplifier: Concrete implementation of a load cell sensor that provides force and moment data.
 
 Dependencies:
@@ -15,6 +16,7 @@ Dependencies:
     - smbus2
     - opensourceleg.logging
     - opensourceleg.sensors.base
+    - opensourceleg.actuators.dephy
 """
 
 import time
@@ -84,8 +86,9 @@ class DephyLoadcellAmplifier(LoadcellBase):
     """
     Implementation of a load cell sensor using the Dephy Loadcell Amplifier.
 
-    This class communicates with the dephy strain amplifier via I2C using the SMBus interface,
-    processes the raw ADC data, and computes forces (Fx, Fy, Fz) and moments (Mx, My, Mz)
+    This class communicates with the Dephy strain amplifier.
+    It can connect via either I2C using the SMBus interface, or directly via an ActPack.
+    It processes the raw ADC data, and computes forces (Fx, Fy, Fz) and moments (Mx, My, Mz)
     based on a provided calibration matrix and hardware configuration.
 
     Class Attributes:
@@ -116,6 +119,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
         Args:
             calibration_matrix (npt.NDArray[np.double]): A 6x6 calibration matrix.
+            tag (str, optional): A tag for identifying the load cell instance. Defaults to "DephyLoadcellAmplifier".
             amp_gain (float, optional): Amplifier gain; must be greater than 0. Defaults to 125.0.
             exc (float, optional): Excitation voltage; must be greater than 0. Defaults to 5.0.
             bus (int, optional): I2C bus number to use. Defaults to 1.
@@ -164,8 +168,9 @@ class DephyLoadcellAmplifier(LoadcellBase):
         """
         Start the load cell sensor.
 
-        Opens the I2C connection using SMBus, waits briefly for hardware stabilization,
+        If using I2C Mode, it opens the I2C connection using SMBus, waits briefly for hardware stabilization,
         and sets the streaming flag to True.
+        If using ACTPACK mode, ensures the ActPack instance is provided and streaming.
         """
         if self._connection_mode == DEPHY_AMPLIFIER_CONNECTION_MODES.I2C:
             self._smbus = SMBus(self._bus)
@@ -194,7 +199,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         """
         Query the load cell for the latest data and update internal state.
 
-        Reads raw ADC data (either via a provided callback or by reading from I2C),
+        Reads raw ADC data (either via a provided callback or by reading from I2C/ActPack),
         converts it to engineering units using the calibration matrix, amplifier gain,
         and excitation voltage, and subtracts any calibration offset.
 
@@ -203,6 +208,9 @@ class DephyLoadcellAmplifier(LoadcellBase):
                 An offset to subtract from the processed data. If None, uses the current calibration offset.
             data_callback (Optional[Callable[..., npt.NDArray[np.uint8]]], optional):
                 A callback function to provide raw data. If not provided, the sensor's internal method is used.
+
+        Raises:
+            ValueError: If the update method fails due to misconfiguration.
         """
         if data_callback:
             data = data_callback()
