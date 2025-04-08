@@ -38,12 +38,12 @@ if __name__ == "__main__":
         i2c_address=102,
     )
 
-    loadcell_logger.track_variable(lambda: loadcell.fx, "Fx")
-    loadcell_logger.track_variable(lambda: loadcell.fy, "Fy")
-    loadcell_logger.track_variable(lambda: loadcell.fz, "Fz")
-    loadcell_logger.track_variable(lambda: loadcell.mx, "Mx")
-    loadcell_logger.track_variable(lambda: loadcell.my, "My")
-    loadcell_logger.track_variable(lambda: loadcell.mz, "Mz")
+    loadcell_logger.track_function(lambda: loadcell.fx, "Fx")
+    loadcell_logger.track_function(lambda: loadcell.fy, "Fy")
+    loadcell_logger.track_function(lambda: loadcell.fz, "Fz")
+    loadcell_logger.track_function(lambda: loadcell.mx, "Mx")
+    loadcell_logger.track_function(lambda: loadcell.my, "My")
+    loadcell_logger.track_function(lambda: loadcell.mz, "Mz")
 
     with loadcell:
         for t in clock:
