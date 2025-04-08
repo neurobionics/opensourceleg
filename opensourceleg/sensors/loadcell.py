@@ -48,6 +48,25 @@ class LoadcellNotRespondingException(Exception):
         super().__init__(message)
 
 
+class LoadcellBrokenWireDetectedException(Exception):
+    """
+    Exception raised when a broken wire is detected in the load cell.
+    Indicated by saturated ADC values (0 or 4095).
+
+    Attributes:
+        message (str): Description of the error.
+    """
+
+    def __init__(self, message: str = "Load cell broken wire detected.") -> None:
+        """
+        Initialize the LoadcellBrokenWireDetectedException.
+
+        Args:
+            message (str, optional): Error message. Defaults to "Load cell broken wire detected.".
+        """
+        super().__init__(message)
+
+
 class DEPHY_AMPLIFIER_MEMORY_CHANNELS(int, Enum):
     """
     Enumeration of memory channel addresses used by the load cell.
@@ -203,20 +222,16 @@ class DephyLoadcellAmplifier(LoadcellBase):
     ) -> None:
         """
         Watches raw values from the load cell to try to catch broken wires.
+        Symptom is indicated by saturation at either max or min ADC values.
         """
         ADC_saturated_high = any(self._data == self.ADC_RANGE)
         ADC_saturated_low = any(self._data == 0)
         concerning_data_found = ADC_saturated_high or ADC_saturated_low
         self._diagnostics_counter.update(concerning_data_found)
         if self._diagnostics_counter.current_count >= 5:
-            self._data_potentially_invalid = True
-
-    @property
-    def data_potentially_invalid(self) -> bool:
-        """
-        Check if the data from the load cell is potentially invalid,
-        indicated by saturation at either max or min ADC values."""
-        return self._data_potentially_invalid
+            raise LoadcellBrokenWireDetectedException(
+                f"[{self.__repr__()}] Consistent saturation in readings, check wiring. " f"ADC values: {self._data}. "
+            )
 
     def calibrate(
         self,
