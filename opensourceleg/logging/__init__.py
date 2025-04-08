@@ -1,1 +1,1 @@
-from opensourceleg.logging.logger import *
+from .logger import *  # noqa: F403

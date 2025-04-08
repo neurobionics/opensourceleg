@@ -11,9 +11,9 @@ October 26, 2023
 
 import numpy as np
 
+from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.time import SoftRealtimeLoop
-from opensourceleg.units import units
+from opensourceleg.utilities import SoftRealtimeLoop, units
 
 FREQUENCY = 200
 
@@ -53,8 +53,8 @@ with knee, ankle:
 
     input("Homing complete: Press enter to continue")
 
-    knee.set_control_mode(knee.CONTROL_MODES.POSITION)
-    ankle.set_control_mode(ankle.CONTROL_MODES.POSITION)
+    knee.set_control_mode(CONTROL_MODES.POSITION)
+    ankle.set_control_mode(CONTROL_MODES.POSITION)
     knee.set_position_gains(kp=5)
     ankle.set_position_gains(kp=5)
 
@@ -62,19 +62,15 @@ with knee, ankle:
         knee.update()
         ankle.update()
 
-        knee_setpoint = units.convert_to_default(knee_traj(t), units.position.deg)
-        ankle_setpoint = units.convert_to_default(ankle_traj(t), units.position.deg)
+        knee_setpoint = units.convert_to_default(knee_traj(t), units.Position.deg)
+        ankle_setpoint = units.convert_to_default(ankle_traj(t), units.Position.deg)
 
         knee.set_output_position(knee_setpoint)
         ankle.set_output_position(ankle_setpoint)
 
         print(
-            "Ankle Desired {:+.2f} rad, Ankle Actual {:+.2f} rad, Knee Desired {:+.2f} rad, Ankle Desired {:+.2f} rad".format(
-                ankle_setpoint,
-                ankle.output_position,
-                knee_setpoint,
-                knee.output_position,
-            ),
+            f"Ankle Desired {ankle_setpoint:+.2f} rad, Ankle Actual {ankle.output_position:+.2f} rad, \
+                Knee Desired {knee_setpoint:+.2f} rad, Ankle Desired {knee.output_position:+.2f} rad",
             end="\r",
         )
 

@@ -1,42 +1,27 @@
 ---
-name: 🐛 Bug report
-about: If something isn't working 🔧
-title: ''
+name: Bug report
+about: Create a report to help us improve
+title: ""
 labels: bug
-assignees:
+assignees: ""
 ---
 
-## 🐛 Bug Report
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-<!-- A clear and concise description of what the bug is. -->
-
-## 🔬 How To Reproduce
-
+**To Reproduce**
 Steps to reproduce the behavior:
 
-1. ...
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
 
-### Code sample
+**Expected behavior**
+A clear and concise description of what you expected to happen.
 
-<!-- If applicable, attach a minimal code sample to reproduce the decried issue. -->
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
 
-### Environment
-
-* OS: [e.g. Linux / Windows / macOS]
-* Python version, get it with:
-
-```bash
-python --version
-```
-
-### Screenshots
-
-<!-- If applicable, add screenshots to help explain your problem. -->
-
-## 📈 Expected behavior
-
-<!-- A clear and concise description of what you expected to happen. -->
-
-## 📎 Additional context
-
-<!-- Add any other context about the problem here. -->
+**Additional context**
+Add any other context about the problem here.

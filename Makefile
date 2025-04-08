@@ -1,114 +1,60 @@
-#* Variables
-SHELL := /usr/bin/env bash
-PYTHON := python
-PYTHONPATH := `pwd`
-
-#* Docker variables
-IMAGE := opensourceleg
-VERSION := latest
-
-#* Poetry
-.PHONY: poetry-download
-poetry-download:
-	curl -sSL https://install.python-poetry.org | $(PYTHON) -
-
-.PHONY: poetry-remove
-poetry-remove:
-	curl -sSL https://install.python-poetry.org | $(PYTHON) - --uninstall
-
-#* Installation
 .PHONY: install
-install:
-	poetry lock -n && poetry export --without-hashes > requirements.txt
-	poetry install -n
-	-poetry run mypy --install-types --non-interactive ./ --explicit-package-bases
+install: ## Install the poetry environment and install the pre-commit hooks
+	@echo "🚀 Creating virtual environment using pyenv and poetry"
+	@poetry install
+	@poetry run pre-commit install
+	@eval $(poetry env activate)
 
-.PHONY: pre-commit-install
-pre-commit-install:
-	poetry run pre-commit install
+.PHONY: check
+check: ## Run code quality tools.
+	@echo "🚀 Checking Poetry lock file consistency with 'pyproject.toml': Running poetry check --lock"
+	@poetry check --lock
+	@echo "🚀 Linting code: Running pre-commit"
+	@poetry run pre-commit run -a
+	@echo "🚀 Static type checking: Running mypy"
+	@poetry run mypy
+	@echo "🚀 Checking for obsolete dependencies: Running deptry"
+	@poetry run deptry . --ignore DEP002,DEP001,DEP003
 
-#* Formatters
-.PHONY: codestyle
-codestyle:
-	poetry run pyupgrade --exit-zero-even-if-changed --py39-plus **/*.py
-	poetry run isort --settings-path pyproject.toml ./
-	poetry run black --config pyproject.toml ./
-
-.PHONY: formatting
-formatting: codestyle
-
-#* Linting
 .PHONY: test
-test:
-	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov-report=html --cov=opensourceleg tests/
-	poetry run coverage-badge -o assets/images/coverage.svg -f
+test: ## Test the code with pytest
+	@echo "🚀 Testing code: Running pytest"
+	@poetry run pytest --cov --cov-config=pyproject.toml --cov-report=xml
 
-.PHONY: check-codestyle
-check-codestyle:
-	poetry run isort --diff --check-only --settings-path pyproject.toml ./
-	poetry run black --diff --check --config pyproject.toml ./
-	poetry run darglint --verbosity 2 opensourceleg tests
+.PHONY: build
+build: clean-build ## Build wheel file using poetry
+	@echo "🚀 Creating wheel file"
+	@poetry build
 
-.PHONY: mypy
-mypy:
-	poetry run mypy --config-file pyproject.toml ./ --explicit-package-bases 
-#* --check-untyped-defs
+.PHONY: clean-build
+clean-build: ## clean build artifacts
+	@rm -rf dist
 
-.PHONY: check-safety
-check-safety:
-	poetry check
-	poetry run safety check --full-report --ignore 70612
-	poetry run bandit --recursive -c pyproject.toml opensourceleg tests
+.PHONY: publish
+publish: ## publish a release to pypi.
+	@echo "🚀 Publishing: Dry run."
+	@poetry config pypi-token.pypi $(PYPI_TOKEN)
+	@poetry publish --dry-run
+	@echo "🚀 Publishing."
+	@poetry publish
 
-.PHONY: lint
-lint: mypy
+.PHONY: build-and-publish
+build-and-publish: build publish ## Build and publish.
 
-.PHONY: update-dev-deps
-update-dev-deps:
-	poetry add -D bandit@latest darglint@latest "isort[colors]@latest" mypy@latest pre-commit@latest pydocstyle@latest pylint@latest pytest@latest pyupgrade@latest safety@latest coverage@latest coverage-badge@latest pytest-html@latest pytest-cov@latest
-	poetry add -D --allow-prereleases black@latest
+.PHONY: docs-test
+docs-test: ## Test if documentation can be built without warnings or errors
+	@poetry run mkdocs build -s
 
-#* Docker
-# Example: make docker-build VERSION=latest
-# Example: make docker-build IMAGE=some_name VERSION=0.1.0
-.PHONY: docker-build
-docker-build:
-	@echo Building docker $(IMAGE):$(VERSION) ...
-	docker build \
-		-t $(IMAGE):$(VERSION) . \
-		-f ./docker/Dockerfile --no-cache
+.PHONY: docs
+docs: ## Build and serve the documentation
+	@poetry run mkdocs serve
 
-# Example: make docker-remove VERSION=latest
-# Example: make docker-remove IMAGE=some_name VERSION=0.1.0
-.PHONY: docker-remove
-docker-remove:
-	@echo Removing docker $(IMAGE):$(VERSION) ...
-	docker rmi -f $(IMAGE):$(VERSION)
+.PHONY: docs-deploy
+docs-deploy: ## Deploy the documentation to GitHub pages
+	@poetry run mkdocs gh-deploy --force
 
-#* Cleaning
-.PHONY: pycache-remove
-pycache-remove:
-	find . | grep -E "(__pycache__|\.pyc|\.pyo$$)" | xargs rm -rf
+.PHONY: help
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: dsstore-remove
-dsstore-remove:
-	find . | grep -E ".DS_Store" | xargs rm -rf
-
-.PHONY: mypycache-remove
-mypycache-remove:
-	find . | grep -E ".mypy_cache" | xargs rm -rf
-
-.PHONY: ipynbcheckpoints-remove
-ipynbcheckpoints-remove:
-	find . | grep -E ".ipynb_checkpoints" | xargs rm -rf
-
-.PHONY: pytestcache-remove
-pytestcache-remove:
-	find . | grep -E ".pytest_cache" | xargs rm -rf
-
-.PHONY: build-remove
-build-remove:
-	rm -rf build/
-
-.PHONY: cleanup
-cleanup: pycache-remove dsstore-remove mypycache-remove ipynbcheckpoints-remove pytestcache-remove
+.DEFAULT_GOAL := help
