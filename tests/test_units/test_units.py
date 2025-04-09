@@ -2,120 +2,141 @@
 
 import numpy as np
 import pytest
-
 from opensourceleg.units import (
-    Acceleration,
-    Current,
-    Damping,
+    UnitType,
     Force,
-    Length,
-    Mass,
-    Position,
-    Stiffness,
     Torque,
-    Velocity,
-    Voltage,
-    convert_from_default,
-    convert_to_default,
+    Length,
+    Position,
+    Mass,
+    Acceleration,
+    UnitsManager,
+    with_units
 )
 
-# Values to iterate over for testing
-VALUES = np.append(np.array([0, 1, -1, 1000, -1000]), np.random.random(5))
+# Example functions using the decorators
+@with_units(UnitType.FORCE, UnitType.LENGTH, return_type=UnitType.TORQUE)
+def calculate_work(force: float, distance: float) -> float:
+    """Calculate work done by a force over a distance."""
+    return force * distance
 
+@with_units(UnitType.TORQUE, UnitType.POSITION, return_type=UnitType.TORQUE)
+def calculate_rotational_work(torque: float, angle: float) -> float:
+    """Calculate rotational work done by a torque over an angle."""
+    return torque * angle
 
-def test_convert_to_from_default():
-    # Testing behaviour when invalid input type is passed to convert_to_default & convert_from_default
-    with pytest.raises(TypeError):
-        convert_to_default("TEST", Force.kgf)
-    with pytest.raises(TypeError):
-        convert_to_default("T", Force.kgf)
-    with pytest.raises(TypeError):
-        convert_from_default("TEST", Force.N)
-    with pytest.raises(TypeError):
-        convert_from_default("T", Force.N)
+@with_units(UnitType.MASS, UnitType.ACCELERATION, return_type=UnitType.FORCE)
+def calculate_force(mass: float, acceleration: float) -> float:
+    """Calculate force from mass and acceleration."""
+    return mass * acceleration
 
-    # Testing behaviour on all possible unit conversions to default & from default
-    categories = [
-        Force,
-        Torque,
-        Stiffness,
-        Damping,
-        Length,
-        Position,
-        Mass,
-        Velocity,
-        Acceleration,
-        Current,
-        Voltage,
-    ]
-    units = []
-    # Add all units to array
-    for c in categories:
-        for unit in c:
-            units.append(unit)
+@with_units(UnitType.FORCE, UnitType.LENGTH, return_type=UnitType.TORQUE)
+def calculate_torque(force: float, lever_arm: float) -> float:
+    """Calculate torque from force and lever arm."""
+    return force * lever_arm
 
-    # Iterate over all possible units and test converting to/from default
-    for unit in units:
-        for value in VALUES:
-            assert convert_to_default(value, unit) == value * unit
-            assert convert_from_default(value, unit) == value / unit
+def test_basic_unit_conversion():
+    """Test basic unit conversion with float inputs and outputs."""
+    work = calculate_work(10, 5)  # 10 N * 5 m
+    assert isinstance(work, float)
+    assert work == 50.0  # Result in N⋅m
 
+def test_force_calculation():
+    """Test force calculation with mass and acceleration."""
+    force = calculate_force(5, 2)  # 5 kg * 2 m/s²
+    assert isinstance(force, float)
+    assert force == 10.0  # Result in N
 
-def test_force():
-    assert Force.N == 1.0
-    assert Force.lbf == 4.4482216152605
-    assert Force.kgf == 9.80665
+def test_torque_calculation():
+    """Test torque calculation with force and lever arm."""
+    torque = calculate_torque(10, 0.5)  # 10 N * 0.5 m
+    assert isinstance(torque, float)
+    assert torque == 5.0  # Result in N⋅m
 
+def test_rotational_work():
+    """Test rotational work calculation with torque and angle."""
+    work = calculate_rotational_work(10, np.pi/2)  # 10 N⋅m * π/2 rad
+    assert isinstance(work, float)
+    assert work == pytest.approx(15.707963267948966)  # Result in N⋅m
 
-def test_torque():
-    assert Torque.N_m == 1.0
-    assert Torque.lbf_inch == 0.1129848290276167
-    assert Torque.kgf_cm == 0.0980665
+def test_negative_values():
+    """Test handling of negative values."""
+    # Test negative force
+    work = calculate_work(-10, 5)
+    assert work == -50.0
+    
+    # Test negative distance
+    work = calculate_work(10, -5)
+    assert work == -50.0
+    
+    # Test negative torque
+    work = calculate_rotational_work(-10, np.pi/2)
+    assert work == pytest.approx(-15.707963267948966)
 
+def test_wrong_return_type():
+    """Test error handling for wrong return type."""
+    @with_units(UnitType.FORCE, return_type=UnitType.TORQUE)
+    def wrong_return_type(force: float) -> float:
+        return force  # Wrong return type (should be torque)
+    
+    with pytest.raises(ValueError, match="Function returned Quantity of type force, expected torque"):
+        wrong_return_type(10)
 
-def test_stiffness():
-    assert Stiffness.N_m_per_rad == 1.0
-    assert Stiffness.N_m_per_deg == 0.017453292519943295
+def test_user_defined_default_units():
+    """Test that decorator respects user-defined default units."""
+    manager = UnitsManager()
+    
+    # Test with SI units (defaults)
+    work = calculate_work(10, 5)  # 10 N * 5 m
+    assert work == 50.0  # Result in N⋅m
+    
+    # Change defaults to imperial units
+    manager.set_default_unit(UnitType.FORCE, Force.lbf)
+    manager.set_default_unit(UnitType.LENGTH, Length.inch)
+    
+    # Test with imperial units
+    work = calculate_work(10, 5)  # 10 lbf * 5 inches
+    assert work == 50.0  # Result in lbf⋅inch
+    
+    # Test force calculation with imperial units
+    manager.set_default_unit(UnitType.MASS, Mass.lb)
+    manager.set_default_unit(UnitType.ACCELERATION, Acceleration.ft_per_s2)
+    force = calculate_force(5, 2)  # 5 lb * 2 ft/s²
+    assert force == 10.0  # Result in lbf
+    
+    # Test rotational work with imperial units
+    manager.set_default_unit(UnitType.TORQUE, Torque.lbf_inch)
+    manager.set_default_unit(UnitType.POSITION, Position.deg)
+    work = calculate_rotational_work(10, 90)  # 10 lbf⋅inch * 90 deg
+    assert work == pytest.approx(900.0)  # Result in lbf⋅inch
+    
+    # Reset defaults to SI units
+    manager.set_default_unit(UnitType.FORCE, Force.N)
+    manager.set_default_unit(UnitType.LENGTH, Length.m)
+    manager.set_default_unit(UnitType.MASS, Mass.kg)
+    manager.set_default_unit(UnitType.ACCELERATION, Acceleration.m_per_s2)
+    manager.set_default_unit(UnitType.TORQUE, Torque.N_m)
+    manager.set_default_unit(UnitType.POSITION, Position.rad)
+    
+    # Verify back to SI units
+    work = calculate_work(10, 5)  # 10 N * 5 m
+    assert work == 50.0  # Result in N⋅m
 
-
-def test_damping():
-    assert Damping.N_m_per_rad_per_s == 1.0
-    assert Damping.N_m_per_deg_per_s == 0.017453292519943295
-
-
-def test_length():
-    assert Length.m == 1.0
-    assert Length.cm == 0.01
-    assert Length.inch == 0.0254
-
-
-def test_position():
-    assert Position.rad == 1.0
-    assert Position.deg == 0.017453292519943295
-
-
-def test_mass():
-    assert Mass.kg == 1.0
-    assert Mass.g == 0.001
-    assert Mass.lb == 0.45359237
-
-
-def test_velocity():
-    assert Velocity.rad_per_s == 1.0
-    assert Velocity.deg_per_s == 0.017453292519943295
-    assert Velocity.rpm == 0.10471975511965977
-
-
-def test_acceleration():
-    assert Acceleration.rad_per_s2 == 1.0
-    assert Acceleration.deg_per_s2 == 0.017453292519943295
-
-
-def test_current():
-    assert Current.mA == 1
-    assert Current.A == 1000
-
-
-def test_voltage():
-    assert Voltage.mV == 1
-    assert Voltage.V == 1000
+def test_unit_conversion_consistency():
+    """Test that unit conversions are consistent across different default units."""
+    manager = UnitsManager()
+    
+    # Test with SI units
+    work_si = calculate_work(10, 5)  # 10 N * 5 m = 50 N⋅m
+    
+    # Change to imperial units
+    manager.set_default_unit(UnitType.FORCE, Force.lbf)
+    manager.set_default_unit(UnitType.LENGTH, Length.inch)
+    
+    # Convert SI values to imperial
+    force_lbf = 10 * Force.lbf.value  # Convert 10 N to lbf
+    distance_inch = 5 * Length.inch.value  # Convert 5 m to inches
+    work_imperial = calculate_work(force_lbf, distance_inch)
+    
+    # Results should be equivalent
+    assert work_imperial == pytest.approx(work_si * Torque.lbf_inch.value) 
