@@ -2,13 +2,12 @@
 Module for interfacing with Loadcell amplifiers.
 
 This module provides an implementation of a load cell amplifier (DephyLoadcellAmplifier) that
-inherits from LoadcellBase. It uses either an I2C interface via SMBus or direct communication with an ActPack
+inherits from LoadcellBase. It uses either an I2C interface via SMBus or a custom data callback function 
 to communicate with a strain amplifier and processes raw ADC data to compute forces and moments.
 
 Classes:
     LoadcellNotRespondingException: Exception raised when the load cell does not respond.
     DEPHY_AMPLIFIER_MEMORY_CHANNELS: Enum representing memory channel addresses for load cell readings.
-    DEPHY_AMPLIFIER_CONNECTION_MODES: Enum representing connection modes for the load cell amplifier.
     DephyLoadcellAmplifier: Concrete implementation of a load cell sensor that provides force and moment data.
 
 Dependencies:
@@ -16,7 +15,6 @@ Dependencies:
     - smbus2
     - opensourceleg.logging
     - opensourceleg.sensors.base
-    - opensourceleg.actuators.dephy
 """
 
 import time
@@ -75,7 +73,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
     Implementation of a load cell sensor using the Dephy Loadcell Amplifier.
 
     This class communicates with the Dephy strain amplifier.
-    It can connect via either I2C using the SMBus interface, or directly via an ActPack.
+    It can connect via either I2C using the SMBus interface, or using custom data callbacks. 
     It processes the raw ADC data, and computes forces (Fx, Fy, Fz) and moments (Mx, My, Mz)
     based on a provided calibration matrix and hardware configuration.
 
@@ -151,7 +149,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
         If using I2C Mode, it opens the I2C connection using SMBus, waits briefly for hardware stabilization,
         and sets the streaming flag to True.
-        If using ACTPACK mode, ensures the ActPack instance is provided and streaming.
         """
         self._smbus = SMBus(self._bus)
         time.sleep(1)
@@ -174,7 +171,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         """
         Query the load cell for the latest data and update internal state.
 
-        Reads raw ADC data (either via a provided callback or by reading from I2C/ActPack),
+        Reads raw ADC data (either via a provided callback or by reading from I2C),
         converts it to engineering units using the calibration matrix, amplifier gain,
         and excitation voltage, and subtracts any calibration offset.
 
@@ -182,7 +179,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
             calibration_offset (Optional[npt.NDArray[np.double]], optional):
                 An offset to subtract from the processed data. If None, uses the current calibration offset.
             data_callback (Optional[Callable[..., npt.NDArray[np.uint8]]], optional):
-                A callback function to provide raw data. If not provided, the sensor's internal method is used.
+                A callback function to provide raw data. If not provided, the sensor's internal i2c method is used.
 
         Raises:
             ValueError: If the update method fails due to misconfiguration.
