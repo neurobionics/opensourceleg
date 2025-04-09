@@ -42,6 +42,16 @@ def demo_loadcell_i2c(loadcell_logger, clock):
     loadcell_logger.track_variable(lambda: loadcell.my, "My")
     loadcell_logger.track_variable(lambda: loadcell.mz, "Mz")
 
+    with loadcell:
+        loadcell.calibrate(reset=True)
+        for t in clock:
+            loadcell.update()
+            loadcell_logger.info(
+                f"Time: {t}; Fx: {loadcell.fx}; Fy: {loadcell.fy}; Fz: {loadcell.fz};"
+                f"Mx: {loadcell.mx}; My: {loadcell.my}; Mz: {loadcell.mz};"
+            )
+            loadcell_logger.update()
+
 
 def demo_loadcell_actpack(loadcell_logger, clock):
     actpack = DephyActuator(
