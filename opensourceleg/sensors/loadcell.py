@@ -19,7 +19,7 @@ Dependencies:
 
 import time
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -165,6 +165,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         self._data_potentially_invalid: bool = False
         if self._enable_diagnostics:
             self._diagnostics_counter = Counter()
+        self._num_broken_wire_pre_exception: int = 5
 
     def start(self) -> None:
         """
@@ -189,7 +190,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
     def update(
         self,
         calibration_offset: Optional[npt.NDArray[np.double]] = None,
-        data_callback: Optional[Callable[..., npt.NDArray[np.uint8]]] = None,
+        data_callback: Optional[Callable[..., npt.NDArray[np.uint16]]] = None,
     ) -> None:
         """
         Query the load cell for the latest data and update internal state.
@@ -206,6 +207,9 @@ class DephyLoadcellAmplifier(LoadcellBase):
         """
         data = data_callback() if data_callback else self._read_compressed_strain()
 
+        if self._enable_diagnostics:
+            self.check_data(data)
+
         if calibration_offset is None:
             calibration_offset = self._calibration_offset
 
@@ -214,30 +218,26 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
         # Process the data using the calibration matrix and subtract the offset.
         self._data = np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
-        if self._enable_diagnostics:
-            self.check_data()
 
-    def check_data(
-        self,
-    ) -> None:
+    def check_data(self, data: npt.NDArray[np.uint16]) -> None:
         """
         Watches raw values from the load cell to try to catch broken wires.
         Symptom is indicated by saturation at either max or min ADC values.
         """
-        ADC_saturated_high = any(self._data == self.ADC_RANGE)
-        ADC_saturated_low = any(self._data == 0)
-        concerning_data_found = ADC_saturated_high or ADC_saturated_low
+        ADC_saturated_high = np.any(data == self.ADC_RANGE)  # Use np.any for NumPy arrays
+        ADC_saturated_low = np.any(data == 0)  # Use np.any for NumPy arrays
+        concerning_data_found = bool(ADC_saturated_high or ADC_saturated_low)
         self._diagnostics_counter.update(concerning_data_found)
-        if self._diagnostics_counter.current_count >= 5:
+        if self._diagnostics_counter.current_count >= self._num_broken_wire_pre_exception:
             raise LoadcellBrokenWireDetectedException(
-                f"[{self.__repr__()}] Consistent saturation in readings, check wiring. " f"ADC values: {self._data}. "
+                f"[{self.__repr__()}] Consistent saturation in readings, check wiring. ADC values: {self._data}."
             )
 
     def calibrate(
         self,
         number_of_iterations: int = 2000,
         reset: bool = False,
-        data_callback: Optional[Callable[[], npt.NDArray[np.uint8]]] = None,
+        data_callback: Optional[Callable[[], npt.NDArray[np.uint16]]] = None,
     ) -> None:
         """
         Perform a zeroing (calibration) routine for the load cell.
@@ -293,7 +293,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         if hasattr(self, "_smbus"):
             self._smbus.close()
 
-    def _read_compressed_strain(self) -> Any:
+    def _read_compressed_strain(self) -> npt.NDArray[np.uint16]:
         """
         Read and unpack compressed strain data from the sensor.
 
