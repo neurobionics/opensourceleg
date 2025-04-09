@@ -24,6 +24,7 @@ LOADCELL_CALIBRATION_MATRIX = np.array([
     (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
 ])
 
+
 def demo_loadcell_i2c(loadcell_logger, clock):
     loadcell = DephyLoadcellAmplifier(
         calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
@@ -40,7 +41,7 @@ def demo_loadcell_i2c(loadcell_logger, clock):
     loadcell_logger.track_variable(lambda: loadcell.mx, "Mx")
     loadcell_logger.track_variable(lambda: loadcell.my, "My")
     loadcell_logger.track_variable(lambda: loadcell.mz, "Mz")
-    
+
 
 def demo_loadcell_actpack(loadcell_logger, clock):
     actpack = DephyActuator(
@@ -67,7 +68,7 @@ def demo_loadcell_actpack(loadcell_logger, clock):
     def get_raw_loadcell_actpack():
         actpack.update()
         return actpack.genvars
-    
+
     with actpack, loadcell:
         loadcell.calibrate(reset=True, data_callback=get_raw_loadcell_actpack)
         for t in clock:
@@ -78,7 +79,7 @@ def demo_loadcell_actpack(loadcell_logger, clock):
             )
             loadcell_logger.update()
 
-    
+
 if __name__ == "__main__":
     loadcell_logger = Logger(
         log_path="./logs",
@@ -87,5 +88,5 @@ if __name__ == "__main__":
 
     clock = SoftRealtimeLoop(dt=DT)
 
-    demo_loadcell_actpack(loadcell_logger=loadcell_logger, clock = clock)
+    demo_loadcell_actpack(loadcell_logger=loadcell_logger, clock=clock)
     # demo_loadcell_i2c(loadcell_logger=loadcell_logger, clock = clock)

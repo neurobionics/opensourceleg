@@ -2,7 +2,7 @@
 Module for interfacing with Loadcell amplifiers.
 
 This module provides an implementation of a load cell amplifier (DephyLoadcellAmplifier) that
-inherits from LoadcellBase. It uses either an I2C interface via SMBus or a custom data callback function 
+inherits from LoadcellBase. It uses either an I2C interface via SMBus or a custom data callback function
 to communicate with a strain amplifier and processes raw ADC data to compute forces and moments.
 
 Classes:
@@ -73,7 +73,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
     Implementation of a load cell sensor using the Dephy Loadcell Amplifier.
 
     This class communicates with the Dephy strain amplifier.
-    It can connect via either I2C using the SMBus interface, or using custom data callbacks. 
+    It can connect via either I2C using the SMBus interface, or using custom data callbacks.
     It processes the raw ADC data, and computes forces (Fx, Fy, Fz) and moments (Mx, My, Mz)
     based on a provided calibration matrix and hardware configuration.
 
