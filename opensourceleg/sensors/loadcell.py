@@ -27,7 +27,6 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import LoadcellBase
 
@@ -71,17 +70,6 @@ class DEPHY_AMPLIFIER_MEMORY_CHANNELS(int, Enum):
     CH6_L = 19
 
 
-class DEPHY_AMPLIFIER_CONNECTION_MODES(int, Enum):
-    """
-    Enumeration of connection modes for the load cell amplifier.
-
-    It can either be connected via I2C or interfaced directly to an ActPack.
-    """
-
-    I2C = 0
-    ACTPACK = 1
-
-
 class DephyLoadcellAmplifier(LoadcellBase):
     """
     Implementation of a load cell sensor using the Dephy Loadcell Amplifier.
@@ -108,8 +96,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
         bus: int = 1,
         i2c_address: int = 0x66,
         offline: bool = False,
-        connection_mode: DEPHY_AMPLIFIER_CONNECTION_MODES = DEPHY_AMPLIFIER_CONNECTION_MODES.I2C,
-        actpack: Optional[DephyActuator] = None,
     ) -> None:
         """
         Initialize the Dephy loadcell amplifier.
@@ -124,9 +110,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
             exc (float, optional): Excitation voltage; must be greater than 0. Defaults to 5.0.
             bus (int, optional): I2C bus number to use. Defaults to 1.
             i2c_address (int, optional): I2C address of the strain amplifier. Defaults to 0x66.
-            offline (bool, optional): Whether the amplifier is offline. Defaults to False.
-            connection_mode (DEPHY_AMPLIFIER_CONNECTION_MODES, optional): Connection mode. Defaults to I2C.
-            actpack (Optional[DephyActuator], optional): Dephy Actuator instance or None. Defaults to None.
 
         Raises:
             TypeError: If calibration_matrix is not a 6x6 array.
@@ -161,8 +144,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
         self._zero_calibration_offset: npt.NDArray[np.double] = self._calibration_offset
         self._is_calibrated: bool = False
         self._is_streaming: bool = False
-        self._connection_mode: DEPHY_AMPLIFIER_CONNECTION_MODES = connection_mode
-        self._actpack: Optional[DephyActuator] = actpack
 
     def start(self) -> None:
         """
@@ -172,14 +153,8 @@ class DephyLoadcellAmplifier(LoadcellBase):
         and sets the streaming flag to True.
         If using ACTPACK mode, ensures the ActPack instance is provided and streaming.
         """
-        if self._connection_mode == DEPHY_AMPLIFIER_CONNECTION_MODES.I2C:
-            self._smbus = SMBus(self._bus)
-            time.sleep(1)
-        else:
-            if self._actpack is None:
-                raise ValueError("ActPack instance must be provided for ACTPACK connection mode.")
-            if not self._actpack._is_streaming:
-                raise ValueError("ActPack is not streaming. Please start actpack before loadcell amp.")
+        self._smbus = SMBus(self._bus)
+        time.sleep(1)
         self._is_streaming = True
 
     def reset(self) -> None:
@@ -212,15 +187,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Raises:
             ValueError: If the update method fails due to misconfiguration.
         """
-        if data_callback:
-            data = data_callback()
-        elif self._connection_mode == DEPHY_AMPLIFIER_CONNECTION_MODES.I2C:
-            data = self._read_compressed_strain()
-        else:
-            if self._actpack is not None:
-                data = self._actpack.genvars
-            else:
-                raise ValueError("Loadcell update method failed. Check configuration.")
+        data = data_callback() if data_callback else self._read_compressed_strain()
 
         if calibration_offset is None:
             calibration_offset = self._calibration_offset
