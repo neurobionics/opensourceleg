@@ -207,7 +207,7 @@ class Quantity:
         Returns:
             float: The numeric value converted to the default unit for this quantity type
         """
-        return self._value * self._unit.value
+        return self._value * float(self._unit.value)
 
     def to(self, unit: BaseUnit) -> "Quantity":
         """Convert the quantity to a different unit.
@@ -256,11 +256,11 @@ class Quantity:
         """
         return float(self.value)
 
-    def __eq__(self, other: Union["Quantity", float]) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare this quantity with another quantity or float value.
 
         Args:
-            other (Union[Quantity, float]): Another quantity or float value to compare with
+            other (object): Another quantity or float value to compare with
 
         Returns:
             bool: True if the quantities are equal when converted to default units
@@ -272,7 +272,9 @@ class Quantity:
             if self._unit_type != other._unit_type:
                 raise ValueError("Cannot compare quantities of different types")
             return self.in_default_unit == other.in_default_unit
-        return self.in_default_unit == float(other)
+        elif isinstance(other, (int, float)):
+            return self.in_default_unit == float(other)
+        return False
 
     def __add__(self, other: Union["Quantity", float]) -> "Quantity":
         """Add a quantity with another quantity or float value. Assumes units are consistent if adding with a float.
@@ -458,12 +460,12 @@ class UnitsManager:
 
     _instance = None
 
-    def __new__(cls):
+    def __new__(cls) -> "UnitsManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._user_defaults: dict[UnitType, BaseUnit] = {}
             self._initialized = True
@@ -518,7 +520,7 @@ class UnitsManager:
         return Quantity(value, unit_type, unit)
 
 
-def with_units(*unit_types: UnitType, return_type: UnitType):
+def with_units(*unit_types: UnitType, return_type: UnitType) -> "Callable[[Callable[..., Any]], Callable[..., Any]]":
     """Decorator for handling unit conversions in function arguments and return values.
 
     This decorator handles unit conversions between user-defined defaults and SI units:
