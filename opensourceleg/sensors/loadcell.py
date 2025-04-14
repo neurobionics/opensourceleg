@@ -170,8 +170,10 @@ class DephyLoadcellAmplifier(LoadcellBase):
         and excitation voltage, and subtracts any calibration offset.
 
         Args:
-            calibration_offset: An offset to subtract from the processed data. If None, uses the current calibration offset.
-            data_callback: A callback function to provide raw data. If not provided, the sensor's internal method is used.
+            calibration_offset: An offset to subtract from the processed data.
+            If None, uses the current calibration offset.
+            data_callback: A callback function to provide raw data.
+            If not provided, the sensor's internal method is used.
         """
         data = data_callback() if data_callback else self._read_compressed_strain()
 
@@ -200,7 +202,8 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Args:
             number_of_iterations: Number of iterations to average for calibration.
             reset: If True, forces recalibration by resetting the current calibration.
-            data_callback: Optional callback function to provide raw data. If not provided, the sensor's internal method is used.
+            data_callback: Optional callback function to provide raw data.
+            If not provided, the sensor's internal method is used.
         """
         if not self.is_calibrated:
             LOGGER.info(

@@ -1,8 +1,7 @@
-from enum import Enum
-from typing import Optional, Union
 from dataclasses import dataclass
+from enum import Enum
 from functools import wraps
-from typing import Callable, Any
+from typing import Any, Callable, Optional, Union
 
 
 class UnitType(Enum):
@@ -220,7 +219,7 @@ class Quantity:
             Quantity: A new Quantity instance with the value converted to the target unit
 
         Raises:
-            ValueError: If the target unit is not compatible with this quantity's type
+            TypeError: If the target unit is not compatible with this quantity's type
 
         Example:
             >>> force = Quantity(10, UnitType.FORCE, Force.N)
@@ -229,7 +228,7 @@ class Quantity:
             2.2481 lbf
         """
         if not isinstance(unit, type(self._unit)):
-            raise ValueError(f"Cannot convert to unit of different type: {unit}")
+            raise TypeError(f"Cannot convert to unit of different type: {unit}")
         new_value = self.in_default_unit / unit.value
         return Quantity(new_value, self._unit_type, unit)
 
@@ -311,7 +310,8 @@ class Quantity:
         return self.__add__(other)
 
     def __sub__(self, other: Union["Quantity", float]) -> "Quantity":
-        """Subtract a quantity from another quantity or float value. Assumes units are consistent if subtracting with a float.
+        """Subtract a quantity from another quantity or float value.
+        Assumes units are consistent if subtracting with a float.
 
         Args:
             other (Union[Quantity, float]): Another quantity or float value to subtract
@@ -350,7 +350,8 @@ class Quantity:
             raise TypeError("Can only subtract Quantity from float")
 
     def __mul__(self, other: Union["Quantity", float]) -> "Quantity":
-        """Multiply a quantity by a scalar or another quantity of the same type. Assumes units are consistent if multiplying with a float.
+        """Multiply a quantity by a scalar or another quantity of the same type.
+        Assumes units are consistent if multiplying with a float.
 
         Args:
             other (Union[Quantity, float]): Scalar value or another quantity
@@ -367,7 +368,6 @@ class Quantity:
         elif isinstance(other, Quantity):
             # Special cases for physical quantity multiplication
             if self._unit_type == other._unit_type:
-                # Force × Length = Torque
                 result_in_default = self.in_default_unit * other.in_default_unit
                 return Quantity(result_in_default / self._unit.value, self._unit_type, self._unit)
             else:
@@ -376,7 +376,8 @@ class Quantity:
             raise TypeError("Can only multiply Quantity with scalar or Quantity")
 
     def __rmul__(self, other: float) -> "Quantity":
-        """Reverse multiplication for Quantity and float values. Assumes units are consistent if multiplying with a float.
+        """Reverse multiplication for Quantity and float values.
+        Assumes units are consistent if multiplying with a float.
 
         Args:
             other (float): Scalar value to multiply with
@@ -387,7 +388,8 @@ class Quantity:
         return self.__mul__(other)
 
     def __truediv__(self, other: Union["Quantity", float]) -> "Quantity":
-        """Divide a quantity by a scalar or another quantity of the same type. Assumes units are consistent if dividing with a float.
+        """Divide a quantity by a scalar or another quantity of the same type.
+        Assumes units are consistent if dividing with a float.
 
         Args:
             other (Union[Quantity, float]): Scalar value or another quantity
@@ -425,6 +427,7 @@ class Quantity:
             return Quantity(other / self._value, self._unit_type, self._unit)
         else:
             raise TypeError("Can only divide scalar by Quantity")
+
 
 @dataclass
 class UnitConfig:
@@ -486,10 +489,10 @@ class UnitsManager:
             unit: The unit to set as default
 
         Raises:
-            ValueError: If the unit is not compatible with the unit type
+            TypeError: If the unit is not compatible with the unit type
         """
         if not isinstance(unit, UNIT_TYPE_MAP[unit_type]):
-            raise ValueError(f"Unit {unit} is not compatible with type {unit_type}")
+            raise TypeError(f"Unit {unit} is not compatible with type {unit_type}")
         self._user_defaults[unit_type] = unit
 
     def reset_to_si_defaults(self) -> None:
@@ -582,7 +585,7 @@ if __name__ == "__main__":
     force_lbf = force.to(Force.lbf)
     print(f"Force in lbf: {force_lbf}")  # ~2.25 lbf
 
-    #units manager usage
+    # units manager usage
     um = UnitsManager()
     um.set_default_unit(UnitType.POSITION, Position.deg)
 
