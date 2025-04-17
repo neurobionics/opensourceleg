@@ -83,6 +83,19 @@ class MockNode:
 
 # Creating a Mock LordMicrostrainIMU Class with patched functions for mscl
 class MockLordMicrostrainIMU(LordMicrostrainIMU):
+    def __init__(
+        self,
+        tag: str = "MockIMULordMicrostrain",
+        port: str = r"/dev/ttyUSB0",
+        baud_rate: int = 921600,
+        frequency: int = 200,
+        update_timeout: int = 500,
+        max_packets: int = 1,
+        return_packets: bool = False,
+    ):
+        LOGGER.info("Initializing MockLordMicrostrainIMU")
+        self._init_variables(tag, port, baud_rate, frequency, update_timeout, max_packets, return_packets, offline=True)
+
     def _configure_mip_channels(self):
         return [MockMipChannel(f"{i}", 200) for i in MockTypes]
 
@@ -245,12 +258,16 @@ def test_ping_success(sample_imu: MockLordMicrostrainIMU):
 
 # Test update
 def test_update(sample_imu: MockLordMicrostrainIMU):
+    sample_imu.set_update_timeout(400)
+    sample_imu.set_max_packets(3)
+    sample_imu.set_return_packets(True)
+
     sample_imu.start()
     assert sample_imu._data == {}
-    sample_imu.update(500, 2, False)
+    sample_imu.update()
     assert sample_imu._data == {"mockdata": 20}
 
-    return_val = sample_imu.update(400, 3, True)
+    return_val = sample_imu.update()
     assert len(return_val) == 3
     for i in range(0, 3):
         assert isinstance(return_val[i], MockDataPockets)
@@ -258,7 +275,7 @@ def test_update(sample_imu: MockLordMicrostrainIMU):
 
 # Test LordMicrostrainIMU repr
 def test_lord_microstrain_imu_repr(sample_imu: MockLordMicrostrainIMU):
-    assert sample_imu.__repr__() == "IMULordMicrostrain"
+    assert sample_imu.__repr__() == "MockIMULordMicrostrain[MockLordMicrostrainIMU]"
 
 
 # Test port

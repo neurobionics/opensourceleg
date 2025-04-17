@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opensourceleg.safety.safety import (
+from opensourceleg.extras.safety import (
     SafetyDecorators,
     SafetyManager,
     ThermalLimitException,
@@ -98,7 +98,7 @@ def test_is_changing_four_points_less_than_threshold():
     def test_changing_point1(instance):
         return 9
 
-    with pytest.raises(ValueError, match=f"{att} is unstable"):
+    with pytest.raises(ValueError, match=f"{att} is not changing"):
         test_changing_point1(instance)
 
 

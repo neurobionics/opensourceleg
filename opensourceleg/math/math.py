@@ -2,6 +2,15 @@ from typing import Any, Optional, Union
 
 import numpy as np
 
+__all__ = [
+    "EdgeDetector",
+    "SaturatingRamp",
+    "ThermalModel",
+    "clamp_within_vector_range",
+    "from_twos_complement",
+    "to_twos_complement",
+]
+
 
 class ThermalModel:
     """
@@ -17,16 +26,16 @@ class ThermalModel:
         1: C_w * dT_w/dt = (I^2)R + (T_c-T_w)/R_WC
         2: C_c * dT_c/dt = (T_w-T_c)/R_WC + (T_w-T_a)/R_CA
 
-    where:
-        C_w: Thermal capacitance of the winding
-        C_c: Thermal capacitance of the case
-        R_WC: Thermal resistance between the winding and the case
-        R_CA: Thermal resistance between the case and the ambient
-        T_w: Temperature of the winding
-        T_c: Temperature of the case
-        T_a: Temperature of the ambient
-        I: Current
-        R: Resistance
+        where:
+            C_w: Thermal capacitance of the winding
+            C_c: Thermal capacitance of the case
+            R_WC: Thermal resistance between the winding and the case
+            R_CA: Thermal resistance between the case and the ambient
+            T_w: Temperature of the winding
+            T_c: Temperature of the case
+            T_a: Temperature of the ambient
+            I: Current
+            R: Resistance
 
     Implementation:
         1: The model is updated at every time step with the current and the ambient temperature.
@@ -248,3 +257,66 @@ def clamp_within_vector_range(
     min_allowed = min(input_vector)
     max_allowed = max(input_vector)
     return max(min(input_value, max_allowed), min_allowed)
+
+
+def to_twos_complement(value: int, bit_length: int) -> int:
+    """Converts a signed integer to 2's complement for a defined number of bits
+    as an unsigned integer
+
+    Args:
+        value (int): Signed integer to convert
+        bit_length (int): Number of bits of 2's complement representation
+
+    Returns:
+        int: Unsigned integer 2's complement
+
+    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
+
+    Raises:
+        ValueError: If value is too small or too large for the given bit length
+    """
+    min_value = -(2 ** (bit_length - 1))
+    max_value = 2 ** (bit_length - 1) - 1
+
+    if value < min_value:
+        raise ValueError(f"Value {value} is too small for {bit_length} bits")
+    if value > max_value:
+        raise ValueError(f"Value {value} is too large for {bit_length} bits")
+
+    if value >= 0:
+        return value
+
+    return int(value + 2**bit_length)
+
+
+def from_twos_complement(value: int, bit_length: int) -> int:
+    """Converts a 2's complement integer to a signed integer
+
+    Args:
+        value (int): 2's complement integer
+        bit_length (int): Number of bits of 2's complement representation
+
+    Returns:
+        int: Signed integer
+
+    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
+
+    Raises:
+        TypeError: If value or bit_length is not an integer
+        ValueError: If value is negative, bit_length is negative, or value exceeds bit_length
+    """
+    if not isinstance(value, int):
+        raise TypeError("value must be an integer")
+    if value < 0:
+        raise ValueError("value must be non-negative")
+    if not isinstance(bit_length, int):
+        raise TypeError("bit_length must be an integer")
+    if bit_length < 0:
+        raise ValueError("bit_length must be non-negative")
+    if value.bit_length() > bit_length:
+        raise ValueError(f"value ({value}) exceeds the specified bit_length ({bit_length})")
+
+    if value >= 2 ** (bit_length - 1):
+        return int(value - (2**bit_length))
+    else:
+        return int(value)

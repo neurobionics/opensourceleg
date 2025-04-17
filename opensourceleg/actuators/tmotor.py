@@ -1,6 +1,7 @@
 import time
 import warnings
 from math import isfinite
+from typing import Optional
 
 import can
 import numpy as np
@@ -25,7 +26,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_stream,
 )
 from opensourceleg.math import ThermalModel
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
@@ -82,12 +83,12 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     def __init__(
         self,
         tag: str = "TMotorActuator",
-        motor_type="AK80-9",
-        motor_ID=41,
+        motor_type: str = "AK80-9",
+        motor_ID: int = 41,
         gear_ratio: float = 1.0,
         frequency: int = 500,
         offline: bool = False,
-        max_mosfett_temp=50,
+        max_mosfett_temp: float = 50,
     ):
         """
         Sets up the motor manager. Note the device will not be powered on by this method! You must
@@ -189,7 +190,15 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         print("Turning off control for device: " + self.device_info_string())
         self.power_off()
 
-    def home(self):
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ):
         pass
 
     def update(self):  # noqa: C901
@@ -409,7 +418,14 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         return float(self.motor_current * MIT_Params[self.type]["Kt_actual"] * MIT_Params[self.type]["GEAR_RATIO"])
 
     # uses plain impedance mode, will send 0.0 for current command.
-    def set_impedance_gains(self, kp=0, ki=0, K=0.08922, B=0.0038070, ff=0) -> None:
+    def set_impedance_gains(
+        self,
+        kp: float = 0,
+        ki: float = 0,
+        K: float = 0.08922,
+        B: float = 0.0038070,
+        ff: float = 0,
+    ) -> None:
         """
         Uses plain impedance mode, will send 0.0 for current command in addition to position request.
 
@@ -436,7 +452,13 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.kd = B
         self._command.velocity = 0.0
 
-    def set_current_gains(self, kp=40, ki=400, ff=128, spoof=False) -> None:
+    def set_current_gains(
+        self,
+        kp: float = 40,
+        ki: float = 400,
+        ff: float = 128,
+        spoof: bool = False,
+    ) -> None:
         """
         Uses plain current mode, will send 0.0 for position gains in addition to requested current.
 
@@ -448,7 +470,10 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         """
         pass
 
-    def set_velocity_gains(self, kd=1.0) -> None:
+    def set_velocity_gains(
+        self,
+        kd: float = 1.0,
+    ) -> None:
         """
         Uses plain speed mode, will send 0.0 for position gain and for feed forward current.
 
@@ -518,7 +543,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.current = value
 
     # used for either current or MIT Mode to set current, based on desired torque
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
         Used for either current or MIT Mode to set current, based on desired torque.
         If a more complicated torque model is available for the motor, that will be used.

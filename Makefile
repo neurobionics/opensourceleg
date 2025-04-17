@@ -3,7 +3,7 @@ install: ## Install the poetry environment and install the pre-commit hooks
 	@echo "🚀 Creating virtual environment using pyenv and poetry"
 	@poetry install
 	@poetry run pre-commit install
-	@poetry shell
+	@eval $(poetry env activate)
 
 .PHONY: check
 check: ## Run code quality tools.
@@ -14,7 +14,7 @@ check: ## Run code quality tools.
 	@echo "🚀 Static type checking: Running mypy"
 	@poetry run mypy
 	@echo "🚀 Checking for obsolete dependencies: Running deptry"
-	@poetry run deptry . --ignore DEP002,DEP001
+	@poetry run deptry . --ignore DEP002,DEP001,DEP003
 
 .PHONY: test
 test: ## Test the code with pytest

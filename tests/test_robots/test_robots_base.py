@@ -70,7 +70,7 @@ def test_robot_base_init():
         ),
     )
     test_actuators = {"actuator": test_tactuator}
-    test_tsensor = MockSensor()
+    test_tsensor = MockSensor(tag="MockSensor")
     test_sensors = {"sensor": test_tsensor}
     sample_robot = MockRobot(tag=tag_name, actuators=test_actuators, sensors=test_sensors)
     assert all([
@@ -114,7 +114,7 @@ def test_robot_base_start(mock_robot: MockRobot, test_logger: Logger):
     file = open(test_logger.file_path)
     contents = file.read()
     assert ("DEBUG: Calling start method of MockActuator") in contents
-    assert "DEBUG: Calling start method of SensorBase" in contents
+    assert "DEBUG: Calling start method of MockSensor[MockSensor]" in contents
     file.close()
 
     MockActuator.start.assert_called_once()
@@ -136,7 +136,7 @@ def test_robot_base_stop(mock_robot: MockRobot, test_logger: Logger):
     file = open(test_logger.file_path)
     contents = file.read()
     assert "DEBUG: Calling stop method of MockActuator" in contents
-    assert "DEBUG: Calling stop method of SensorBase" in contents
+    assert "DEBUG: Calling stop method of MockSensor[MockSensor]" in contents
     file.close()
 
     MockActuator.stop.assert_called_once()

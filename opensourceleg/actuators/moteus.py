@@ -274,7 +274,15 @@ class MoteusActuator(ActuatorBase, Controller):
 
         self._command = self.make_query()
 
-    def home(self) -> None:
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ) -> None:
         # TODO: implement homing
         LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
 
@@ -296,9 +304,9 @@ class MoteusActuator(ActuatorBase, Controller):
             query=True,
         )
 
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
-        Set the joint torque of the joint.
+        Set the output torque of the actuator.
         This is the torque that is applied to the joint, not the motor.
 
         Args:
@@ -461,11 +469,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @property
     def motor_position(self) -> float:
         if self._data is not None:
-            return (
-                float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi)
-                - self.motor_zero_position
-                - self.motor_position_offset
-            )
+            return float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi) - self.motor_zero_position
         else:
             LOGGER.warning(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
