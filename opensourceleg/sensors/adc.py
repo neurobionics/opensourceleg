@@ -14,40 +14,12 @@ from opensourceleg.sensors.base import ADCBase
 
 class ADS131M0x(ADCBase):
     """
-    Class used for communication with the ADS131M0x family of ADC chips.
+    Class for communication with the ADS131M0x family of ADC chips.
 
-    This class allows you to configure the ADS131M0x family of chips as well as
-    read out the ADC values in units of millivolts.
-
-    Class Attributes:
-        _MAX_CHANNELS (int): Maximum number of channels supported.
-        _BYTES_PER_WORD (int): Number of bytes per word in SPI communication.
-        _RESOLUTION (int): ADC resolution in bits.
-        _SPI_MODE (int): SPI mode used for communication.
-        _BLANK_WORD (ClassVar[list[int]]): Blank word for SPI messages.
-        _RESET_WORD (ClassVar[list[int]]): SPI command for resetting the ADC.
-        _STANDBY_WORD (ClassVar[list[int]]): SPI command for putting the ADC in standby.
-        _WAKEUP_WORD (ClassVar[list[int]]): SPI command for waking up the ADC.
-        _RREG_PREFIX (int): Prefix for read register commands.
-        _WREG_PREFIX (int): Prefix for write register commands.
-        _ID_REG (int): Address of the ID register.
-        _STATUS_REG (int): Address of the status register.
-        _MODE_REG (int): Address of the mode register.
-        _CLOCK_REG (int): Address of the clock register.
-        _GAIN1_REG (int): Address of the first gain register.
-        _GAIN2_REG (int): Address of the second gain register.
-        _CFG_REG (int): Address of the configuration register.
-        _DISABLE_CHANNELS_CLOCK (int): Value to disable channel clocks.
-        _ENABLE_CHANNELS_CLOCK (int): Value to enable channel clocks.
-        _MODE_CFG (int): Mode configuration value.
-        _OCAL_MSB_ADDRS (ClassVar[list[int]]): List of MSB addresses for offset calibration.
-        _OCAL_LSB_ADDRS (ClassVar[list[int]]): List of LSB addresses for offset calibration.
-        _GCAL_MSB_ADDRS (ClassVar[list[int]]): List of MSB addresses for gain calibration.
-        _GCAL_LSB_ADDRS (ClassVar[list[int]]): List of LSB addresses for gain calibration.
-        _CHANNEL_CFG_ADDRS (ClassVar[list[int]]): List of addresses for channel configuration.
-        _GCAL_STEP_SIZE (float): Step size used in gain calibration.
+    This class allows configuration of the ADS131M0x chips and reading ADC values in millivolts.
     """
 
+    # Class attributes
     _MAX_CHANNELS = 8
     _BYTES_PER_WORD = 3
     _RESOLUTION = 24
@@ -55,14 +27,12 @@ class ADS131M0x(ADCBase):
     _DATA_RATES = (250, 500, 1000, 2000, 4000, 8000, 16000, 32000)
 
     _BLANK_WORD = [0x00, 0x00, 0x00]
-    # SPI Commands
     _RESET_WORD = [0x00, 0x11, 0x00]
     _STANDBY_WORD = [0x00, 0x22, 0x00]
     _WAKEUP_WORD = [0x00, 0x33, 0x00]
     _RREG_PREFIX = 0b101
     _WREG_PREFIX = 0b011
 
-    # Multi-channel setting register addresses
     _ID_REG = 0x00
     _STATUS_REG = 0x01
     _MODE_REG = 0x02
@@ -71,12 +41,10 @@ class ADS131M0x(ADCBase):
     _GAIN2_REG = 0x05
     _CFG_REG = 0x06
 
-    # Specific values to be written to registers
     _DISABLE_CHANNELS_CLOCK = 0x000E
     _ENABLE_CHANNELS_CLOCK = 0xFF0E
     _MODE_CFG = 0x0110
 
-    # Channel specific setting register addresses
     _OCAL_MSB_ADDRS = [0x0A, 0x0F, 0x14, 0x19, 0x1E, 0x23, 0x28, 0x2D]
     _OCAL_LSB_ADDRS = [0x0B, 0x10, 0x15, 0x1A, 0x1F, 0x24, 0x29, 0x2E]
     _GCAL_MSB_ADDRS = [0x0C, 0x11, 0x16, 0x1B, 0x20, 0x25, 0x2A, 0x2F]
@@ -84,8 +52,7 @@ class ADS131M0x(ADCBase):
     _CHANNEL_CFG_ADDRS = [0x09, 0x0E, 0x13, 0x18, 0x1D, 0x22, 0x27, 0x2C]
 
     _GCAL_STEP_SIZE = 1.19e-7
-
-# What is gain_error doing?
+    _READY_STATUS_BASE = 0x05 << 8
 
     def __init__(
         self,
@@ -95,85 +62,67 @@ class ADS131M0x(ADCBase):
         data_rate: int = 500,
         clock_freq: int = 8192000,
         num_channels: int = 6,
-        prog_gains: List[int] = [1] * 6,
+        gains: List[int] = [1] * 6,
         voltage_reference: float = 1.2,
-        gain_error: List[int] = [0] * 6,
+        gain_error: List[int] = None,
         offline: bool = False,
     ):
         """
-        Initializes the ADS131M0x instance.
-
-        Validates the provided configuration and sets up internal parameters for SPI communication,
-        channel gains, and calibration.
+        Initialize the ADS131M0x instance.
 
         Args:
-        - spi_bus(int): SPI bus. Default: 0
-        - spi_chip(int): Chip select line. Default: 0
-        - clock_freq_hz(int): SPI clock frequency. Default: 8192000
-        - num_channels(int): Number of channels on ADC. Default: 6
-        - data_rate(int): Sampling rate (Hz). Default: 500 Hz
-        - prog_gains(List[int]): Gains for ADC's Programmable Gain Amplifier (PGA). Default: [1] * 6
-        - voltage_reference(float): Reference voltage (volts) used by the ADC. Default: 1.2
-        - gain_error(List[int]): User-calculated integers used for gain correction. Default: []
+            tag (str): Identifier for the ADC instance. Default is "ADS131M0x".
+            spi_bus (int): SPI bus number. Default is 0.
+            spi_cs (int): SPI chip select line. Default is 0.
+            data_rate (int): Sampling rate in Hz. Default is 500 Hz.
+            clock_freq (int): SPI clock frequency in Hz. Default is 8192000 Hz.
+            num_channels (int): Number of ADC channels. Default is 6.
+            gains (List[int]): Programmable gain values for each channel. Default is [1] * num_channels.
+            voltage_reference (float): Reference voltage in volts. Default is 1.2 V.
+            gain_error (List[int]): Gain error correction values for each channel. Default is None.
+            offline (bool): If True, the ADC operates in offline mode. Default is False.
 
         Raises:
-            ValueError: If the length of channel_gains does not equal num_channels,
-                        or if gain_error is provided and its length does not equal num_channels,
-                        or if any gain is not a power of 2 between 1 and 128.
+            ValueError: If the configuration parameters are invalid.
         """
 
         try:
             import spidev
-
             self._spi = spidev.SpiDev()
-        except ImportError:
-            LOGGER.warning("spidev is not installed")
-            exit(1)
+        except ImportError as e:
+            LOGGER.error("spidev is not installed. Please install it to use this module.")
+            raise ImportError("spidev is required but not installed.") from e
 
-        if len(prog_gains) != num_channels:
-            raise ValueError(
-                "Length of channel_gains does not equal number of channels"
-            )
-        if gain_error != [] and len(gain_error) != num_channels:
-            raise ValueError(
-                "Length of channel_gains does not equal number of channels"
-            )
+        if len(gains) != num_channels:
+            raise ValueError("Length of gains must equal the number of channels.")
+        if (gain_error is not None) and (len(gain_error) != num_channels):
+            raise ValueError("Length of gain_error must equal the number of channels.")
         if data_rate not in self._DATA_RATES:
-            raise ValueError("Invalid data rate")
+            raise ValueError(f"Invalid data rate. Must be one of {self._DATA_RATES}.")
 
         self._spi_bus = spi_bus
         self._spi_cs = spi_cs
         self._num_channels = num_channels
         self._clock_freq = clock_freq
         self._data_rate = data_rate
-        self._gain_exponents = [0] * num_channels
-        for i in range(0, num_channels):
-            gain = int(math.log2(prog_gains[i]))
-            if gain != math.log2(prog_gains[i]):
-                raise ValueError("Gain must be a power of 2 between 1 and 128")
-            self._gain_exponents[i] = gain
+        self._gain_exponents = self._calculate_gain_exponents(gains)
         self._voltage_reference = voltage_reference
         self._gain_error = gain_error
         self._streaming = False
         self._words_per_frame = 2 + num_channels
-
-        self._ready_status = 0x05 << 8
-        for i in range(self.num_channels):
-            self._ready_status |= 1 << i
-
+        self._ready_status = self._calculate_ready_status()
         self._data_counts = np.empty(self.num_channels, dtype=int)
         self._data = np.empty(self.num_channels, dtype=float)
 
     def __repr__(self) -> str:
         return f"ADS131M0x"
-
+    
     def start(self) -> None:
         """
-        Open the SPI port, reset the ADC, configure gain settings, and begin streaming ADC data.
-
-        This method initializes the SPI communication, resets the device, sets the channel gains,
-        transitions the device to continuous conversion mode, and clears any stale data.
+        Start the ADC by opening the SPI port, resetting the device, configuring gain settings,
+        and transitioning to continuous conversion mode.
         """
+        LOGGER.info("Starting ADC...")
         self._spi.open(self._spi_bus, self._spi_cs)
         self._spi.max_speed_hz = self._clock_freq
         self._spi.mode = self._SPI_MODE
@@ -182,28 +131,28 @@ class ADS131M0x(ADCBase):
         self._set_gain()
         self._set_device_state(1)
         self._clear_stale_data()
+        LOGGER.info("ADC started successfully.")
 
     def stop(self) -> None:
         """
-        Stop streaming ADC data and close the SPI port.
-
-        This method transitions the ADC to standby mode and closes the SPI connection.
+        Stop the ADC by transitioning to standby mode and closing the SPI port.
         """
+        LOGGER.info("Stopping ADC...")
         self._set_device_state(0)
         self._spi.close()
+        LOGGER.info("ADC stopped successfully.")
 
     def reset(self) -> None:
-        """Resets all register values."""
+        """
+        Reset the ADC by sending the reset command via SPI.
+        """
         self._spi.xfer2(
             self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
         )
 
     def update(self) -> None:
         """
-        Read ADC data from the device.
-
-        Waits until the ADC channels are ready to be read and then updates the internal data
-        with the latest voltage values in millivolts.
+        Update the ADC data by reading the latest voltage values in millivolts.
         """
         while not self._ready_to_read():
             sleep(0.001)
@@ -212,9 +161,6 @@ class ADS131M0x(ADCBase):
     def calibrate(self) -> None:
         """
         Perform offset and gain calibration on the ADC.
-
-        This method performs an offset calibration (zeroing) and, if gain error corrections
-        are provided, performs a gain calibration.
         """
         self._offset_calibration()
         # if self._gain_error is not None:
@@ -222,13 +168,13 @@ class ADS131M0x(ADCBase):
 
     def read_register(self, address: int) -> int:
         """
-        Read the value stored in the register at the specified address.
+        Read the value of a register at the specified address.
 
         Args:
-            address (int): The address of the register to read.
+            address (int): Address of the register to read.
 
         Returns:
-            int: The value stored at the register.
+            int: Value stored in the register.
         """
         msg = (address << 7) | (self._RREG_PREFIX << 13)
         word = self._message_to_word(msg)
@@ -237,11 +183,11 @@ class ADS131M0x(ADCBase):
 
     def write_register(self, address: int, reg_val: int) -> None:
         """
-        Write a specific value to the register at the designated address.
+        Write a value to a register at the specified address.
 
         Args:
-            address (int): The address of the register to write.
-            reg_val (int): The value to be written to the register.
+            address (int): Address of the register to write.
+            reg_val (int): Value to write to the register.
         """
         addr_msg = (address << 7) | (self._WREG_PREFIX << 13)
         addr_bytes = self._message_to_word(addr_msg)
@@ -254,32 +200,81 @@ class ADS131M0x(ADCBase):
         Check if the ADC is currently streaming data.
 
         Returns:
-            bool: True if streaming; otherwise, False.
+            bool: True if streaming, False otherwise.
         """
         return self._streaming
 
     @property
     def gains(self) -> List[int]:
+        """
+        Get the programmable gain values for each channel.
+
+        Returns:
+            List[int]: List of gain values.
+        """
         return np.power(2, self._gain_exponents)
 
     @property
     def data(self) -> List[float]:
         """
-        Get the latest ADC data.
+        Get the latest ADC data in millivolts.
 
         Returns:
-            Any: The list of voltage readings (in millivolts) for each channel.
+            List[float]: List of voltage readings for each channel.
         """
         return self._data
 
     @property
-    def data_counts(self):
+    def data_counts(self) -> List[int]:
+        """
+        Get the latest ADC data in raw counts.
+
+        Returns:
+            List[int]: List of raw ADC counts for each channel.
+        """
         return self._data_counts
 
     @property
-    def num_channels(self):
+    def num_channels(self) -> int:
+        """
+        Get the number of ADC channels.
+
+        Returns:
+            int: Number of channels.
+        """
         return self._num_channels
 
+    def _calculate_gain_exponents(self, gains: List[int]) -> List[int]:
+        """
+        Calculate gain exponents for the programmable gains.
+
+        Args:
+            gains (List[int]): List of programmable gains.
+
+        Returns:
+            List[int]: List of gain exponents.
+
+        Raises:
+            ValueError: If a gain is not a power of 2 between 1 and 128.
+        """
+        gain_exponents = []
+        for gain in gains:
+            if not (1 <= gain <= 128 and math.log2(gain).is_integer()):
+                raise ValueError("Each gain must be a power of 2 between 1 and 128.")
+            gain_exponents.append(int(math.log2(gain)))
+        return gain_exponents
+
+    def _calculate_ready_status(self) -> int:
+        """
+        Calculate the ready status bitmask for the ADC.
+
+        Returns:
+            int: Ready status bitmask.
+        """
+        ready_status = self._READY_STATUS_BASE
+        for i in range(self._num_channels):
+            ready_status |= 1 << i
+        return ready_status
 
     def _spi_message(self, msg: List[int]) -> List[int]:
         """Send SPI message to ADS131M0x.

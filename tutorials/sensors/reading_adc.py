@@ -18,7 +18,7 @@ if __name__ == "__main__":
         data_rate = FREQUENCY,
         clock_freq = 8192000,
         num_channels = 6,
-        prog_gains = [1] * 6,
+        gains = [1] * 6,
         voltage_reference = 1.2,
         gain_error = [0] * 6,
         offline = False,
