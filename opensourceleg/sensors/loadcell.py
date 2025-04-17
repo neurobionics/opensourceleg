@@ -8,6 +8,7 @@ from smbus2 import SMBus
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import LoadcellBase
+from opensourceleg.sensors.adc import ADS131M0x
 
 
 class LoadcellNotRespondingException(Exception):
@@ -47,13 +48,19 @@ class SRILoadcell(LoadcellBase):
         """
         # Check that parameters are set correctly:
         if calibration_matrix.shape != (6, 6):
-            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
+            LOGGER.info(
+                f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double."
+            )
             raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
         if amp_gain <= 0:
-            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
+            LOGGER.info(
+                f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0."
+            )
             raise ValueError("amp_gain must be a floating point value greater than 0.")
         if exc <= 0:
-            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
+            LOGGER.info(
+                f"[{self.__repr__()}] exc must be a floating point value greater than 0."
+            )
             raise ValueError("exc must be a floating point value greater than 0.")
 
         self._amp_gain: float = amp_gain
@@ -68,7 +75,9 @@ class SRILoadcell(LoadcellBase):
         self._prev_data: npt.NDArray[np.double] = self._data
         self._failed_reads = 0
 
-        self._calibration_offset: npt.NDArray[np.double] = np.zeros(shape=(1, 6), dtype=np.double)
+        self._calibration_offset: npt.NDArray[np.double] = np.zeros(
+            shape=(1, 6), dtype=np.double
+        )
         self._zero_calibration_offset: npt.NDArray[np.double] = self._calibration_offset
         self._is_calibrated: bool = False
         self._is_streaming: bool = False
@@ -99,7 +108,10 @@ class SRILoadcell(LoadcellBase):
         signed_data = ((data - self.OFFSET) / self.ADC_RANGE) * self._exc
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
-        self._data = np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
+        self._data = (
+            np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data)))
+            - calibration_offset
+        )
 
     def calibrate(
         self,
@@ -127,7 +139,9 @@ class SRILoadcell(LoadcellBase):
                     data_callback=data_callback,
                 )
                 iterative_calibration_offset = self._data
-                self._calibration_offset = (iterative_calibration_offset + self._calibration_offset) / 2.0
+                self._calibration_offset = (
+                    iterative_calibration_offset + self._calibration_offset
+                ) / 2.0
 
             self._is_calibrated = True
             LOGGER.info(f"[{self.__repr__()}] Calibration routine complete.")
@@ -150,18 +164,24 @@ class SRILoadcell(LoadcellBase):
     def _read_compressed_strain(self) -> Any:
         """Used for more recent versions of strain amp firmware"""
         try:
-            data = self._smbus.read_i2c_block_data(self._i2c_address, MEMORY_CHANNELS.CH1_H, 10)
+            data = self._smbus.read_i2c_block_data(
+                self._i2c_address, MEMORY_CHANNELS.CH1_H, 10
+            )
             self.failed_reads = 0
         except OSError:
             self.failed_reads += 1
 
             if self.failed_reads >= 5:
-                raise LoadcellNotRespondingException("Load cell unresponsive.") from None
+                raise LoadcellNotRespondingException(
+                    "Load cell unresponsive."
+                ) from None
 
         return self._unpack_compressed_strain(np.array(object=data, dtype=np.uint8))
 
     @staticmethod
-    def _unpack_uncompressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
+    def _unpack_uncompressed_strain(
+        data: npt.NDArray[np.uint8],
+    ) -> npt.NDArray[np.uint16]:
         """Used for an older version of the strain amp firmware (at least pre-2017)"""
         ch1 = (data[0] << 8) | data[1]
         ch2 = (data[2] << 8) | data[3]
@@ -172,7 +192,9 @@ class SRILoadcell(LoadcellBase):
         return np.array(object=[ch1, ch2, ch3, ch4, ch5, ch6])
 
     @staticmethod
-    def _unpack_compressed_strain(data: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint16]:
+    def _unpack_compressed_strain(
+        data: npt.NDArray[np.uint8],
+    ) -> npt.NDArray[np.uint16]:
         """Used for more recent versions of strainamp firmware"""
         return np.array(
             object=[
@@ -254,3 +276,95 @@ class SRILoadcell(LoadcellBase):
             return self._data[0]
         else:
             return self._zero_calibration_offset
+
+
+class SRILoadcell_ADC(LoadcellBase):
+
+    def __init__(
+        self, decoupling_matrix=None, excitation_voltage=5.0, ch_gains=[1]*6, **kwargs
+    ):
+        self._adc = ADS131M0x(**kwargs)
+        self.decoupling_matrix = decoupling_matrix
+        self.excitation_voltage = excitation_voltage
+        self._offset = np.zeros(self.adc.num_channels)
+        self.ch_gains = np.array(ch_gains)
+
+    @property
+    def adc(self):
+        return self._adc
+
+    def __repr__(self) -> str:
+        return f"Loadcell"
+
+    @property
+    def is_streaming(self) -> bool:
+        return self.adc._streaming
+
+    def start(self):
+        self.adc.start()
+
+    def stop(self):
+        self.adc.stop()
+
+    def update(self):
+        self.adc.update()
+
+        coupled = self.adc.data - self._offset
+        for i in range(int(self.adc.num_channels / 2)):
+            coupled[i * 2 + 1] *= -1
+
+        gains = self.ch_gains * self.adc.gains
+        normalized = coupled / (self.excitation_voltage * gains)
+
+        self._data = self.decoupling_matrix @ normalized
+
+    def reset(self):
+        self.adc.reset()
+
+    def calibrate(self, n_samples=2**10):
+        self.adc.calibrate()
+
+        offsets = np.empty((n_samples, self.adc.num_channels))
+        for i in range(n_samples):
+            self.adc.update()
+            offsets[i] = self.adc.data
+        self._offset = offsets.mean(axis=0)
+
+        self._is_calibrated = True
+
+    @property
+    def is_calibrated(self):
+        return self._is_calibrated
+
+    @property
+    def fx(self):
+        return self.data[0]
+
+    @property
+    def fy(self):
+        return self.data[1]
+
+    @property
+    def fz(self):
+        return self.data[2]
+
+    @property
+    def mx(self):
+        return self.data[3]
+
+    @property
+    def my(self):
+        return self.data[4]
+
+    @property
+    def mz(self):
+        return self.data[5]
+
+    @property
+    def data(self):
+        """
+        Returns a vector of the latest loadcell data.
+        [Fx, Fy, Fz, Mx, My, Mz]
+        Forces in N, moments in Nm.
+        """
+        return self._data
