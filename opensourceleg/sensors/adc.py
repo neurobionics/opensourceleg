@@ -1,9 +1,5 @@
 """
-Module for interfacing with the ADS131M0x family of ADC chips.
-
-This module provides a class for communicating with and configuring the ADS131M0x
-ADC chips. It supports SPI communication to reset, configure, calibrate, and read data
-from the ADC in units of millivolts.
+Module for communicating with the ADS131M0x family of ADC chips.
 """
 
 from typing import List
@@ -95,7 +91,7 @@ class ADS131M0x(ADCBase):
         self,
         tag: str = "ADS131M0x",
         spi_bus: int = 0,
-        spi_chip: int = 0,
+        spi_cs: int = 0,
         data_rate: int = 500,
         clock_freq: int = 8192000,
         num_channels: int = 6,
@@ -146,7 +142,7 @@ class ADS131M0x(ADCBase):
             raise ValueError("Invalid data rate")
 
         self._spi_bus = spi_bus
-        self._spi_chip = spi_chip
+        self._spi_cs = spi_cs
         self._num_channels = num_channels
         self._clock_freq = clock_freq
         self._data_rate = data_rate
@@ -178,7 +174,7 @@ class ADS131M0x(ADCBase):
         This method initializes the SPI communication, resets the device, sets the channel gains,
         transitions the device to continuous conversion mode, and clears any stale data.
         """
-        self._spi.open(self._spi_bus, self._spi_chip)
+        self._spi.open(self._spi_bus, self._spi_cs)
         self._spi.max_speed_hz = self._clock_freq
         self._spi.mode = self._SPI_MODE
 
@@ -267,7 +263,7 @@ class ADS131M0x(ADCBase):
         return np.power(2, self._gain_exponents)
 
     @property
-    def data(self) -> Any:
+    def data(self) -> List[float]:
         """
         Get the latest ADC data.
 
@@ -283,6 +279,7 @@ class ADS131M0x(ADCBase):
     @property
     def num_channels(self):
         return self._num_channels
+
 
     def _spi_message(self, msg: List[int]) -> List[int]:
         """Send SPI message to ADS131M0x.
