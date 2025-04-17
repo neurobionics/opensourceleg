@@ -442,16 +442,18 @@ class DephyLoadcellAmplifier(LoadcellBase):
             return list(map(float, self._zero_calibration_offset.tolist()))
 
 
-class SRILoadcell_ADC(LoadcellBase):
+class NBLoadcellDAQ(LoadcellBase):
 
     def __init__(
-        self, decoupling_matrix=None, excitation_voltage=5.0, ch_gains=[1]*6, **kwargs
+        self, tag='NBLoadcellDAQ', calibration_matrix=None, excitation_voltage=5.0, amp_gain=[34]*3+[151]*3, offline = False, **kwargs
     ):
+        super().__init__(tag=tag, offline=offline)
+    
         self._adc = ADS131M0x(**kwargs)
-        self.decoupling_matrix = decoupling_matrix
+        self.calibration_matrix = calibration_matrix
         self.excitation_voltage = excitation_voltage
         self._offset = np.zeros(self.adc.num_channels)
-        self.ch_gains = np.array(ch_gains)
+        self.amp_gain = np.array(amp_gain)
 
     @property
     def adc(self):
@@ -477,10 +479,10 @@ class SRILoadcell_ADC(LoadcellBase):
         for i in range(int(self.adc.num_channels / 2)):
             coupled[i * 2 + 1] *= -1
 
-        gains = self.ch_gains * self.adc.gains
+        gains = self.amp_gain * self.adc.gains
         normalized = coupled / (self.excitation_voltage * gains)
 
-        self._data = self.decoupling_matrix @ normalized
+        self._data = self.calibration_matrix @ normalized
 
     def reset(self):
         self.adc.reset()
