@@ -102,8 +102,8 @@ def demo_loadcell_actpack(loadcell_logger, clock):
 
 def demo_loadcell_nb_daq(loadcell_logger, clock):
     loadcell = NBLoadcellDAQ(
+        LOADCELL_CALIBRATION_MATRIX_M3554E,
         tag="loadcell",
-        calibration_matrix=LOADCELL_CALIBRATION_MATRIX_M3554E,
         excitation_voltage=5.0,
         amp_gain=[34]*3+[151]*3
     )

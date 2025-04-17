@@ -1,20 +1,21 @@
 """
 Module for interfacing with Loadcell amplifiers.
 
-This module provides an implementation of a load cell amplifier (DephyLoadcellAmplifier) that
-inherits from LoadcellBase. It uses either an I2C interface via SMBus or a custom data callback function
-to communicate with a strain amplifier and processes raw ADC data to compute forces and moments.
+This module provides implements reading force/moment data from a 6-axis loadcell using DAQs by the Neurobionics lab, and Dephy.
 
 Classes:
     LoadcellNotRespondingException: Exception raised when the load cell does not respond.
     DEPHY_AMPLIFIER_MEMORY_CHANNELS: Enum representing memory channel addresses for load cell readings.
-    DephyLoadcellAmplifier: Concrete implementation of a load cell sensor that provides force and moment data.
+    DephyLoadcellAmplifier: Read and process force/moment data from a 6-axis load cell with a DAQ by Dephy.
+    NBLoadcellDAQ: Read and process force/moment data from a 6-axis load cell with DAQs by Neurobionics Lab.
 
 Dependencies:
     - numpy
     - smbus2
+    - spidev
     - opensourceleg.logging
     - opensourceleg.sensors.base
+    - opensourceleg.sensors.adc
 """
 
 import time
@@ -443,20 +444,58 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
 
 class NBLoadcellDAQ(LoadcellBase):
+    """
+    Implementation of a load cell DAQ system using the ADS131M0x ADC.
+
+    This class provides methods for acquiring, calibrating, and processing load cell data.
+    It uses an ADC to read raw data, applies a calibration matrix, and computes forces and moments.
+
+    Attributes:
+        calibration_matrix (np.ndarray): A matrix used to convert raw ADC data into forces and moments.
+        excitation_voltage (float): The excitation voltage applied to the load cell.
+        amp_gain (np.ndarray): Amplifier gain values for each channel.
+        adc (ADS131M0x): The ADC instance used for data acquisition.
+        is_calibrated (bool): Indicates whether the load cell has been calibrated.
+        is_streaming (bool): Indicates whether the ADC is currently streaming data.
+    """
 
     def __init__(
-        self, tag='NBLoadcellDAQ', calibration_matrix=None, excitation_voltage=5.0, amp_gain=[34]*3+[151]*3, offline = False, **kwargs
-    ):
+        self,
+        calibration_matrix: npt.NDArray[np.double],
+        tag: str = "NBLoadcellDAQ",
+        excitation_voltage: float = 5.0,
+        amp_gain: Optional[list[int]] = [34, 34, 34, 151, 151, 151],
+        offline: bool = False,
+        **kwargs,
+    ) -> None:
+        """
+        Initialize the NBLoadcellDAQ instance.
+
+        Args:
+            calibration_matrix (np.ndarray): A matrix used to convert raw ADC data into forces and moments.
+            tag (str): Identifier for the load cell instance. Defaults to 'NBLoadcellDAQ'.
+            excitation_voltage (float): The excitation voltage applied to the load cell. Defaults to 5.0 V.
+            amp_gain (list[int): Amplifier gain values for each channel. Defaults to [34, 34, 34, 151, 151, 151].
+            offline (bool): If True, the load cell operates in offline mode. Defaults to False.
+            **kwargs: Additional arguments passed to the ADS131M0x ADC instance.
+        """
         super().__init__(tag=tag, offline=offline)
-    
+
         self._adc = ADS131M0x(**kwargs)
         self.calibration_matrix = calibration_matrix
         self.excitation_voltage = excitation_voltage
         self._offset = np.zeros(self.adc.num_channels)
         self.amp_gain = np.array(amp_gain)
+        self._is_calibrated = False
 
     @property
-    def adc(self):
+    def adc(self) -> ADS131M0x:
+        """
+        Get the ADC instance used for data acquisition.
+
+        Returns:
+            ADS131M0x: The ADC instance.
+        """
         return self._adc
 
     def __repr__(self) -> str:
@@ -464,73 +503,163 @@ class NBLoadcellDAQ(LoadcellBase):
 
     @property
     def is_streaming(self) -> bool:
+        """
+        Check if the ADC is currently streaming data.
+
+        Returns:
+            bool: True if the ADC is streaming, False otherwise.
+        """
         return self.adc._streaming
 
-    def start(self):
+    def start(self) -> None:
+        """
+        Start the load cell DAQ system.
+
+        This method initializes the ADC and begins data acquisition.
+        """
+        LOGGER.info(f"[{self.__repr__()}] Starting data acquisition...")
         self.adc.start()
 
-    def stop(self):
+    def stop(self) -> None:
+        """
+        Stop the load cell DAQ system.
+
+        This method stops the ADC and ends data acquisition.
+        """
+        LOGGER.info(f"[{self.__repr__()}] Stopping data acquisition...")
         self.adc.stop()
 
-    def update(self):
+    def update(self) -> None:
+        """
+        Update the load cell data.
+
+        Reads the latest data from the ADC, applies amplifier gains and calibration offsets,
+        and computes forces and moments using the calibration matrix.
+        """
         self.adc.update()
 
+        # Apply calibration offsets and amplifier gains
         coupled = self.adc.data - self._offset
-        for i in range(int(self.adc.num_channels / 2)):
-            coupled[i * 2 + 1] *= -1
+        coupled[1::2] *= -1  # Invert odd-indexed channels for correct orientation
 
         gains = self.amp_gain * self.adc.gains
         normalized = coupled / (self.excitation_voltage * gains)
 
+        # Compute forces and moments using the calibration matrix
         self._data = self.calibration_matrix @ normalized
 
-    def reset(self):
+    def reset(self) -> None:
+        """
+        Reset the load cell DAQ system.
+
+        Resets the ADC and clears any calibration offsets.
+        """
+        LOGGER.info(f"[{self.__repr__()}] Resetting calibration offsets...")
         self.adc.reset()
+        self._offset = np.zeros(self.adc.num_channels)
+        self._is_calibrated = False
 
-    def calibrate(self, n_samples=2**10):
+    def calibrate(self, n_samples: int = 1024) -> None:
+        """
+        Perform a calibration routine to zero the load cell.
+
+        This method determines the zero-load offset by averaging multiple samples
+        and stores it for subsequent data processing.
+
+        Args:
+            n_samples (int, optional): Number of samples to average for calibration. Defaults to 1024.
+        """
+        LOGGER.info(f"[{self.__repr__()}] Calibrating ADS131M0x...")
         self.adc.calibrate()
-
+        LOGGER.info(f"[{self.__repr__()}] Starting calibration with {n_samples} samples...")
         offsets = np.empty((n_samples, self.adc.num_channels))
+
         for i in range(n_samples):
             self.adc.update()
             offsets[i] = self.adc.data
-        self._offset = offsets.mean(axis=0)
 
+        self._offset = offsets.mean(axis=0)
         self._is_calibrated = True
+        LOGGER.info(f"[{self.__repr__()}] Calibration complete.")
 
     @property
-    def is_calibrated(self):
+    def is_calibrated(self) -> bool:
+        """
+        Check if the load cell has been calibrated.
+
+        Returns:
+            bool: True if the load cell has been calibrated, False otherwise.
+        """
         return self._is_calibrated
 
     @property
-    def fx(self):
+    def data(self) -> np.ndarray:
+        """
+        Get the latest processed load cell data.
+
+        Returns:
+            np.ndarray: A 1D vector containing [Fx, Fy, Fz, Mx, My, Mz], where:
+                - Fx, Fy, Fz are forces in Newtons.
+                - Mx, My, Mz are moments in Newton-meters.
+        """
+        return self._data
+
+    @property
+    def fx(self) -> float:
+        """
+        Get the latest force in the x (medial/lateral) direction in Newtons.
+
+        Returns:
+            float: Force (N) along the x-axis.
+        """
         return self.data[0]
 
     @property
-    def fy(self):
+    def fy(self) -> float:
+        """
+        Get the latest force in the y (anterior/posterior) direction in Newtons.
+
+        Returns:
+            float: Force (N) along the y-axis.
+        """
         return self.data[1]
 
     @property
-    def fz(self):
+    def fz(self) -> float:
+        """
+        Get the latest force in the z (vertical) direction in Newtons.
+
+        Returns:
+            float: Force (N) along the z-axis.
+        """
         return self.data[2]
 
     @property
-    def mx(self):
+    def mx(self) -> float:
+        """
+        Get the latest moment about the x (medial/lateral) axis in Nm.
+
+        Returns:
+            float: Moment (Nm) about the x-axis.
+        """
         return self.data[3]
 
     @property
-    def my(self):
+    def my(self) -> float:
+        """
+        Get the latest moment about the y (anterior/posterior) axis in Nm.
+
+        Returns:
+            float: Moment (Nm) about the y-axis.
+        """
         return self.data[4]
 
     @property
-    def mz(self):
-        return self.data[5]
+    def mz(self) -> float:
+        """
+        Get the latest moment about the z (vertical) axis in Nm.
 
-    @property
-    def data(self):
+        Returns:
+            float: Moment (Nm) about the z-axis.
         """
-        Returns a vector of the latest loadcell data.
-        [Fx, Fy, Fz, Mx, My, Mz]
-        Forces in N, moments in Nm.
-        """
-        return self._data
+        return self.data[5]
