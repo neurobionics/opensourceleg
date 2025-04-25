@@ -29,20 +29,33 @@ runs:
       run: poetry config virtualenvs.in-project true
       shell: bash
 
-    # Disable cache for now to debug the issue
-    # - name: Load cached venv
-    #   id: cached-poetry-dependencies
-    #   uses: actions/cache@v4
-    #   with:
-    #     path: .venv
-    #     key: venv-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('poetry.lock') }}
+    # Re-enable caching with improved key and restore logic
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        # Include poetry.toml in the cache key to catch configuration changes
+        key: venv-${{ runner.os }}-py${{ inputs.python-version }}-${{ hashFiles('poetry.lock', 'poetry.toml') }}-v2
 
     - name: Install dependencies
-      # Force a clean install of dependencies
       run: |
-        # Remove any existing virtual environment to start fresh
-        rm -rf .venv || true
-        poetry install --no-interaction --with dev
+        if [ "${{ steps.cached-poetry-dependencies.outputs.cache-hit }}" == 'true' ]; then
+          echo "Using cached virtual environment"
+
+          # Validate the cached environment contains expected tools
+          if ! poetry run pre-commit --version &>/dev/null || \
+             ! poetry run pytest --version &>/dev/null || \
+             ! poetry run mypy --version &>/dev/null; then
+            echo "Cached environment is missing required tools. Reinstalling..."
+            rm -rf .venv
+            poetry install --no-interaction --with dev
+          fi
+        else
+          echo "Installing dependencies"
+          rm -rf .venv || true
+          poetry install --no-interaction --with dev
+        fi
       shell: bash
 
     - name: Verify development tools installation
