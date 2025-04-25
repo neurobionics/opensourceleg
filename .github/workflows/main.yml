@@ -22,6 +22,12 @@ jobs:
       - name: Set up the environment
         uses: ./.github/actions/setup-poetry-env
 
+      - name: Verify tools before running checks
+        run: |
+          poetry run which pre-commit
+          poetry run which mypy
+          poetry run which pytest
+
       - name: Run checks
         run: make check
 
@@ -43,8 +49,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Verify pytest before running tests
+        run: poetry run which pytest
+
       - name: Run tests
         run: poetry run pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+
+      - name: Verify mypy before type checking
+        run: poetry run which mypy
 
       - name: Check typing
         run: poetry run mypy

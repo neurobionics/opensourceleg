@@ -29,25 +29,28 @@ runs:
       run: poetry config virtualenvs.in-project true
       shell: bash
 
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v4
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('poetry.lock') }}
+    # Disable cache for now to debug the issue
+    # - name: Load cached venv
+    #   id: cached-poetry-dependencies
+    #   uses: actions/cache@v4
+    #   with:
+    #     path: .venv
+    #     key: venv-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('poetry.lock') }}
 
     - name: Install dependencies
-      # Always install pre-commit even if cache exists
+      # Force a clean install of dependencies
       run: |
-        if [ "${{ steps.cached-poetry-dependencies.outputs.cache-hit }}" != 'true' ]; then
-          poetry install --no-interaction
-        else
-          # Ensure pre-commit is installed even if using cached venv
-          poetry run pip install pre-commit
-        fi
+        # Remove any existing virtual environment to start fresh
+        rm -rf .venv || true
+        poetry install --no-interaction --with dev
       shell: bash
 
-    - name: Verify pre-commit installation
+    - name: Verify development tools installation
       run: |
-        poetry run pre-commit --version || (echo "Pre-commit not properly installed" && poetry install --no-interaction)
+        echo "Verifying pre-commit installation..."
+        poetry run pre-commit --version
+        echo "Verifying pytest installation..."
+        poetry run pytest --version
+        echo "Verifying mypy installation..."
+        poetry run mypy --version
       shell: bash
