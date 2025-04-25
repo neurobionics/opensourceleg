@@ -37,6 +37,17 @@ runs:
         key: venv-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('poetry.lock') }}
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction
+      # Always install pre-commit even if cache exists
+      run: |
+        if [ "${{ steps.cached-poetry-dependencies.outputs.cache-hit }}" != 'true' ]; then
+          poetry install --no-interaction
+        else
+          # Ensure pre-commit is installed even if using cached venv
+          poetry run pip install pre-commit
+        fi
+      shell: bash
+
+    - name: Verify pre-commit installation
+      run: |
+        poetry run pre-commit --version || (echo "Pre-commit not properly installed" && poetry install --no-interaction)
       shell: bash

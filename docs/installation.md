@@ -53,7 +53,7 @@ pip install opensourceleg
 ```
 #### Hardware-Specific Dependencies
 
-The opensourceleg library supports a variety of actuators and sensors, each with their own dependencies. Rather than installing all possible dependencies (which can be extensive), we recommend installing only what you need for your specific hardware configuration.
+The opensourceleg library supports a variety of actuators and sensors, each with its own dependencies. Rather than installing all possible dependencies (which can be extensive), we recommend installing only what you need for your specific hardware configuration.
 
 ### Installing Hardware-Specific Packages
 
