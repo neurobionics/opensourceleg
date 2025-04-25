@@ -1,7 +1,8 @@
 """
 Module for interfacing with Loadcell amplifiers.
 
-This module provides implements reading force/moment data from a 6-axis loadcell using DAQs by the Neurobionics lab, and Dephy.
+This module provides implements reading force/moment data from a 6-axis loadcell
+using DAQs by the Neurobionics lab, and Dephy.
 
 Classes:
     LoadcellNotRespondingException: Exception raised when the load cell does not respond.
@@ -27,8 +28,8 @@ import numpy.typing as npt
 from smbus2 import SMBus
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import LoadcellBase
 from opensourceleg.sensors.adc import ADS131M0x
+from opensourceleg.sensors.base import LoadcellBase
 
 
 class LoadcellNotRespondingException(Exception):
@@ -119,19 +120,13 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
         # Validate input parameters.
         if calibration_matrix.shape != (6, 6):
-            LOGGER.info(
-                f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double."
-            )
+            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
             raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
         if amp_gain <= 0:
-            LOGGER.info(
-                f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0."
-            )
+            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
             raise ValueError("amp_gain must be a floating point value greater than 0.")
         if exc <= 0:
-            LOGGER.info(
-                f"[{self.__repr__()}] exc must be a floating point value greater than 0."
-            )
+            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
             raise ValueError("exc must be a floating point value greater than 0.")
 
         self._amp_gain: float = amp_gain
@@ -146,9 +141,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         self._prev_data: npt.NDArray[np.double] = self._data
         self._failed_reads = 0
 
-        self._calibration_offset: npt.NDArray[np.double] = np.zeros(
-            shape=(1, 6), dtype=np.double
-        )
+        self._calibration_offset: npt.NDArray[np.double] = np.zeros(shape=(1, 6), dtype=np.double)
         self._zero_calibration_offset: npt.NDArray[np.double] = self._calibration_offset
         self._is_calibrated: bool = False
         self._is_streaming: bool = False
@@ -241,9 +234,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
                     data_callback=data_callback,
                 )
                 iterative_calibration_offset = self._data
-                self._calibration_offset = (
-                    iterative_calibration_offset + self._calibration_offset
-                ) / 2.0
+                self._calibration_offset = (iterative_calibration_offset + self._calibration_offset) / 2.0
 
             self._is_calibrated = True
             LOGGER.info(f"[{self.__repr__()}] Calibration routine complete.")
@@ -285,9 +276,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
             self.failed_reads += 1
 
             if self.failed_reads >= 5:
-                raise LoadcellNotRespondingException(
-                    "Load cell unresponsive."
-                ) from None
+                raise LoadcellNotRespondingException("Load cell unresponsive.") from None
 
         return self._unpack_compressed_strain(np.array(object=data, dtype=np.uint8))
 
@@ -464,9 +453,9 @@ class NBLoadcellDAQ(LoadcellBase):
         calibration_matrix: npt.NDArray[np.double],
         tag: str = "NBLoadcellDAQ",
         excitation_voltage: float = 5.0,
-        amp_gain: Optional[list[int]] = [34, 34, 34, 151, 151, 151],
+        amp_gain: Optional[list[int]] = None,
         offline: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Initialize the NBLoadcellDAQ instance.
@@ -479,6 +468,8 @@ class NBLoadcellDAQ(LoadcellBase):
             offline (bool): If True, the load cell operates in offline mode. Defaults to False.
             **kwargs: Additional arguments passed to the ADS131M0x ADC instance.
         """
+        if amp_gain is None:
+            amp_gain = [34, 34, 34, 151, 151, 151]
         super().__init__(tag=tag, offline=offline)
 
         self._adc = ADS131M0x(**kwargs)
@@ -499,7 +490,7 @@ class NBLoadcellDAQ(LoadcellBase):
         return self._adc
 
     def __repr__(self) -> str:
-        return f"Loadcell"
+        return "Loadcell"
 
     @property
     def is_streaming(self) -> bool:
@@ -593,7 +584,7 @@ class NBLoadcellDAQ(LoadcellBase):
         return self._is_calibrated
 
     @property
-    def data(self) -> np.ndarray:
+    def data(self) -> Any:
         """
         Get the latest processed load cell data.
 
@@ -612,7 +603,7 @@ class NBLoadcellDAQ(LoadcellBase):
         Returns:
             float: Force (N) along the x-axis.
         """
-        return self.data[0]
+        return float(self.data[0])
 
     @property
     def fy(self) -> float:
@@ -622,7 +613,7 @@ class NBLoadcellDAQ(LoadcellBase):
         Returns:
             float: Force (N) along the y-axis.
         """
-        return self.data[1]
+        return float(self.data[1])
 
     @property
     def fz(self) -> float:
@@ -632,7 +623,7 @@ class NBLoadcellDAQ(LoadcellBase):
         Returns:
             float: Force (N) along the z-axis.
         """
-        return self.data[2]
+        return float(self.data[2])
 
     @property
     def mx(self) -> float:
@@ -642,7 +633,7 @@ class NBLoadcellDAQ(LoadcellBase):
         Returns:
             float: Moment (Nm) about the x-axis.
         """
-        return self.data[3]
+        return float(self.data[3])
 
     @property
     def my(self) -> float:
@@ -652,7 +643,7 @@ class NBLoadcellDAQ(LoadcellBase):
         Returns:
             float: Moment (Nm) about the y-axis.
         """
-        return self.data[4]
+        return float(self.data[4])
 
     @property
     def mz(self) -> float:
@@ -662,4 +653,4 @@ class NBLoadcellDAQ(LoadcellBase):
         Returns:
             float: Moment (Nm) about the z-axis.
         """
-        return self.data[5]
+        return float(self.data[5])

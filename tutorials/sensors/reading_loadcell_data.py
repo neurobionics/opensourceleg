@@ -24,16 +24,14 @@ LOADCELL_CALIBRATION_MATRIX_M3564F = np.array([
     (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
 ])
 
-LOADCELL_CALIBRATION_MATRIX_M3554E = np.array(
-    [
-        (-943.401, 4.143, 8.825, -16.57, 952.216, 10.892),
-        (539.853, 14.985, -1111.656, -0.812, 546.9, -18.949),
-        (13.155, 533.082, -4.582, 534.843, 10.827, 536.327),
-        (0.138, -10.419, 0.202, 0.14, 0.063, 10.518),
-        (-0.075, 6.213, -0.239, -12.094, 0.181, 6.156),
-        (-19.912, 0.082, -20.347, 0.022, -19.486, 0.013),
-    ]
-)
+LOADCELL_CALIBRATION_MATRIX_M3554E = np.array([
+    (-943.401, 4.143, 8.825, -16.57, 952.216, 10.892),
+    (539.853, 14.985, -1111.656, -0.812, 546.9, -18.949),
+    (13.155, 533.082, -4.582, 534.843, 10.827, 536.327),
+    (0.138, -10.419, 0.202, 0.14, 0.063, 10.518),
+    (-0.075, 6.213, -0.239, -12.094, 0.181, 6.156),
+    (-19.912, 0.082, -20.347, 0.022, -19.486, 0.013),
+])
 
 
 def demo_loadcell_i2c(loadcell_logger, clock):
@@ -100,12 +98,10 @@ def demo_loadcell_actpack(loadcell_logger, clock):
             )
             loadcell_logger.update()
 
+
 def demo_loadcell_nb_daq(loadcell_logger, clock):
     loadcell = NBLoadcellDAQ(
-        LOADCELL_CALIBRATION_MATRIX_M3554E,
-        tag="loadcell",
-        excitation_voltage=5.0,
-        amp_gain=[34]*3+[151]*3
+        LOADCELL_CALIBRATION_MATRIX_M3554E, tag="loadcell", excitation_voltage=5.0, amp_gain=[34] * 3 + [151] * 3
     )
 
     loadcell_logger.track_variable(lambda: loadcell.fx, "Fx")
@@ -124,6 +120,7 @@ def demo_loadcell_nb_daq(loadcell_logger, clock):
                 f"Mx: {loadcell.mx}; My: {loadcell.my}; Mz: {loadcell.mz};"
             )
             loadcell_logger.update()
+
 
 if __name__ == "__main__":
     loadcell_logger = Logger(

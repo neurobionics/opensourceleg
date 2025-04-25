@@ -2,10 +2,10 @@
 Module for communicating with the ADS131M0x family of ADC chips.
 """
 
-from typing import List
-
 import math
 from time import sleep
+from typing import Any, ClassVar, Optional
+
 import numpy as np
 
 from opensourceleg.logging import LOGGER
@@ -26,10 +26,10 @@ class ADS131M0x(ADCBase):
     _SPI_MODE = 1
     _DATA_RATES = (250, 500, 1000, 2000, 4000, 8000, 16000, 32000)
 
-    _BLANK_WORD = [0x00, 0x00, 0x00]
-    _RESET_WORD = [0x00, 0x11, 0x00]
-    _STANDBY_WORD = [0x00, 0x22, 0x00]
-    _WAKEUP_WORD = [0x00, 0x33, 0x00]
+    _BLANK_WORD: ClassVar[list[int]] = [0x00, 0x00, 0x00]
+    _RESET_WORD: ClassVar[list[int]] = [0x00, 0x11, 0x00]
+    _STANDBY_WORD: ClassVar[list[int]] = [0x00, 0x22, 0x00]
+    _WAKEUP_WORD: ClassVar[list[int]] = [0x00, 0x33, 0x00]
     _RREG_PREFIX = 0b101
     _WREG_PREFIX = 0b011
 
@@ -45,11 +45,11 @@ class ADS131M0x(ADCBase):
     _ENABLE_CHANNELS_CLOCK = 0xFF0E
     _MODE_CFG = 0x0110
 
-    _OCAL_MSB_ADDRS = [0x0A, 0x0F, 0x14, 0x19, 0x1E, 0x23, 0x28, 0x2D]
-    _OCAL_LSB_ADDRS = [0x0B, 0x10, 0x15, 0x1A, 0x1F, 0x24, 0x29, 0x2E]
-    _GCAL_MSB_ADDRS = [0x0C, 0x11, 0x16, 0x1B, 0x20, 0x25, 0x2A, 0x2F]
-    _GCAL_LSB_ADDRS = [0x0D, 0x12, 0x17, 0x1C, 0x21, 0x26, 0x2B, 0x30]
-    _CHANNEL_CFG_ADDRS = [0x09, 0x0E, 0x13, 0x18, 0x1D, 0x22, 0x27, 0x2C]
+    _OCAL_MSB_ADDRS: ClassVar[list[int]] = [0x0A, 0x0F, 0x14, 0x19, 0x1E, 0x23, 0x28, 0x2D]
+    _OCAL_LSB_ADDRS: ClassVar[list[int]] = [0x0B, 0x10, 0x15, 0x1A, 0x1F, 0x24, 0x29, 0x2E]
+    _GCAL_MSB_ADDRS: ClassVar[list[int]] = [0x0C, 0x11, 0x16, 0x1B, 0x20, 0x25, 0x2A, 0x2F]
+    _GCAL_LSB_ADDRS: ClassVar[list[int]] = [0x0D, 0x12, 0x17, 0x1C, 0x21, 0x26, 0x2B, 0x30]
+    _CHANNEL_CFG_ADDRS: ClassVar[list[int]] = [0x09, 0x0E, 0x13, 0x18, 0x1D, 0x22, 0x27, 0x2C]
 
     _GCAL_STEP_SIZE = 1.19e-7
     _READY_STATUS_BASE = 0x05 << 8
@@ -62,9 +62,9 @@ class ADS131M0x(ADCBase):
         data_rate: int = 500,
         clock_freq: int = 8192000,
         num_channels: int = 6,
-        gains: List[int] = [1] * 6,
+        gains: list[int] = [1] * 6,
         voltage_reference: float = 1.2,
-        gain_error: List[int] = None,
+        gain_error: Optional[list[int]] = None,
         offline: bool = False,
     ):
         """
@@ -88,6 +88,7 @@ class ADS131M0x(ADCBase):
 
         try:
             import spidev
+
             self._spi = spidev.SpiDev()
         except ImportError as e:
             LOGGER.error("spidev is not installed. Please install it to use this module.")
@@ -115,8 +116,8 @@ class ADS131M0x(ADCBase):
         self._data = np.empty(self.num_channels, dtype=float)
 
     def __repr__(self) -> str:
-        return f"ADS131M0x"
-    
+        return "ADS131M0x"
+
     def start(self) -> None:
         """
         Start the ADC by opening the SPI port, resetting the device, configuring gain settings,
@@ -146,9 +147,7 @@ class ADS131M0x(ADCBase):
         """
         Reset the ADC by sending the reset command via SPI.
         """
-        self._spi.xfer2(
-            self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
-        )
+        self._spi.xfer2(self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
 
     def update(self) -> None:
         """
@@ -205,32 +204,32 @@ class ADS131M0x(ADCBase):
         return self._streaming
 
     @property
-    def gains(self) -> List[int]:
+    def gains(self) -> np.ndarray:
         """
         Get the programmable gain values for each channel.
 
         Returns:
-            List[int]: List of gain values.
+            np.ndarray: Array of gain values.
         """
         return np.power(2, self._gain_exponents)
 
     @property
-    def data(self) -> List[float]:
+    def data(self) -> np.ndarray:
         """
         Get the latest ADC data in millivolts.
 
         Returns:
-            List[float]: List of voltage readings for each channel.
+            np.ndarray: Array of voltage readings for each channel.
         """
         return self._data
 
     @property
-    def data_counts(self) -> List[int]:
+    def data_counts(self) -> np.ndarray:
         """
         Get the latest ADC data in raw counts.
 
         Returns:
-            List[int]: List of raw ADC counts for each channel.
+            np.ndarray: Array of raw ADC counts for each channel.
         """
         return self._data_counts
 
@@ -244,7 +243,7 @@ class ADS131M0x(ADCBase):
         """
         return self._num_channels
 
-    def _calculate_gain_exponents(self, gains: List[int]) -> List[int]:
+    def _calculate_gain_exponents(self, gains: list[int]) -> list[int]:
         """
         Calculate gain exponents for the programmable gains.
 
@@ -276,7 +275,7 @@ class ADS131M0x(ADCBase):
             ready_status |= 1 << i
         return ready_status
 
-    def _spi_message(self, msg: List[int]) -> List[int]:
+    def _spi_message(self, msg: list[int]) -> Any:
         """Send SPI message to ADS131M0x.
 
         Args:
@@ -300,9 +299,9 @@ class ADS131M0x(ADCBase):
         self._ENABLE_CHANNELS_CLOCK |= OSR_reg << 2
         self._DISABLE_CHANNELS_CLOCK &= ~(0b111 << 2)
         self._DISABLE_CHANNELS_CLOCK |= OSR_reg << 2
-        if state == True:
+        if state is True:
             self.write_register(self._CLOCK_REG, self._ENABLE_CHANNELS_CLOCK)
-        elif state == False:
+        elif state is False:
             self.write_register(self._CLOCK_REG, self._DISABLE_CHANNELS_CLOCK)
 
     def _set_device_state(self, state: int) -> None:
@@ -315,14 +314,10 @@ class ADS131M0x(ADCBase):
                 1 -- Continuous Conversion Mode.
         """
         if state == 0:
-            self._spi.xfer2(
-                self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
-            )
+            self._spi.xfer2(self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
             self._streaming = False
         elif state == 1:
-            self._spi.xfer2(
-                self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1)
-            )
+            self._spi.xfer2(self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
             self._streaming = True
 
     def _set_voltage_source(self, source: int) -> None:
@@ -347,9 +342,7 @@ class ADS131M0x(ADCBase):
     def _set_gain(self) -> None:
         """Set PGA gain for all channels."""
 
-        gains = self._gain_exponents + [0] * (
-            self._MAX_CHANNELS - len(self._gain_exponents)
-        )
+        gains = self._gain_exponents + [0] * (self._MAX_CHANNELS - len(self._gain_exponents))
         self._channel_enable(False)
         msg1 = gains[3] << 12 | gains[2] << 8 | gains[1] << 4 | gains[0]
         self.write_register(self._GAIN1_REG, msg1)
@@ -357,7 +350,7 @@ class ADS131M0x(ADCBase):
         self.write_register(self._GAIN2_REG, msg2)
         self._channel_enable(True)
 
-    def _offset_calibration(self, n_samples=1000) -> None:
+    def _offset_calibration(self, n_samples: int = 1000) -> None:
         """Centers the ADC data around the measured zero value."""
         self._set_voltage_source(1)
         self._clear_stale_data()
@@ -369,18 +362,19 @@ class ADS131M0x(ADCBase):
 
         for i in range(0, self.num_channels):
             self.write_register(self._OCAL_MSB_ADDRS[i], mean_offset[i].item() >> 8)
-            self.write_register(
-                self._OCAL_LSB_ADDRS[i], (mean_offset[i].item() << 8) & 0xFF00
-            )
+            self.write_register(self._OCAL_LSB_ADDRS[i], (mean_offset[i].item() << 8) & 0xFF00)
         self._set_voltage_source(0)
 
     def _gain_calibration(self) -> None:
         """Corrects actual gain to desired gain using user-calculated gain error for each channel."""
         for i in range(self.num_channels):
+            if self._gain_error is None:
+                raise ValueError("Gain error is not set.")
+
             gain_correction = (1 + self._gain_error[i]) / self._GCAL_STEP_SIZE
             self.write_register(self._GCAL_MSB_ADDRS[i], int(gain_correction) >> 8)
 
-    def _message_to_word(self, msg: int) -> List[int]:
+    def _message_to_word(self, msg: int) -> list[int]:
         """Separates message into bytes to be sent to ADC."""
         word = [0] * 3
         word[0] = (msg >> 8) & 0xFF
@@ -397,18 +391,13 @@ class ADS131M0x(ADCBase):
         reply = self.read_register(self._STATUS_REG)
         return reply == self._ready_status
 
-    def _read_data_millivolts(self) -> List[float]:
+    def _read_data_millivolts(self) -> Any:
         """Returns channel readings in millivolts."""
         self._data_counts = self._read_data_counts()
-        mV = (
-            1000
-            * self._data_counts
-            / 2 ** (self._RESOLUTION - 1)
-            * self._voltage_reference
-        )
+        mV = 1000 * self._data_counts / 2 ** (self._RESOLUTION - 1) * self._voltage_reference
         return mV
 
-    def _read_data_counts(self) -> List[int]:
+    def _read_data_counts(self) -> np.ndarray:
         """Returns channel readings in counts ranging from -2^23 -> 2^23-1"""
         reply = self._spi.readbytes(self._BYTES_PER_WORD * self._words_per_frame)
         data_counts = np.empty(self.num_channels, dtype=int)
