@@ -420,15 +420,67 @@ class Quantity:
         """Reverse division for Quantity and float values. Assumes units are consistent if dividing with a float.
 
         Args:
-            other (float): Scalar value to divide by
+            other (float): Float value to divide by
 
         Returns:
             Quantity: A new quantity with the quotient
         """
         if isinstance(other, (int, float)):
+            # Treat float as if its units are consistent with the quantity
             return Quantity(other / self._value, self._unit_type, self._unit)
-        else:
+        else:  # Don't need to implement __rsub__ for Quantity as __sub__ handles this
             raise TypeError("Can only divide scalar by Quantity")
+
+    @classmethod
+    def parse(cls, value_str: str) -> "Quantity":
+        """Parse a string representation of a quantity into a Quantity object.
+        
+        The string should be in the format "value unit" (e.g., "10 N", "45 deg").
+        The unit type is inferred from the unit string.
+        
+        Args:
+            value_str (str): String to parse in format "value unit" (e.g., "10 N", "45 deg")
+            
+        Returns:
+            Quantity: A new Quantity instance parsed from the string
+            
+        Raises:
+            ValueError: If the string format is invalid or the unit is unknown
+            
+        Example:
+            >>> force = Quantity.parse("10 N")
+            >>> print(force)
+            10 N
+            >>> print(force.to(Force.lbf))
+            2.2481 lbf
+            
+            >>> angle = Quantity.parse("45 deg")
+            >>> print(angle)
+            45 deg
+            >>> print(angle.to(Position.rad))
+            0.7854 rad
+        """
+        # Split the string into value and unit parts
+        parts = value_str.strip().split()
+        if len(parts) != 2:
+            raise ValueError(f"Invalid quantity format: {value_str}. Expected 'value unit' (e.g., '10 N')")
+        
+        try:
+            value = float(parts[0])
+        except ValueError:
+            raise ValueError(f"Invalid numeric value: {parts[0]}")
+        
+        unit_str = parts[1]
+        
+        # Find the matching unit in all unit classes
+        for unit_type, unit_class in UNIT_TYPE_MAP.items():
+            try:
+                unit = unit_class[unit_str]
+                return cls(value, unit_type, unit)
+            except KeyError:
+                continue
+        
+        raise ValueError(f"Unknown unit: {unit_str}")
 
 
 @dataclass
@@ -579,13 +631,18 @@ def with_units(*unit_types: UnitType, return_type: UnitType) -> "Callable[[Calla
 
 
 if __name__ == "__main__":
-    # Create quantities with explicit units
-    force = Quantity(10, UnitType.FORCE, Force.N)
+    # Parse quantities from strings
+    force = Quantity.parse("10 N")
     print(f"Force: {force}")  # 10 N
-
+    
     # Convert to different unit
     force_lbf = force.to(Force.lbf)
     print(f"Force in lbf: {force_lbf}")  # ~2.25 lbf
+    
+    # Parse angle
+    angle = Quantity.parse("45 deg")
+    print(f"Angle: {angle}")  # 45 deg
+    print(f"Angle in radians: {angle.to(Position.rad)}")  # ~0.785 rad
 
     # units manager usage
     um = UnitsManager()
