@@ -11,14 +11,12 @@ from typing import (
     Protocol,
     TypeVar,
     Union,
-    cast,
     runtime_checkable,
 )
 
 import numpy as np
 
 from opensourceleg.logging.exceptions import ControlModeException
-from opensourceleg.logging.logger import LOGGER
 
 # TODO: Add validators for every custom data type
 
