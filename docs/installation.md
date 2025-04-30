@@ -51,6 +51,39 @@ source .venv/bin/activate
 # Step 3: Install opensourceleg
 pip install opensourceleg
 ```
+#### Hardware-Specific Dependencies
+
+The opensourceleg library supports a variety of actuators and sensors, each with its own dependencies. Rather than installing all possible dependencies (which can be extensive), we recommend installing only what you need for your specific hardware configuration.
+
+### Installing Hardware-Specific Packages
+
+You can easily install hardware-specific dependencies using pip's "extras" feature:
+
+```bash
+# For Dephy actuators
+pip install opensourceleg[dephy]
+
+# For Moteus actuators
+pip install opensourceleg[moteus]
+
+# For I2C communication
+pip install opensourceleg[communication]
+
+# For gRPC messaging functionality
+pip install opensourceleg[messaging]
+```
+
+### Available Extras
+
+| Extra | Dependencies |
+|-------|-------------|
+| `dephy` | flexsea |
+| `moteus` | moteus, moteus-pi3hat |
+| `communication` | smbus2 |
+| `messaging` | grpcio, grpcio-tools, types-protobuf |
+
+This approach keeps your installation lightweight and focused on just the hardware you're working with.
+
 
 💡 **Why Use a Virtual Environment?**
 Keeps your projects isolated

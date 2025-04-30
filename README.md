@@ -63,6 +63,28 @@ The library is available on PyPI and can be installed using pip:
 pip install opensourceleg
 ```
 
+### Hardware-Specific Dependencies
+
+To keep your installation lightweight, you can install only the dependencies needed for your specific hardware:
+
+```bash
+# For Dephy actuators
+pip install opensourceleg[dephy]
+
+# For Moteus actuators
+pip install opensourceleg[moteus]
+
+# For I2C communication
+pip install opensourceleg[communication]
+```
+
+| Extra           | Dependencies                         |
+| --------------- | ------------------------------------ |
+| `dephy`         | flexsea                              |
+| `moteus`        | moteus, moteus-pi3hat                |
+| `communication` | smbus2                               |
+| `messaging`     | grpcio, grpcio-tools, types-protobuf |
+
 For more details on the installation process, please refer to the [installation guide](https://neurobionics.github.io/opensourceleg/installation).
 
 ## 📚 Usage

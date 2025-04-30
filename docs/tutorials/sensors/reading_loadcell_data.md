@@ -1,56 +1,68 @@
 # Using the Dephy Loadcell Amplifier
 
-This tutorial demonstrates how to use the Dephy Loadcell Amplifier with the Open Source Leg platform to measure forces and moments.
+This tutorial demonstrates how to use the Dephy Loadcell Amplifier with the Open Source Leg platform to measure forces and moments. It includes examples for both standard I2C communication and custom callbacks for advanced use cases, including using the Dephy Actpack to interface with the amplifier directly instead of the Raspberry Pi's I2C bus.
 
 ## Hardware Setup
 
-1. Connect the loadcell to the Dephy Loadcell Amplifier and the amplifier to the Raspberry Pi via I2C
-2. Verify proper power supply connections
-3. Ensure proper grounding
-4. Mount the loadcell securely
+1. Connect the loadcell to the Dephy Loadcell Amplifier and the amplifier to the Raspberry Pi via I2C. Alternatively, raw amplifier readings can be read from the `genvars` property of the `DephyActuator` class and fed into the amplifier update method as a custom callback (see example below).
+2. Verify proper power supply connections.
+3. Ensure proper grounding.
+4. Mount the loadcell securely.
 
 This example shows how to:
 
-- Initialize and configure a Dephy Loadcell Amplifier
-- Read forces and moments (6-axis measurements)
-- Log loadcell measurements
+- Initialize and configure a Dephy Loadcell Amplifier.
+- Read forces and moments (6-axis measurements).
+- Log loadcell measurements.
+- Use custom callbacks for advanced data handling.
+
+---
 
 ## Code Structure
 
-The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_loadcell_data.py) is organized into several main sections:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_loadcell_data.py) for reading loadcell data has two main functions. The first shows the standard implementation where the I2C bus on a Raspberry Pi is used to communicate with the strain amplifier. The second shows an alternative use where raw ADC values are passed to the sensor in a custom data callback function. This second implementation is useful when the raw values are provided via a method other than I2C, such as reading them directly from a Dephy Actuator.
 
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/sensors/reading_loadcell_data.py:1:40"
+--8<-- "tutorials/sensors/reading_loadcell_data.py:1:25"
 ```
 
 This section:
 
 - Sets up constants and configuration parameters
 - Defines the calibration matrix
-- Creates a data logger for recording measurements
-- Sets up a real-time loop for consistent timing
-- Initializes the DephyLoadcellAmplifier with specified parameters
 
-### 2. Main Loop
+### 2. Standard Setup with I2C Communication
+
+This section demonstrates how to use the loadcell with standard I2C communication. It includes:
+
+- Initializing the loadcell with I2C parameters.
+- Calibrating the loadcell.
+- Reading and logging force/torque data.
 
 ```python
---8<-- "tutorials/sensors/reading_loadcell_data.py:48:55"
+--8<-- "tutorials/sensors/reading_loadcell_data.py:28:53"
 ```
 
-The main loop:
+### 3. Custom Callback Communication
+This section demonstrates how to use a custom callback to provide raw data to the loadcell. It includes:
 
-1. Updates the loadcell to get the latest reading
-2. Logs the time and current force/torque values
-3. Updates the logger
-
-## Loadcell Parameters
-
-When initializing the DephyLoadcellAmplifier, several important parameters can be configured:
+- Using a DephyActuator to retrieve raw amplifier readings.
+- Passing the raw data to the loadcell using a callback function.
+- Calibrating the loadcell with the custom callback.
+- Reading and logging force/torque data.
 
 ```python
---8<-- "tutorials/sensors/reading_loadcell_data.py:32:40"
+--8<-- "tutorials/sensors/reading_loadcell_data.py:56:90"
+```
+
+## Important Class Parameters
+
+When initializing the `DephyLoadcellAmplifier`, several important parameters can be configured:
+
+```python
+--8<-- "tutorials/sensors/reading_loadcell_data.py:29:36"
 ```
 
 ### Parameter Details
@@ -86,7 +98,7 @@ When initializing the DephyLoadcellAmplifier, several important parameters can b
 
 ## Available Properties
 
-The DephyLoadcellAmplifier provides six measurement properties:
+The `DephyLoadcellAmplifier` provides six measurement properties:
 
 1. **Forces** (fx, fy, fz):
       - Linear forces in Newtons (N)
@@ -115,13 +127,19 @@ The DephyLoadcellAmplifier provides six measurement properties:
 
 2. Run the script:
    ```bash
-   python loadcell.py
+   python reading_loadcell_data.py
    ```
 
 3. Expected behavior:
       - Loadcell begins reading force/torque data continuously at 200Hz
       - Data is logged to `./logs/reading_loadcell_data.csv`
       - Force and moment values update as you apply loads to the sensor
+
+4. To change between I2C and using custom data callbacks, swap the `if __name__ == "__main__"` between the two demo function calls:
+
+```python
+--8<-- "tutorials/sensors/reading_loadcell_data.py:101:102"
+```
 
 ## Common Issues
 
@@ -141,18 +159,6 @@ LOADCELL_CALIBRATION_MATRIX = np.array([
     # ... additional rows ...
 ])
 ```
-Should be replaced with your specific loadcell's calibration values.
-
-## Best Practices
-
-1. **Before Each Use**
-
-      - Verify all connections
-
-2. **Maintenance**
-
-      - Regular calibration checks
-      - Clean connections
-      - Monitor for drift
+should be replaced with your specific loadcell's calibration values.
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
