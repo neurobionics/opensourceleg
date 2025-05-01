@@ -153,8 +153,17 @@ class ADS131M0x(ADCBase):
         """
         Update the ADC data by reading the latest voltage values in millivolts.
         """
+        MAX_ATTEMPTS = 1000
+        attempts = 0
         while not self._ready_to_read():
             sleep(0.001)
+            attempts += 1
+            if attempts > MAX_ATTEMPTS:
+                raise RuntimeError(
+                    "ADC not ready to read after 1 second. Is your ADC connected and powered on?\n"
+                    "If you are using the Neurobionics interface board, please ensure that the 3v3 power lines are on and the DAQ board's LED is lit solid blue"
+                )
+
         self._data = self._read_data_millivolts()
 
     def calibrate(self) -> None:
