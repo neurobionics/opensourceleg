@@ -181,6 +181,7 @@ class LordMicrostrainIMU(IMUBase):
             exit(1)
 
         self._node = self.mscl.InertialNode(self._connection)
+        self.validate_frequency()
         self._node.setActiveChannelFields(self.mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels())
         self._node.enableDataStream(self.mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
@@ -447,6 +448,29 @@ class LordMicrostrainIMU(IMUBase):
             float: Timestamp (s) from the sensor data.
         """
         return self._data["estFilterGpsTimeTow"]
+
+    def validate_frequency(self) -> None:
+        """
+        Check and adjust frequency for compatibility with IMU refresh rate.
+        """
+
+        imu_sample_rate = self._node.getDataRateBase(self.mscl.MipTypes.CLASS_ESTFILTER)
+
+        if self._frequency > imu_sample_rate or imu_sample_rate % self._frequency != 0:
+            proximity = imu_sample_rate + 1
+            valid_frequency = 200
+
+            for divisor in range(1, imu_sample_rate + 1):
+                if imu_sample_rate % divisor == 0 and abs(self._frequency - divisor) < proximity:
+                    proximity = abs(self._frequency - divisor)
+                    valid_frequency = divisor
+
+            LOGGER.info(
+                f"""{self._frequency} is not a valid decimation of {imu_sample_rate},
+                choosing closest decimation: {valid_frequency}"""
+            )
+
+            self._frequency = valid_frequency
 
 
 class BNO055(IMUBase):
