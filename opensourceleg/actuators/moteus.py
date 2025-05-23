@@ -125,12 +125,17 @@ class MoteusInterface:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls.bus_map: dict[int, list[int]] = {}
-            cls.bus_map: dict[int, list[int]] = {}
-            cls._commands: list[Command] = []
+            cls.actuator_map: dict[int, MoteusActuator] = {}
+            cls._command_map: dict[int, Command] = {}
+            cls._stop_servos: list[MoteusActuator] = []
             cls.transport = None
+
+            batch = kwargs.pop("batch", False)  # default to false
+            cls.batch = batch
+
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, batch=False):
         pass
 
     def __repr__(self):
@@ -150,12 +155,44 @@ class MoteusInterface:
             self.transport = pihat.Pi3HatRouter(servo_bus_map=self.bus_map)
 
     async def update(self):
-        # TODO: multiple servo update simultaneously should go here
-        self._commands = []
+        if not self.batch:
+            LOGGER.warning("Batching is disabled. Use the update method of MoteusActuator")
+
+        commands = []
+        for servo_id in self.actuator_map:
+            if servo_id in self._command_map:
+                # Command has been set for this cycle
+                commands.append(self._command_map[servo_id])
+            else:
+                # Default to query
+                actuator = self.actuator_map.get(servo_id)
+                commands.append(actuator.make_query())
+
+        results = await self.transport.cycle(commands)
+
+        for result in results:
+            actuator = self.actuator_map.get(result.id)
+            if actuator:
+                actuator._data = result
+                actuator.check_thermals()
+
+        self._command_map.clear()
 
     async def stop(self):
-        # TODO: multiple servo stop simultaneously should go here
-        self._commands = []
+        if not self.batch:
+            LOGGER.warning("Batching is disabled. Use the stop method of MoteusActuator")
+
+        if not self._stop_servos:
+            return
+
+        stopCommands = []
+
+        for actuator in self._stop_servos:
+            actuator.set_control_mode(mode=CONTROL_MODES.IDLE)
+            stopCommands.append(actuator.make_stop(query=True))
+
+        await self.transport.cycle(stopCommands)
+        self._stop_servos.clear()
 
 
 class MoteusActuator(ActuatorBase, Controller):
@@ -184,6 +221,7 @@ class MoteusActuator(ActuatorBase, Controller):
 
         self._interface = MoteusInterface()
         self._interface._add2map(servo_id=servo_id, bus_id=bus_id)
+        self._interface.actuator_map[servo_id] = self
 
         self._is_streaming: bool = False
         self._is_open: bool = False
@@ -246,14 +284,23 @@ class MoteusActuator(ActuatorBase, Controller):
     @check_actuator_stream
     @check_actuator_open
     async def stop(self) -> None:
+        if self._interface.batch:
+            LOGGER.warning("Batching is enabled. Use the stop method of MoteusInterface")
+
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
 
         await self._interface.transport.cycle([self.make_stop(query=True)])
         self._command = self.make_query()
 
     async def update(self):
-        self._data = await self._interface.transport.cycle([self._command])
+        if self._interface.batch:
+            LOGGER.warning("Batching is enabled. Use the update method of MoteusInterface")
 
+        self._data = await self._interface.transport.cycle([self._command])
+        self.check_thermals()
+        self._command = self.make_query()
+
+    def check_thermals(self):
         self._thermal_model.T_c = self.case_temperature
         self._thermal_scale = self._thermal_model.update_and_get_scale(
             dt=1 / self.frequency,
@@ -272,7 +319,12 @@ class MoteusActuator(ActuatorBase, Controller):
             )
             raise ThermalLimitException()
 
-        self._command = self.make_query()
+    def enqueue_command(self) -> None:
+        # Set the command for this cycle
+        self._interface._command_map[self._servo_id] = self._command
+
+    def enqueue_stop_command(self) -> None:
+        self._interface._stop_servos.append(self)
 
     def home(
         self,
@@ -304,6 +356,9 @@ class MoteusActuator(ActuatorBase, Controller):
             query=True,
         )
 
+        if self._interface.batch:
+            self.enqueue_command()
+
     def set_output_torque(self, value: float) -> None:
         """
         Set the output torque of the actuator.
@@ -328,6 +383,9 @@ class MoteusActuator(ActuatorBase, Controller):
             watchdog_timeout=math.nan,
         )
 
+        if self._interface.batch:
+            self.enqueue_command()
+
     def set_motor_voltage(self, value: float) -> None:
         """
         Sets the motor voltage in mV.
@@ -350,6 +408,9 @@ class MoteusActuator(ActuatorBase, Controller):
             query=True,
             watchdog_timeout=math.nan,
         )
+
+        if self._interface.batch:
+            self.enqueue_command()
 
     async def set_torque_gains(
         self,
