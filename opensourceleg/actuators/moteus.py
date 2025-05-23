@@ -135,7 +135,7 @@ class MoteusInterface:
 
         return cls._instance
 
-    def __init__(self, batch=False):
+    def __init__(self):
         pass
 
     def __repr__(self):
