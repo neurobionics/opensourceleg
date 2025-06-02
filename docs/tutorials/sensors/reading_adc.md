@@ -87,7 +87,7 @@ When initializing the ADS131M0x ADC, several parameters can be configured:
 
 10. **offline** (bool):
       - Enables and disables offline mode for ADS131M0x ADC
-      - If `True`, the ADC operates in offline mode
+      - If `True`, the ADC operates in offline mode, meaning that the ADC hardware does not have to be connected in order for your script to run
       - Default is `False`
 
 ## Available Properties
