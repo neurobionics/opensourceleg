@@ -1,20 +1,18 @@
 # Using the ADS131M0x Analog to Digital Converter
 
-This tutorial demonstrates how to use the ADS131M0x analog to digital converter with the Open Source Leg platform.
+This tutorial demonstrates how to use the ADS131M0x analog to digital converter with the Open Source Leg platform. This example shows how to:
+
+- Initialize and configure an ADS131M0x ADC
+- Read voltage data
 
 ## Hardware Setup
 
 1. Connect the ADS131M0x ADC to your Raspberry Pi's SPI pins
 2. Make sure the ADC is powered on and the SPI pins are connected correctly
 
-This example shows how to:
-
-- Initialize and configure an ADS131M0x ADC
-- Read voltage data
-
 ## Code Structure
 
-The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_adc.py) is organized into several main sections:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_adc.py) is organized as follows:
 
 ### 1. Initialization
 
@@ -36,13 +34,13 @@ This section:
 ```
 
 The main loop:
+
 1. Updates the ADC to get the latest reading
 2. Logs the time and current voltage reading
-3. Updates the logger
 
 ## ADC Parameters
 
-When initializing the ADS131M0x ADC, several important parameters can be configured:
+When initializing the ADS131M0x ADC, several parameters can be configured:
 
 ```python
 --8<-- "tutorials/sensors/reading_adc.py:14:24"
@@ -80,7 +78,7 @@ When initializing the ADS131M0x ADC, several important parameters can be configu
       - Default is [1] * num_channels.
 
 8. **voltage_reference** (float):
-      - Reference voltage in volts for input analog voltage comparison
+      - ADC reference voltage in volts
       - Default reference for ADS131M0x ADC is 1.2 V and should not be changed if using this ADC
 
 9. **gain_error** (List[int]):
@@ -89,15 +87,33 @@ When initializing the ADS131M0x ADC, several important parameters can be configu
 
 10. **offline** (bool):
       - Enables and disables offline mode for ADS131M0x ADC
-      - If True, the ADC operates in offline mode
-      - Default is False.
+      - If `True`, the ADC operates in offline mode
+      - Default is `False`
 
 ## Available Properties
 
-The ADS131M0x ADC provides several useful properties:
+The ADS131M0x ADC provides the following properties:
 
-1. **voltage**:
-      - Voltage output in mV
+1. **is_streaming**
+      - Checks if ADC is streaming data
+      - Returns `True` if streaming, `False` otherwise
+
+2. **gain**:
+      - Gets the programmable gain values for each channel
+      - Returns array of gain values (np.ndarray)
+
+3. **data**
+      - Gets the latest ADC data in millivolts
+      - Returns array of voltage readings for each channel (np.ndarray)
+
+
+4. **data_counts**
+      - Gets the latest ADC data in raw counts
+      - Returns array of raw ADC counts for each channel (np.ndarray)
+
+5. **num_channels**
+      - Get the number of ADC channels.
+      - Returns # of channels (int)
 
 ## Running the Example
 
@@ -115,12 +131,7 @@ The ADS131M0x ADC provides several useful properties:
       - ADC begins reading voltage values in mV continuously at sampling rate (default is 500 Hz)
       - Data is logged to `./logs/reading_adc_data.csv`
 
-## Advanced Usage
-
-### [Insert advanced function]
-
 ## Common Issues
 
--
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
