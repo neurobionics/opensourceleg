@@ -427,11 +427,8 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         Uses plain impedance mode, will send 0.0 for current command in addition to position request.
 
         Args:
-            kp: A dummy argument for backward compatibility with the dephy library.
-            ki: A dummy argument for backward compatibility with the dephy library.
             K: The stiffness in Nm/rad
             B: The damping in Nm/(rad/s)
-            ff: A dummy argument for backward compatibility with the dephy library.
         """
         if not (isfinite(K) and MIT_Params[self.type]["Kp_min"] <= K and MIT_Params[self.type]["Kp_max"] >= K):
             raise ValueError(

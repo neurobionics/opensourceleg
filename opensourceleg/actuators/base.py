@@ -746,12 +746,8 @@ class ActuatorBase(ABC):
         Set the impedance control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
             k (float): Stiffness coefficient.
             b (float): Damping coefficient.
-            ff (float): Feed-forward gain.
 
         Must be implemented by subclasses.
 
