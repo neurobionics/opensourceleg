@@ -741,7 +741,7 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
+    def set_impedance_gains(self, k: float, b: float) -> None:
         """
         Set the impedance control gains.
 
@@ -756,7 +756,7 @@ class ActuatorBase(ABC):
         Must be implemented by subclasses.
 
         Examples:
-            >>> actuator.set_impedance_gains(1.0, 0.1, 0.01, 0.5, 0.05, 0.0)
+            >>> actuator.set_impedance_gains(0.5, 0.05)
         """
         pass
 

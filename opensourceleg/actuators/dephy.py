@@ -566,7 +566,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         ki: float,
         kd: float,
         ff: float,
-    ):
+    ) -> None:
         """
         Caches the gains, should be called before set_output_impedence
 
