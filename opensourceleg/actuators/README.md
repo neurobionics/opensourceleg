@@ -1,147 +1,214 @@
-﻿# Actuators Library Guide
+﻿# Actuators Module Customization Guide
 
-## Introduction
+## Overview
 
 The actuators library supports multiple controllers for the Open-Source Leg Project, and an API as [base.py](./base.py) for quick development.
 
 The documentation mainly focus on how to develop a custom **actuator module**. Structures for the example implementations ([`dephy.py`](./dephy.py), etc) can be found in Reference.
 
-## Customization Guide of Actuators Module
+---
 
-1. Import base module
+## 1. Import base module
 
-   ```Python
-   import opensourceleg.actuators.base as base
-   ```
+```python
+from opensourceleg.actuators.base import (
+    CONTROL_MODE_CONFIGS,
+    CONTROL_MODES,
+    MOTOR_CONSTANTS,
+    ActuatorBase,
+    ControlGains,
+    ControlModeConfig,
+)
+```
 
-2. Customize the Modes of Actuators from `base.ActuatorMode`
+---
 
-   `VoltageMode`, `CurrentMode`, `PositionMode`, and `ImpedanceMode` are predefined for common use.
+## 2. Configuring and Customizing Predefined Control Modes
 
-   For example, when customizing `class VoltageMode`:
+Actuator control modes (IDLE, POSITION, CURRENT, VOLTAGE, IMPEDANCE, VELOCITY, TORQUE) are predefined using the `CONTROL_MODES` enum. These can be configured per actuator using `ControlModeConfig` and `CONTROL_MODE_CONFIGS`. Each mode can specify entry/exit callbacks and gain limits.
 
-   ```Python
-   class VoltageMode(base.VoltageMode):
-       def __init__(self, device: "DephyActuator") -> None:
+**Example: Define and Configure Modes for Your Actuator**
 
-           super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
-           # Should implement your own steps below
-           pass
+```python
+def entry_position_mode(actuator):
+    # You can execute any actions here, such as logging, hardware setup, or custom checks.
+    print(f"[{actuator.tag}] Entering POSITION mode.")
 
+def exit_position_mode(actuator):
+    print(f"[{actuator.tag}] Exiting POSITION mode.")
 
-       def set_voltage(self, voltage_value: int) -> None:
-           # Should implement your own steps below
-           pass
-   ```
+MY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+    POSITION=ControlModeConfig(
+        entry_callback=entry_position_mode,
+        exit_callback=exit_position_mode,
+        has_gains=True,
+        max_gains=ControlGains(kp=100, ki=10, kd=1, k=0, b=0, ff=0),
+    ),
+    # Add other modes similarly...
+)
+```
 
-   Or customizing from `class ControlModeBase` if new modes are needed:
+**Link these configs to your actuator class using the `_CONTROL_MODE_CONFIGS` property.**
 
-   ```Python
-   class TorqueMode(base.ControlModeBase)
-       def __init__(self, device: "DephyActuator") -> None:
+---
 
-           super().__init__(mode_pass, device=device)       # Inherit the steps from the template are suggested, as they connects to class Actuator
-           # Should implement your own steps below
-           pass
+## 2. Defining and Integrating Custom Control Modes
 
-       # Should implement your own steps below
-       pass
-   ```
+> **Note:** > **Python's `enum.Enum` does _not_ support extension by subclassing.**
+> To add custom modes, define a new Enum containing all the original modes plus your custom ones.
 
-   Index from `class ControlModesBase` is needed if constructing the Actuator Object from `base.ActuatorBase`. For example:
+**Example: Adding a CUSTOM Mode**
 
-   ```Python
-   @dataclass(init=False)
-   class ActuatorControlModes(ControlModesBase):
+```python
+ from enum import Enum
 
-   def __init__(self, actuator: "Actuator") -> None:
+ class MY_CONTROL_MODES(Enum):
+     IDLE = -1
+     POSITION = 0
+     VOLTAGE = 1
+     CURRENT = 2
+     IMPEDANCE = 3
+     VELOCITY = 4
+     TORQUE = 5
+     CUSTOM = 100  # Your custom mode -- assign a unique integer
+```
 
-       self.VOLTAGE = VoltageMode(actuator=actuator)
-       self.CURRENT = CurrentMode(actuator=actuator)
-       self.POSITION = PositionMode(actuator=actuator)
-       self.IMPEDANCE = ImpedanceMode(actuator=actuator)
-   ```
+Make sure your control logic, configs, and actuator class use your custom Enum everywhere a mode is referenced.
 
-3. Customize the actuator object from `base.ActuatorBase`
+```python
+def entry_custom_mode(actuator):
+    print(f"[{actuator.tag}] Entering CUSTOM mode.")
 
-   ```Python
-   class Motor(base.ActuatorBase):
+def exit_custom_mode(actuator):
+    print(f"[{actuator.tag}] Exiting CUSTOM mode.")
 
-       def __init__(
-           self,
-           tag: str = "Motor1"
-           port: str = "/dev/ttM0",
-           baud_rate: int = 230400,
-           frequency: int = 200,
-           logger: Logger = Logger(),
-           debug_level: int = 0,
-           dephy_log: bool = False,
-           *args,
-           **kwargs,
-       ) -> None:
-           base.Actuator.__init__(
-               self,
-               Gains=base.ControlGains(),
-               MecheSpecs=base.MecheConsts(),
-           )                                                               # Inherit the steps from the template are suggested, as they offer common member definitions
+MY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
+    # ... other modes ...
+    CUSTOM=ControlModeConfig(
+        entry_callback=entry_custom_mode,
+        exit_callback=exit_custom_mode,
+        has_gains=False,
+        max_gains=None,
+    ),
+)
+```
 
-           # Should implement your own steps below
-           pass
+---
 
-       def __repr__(self) -> str:
-           return f"DephyActuator[{self._name}]"
+## 3. Implementing a Custom Actuator Class with `ActuatorBase`
 
-       def start(self) -> None:
-           super().start()
-           # Should implement your own steps below
-           pass
+To add a new actuator, **subclass `ActuatorBase`** and implement all required abstract methods and properties. The class should also expose the `_CONTROL_MODE_CONFIGS` property that returns your mode configuration.
 
-       def stop(self) -> None:
-           super().stop()
-           # Should implement your own steps below
-           pass
+**Example: Minimal Template for a Custom Actuator**
 
-       def update(self) -> None:
-           super().update()
-           # Should implement your own steps below
-           pass
+```python
+# 1. Define motor constants for your actuator
+MY_MOTOR_CONSTANTS = MOTOR_CONSTANTS(
+    MOTOR_COUNT_PER_REV=4096,
+    NM_PER_AMP=0.05,
+    NM_PER_RAD_TO_K=0.001,
+    NM_S_PER_RAD_TO_B=0.0001,
+    MAX_CASE_TEMPERATURE=75.0,
+    MAX_WINDING_TEMPERATURE=100.0
+)
 
-       def set_mode(self, mode: base.ActuatorMode) -> None:
-           # Should implement your own steps below
-           pass
+# 2. Define mode configs as in the previous section and create a class
 
-       def set_motor_voltage(self, voltage_value: float):
-           # Should implement your own steps below
-           pass
+class MyActuator(ActuatorBase):
+    """
+    Example actuator implementation.
 
-       def set_motor_current(
-           self,
-           current_value: float,
-       ):
-           # Should implement your own steps below
-           pass
+    Example usage:
+        >>> actuator = MyActuator(tag="motor1", port="/dev/ttyUSB0", gear_ratio=100.0)
+        >>> actuator.start()
+        >>> actuator.set_motor_voltage(1500)
+        >>> print(f"Motor position: {actuator.motor_position:.2f} rad")
+        >>> actuator.stop()
+    """
+    def __init__(
+        self,
+        tag: str = "MyActuator",
+        port: str = "/dev/ttyUSB0",
+        gear_ratio: float = 100.0,
+        motor_constants: MOTOR_CONSTANTS = MY_MOTOR_CONSTANTS,
+        frequency: int = 500,
+    ):
+        super().__init__(
+            tag=tag,
+            gear_ratio=gear_ratio,
+            motor_constants=motor_constants,
+            frequency=frequency,
+        )
+        # Implement your own hardware initialization steps here
 
-       # Should implement your own steps below
-       pass
+    @property
+    def _CONTROL_MODE_CONFIGS(self):
+        return MY_CONTROL_MODE_CONFIGS
+    def start(self):
+        # Implement your own steps to start communication with the actuator hardware
+        pass
+    def stop(self):
+        # Implement your own steps to safely stop and disconnect hardware
+        pass
+    def update(self):
+        # Implement your own steps to update actuator state from hardware
+        pass
+    def set_motor_voltage(self, value: float):
+        # Implement your own steps as per the hardware
+        pass
+    @property
+    def motor_position(self) -> float:
+        # Implement your own steps to return position from hardware
+        pass
+    # Add other required methods and properties as needed for your application
+```
 
-   ```
+---
 
-## Reference
+## 4. Restricting Methods by Control Mode (`MethodWithRequiredModes` and `@requires`)
+
+The actuators framework allows you to restrict which methods can be called in each control mode.
+This is implemented using the `@requires` decorator and the `MethodWithRequiredModes` protocol.
+
+### How It Works
+
+- **@requires decorator**: Add `@requires(CONTROL_MODES.POSITION, CONTROL_MODES.TORQUE)` above a method to specify that it is only allowed in those modes.
+- **Enforcement**: The base class automatically enforces these mode restrictions at runtime.
+- **Protocol**: Any method with a `_required_modes` attribute is recognized as a `MethodWithRequiredModes`.
+
+### Example Usage
+
+```python
+from opensourceleg.actuators.base import requires, CONTROL_MODES
+
+class MyActuator(ActuatorBase):
+    @requires(CONTROL_MODES.POSITION)
+    def set_motor_position(self, value):
+        # Implementation here
+        pass
+
+    @requires(CONTROL_MODES.CURRENT)
+    def set_motor_current(self, value):
+        # Implementation here
+        pass
+```
+
+If you try to call `set_motor_position` when the actuator is not in `POSITION` mode, a `ControlModeException` will be raised.
+
+---
+
+## 5. Reference
 
 ### Structure of [base.py](./base.py) with Example Applications
 
 ![](./images/Class%20Diagram%20Base%20Lib.svg)
 
-### [DephyActpack](./dephy.py) Support
+[DephyActpack](./dephy.py) Support
 
-#### Known Issues
+[Moteus Controller](./moteus.py) Support
 
-- Support for DephyActpack new firmware not finished
+[TMotor](./tmotor.py) Support
 
-### [Moteus Controller](./moteus.py) Support
+### Issues:
 
-#### Known Issues [Check [Issue Page](https://github.com/neurobionics/opensourceleg/issues) for Details]
-
-- Missing Joint Properties (e.g. `homing`)
-
-- [Multiple actuators sharing same cycle not supported, manual access to `MoteusInterface` Required](https://github.com/neurobionics/opensourceleg/issues)
+Found a bug or have a suggestion? Please [open an issue](https://github.com/neurobionics/opensourceleg/issues).
