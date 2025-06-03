@@ -9,6 +9,7 @@ __all__ = [
     "clamp_within_vector_range",
     "from_twos_complement",
     "to_twos_complement",
+    "Counter",
 ]
 
 
@@ -320,3 +321,27 @@ def from_twos_complement(value: int, bit_length: int) -> int:
         return int(value - (2**bit_length))
     else:
         return int(value)
+
+
+class Counter:
+    """
+    A simple counter class that increments a counter each time the increment_counter argument is set true.
+    To reset the counter, call update with increment_counter set to false.
+
+    Author: Kevin Best, 9/25/2024
+    https://github.com/tkevinbest
+    """
+
+    def __init__(self) -> None:
+        self._count: int = 0
+
+    def update(self, increment_counter: bool) -> None:
+        if increment_counter:
+            self._count += 1
+        else:
+            self._count = 0
+
+    @property
+    def current_count(self) -> int:
+        """Returns the current count"""
+        return self._count
