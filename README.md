@@ -127,7 +127,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://tkevinbest.github.io"><img src="https://avatars.githubusercontent.com/u/70407790?v=4?s=100" width="100px;" alt="tkevinbest"/><br /><sub><b>tkevinbest</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Tests">⚠️</a> <a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Atkevinbest" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Documentation">📖</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://tkevinbest.github.io"><img src="https://avatars.githubusercontent.com/u/70407790?v=4?s=100" width="100px;" alt="tkevinbest"/><br /><sub><b>tkevinbest</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Tests">⚠️</a> <a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Atkevinbest" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Documentation">📖</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Code">💻</a> <a href="#example-tkevinbest" title="Examples">💡</a></td>
     </tr>
   </tbody>
 </table>
