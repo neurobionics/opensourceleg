@@ -1,8 +1,6 @@
 # Getting Started with Robots and the OSL
 
-This guide introduces the `opensourceleg.robots` module and provides essential safety information for robot tutorials.
-
-"add paragraph that robot class is a combination of actuator and sensor instances that are implemented and organized for you". for example, homing joints is a robot specific method that is easier to navigate with a robot specific class"
+This guide introduces the `opensourceleg.robots` module and provides essential safety information for robot tutorials. To preface, the robot class is a combination of actuator and sensor instances that are implemented and organized for you. The class is adapted from the `OpenSourceLeg` class to provide a generalized framework for any robotics platform. The class used for non OSL applications is called `RobotBase`, and more documentation can be found [here](https://github.com/neurobionics/opensourceleg/blob/main/opensourceleg/robots/base.py).
 
 ## Prerequisites
 
@@ -12,8 +10,10 @@ This guide introduces the `opensourceleg.robots` module and provides essential s
 - External power supply
 
 ## Hardware Setup
+The hardware setup will be unique to each robot platform. If you are having trouble with your setup, please refer to the specific documentation regarding actuators and sensors below.
 
-1. Cong
+- [Actuator Setup Guide](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/actuators/getting_started.md)
+- [Sensor Setup Guide](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/getting_started.md)
 
 ## Safety Guidelines
 
@@ -38,12 +38,6 @@ Please follow these guidelines when following the `opensourceleg.robots` tutoria
 - Check all electrical connections before powering on
 
 ### 3. Operational Safety
-
-- Start with conservative values:
-
-    - Low voltages in voltage control
-    - Low currents in current control
-    - Small steps in position control
 
 - Continuously monitor sensor readings
 - Watch for unexpected behavior:
@@ -90,17 +84,13 @@ Please follow these guidelines when following the `opensourceleg.robots` tutoria
 If you encounter any issues or need assistance:
 
 1. Check the troubleshooting section in the specific tutorial
-2. Review the [API documentation](../../api/actuators/actuators.md)
+2. Review the [API documentation](../../api/robots/robots.md)
 3. Post questions on the [Open Source Leg community forum](https://opensourceleg.org/community)
 
 ## Next Steps
 
 Choose a tutorial to get started:
 
-- [Reading Sensor Data](reading_sensor_data.md)
-- [Commanding Voltage](commanding_voltage.md)
-- [Commanding Current](commanding_current.md)
-- [Commanding Position](commanding_position.md)
-- [Commanding Impedance](commanding_impedance.md)
+- [Home OSL Joints](homing_joints.md)
 
 Each tutorial includes specific setup instructions and code examples.
