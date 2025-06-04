@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
@@ -134,6 +134,7 @@ Thanks to all the wonderful people who have contributed to the project!
       <td align="center" valign="top" width="14.28%"><a href="https://senthurayyappan.com"><img src="https://avatars.githubusercontent.com/u/25511437?v=4?s=100" width="100px;" alt="Senthur Ayyappan"/><br /><sub><b>Senthur Ayyappan</b></sub></a><br /><a href="#infra-senthurayyappan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#security-senthurayyappan" title="Security">🛡️</a> <a href="#maintenance-senthurayyappan" title="Maintenance">🚧</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=senthurayyappan" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://tkevinbest.github.io"><img src="https://avatars.githubusercontent.com/u/70407790?v=4?s=100" width="100px;" alt="tkevinbest"/><br /><sub><b>tkevinbest</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Atkevinbest" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Tests">⚠️</a> <a href="#example-tkevinbest" title="Examples">💡</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=tkevinbest" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jderosia"><img src="https://avatars.githubusercontent.com/u/134736683?v=4?s=100" width="100px;" alt="jderosia"/><br /><sub><b>jderosia</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=jderosia" title="Documentation">📖</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=jderosia" title="Tests">⚠️</a> <a href="#example-jderosia" title="Examples">💡</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=jderosia" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Robin0265"><img src="https://avatars.githubusercontent.com/u/69673450?v=4?s=100" width="100px;" alt="Yuanshao Yang"/><br /><sub><b>Yuanshao Yang</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=Robin0265" title="Tests">⚠️</a> <a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3ARobin0265" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=Robin0265" title="Documentation">📖</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=Robin0265" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
