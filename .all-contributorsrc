@@ -118,6 +118,16 @@
         "doc",
         "example"
       ]
+    },
+    {
+      "login": "VarunSatyadevShetty",
+      "name": "Varun Satyadev Shetty",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62276853?v=4",
+      "profile": "https://github.com/VarunSatyadevShetty",
+      "contributions": [
+        "doc",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
