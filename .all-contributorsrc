@@ -76,6 +76,17 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "esharnow",
+      "name": "esharnow",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99085536?v=4",
+      "profile": "https://github.com/esharnow",
+      "contributions": [
+        "test",
+        "bug",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
