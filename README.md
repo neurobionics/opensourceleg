@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-14-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
@@ -146,6 +146,7 @@ Thanks to all the wonderful people who have contributed to the project!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/VarunSatyadevShetty"><img src="https://avatars.githubusercontent.com/u/62276853?v=4?s=100" width="100px;" alt="Varun Satyadev Shetty"/><br /><sub><b>Varun Satyadev Shetty</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=VarunSatyadevShetty" title="Documentation">📖</a> <a href="#example-VarunSatyadevShetty" title="Examples">💡</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Katharine-Walters"><img src="https://avatars.githubusercontent.com/u/111811694?v=4?s=100" width="100px;" alt="Katharine-Walters"/><br /><sub><b>Katharine-Walters</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3AKatharine-Walters" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/zachbons"><img src="https://avatars.githubusercontent.com/u/74107027?v=4?s=100" width="100px;" alt="zachbons"/><br /><sub><b>zachbons</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Azachbons" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anushkarathi"><img src="https://avatars.githubusercontent.com/u/98593597?v=4?s=100" width="100px;" alt="Anushka"/><br /><sub><b>Anushka</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Aanushkarathi" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
