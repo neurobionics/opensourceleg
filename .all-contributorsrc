@@ -30,6 +30,18 @@
         "example",
         "code"
       ]
+    },
+    {
+      "login": "jderosia",
+      "name": "jderosia",
+      "avatar_url": "https://avatars.githubusercontent.com/u/134736683?v=4",
+      "profile": "https://github.com/jderosia",
+      "contributions": [
+        "doc",
+        "test",
+        "example",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
