@@ -108,10 +108,6 @@ For more details on available modules, tutorials, and examples, please refer to 
 [![Trending topics](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_words.svg)](https://github.com/neurobionics/opensourceleg/commits)
 [![Activity map](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_map.svg)](https://github.com/neurobionics/opensourceleg/commits)
 
-## 🤝 Contributing
-
-Contributions are welcome, and they are greatly appreciated! For more details, read our [contribution guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md).
-
 ## 📝 License
 
 The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
