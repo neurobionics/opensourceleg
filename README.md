@@ -114,17 +114,6 @@ For more details on available modules, tutorials, and examples, please refer to 
 [![Trending topics](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_words.svg)](https://github.com/neurobionics/opensourceleg/commits)
 [![Activity map](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_map.svg)](https://github.com/neurobionics/opensourceleg/commits)
 
-## 📝 License
-
-The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
-
-- You are free to use the `opensourceleg` library for any purpose.
-- You are free to modify the `opensourceleg` library to suit your needs.
-- You can study how the `opensourceleg` library works and change it.
-- You can distribute modified versions of the `opensourceleg` library.
-
-The LGPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
-
 ## Contributors ✨
 
 Thanks to all the wonderful people who have contributed to the project!
@@ -146,3 +135,14 @@ Thanks to all the wonderful people who have contributed to the project!
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 Contributions of any kind welcome! For more details, read our [contribution guidelines](https://neurobionics.github.io/opensourceleg/contributing/). This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification.
+
+## 📝 License
+
+The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
+
+- You are free to use the `opensourceleg` library for any purpose.
+- You are free to modify the `opensourceleg` library to suit your needs.
+- You can study how the `opensourceleg` library works and change it.
+- You can distribute modified versions of the `opensourceleg` library.
+
+The LGPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
