@@ -13,6 +13,7 @@ nav:
   - Tutorials:
       - Sensors:
           - Getting Started: tutorials/sensors/getting_started.md
+          - Reading ADC Data: tutorials/sensors/reading_adc.md
           - Reading Encoder Data: tutorials/sensors/reading_encoder_data.md
           - Reading IMU Data: tutorials/sensors/reading_imu_data.md
           - Reading Loadcell Data: tutorials/sensors/reading_loadcell_data.md
