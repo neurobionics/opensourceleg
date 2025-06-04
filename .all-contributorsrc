@@ -87,6 +87,17 @@
         "bug",
         "doc"
       ]
+    },
+    {
+      "login": "JapmanGill",
+      "name": "Japman Gill",
+      "avatar_url": "https://avatars.githubusercontent.com/u/82068921?v=4",
+      "profile": "https://github.com/JapmanGill",
+      "contributions": [
+        "test",
+        "bug",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
