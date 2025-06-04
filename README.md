@@ -36,7 +36,8 @@ This library solves common challenges in developing, testing, and deploying robo
 - Are working on a robotic project and need a flexible and powerful software development kit
 - Are looking for benchmarks to pick the best hardware for their robotic project
 
-## 🔄 Available Hardware Interfaces
+<details>
+<summary>🔄 Available Hardware Interfaces</summary>
 
 The library currently supports the following hardware components:
 
@@ -58,6 +59,8 @@ Hardware tests indicate successful testing on physical devices.
 Benchmarks include performance metrics such as response time and accuracy measurements.
 Documentation includes API reference and usage examples.
 
+</details>
+
 ## 📦 Installation
 
 The library is available on PyPI and can be installed using pip:
@@ -66,7 +69,8 @@ The library is available on PyPI and can be installed using pip:
 pip install opensourceleg
 ```
 
-### Hardware-Specific Dependencies
+<details>
+<summary>📦 Hardware-Specific Dependencies</summary>
 
 To keep your installation lightweight, you can install only the dependencies needed for your specific hardware:
 
@@ -87,6 +91,8 @@ pip install opensourceleg[communication]
 | `moteus`        | moteus, moteus-pi3hat                |
 | `communication` | smbus2                               |
 | `messaging`     | grpcio, grpcio-tools, types-protobuf |
+
+</details>
 
 For more details on the installation process, please refer to the [installation guide](https://neurobionics.github.io/opensourceleg/installation).
 
