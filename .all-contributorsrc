@@ -1,7 +1,5 @@
 {
-  "files": [
-    "README.md"
-  ],
+  "files": ["README.md"],
   "imageSize": 100,
   "commit": false,
   "commitType": "docs",
@@ -12,12 +10,7 @@
       "name": "Senthur Ayyappan",
       "avatar_url": "https://avatars.githubusercontent.com/u/25511437?v=4",
       "profile": "https://senthurayyappan.com",
-      "contributions": [
-        "infra",
-        "security",
-        "test",
-        "code"
-      ]
+      "contributions": ["infra", "security", "maintenance", "code", "test"]
     }
   ],
   "contributorsPerLine": 7,
