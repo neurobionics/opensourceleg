@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-15-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-16-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
@@ -150,6 +150,7 @@ Thanks to all the wonderful people who have contributed to the project!
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://nundinir.github.io/"><img src="https://avatars.githubusercontent.com/u/90918772?v=4?s=100" width="100px;" alt="Nundini Rawal"/><br /><sub><b>Nundini Rawal</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Anundinir" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/matteo-crotti"><img src="https://avatars.githubusercontent.com/u/32237604?v=4?s=100" width="100px;" alt="matteo-crotti"/><br /><sub><b>matteo-crotti</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Amatteo-crotti" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
