@@ -108,6 +108,16 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "anujtaosf",
+      "name": "anujtaosf",
+      "avatar_url": "https://avatars.githubusercontent.com/u/123828257?v=4",
+      "profile": "https://github.com/anujtaosf",
+      "contributions": [
+        "doc",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
