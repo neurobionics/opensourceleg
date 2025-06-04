@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
@@ -142,6 +142,7 @@ Thanks to all the wonderful people who have contributed to the project!
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/JapmanGill"><img src="https://avatars.githubusercontent.com/u/82068921?v=4?s=100" width="100px;" alt="Japman Gill"/><br /><sub><b>Japman Gill</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=JapmanGill" title="Tests">⚠️</a> <a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3AJapmanGill" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=JapmanGill" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/unshrawal"><img src="https://avatars.githubusercontent.com/u/32817861?v=4?s=100" width="100px;" alt="unshrawal"/><br /><sub><b>unshrawal</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Aunshrawal" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=unshrawal" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anujtaosf"><img src="https://avatars.githubusercontent.com/u/123828257?v=4?s=100" width="100px;" alt="anujtaosf"/><br /><sub><b>anujtaosf</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=anujtaosf" title="Documentation">📖</a> <a href="#example-anujtaosf" title="Examples">💡</a></td>
     </tr>
   </tbody>
 </table>
