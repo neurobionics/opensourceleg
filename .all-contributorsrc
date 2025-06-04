@@ -1,0 +1,29 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "senthurayyappan",
+      "name": "Senthur Ayyappan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25511437?v=4",
+      "profile": "https://senthurayyappan.com",
+      "contributions": [
+        "infra",
+        "security",
+        "test",
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "opensourceleg",
+  "projectOwner": "neurobionics"
+}
