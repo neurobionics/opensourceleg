@@ -1,5 +1,11 @@
 # opensourceleg
 
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
 [![Build status](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml/badge.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 [![Documentation Status](https://github.com/neurobionics/opensourceleg/actions/workflows/pages/pages-build-deployment/badge.svg)](https://neurobionics.github.io/opensourceleg/)
 [![Python Version](https://img.shields.io/pypi/pyversions/opensourceleg.svg)](https://pypi.org/project/opensourceleg/)
@@ -107,6 +113,28 @@ For more details on available modules, tutorials, and examples, please refer to 
 [![Top contributors](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_users.svg)](https://github.com/neurobionics/opensourceleg/graphs/contributors)
 [![Trending topics](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_words.svg)](https://github.com/neurobionics/opensourceleg/commits)
 [![Activity map](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_map.svg)](https://github.com/neurobionics/opensourceleg/commits)
+
+## Contributors ✨
+
+Thanks to all the wonderful people who have contributed to the project!
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://senthurayyappan.com"><img src="https://avatars.githubusercontent.com/u/25511437?v=4?s=100" width="100px;" alt="Senthur Ayyappan"/><br /><sub><b>Senthur Ayyappan</b></sub></a><br /><a href="#infra-senthurayyappan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#security-senthurayyappan" title="Security">🛡️</a> <a href="#maintenance-senthurayyappan" title="Maintenance">🚧</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=senthurayyappan" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+Contributions of any kind welcome! For more details, read our [contribution guidelines](https://neurobionics.github.io/opensourceleg/contributing/). This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification.
 
 ## 📝 License
 
