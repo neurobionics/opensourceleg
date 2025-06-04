@@ -1,4 +1,8 @@
-# opensourceleg
+<p align="center">
+  <img src="https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/banner.gif" width="100%">
+</p>
+
+<div align="center">
 
 [![Build status](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml/badge.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 [![Documentation Status](https://github.com/neurobionics/opensourceleg/actions/workflows/pages/pages-build-deployment/badge.svg)](https://neurobionics.github.io/opensourceleg/)
@@ -14,9 +18,9 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
+</div>
 
-<img src="https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/banner.gif" width="800" title="Open-Source Leg">
+An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
 
 ## 🎯 Key Features
 
@@ -70,7 +74,7 @@ pip install opensourceleg
 ```
 
 <details>
-<summary>📦 Hardware-Specific Dependencies</summary>
+<summary>🔧 Hardware-Specific Dependencies</summary>
 
 To keep your installation lightweight, you can install only the dependencies needed for your specific hardware:
 
