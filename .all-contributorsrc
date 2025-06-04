@@ -16,7 +16,8 @@
         "test",
         "bug",
         "doc",
-        "code"
+        "code",
+        "example"
       ]
     }
   ],
