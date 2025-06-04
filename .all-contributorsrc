@@ -54,6 +54,17 @@
         "doc",
         "code"
       ]
+    },
+    {
+      "login": "shreyhas",
+      "name": "shreyhas",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68916446?v=4",
+      "profile": "https://github.com/shreyhas",
+      "contributions": [
+        "doc",
+        "test",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
