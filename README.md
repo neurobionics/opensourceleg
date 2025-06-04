@@ -102,16 +102,14 @@ from opensourceleg.sensors.encoder import AS5048B
 
 For more details on available modules, tutorials, and examples, please refer to the [documentation](https://neurobionics.github.io/opensourceleg/tutorials/sensors/getting_started).
 
-## 📝 License
+## [![Repography logo](https://images.repography.com/logo.svg)](https://repography.com) / Community Activity [![Time period](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_badge.svg)](https://repography.com)
 
-The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
-
-- You are free to use the `opensourceleg` library for any purpose.
-- You are free to modify the `opensourceleg` library to suit your needs.
-- You can study how the `opensourceleg` library works and change it.
-- You can distribute modified versions of the `opensourceleg` library.
-
-The LGPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
+[![Timeline graph](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_timeline.svg)](https://github.com/neurobionics/opensourceleg/commits)
+[![Issue status graph](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_issues.svg)](https://github.com/neurobionics/opensourceleg/issues)
+[![Pull request status graph](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_prs.svg)](https://github.com/neurobionics/opensourceleg/pulls)
+[![Top contributors](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_users.svg)](https://github.com/neurobionics/opensourceleg/graphs/contributors)
+[![Trending topics](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_words.svg)](https://github.com/neurobionics/opensourceleg/commits)
+[![Activity map](https://images.repography.com/63788890/neurobionics/opensourceleg/recent-activity/iG94TwYB5IO_esvflL1mNk_1EL1bAD6JZ1guhH_p4ek/eOAVZwtHiffhksyJHZ7XihsPlw5JaT6XcoWMERSIhHs_map.svg)](https://github.com/neurobionics/opensourceleg/commits)
 
 ## 🤝 Contributing
 
@@ -138,3 +136,14 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+## 📝 License
+
+The `opensourceleg` library is licensed under the terms of the [LGPL-v2.1 license](https://github.com/neurobionics/opensourceleg/raw/main/LICENSE). This license grants users a number of freedoms:
+
+- You are free to use the `opensourceleg` library for any purpose.
+- You are free to modify the `opensourceleg` library to suit your needs.
+- You can study how the `opensourceleg` library works and change it.
+- You can distribute modified versions of the `opensourceleg` library.
+
+The LGPL license ensures that all these freedoms are protected, now and in the future, requiring everyone to share their modifications when they also share the library in public.
