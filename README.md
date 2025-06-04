@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-11-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
@@ -144,6 +144,7 @@ Thanks to all the wonderful people who have contributed to the project!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/unshrawal"><img src="https://avatars.githubusercontent.com/u/32817861?v=4?s=100" width="100px;" alt="unshrawal"/><br /><sub><b>unshrawal</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Aunshrawal" title="Bug reports">🐛</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=unshrawal" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/anujtaosf"><img src="https://avatars.githubusercontent.com/u/123828257?v=4?s=100" width="100px;" alt="anujtaosf"/><br /><sub><b>anujtaosf</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=anujtaosf" title="Documentation">📖</a> <a href="#example-anujtaosf" title="Examples">💡</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/VarunSatyadevShetty"><img src="https://avatars.githubusercontent.com/u/62276853?v=4?s=100" width="100px;" alt="Varun Satyadev Shetty"/><br /><sub><b>Varun Satyadev Shetty</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=VarunSatyadevShetty" title="Documentation">📖</a> <a href="#example-VarunSatyadevShetty" title="Examples">💡</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Katharine-Walters"><img src="https://avatars.githubusercontent.com/u/111811694?v=4?s=100" width="100px;" alt="Katharine-Walters"/><br /><sub><b>Katharine-Walters</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3AKatharine-Walters" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
