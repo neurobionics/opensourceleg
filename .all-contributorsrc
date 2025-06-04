@@ -1,0 +1,29 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "tkevinbest",
+      "name": "tkevinbest",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70407790?v=4",
+      "profile": "http://tkevinbest.github.io",
+      "contributions": [
+        "test",
+        "bug",
+        "doc",
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "opensourceleg",
+  "projectOwner": "neurobionics"
+}
