@@ -1,9 +1,5 @@
 # opensourceleg
 
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-
 [![Build status](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml/badge.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 [![Documentation Status](https://github.com/neurobionics/opensourceleg/actions/workflows/pages/pages-build-deployment/badge.svg)](https://neurobionics.github.io/opensourceleg/)
 [![Python Version](https://img.shields.io/pypi/pyversions/opensourceleg.svg)](https://pypi.org/project/opensourceleg/)
@@ -14,6 +10,9 @@
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/neurobionics/opensourceleg/blob/main/.pre-commit-config.yaml)
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
 
@@ -133,7 +132,8 @@ Thanks to all the wonderful people who have contributed to the project!
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-Contributions of any kind welcome! For more details, read our [contribution guidelines](https://neurobionics.github.io/opensourceleg/contributing/). This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification.
+Contributions of any kind are welcome! For more details, read our [contribution guidelines](https://neurobionics.github.io/opensourceleg/contributing/).
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification.
 
 ## 📝 License
 
