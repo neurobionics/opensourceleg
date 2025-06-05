@@ -420,21 +420,15 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
     # uses plain impedance mode, will send 0.0 for current command.
     def set_impedance_gains(
         self,
-        kp: float = 0,
-        ki: float = 0,
         K: float = 0.08922,
         B: float = 0.0038070,
-        ff: float = 0,
     ) -> None:
         """
         Uses plain impedance mode, will send 0.0 for current command in addition to position request.
 
         Args:
-            kp: A dummy argument for backward compatibility with the dephy library.
-            ki: A dummy argument for backward compatibility with the dephy library.
             K: The stiffness in Nm/rad
             B: The damping in Nm/(rad/s)
-            ff: A dummy argument for backward compatibility with the dephy library.
         """
         if not (isfinite(K) and MIT_Params[self.type]["Kp_min"] <= K and MIT_Params[self.type]["Kp_max"] >= K):
             raise ValueError(
