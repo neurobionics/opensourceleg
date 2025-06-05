@@ -109,7 +109,7 @@ The AS5048B encoder provides several useful properties:
 
 2. Run the script:
    ```bash
-   python encoder.py
+   python reading_encoder.py
    ```
 
 3. Expected behavior:
