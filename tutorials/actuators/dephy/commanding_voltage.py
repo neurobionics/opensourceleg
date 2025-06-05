@@ -27,9 +27,9 @@ def voltage_control():
 
     command_voltage = 0
 
-    voltage_logger.track_variable(lambda: command_voltage, "Command Voltage")
-    voltage_logger.track_variable(lambda: actpack.motor_voltage, "Motor Voltage")
-    voltage_logger.track_variable(lambda: time.time(), "Time")
+    voltage_logger.track_function(lambda: command_voltage, "Command Voltage")
+    voltage_logger.track_function(lambda: actpack.motor_voltage, "Motor Voltage")
+    voltage_logger.track_function(lambda: time.time(), "Time")
 
     clock = SoftRealtimeLoop(dt=DT)
 

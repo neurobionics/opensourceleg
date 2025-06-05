@@ -19,7 +19,7 @@ if __name__ == "__main__":
         zero_position=0,
         enable_diagnostics=False,
     )
-    encoder_logger.track_variable(lambda: encoder.position, "Encoder Position")
+    encoder_logger.track_function(lambda: encoder.position, "Encoder Position")
 
     with encoder:
         for t in clock:
