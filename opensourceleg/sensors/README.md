@@ -1,16 +1,48 @@
-﻿# [Actuators Base Library](./base.py) Guide
+﻿# [Sensor Module Customization](./base.py) Guide
 
-## Introduction
+## Overview
 
-The sensor library contains a [`base.py`](./base.py), an abstract base for customizing your own actuator library, and examples of applications such as [`dephy.py`](./dephy.py).
+The sensor library contains a [`base.py`](./base.py), an abstract base for customizing your own sensor instance, and examples of applications such as [`imu.py`](./imu.py), [`encoder.py`](./encoder.py), [`adc.py`](./adc.py), etc.
 
-## Customization Guide of Sensor Module
+## 1. Import base module
 
-1.  Import base module
+```python
+  from opensourceleg.sensors.base import (
+    SensorBase,
+    SensorNotStreamingException,
+    check_sensor_stream
+  )
+```
 
-    ```Python
-    import opensourceleg.hardware.sensor.base as base
-    ```
+## 2. Initialize sensor class
+
+```python
+  class yourSensor(SensorBase):
+    def __init__(
+      self,
+      tag="your_sensor",
+      offline=False):
+
+      """
+      Add other variables here
+      """
+
+    def start(self):
+    """ Initialize hardware connection and start sensor """
+    self._streaming = True
+    print(f"{self.tag} started.")
+
+    def stop(self):
+      """ Stop sensor and raise SensorNotStreamingException: If the sensor is not currently streaming."""
+      self._streaming = False
+      print(f"{self.tag} stopped.")
+
+    @requirement
+    def update(self):
+    """ Read from sensor and do something with the data """
+```
+
+## 3. Check if sensor is streaming data
 
 2.  Customize the sensor classes from `class SensorIMU`
     For example:
