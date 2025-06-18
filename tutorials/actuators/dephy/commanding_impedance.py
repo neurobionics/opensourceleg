@@ -37,10 +37,10 @@ def impedance_control():
         current_position = actpack.output_position
         command_position = current_position
 
-        impedance_logger.track_variable(lambda: actpack.output_position, "Output Position")
-        impedance_logger.track_variable(lambda: command_position, "Command Position")
-        impedance_logger.track_variable(lambda: actpack.motor_current, "Motor Current")
-        impedance_logger.track_variable(lambda: time.time(), "Time")
+        impedance_logger.track_function(lambda: actpack.output_position, "Output Position")
+        impedance_logger.track_function(lambda: command_position, "Command Position")
+        impedance_logger.track_function(lambda: actpack.motor_current, "Motor Current")
+        impedance_logger.track_function(lambda: time.time(), "Time")
 
         for t in clock:
             actpack.update()

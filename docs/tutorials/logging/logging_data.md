@@ -19,17 +19,21 @@ Here's how to set it up:
 
 In this example:
 
-- `track_variable()` tells the logger to monitor a specific variable
-- The first argument is a function that returns the current value
-- The second argument is the variable name (used in CSV headers)
-- You can track multiple variables simultaneously
+- `track_function()` tells the logger to monitor a specific variable
+    - The first argument is a function that returns the current value
+    - The second argument is the variable name (used in CSV headers)
+    - You can track multiple variables simultaneously
+- `track_attributes()` tells the logger to monitor attributes of the `robot` object.
+    - The first argument is the object to track from
+    - The second argument is the attribute name(s)
+    - In the logs, the specific attributes will be prefixed with the name of the object.
 - Variables are added to a buffer every time `update()` is called
 - The buffer is flushed based on the `buffer_size` parameter in the `Logger` constructor or manually with `flush_buffer()`
 - The buffer is automatically flushed when the Logger is destroyed
 
 
 ```python
---8<-- "tutorials/logging/logging_data.py:76:79"
+--8<-- "tutorials/logging/logging_data.py:75:80"
 ```
 
 ## More Examples
@@ -39,7 +43,7 @@ In this example:
 This example demonstrates how to log data from a sensor in real-time. While this uses a simulated sensor, the pattern works for any sensor type:
 
 ```python
---8<-- "tutorials/logging/logging_data.py:5:16"
+--8<-- "tutorials/logging/logging_data.py:6:16"
 ```
 
 Key features demonstrated:
@@ -52,7 +56,7 @@ Key features demonstrated:
 Example usage showing how to integrate this into your application:
 
 ```python
---8<-- "tutorials/logging/logging_data.py:88:101"
+--8<-- "tutorials/logging/logging_data.py:87:101"
 ```
 
 ### 2. Experiment Data Collection
