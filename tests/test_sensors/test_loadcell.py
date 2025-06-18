@@ -75,6 +75,28 @@ def test_SRILoadcell_update():
     assert np.array_equal(SRI._data, data)
 
 
+def test_SRILoadcell_BrokenWire_high():
+    # Test basic call execution
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    for _i in range(SRI._num_broken_wire_pre_exception - 1):
+        SRI.update(data_callback=_read_data_high)
+    # Assert that the broken wire condition raises an exception after correct number of iterations
+
+    with pytest.raises(loadcell.LoadcellBrokenWireDetectedException):
+        SRI.update(data_callback=_read_data_high)
+
+
+def test_SRILoadcell_BrokenWire_low():
+    # Test basic call execution
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    for _i in range(SRI._num_broken_wire_pre_exception - 1):
+        SRI.update(data_callback=_read_data_low)
+    # Assert that the broken wire condition raises an exception after correct number of iterations
+
+    with pytest.raises(loadcell.LoadcellBrokenWireDetectedException):
+        SRI.update(data_callback=_read_data_low)
+
+
 def test_SRILoadcell_calibrate():
     # Test reset, else statement
 
@@ -84,6 +106,20 @@ def test_SRILoadcell_calibrate():
 # Function to bypass _read_compressed_strain() with an array of ones
 def _read_data() -> npt.NDArray[np.uint8]:
     return np.ones(shape=(1, 6))
+
+
+# Function to bypass _read_compressed_strain() with an array of ones with one broken wire pulled high
+def _read_data_high() -> npt.NDArray[np.uint8]:
+    data = np.ones(shape=(1, 6))
+    data[0, 2] = loadcell.DephyLoadcellAmplifier.ADC_RANGE
+    return data
+
+
+# Function to bypass _read_compressed_strain() with an array of ones with one broken wire pulled low
+def _read_data_low() -> npt.NDArray[np.uint8]:
+    data = np.ones(shape=(1, 6))
+    data[0, 2] = 0
+    return data
 
 
 # Function to bypass _read_compressed_strain() with random data
