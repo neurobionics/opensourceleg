@@ -41,7 +41,7 @@ ANKLE_K_ESTANCE = 19.874
 ANKLE_B_ESTANCE = 0
 ANKLE_THETA_ESTANCE = -2
 LOAD_LSTANCE: float = 1.0 * BODY_WEIGHT * 0.25
-ANKLE_THETA_ESTANCE_TO_LSTANCE = np.deg2rad(6.0)
+ANKLE_THETA_ESTANCE_TO_LSTANCE = np.deg2rad(8.0)
 
 # STATE 2: LATE STANCE 
 ANKLE_K_LSTANCE = 79.498
@@ -105,7 +105,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
             raise ValueError("Loadcell is not connected")
         if osl.ankle is None:
             raise ValueError("Ankle is not connected")
-        return bool(np.abs(osl.loadcell.fz) > LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
+        return bool(-(osl.loadcell.fz) > LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
 
     def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
         """
@@ -114,7 +114,7 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         """
         if osl.loadcell is None:
             raise ValueError("Loadcell is not connected")
-        return bool(np.abs(osl.loadcell.fz) < LOAD_ESWING)
+        return bool(-(osl.loadcell.fz) < LOAD_ESWING)
 
     def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
         """
