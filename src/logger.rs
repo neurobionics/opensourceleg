@@ -9,6 +9,7 @@ use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn, Level};
 use tracing::debug;
+use tracing_appender::non_blocking::NonBlockingBuilder;
 use tracing_appender::rolling;
 use tracing_subscriber::{filter, fmt, layer, Registry};
 use tracing_subscriber::prelude::*;
@@ -18,6 +19,7 @@ use tracing_subscriber::fmt::time::{ChronoLocal};
 static SUBSCRIBER: OnceCell<()> = OnceCell::new(); //OnceCell is thread-safe
 static GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new(); //OnceCell is thread-safe
 static VAR_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new(); //OnceCell is thread-safe
+static STDOUT_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new();
 static RECORD: OnceCell<Mutex<Record>> = OnceCell::new();
 
 #[pyclass]
@@ -37,8 +39,11 @@ impl Logger {
 
             let mut layers = vec![];
 
+            let (non_blocking_stdout, guard_stdout) = tracing_appender::non_blocking(std::io::stdout());
+            let _ = STDOUT_GUARD.set(guard_stdout);
+
             let base = fmt::layer()
-                                                        .with_writer(std::io::stdout)
+                                                        .with_writer(non_blocking_stdout)
                                                         .with_level(true)
                                                         .with_target(false)
                                                         .with_line_number(false)
@@ -47,6 +52,7 @@ impl Logger {
             if print_stdout {
                 layers.push(base.boxed());
             }
+            
             let _ = RECORD.set(Mutex::new(Record::new(String::from("base"))));
             //Create file layer
             let file_appender = rolling::daily(dir, log_name);
@@ -62,6 +68,7 @@ impl Logger {
                                                             .with_ansi(false)
                                                             .with_timer(ChronoLocal::new(time.clone()))
                                                             .with_filter(LevelFilter::TRACE);
+
             layers.push(file_layer.boxed());
             let filter = filter::Targets::new()
                                                         .with_target("variables" ,Level::TRACE);
