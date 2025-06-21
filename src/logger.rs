@@ -52,7 +52,7 @@ impl Logger {
             if print_stdout {
                 layers.push(base.boxed());
             }
-            
+
             let _ = RECORD.set(Mutex::new(Record::new(String::from("base"))));
             //Create file layer
             let file_appender = rolling::daily(dir, log_name);
