@@ -31,9 +31,9 @@ class Experiment:
         self.max_steps = 5  # For demonstration
 
         # Track experimental variables
-        self.logger.track_variable(lambda: self.input, "Input")
-        self.logger.track_variable(lambda: self.output, "Output")
-        self.logger.track_variable(lambda: self.error, "Error")
+        self.logger.track_function(lambda: self.input, "Input")
+        self.logger.track_function(lambda: self.output, "Output")
+        self.logger.track_function(lambda: self.error, "Error")
 
     def is_complete(self):
         """Check if experiment is complete."""
@@ -61,7 +61,7 @@ def basic_variable_tracking():
 
     # Track a simple variable
     x = 42
-    logger.track_variable(lambda: x, "x_value")
+    logger.track_function(lambda: x, "x_value")
 
     # Track class attributes
     class Robot:
@@ -70,8 +70,7 @@ def basic_variable_tracking():
             self.velocity = 0.0
 
     robot = Robot()
-    logger.track_variable(lambda: robot.position, "position")
-    logger.track_variable(lambda: robot.velocity, "velocity")
+    logger.track_attributes(robot, ["position", "velocity"])
 
     # Update logged values
     logger.update()  # Records current values to buffer
@@ -89,8 +88,8 @@ def sensor_logging():
     logger = Logger(log_path="./logs", file_name="sensor_data")
 
     # Track sensor values
-    logger.track_variable(lambda: sensor.temperature, "Temperature (C)")
-    logger.track_variable(lambda: sensor.humidity, "Humidity (%)")
+    logger.track_function(lambda: sensor.temperature, "Temperature (C)")
+    logger.track_function(lambda: sensor.humidity, "Humidity (%)")
 
     # Simulate a few updates
     for _ in range(3):

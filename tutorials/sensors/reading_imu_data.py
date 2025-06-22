@@ -21,9 +21,9 @@ if __name__ == "__main__":
         return_packets=False,
         offline=False,
     )
-    imu_logger.track_variable(lambda: imu.roll, "Roll")
-    imu_logger.track_variable(lambda: imu.pitch, "Pitch")
-    imu_logger.track_variable(lambda: imu.yaw, "Yaw")
+    imu_logger.track_function(lambda: imu.roll, "Roll")
+    imu_logger.track_function(lambda: imu.pitch, "Pitch")
+    imu_logger.track_function(lambda: imu.yaw, "Yaw")
 
     with imu:
         for t in clock:
