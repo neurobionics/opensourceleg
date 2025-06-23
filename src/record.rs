@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tracing::trace;
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
     label: String,
+    #[serde(flatten)]
     variables: HashMap::<String, Value>
 }
 
@@ -21,13 +24,7 @@ impl Record {
     }
 
     pub fn flush(&mut self) {
-        let json = json!({
-            "label": self.label,
-            "variables": self.variables
-        });
-
-        trace!(target: "variables", %json);
-
+        trace!(target: "variables", "{}",  serde_json::to_string(&self.variables).expect("error"));
         self.variables.clear();
     }
 }

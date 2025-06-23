@@ -8,9 +8,9 @@ def func():
 
     t = time.time()
     for i in range(1, 1000000):
-        Logger.debug("yolo")
-
+        #Logger.debug("yolo")
+        Logger.trace_variables(dict(one=1, two=2))
+        Logger.flush_record()
     print(time.time() - t)
-
-#cProfile.run('func()')
-func()
+cProfile.run('func()')
+#func()
