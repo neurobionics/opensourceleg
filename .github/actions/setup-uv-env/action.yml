@@ -72,7 +72,7 @@ runs:
       if: runner.os == 'Windows'
       run: |
         echo "Building Rust extension..."
-        uv run maturin develop --release --find-interpreter
+        uv run maturin develop --release
       shell: bash
 
     - name: Build Rust extension (Unix)
