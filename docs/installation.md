@@ -148,7 +148,7 @@ This section is for those who want to contribute to opensourceleg or need to mod
    .venv\Scripts\activate
 
    # Install project dependencies using UV
-   uv sync  # This is much faster than traditional pip installs!
+   uv sync  # Installs all dependencies including hardware-specific packages
 
    # Install pre-commit hooks and setup development tools
    make install

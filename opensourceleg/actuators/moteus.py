@@ -20,9 +20,9 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
+from opensourceleg.extras.safety import ThermalLimitException
 from opensourceleg.logging.logger import LOGGER
 from opensourceleg.math import ThermalModel
-from opensourceleg.safety import ThermalLimitException
 
 try:
     import moteus_pi3hat as pihat
@@ -44,8 +44,8 @@ RAD_PER_DEG = np.pi / 180
 MOTEUS_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
-    NM_PER_RAD_TO_K=0.0,  # TODO: Change this value when impedance control is implemented
-    NM_S_PER_RAD_TO_B=0.0,  # TODO: Change this value when impedance control is implemented
+    NM_PER_RAD_TO_K=1e-6,  # Small positive value - TODO: Change this value when impedance control is implemented
+    NM_S_PER_RAD_TO_B=1e-6,  # Small positive value - TODO: Change this value when impedance control is implemented
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )

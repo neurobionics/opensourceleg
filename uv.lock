@@ -1135,6 +1135,15 @@ moteus = [
 ]
 
 [package.dev-dependencies]
+all-extras = [
+    { name = "flexsea", version = "10.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "flexsea", version = "12.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "grpcio" },
+    { name = "grpcio-tools" },
+    { name = "moteus" },
+    { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "types-protobuf" },
+]
 dev = [
     { name = "deptry" },
     { name = "mypy" },
@@ -1168,6 +1177,14 @@ requires-dist = [
 provides-extras = ["dephy", "moteus", "messaging"]
 
 [package.metadata.requires-dev]
+all-extras = [
+    { name = "flexsea" },
+    { name = "grpcio", specifier = ">=1.65.5,<2" },
+    { name = "grpcio-tools", specifier = ">=1.65.5,<2" },
+    { name = "moteus", specifier = ">=0.3.72,<0.4" },
+    { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=0.3.29,<0.4" },
+    { name = "types-protobuf", specifier = ">=4.21.0,<5" },
+]
 dev = [
     { name = "deptry", specifier = ">=0.16.2,<0.17" },
     { name = "mypy", specifier = ">=1.5.1,<2" },

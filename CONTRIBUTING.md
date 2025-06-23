@@ -80,6 +80,12 @@ Finally, install the dependencies:
 uv sync
 ```
 
+or, if you want to install all extra/optional dependencies:
+
+```bash
+uv sync --all-extras
+```
+
 4. Install pre-commit to run linters/formatters at commit time:
 
 ```bash
