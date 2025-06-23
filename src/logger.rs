@@ -9,8 +9,9 @@ use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn, Level};
 use tracing::debug;
-use tracing_appender::non_blocking::NonBlockingBuilder;
+use tracing_appender::non_blocking::{NonBlocking, NonBlockingBuilder};
 use tracing_appender::rolling;
+use tracing_subscriber::fmt::format::{DefaultFields, Format};
 use tracing_subscriber::{filter, fmt, layer, Registry};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
@@ -38,52 +39,14 @@ impl Logger {
             let log_name = log_name.unwrap_or(String::from("logfile.log"));
 
             let mut layers = vec![];
+            let _ = RECORD.set(Mutex::new(Record::new(String::from("base"))));
 
-            let (non_blocking_stdout, guard_stdout) = tracing_appender::non_blocking(std::io::stdout());
-            let _ = STDOUT_GUARD.set(guard_stdout);
-
-            let base = fmt::layer()
-                                                        .with_writer(non_blocking_stdout)
-                                                        .with_level(true)
-                                                        .with_target(false)
-                                                        .with_line_number(false)
-                                                        .with_ansi(true)
-                                                        .with_timer(ChronoLocal::new(time.clone()));
             if print_stdout {
-                layers.push(base.boxed());
+                layers.push(create_stdout_layer(time.clone()).boxed());
             }
 
-            let _ = RECORD.set(Mutex::new(Record::new(String::from("base"))));
-            //Create file layer
-            let file_appender = rolling::daily(dir, log_name);
-            let (non_blocking_writer, _guard) = tracing_appender::non_blocking(file_appender);
-            
-            //Must keep guard in memory
-            let _ = GUARD.set(_guard);
-            let file_layer = fmt::layer()
-                                                            .with_writer(non_blocking_writer)
-                                                            .with_level(true)
-                                                            .with_target(false)
-                                                            .with_line_number(false)
-                                                            .with_ansi(false)
-                                                            .with_timer(ChronoLocal::new(time.clone()))
-                                                            .with_filter(LevelFilter::TRACE);
-
-            layers.push(file_layer.boxed());
-            let filter = filter::Targets::new()
-                                                        .with_target("variables" ,Level::TRACE);
-
-            let var_fw = rolling::daily("logs", "variables.log");
-            let (writer, guard) = tracing_appender::non_blocking(var_fw);
-            let _ = VAR_GUARD.set(guard);
-            let variable_layer = fmt::layer()
-                                                                .with_writer(writer)
-                                                                .with_ansi(false)
-                                                                .with_level(true)
-                                                                .with_target(false)
-                                                                .with_line_number(false)
-                                                                .with_filter(filter);
-            layers.push(variable_layer.boxed());
+            layers.push(create_file_layer(dir.clone(), log_name, time).boxed());
+            layers.push(create_variable_layer(dir).boxed());
             let subscriber = Registry::default().with(layers);
 
             tracing::subscriber::set_global_default(subscriber).expect("error");
@@ -114,14 +77,6 @@ impl Logger {
     pub fn warn(msg: String) {
         warn!("{}", msg);
     }
-    
-    // pub fn trace_variable<T: Serialize>(name: String, value: T) {
-    //     let val = serde_json::to_value(value).unwrap();
-    //     if let Some(lock) = RECORD.get() {
-    //         let mut record = lock.lock().unwrap();
-    //         record.insert_variable(name, val);
-    //     }
-    // }
 
     #[staticmethod]
     pub fn trace_variables<'py>(dict: &Bound<'_, PyDict>) -> PyResult<()>{
@@ -175,4 +130,67 @@ fn python_to_json_value(value: &Bound<'_, PyAny>) -> Result<Value, String> {
     }
 
     Ok(Value::Null)
+}
+
+fn create_stdout_layer(time: String) -> tracing_subscriber::fmt::Layer<
+    tracing_subscriber::Registry,
+    tracing_subscriber::fmt::format::DefaultFields,
+    Format<tracing_subscriber::fmt::format::Full, ChronoLocal>,
+    tracing_appender::non_blocking::NonBlocking
+> {
+
+    let (non_blocking_stdout, guard_stdout) = tracing_appender::non_blocking(std::io::stdout());
+    let _ = STDOUT_GUARD.set(guard_stdout);
+
+    let base = fmt::layer()
+                                                .with_writer(non_blocking_stdout)
+                                                .with_level(true)
+                                                .with_target(false)
+                                                .with_line_number(false)
+                                                .with_ansi(true)
+                                                .with_timer(ChronoLocal::new(time));
+    base
+}
+
+fn create_file_layer(dir: String, log_name: String, time: String) -> filter::Filtered<
+    fmt::Layer<Registry, DefaultFields, Format<fmt::format::Full, ChronoLocal>, NonBlocking>,
+    LevelFilter,
+    Registry
+>{
+    //Create file layer
+    let file_appender = rolling::daily(dir, log_name);
+    let (non_blocking_writer, _guard) = tracing_appender::non_blocking(file_appender);
+    
+    //Must keep guard in memory
+    let _ = GUARD.set(_guard);
+    let file_layer = fmt::layer()
+                                                    .with_writer(non_blocking_writer)
+                                                    .with_level(true)
+                                                    .with_target(false)
+                                                    .with_line_number(false)
+                                                    .with_ansi(false)
+                                                    .with_timer(ChronoLocal::new(time.clone()))
+                                                    .with_filter(LevelFilter::TRACE);
+    file_layer
+}
+
+fn create_variable_layer(dir: String) -> filter::Filtered<
+    fmt::Layer<Registry,DefaultFields, Format, NonBlocking>,
+    filter::Targets,
+    Registry
+>{
+    let filter = filter::Targets::new()
+                                                .with_target("variables" ,Level::TRACE);
+
+    let var_fw = rolling::daily(dir, "variables.log");
+    let (writer, guard) = tracing_appender::non_blocking(var_fw);
+    let _ = VAR_GUARD.set(guard);
+    let variable_layer = fmt::layer()
+                                                        .with_writer(writer)
+                                                        .with_ansi(false)
+                                                        .with_level(true)
+                                                        .with_target(false)
+                                                        .with_line_number(false)
+                                                        .with_filter(filter);
+    variable_layer                          
 }
