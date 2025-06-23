@@ -1,18 +1,17 @@
 use crate::record::Record;
-use std::io::stdout;
 use std::sync::Mutex;
 
 use once_cell::sync::OnceCell;
-use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods};
-use pyo3::{pyclass, pymethods, Bound, PyAny, PyResult};
+use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyStringMethods};
+use pyo3::{pyclass, pymethods, Bound, PyResult};
 use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn, Level};
 use tracing::debug;
-use tracing_appender::non_blocking::{NonBlocking, NonBlockingBuilder};
+use tracing_appender::non_blocking::{NonBlocking};
 use tracing_appender::rolling;
 use tracing_subscriber::fmt::format::{DefaultFields, Format};
-use tracing_subscriber::{filter, fmt, layer, Registry};
+use tracing_subscriber::{filter, fmt, Registry};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
 use tracing_subscriber::fmt::time::{ChronoLocal};
@@ -84,9 +83,10 @@ impl Logger {
             let mut record = lock.lock().unwrap();
 
             for (key, val) in dict.iter() {
-                let key_str = key.extract::<String>().expect("error");
-                let json_value: Value = python_to_json_value(&val).expect("error");
-                record.insert_variable(key_str, json_value);
+                let key_str = key.str()?.to_str()?.to_owned();
+                let val_str = val.str()?.to_str()?.to_owned();
+                let json_str = Value::String(val_str);
+                record.insert_variable(key_str, json_str);
             }
         }
 
@@ -100,36 +100,6 @@ impl Logger {
             record.flush();
         }
     }
-}
-
-fn python_to_json_value(value: &Bound<'_, PyAny>) -> Result<Value, String> {
-    //handle nulls, bools, ints, floats, strings
-    if value.is_none() {
-        return Ok(Value::Null);
-    }
-    
-    if let Ok(b) = value.extract::<bool>() {
-        return Ok(Value::Bool(b));
-    }
-    
-    if let Ok(i) = value.extract::<i64>() {
-        return Ok(Value::Number(serde_json::Number::from(i)));
-    }
-    
-    if let Ok(f) = value.extract::<f64>() {
-        if f.is_finite() {
-            if let Some(num) = serde_json::Number::from_f64(f) {
-                return Ok(Value::Number(num));
-            }
-        }
-        return Ok(Value::String(f.to_string()));
-    }
-    
-    if let Ok(s) = value.extract::<String>() {
-        return Ok(Value::String(s));
-    }
-
-    Ok(Value::Null)
 }
 
 fn create_stdout_layer(time: String) -> tracing_subscriber::fmt::Layer<

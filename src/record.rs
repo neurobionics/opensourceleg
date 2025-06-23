@@ -7,7 +7,6 @@ use tracing::trace;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
     label: String,
-    #[serde(flatten)]
     variables: HashMap::<String, Value>
 }
 
