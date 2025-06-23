@@ -34,6 +34,7 @@ jobs:
           uv run pre-commit run -a --show-diff-on-failure
 
   test:
+    name: Tests - Python ${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -67,7 +68,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build-wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build Wheels - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -94,8 +95,20 @@ jobs:
         run: uv sync
         shell: bash
 
-      - name: Build wheels
-        run: uv run maturin build --release --uv --out dist
+      - name: Install pip in uv environment (Windows only)
+        if: matrix.os == 'windows-latest'
+        run: uv add pip
+        shell: bash
+
+      - name: Build wheels (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          uv run maturin build --release --find-interpreter --out dist
+        shell: bash
+
+      - name: Build wheels (Unix)
+        if: matrix.os != 'windows-latest'
+        run: uv run maturin build --release --out dist
         shell: bash
 
       - uses: actions/upload-artifact@v4
@@ -104,7 +117,7 @@ jobs:
           path: dist
 
   build-cross-platform:
-    name: Build cross-platform wheels for ARM
+    name: Build Cross-Platform Wheels - ARM
     runs-on: ubuntu-latest
 
     steps:
@@ -138,12 +151,12 @@ jobs:
       - name: Build ARM64 wheel (Raspberry Pi 4/5)
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-        run: uv run maturin build --release --target aarch64-unknown-linux-gnu --find-interpreter --uv --out dist
+        run: uv run maturin build --release --target aarch64-unknown-linux-gnu --find-interpreter --out dist
 
       - name: Build ARMhf wheel (Raspberry Pi 3/older)
         env:
           CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER: arm-linux-gnueabihf-gcc
-        run: uv run maturin build --release --target armv7-unknown-linux-gnueabihf --find-interpreter --uv --out dist
+        run: uv run maturin build --release --target armv7-unknown-linux-gnueabihf --find-interpreter --out dist
 
       - uses: actions/upload-artifact@v4
         with:
