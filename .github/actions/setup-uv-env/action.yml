@@ -63,7 +63,20 @@ runs:
         fi
       shell: bash
 
-    - name: Build Rust extension
+    - name: Install pip in uv environment (Windows only)
+      if: runner.os == 'Windows'
+      run: uv add pip
+      shell: bash
+
+    - name: Build Rust extension (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        echo "Building Rust extension..."
+        uv run maturin develop --release --find-interpreter
+      shell: bash
+
+    - name: Build Rust extension (Unix)
+      if: runner.os != 'Windows'
       run: |
         echo "Building Rust extension..."
         uv run maturin develop --release
