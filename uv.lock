@@ -1116,12 +1116,10 @@ dependencies = [
     { name = "board" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "smbus2" },
 ]
 
 [package.optional-dependencies]
-communication = [
-    { name = "smbus2" },
-]
 dephy = [
     { name = "flexsea", version = "10.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "flexsea", version = "12.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1164,10 +1162,10 @@ requires-dist = [
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'moteus'", specifier = ">=0.3.29,<0.4" },
     { name = "numpy", specifier = ">=1.24.3,<2" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
-    { name = "smbus2", marker = "extra == 'communication'", specifier = ">=0.4.2" },
+    { name = "smbus2", specifier = ">=0.4.2" },
     { name = "types-protobuf", marker = "extra == 'messaging'", specifier = ">=4.21.0,<5" },
 ]
-provides-extras = ["dephy", "moteus", "communication", "messaging"]
+provides-extras = ["dephy", "moteus", "messaging"]
 
 [package.metadata.requires-dev]
 dev = [

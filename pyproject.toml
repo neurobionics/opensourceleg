@@ -11,6 +11,7 @@ dependencies = [
     "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "pandas>=2.2.3,<3",
+    "smbus2>=0.4.2",
 ]
 
 [project.optional-dependencies]
@@ -19,7 +20,6 @@ moteus = [
     "moteus>=0.3.72,<0.4",
     "moteus-pi3hat>=0.3.29,<0.4 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
 ]
-communication = ["smbus2>=0.4.2"]
 messaging = [
     "grpcio>=1.65.5,<2",
     "grpcio-tools>=1.65.5,<2",
