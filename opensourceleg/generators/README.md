@@ -23,7 +23,7 @@ A secure expression engine is included for user-defined mathematical waveforms.
 ## **Quick Start Example**
 
 ```python
-from generators import SineGenerator
+from opensourceleg.generators import SineGenerator
 
 # Generate a 2 Hz sine wave of amplitude 1.0 for 5 seconds
 gen = SineGenerator(amplitude=1.0, frequency=2.0)
@@ -55,11 +55,17 @@ gen.plot(duration=5.0)
 ### Example: Generate a Sine Wave
 
 ```python
-from generators import SineGenerator
+from opensourceleg.generators import SineGenerator
 
 gen = SineGenerator(frequency=1.0, amplitude=2.0, offset=1.0, sample_rate=1000)
 time_pts, values = gen.generate_sequence(duration=3.0)
 ```
+
+**NOTE:**
+
+- Internal time (`_time`) accumulates with each call until `reset()`
+- `dt` in `__call__()` adds to internal time (real-time if not provided)
+- `generate_sequence()` automatically resets time
 
 ---
 
@@ -68,7 +74,7 @@ time_pts, values = gen.generate_sequence(duration=3.0)
 Define any mathematical formula safely using variables and math functions.
 
 ```python
-from generators import CustomGenerator
+from opensourceleg.generators import CustomGenerator
 
 expr = "A * sin(2*pi*f*t) + 0.5 * cos(2*pi*0.1*t)"
 variables = {'A': 1.5, 'f': 2.0}
@@ -77,6 +83,13 @@ gen = CustomGenerator(expression=expr, variables=variables)
 
 - **Supported functions:** `sin`, `cos`, `tan`, `exp`, `log`, `sqrt`, `abs`, `ceil`, `floor`, etc.
 - **Variables:** Use any variable name you want, e.g., `A`, `f`, and always `t` (for time).
+- **Constants:** `pi`, `e` available by default
+- **Conditionals:** Ternary expressions (`x if condition else y`)
+
+**NOTE:**
+
+- `t` variable always represents current time
+- Expressions recompiled on each `CustomGenerator` instantiation
 
 ---
 
@@ -87,7 +100,7 @@ gen = CustomGenerator(expression=expr, variables=variables)
 Combine any number of generators:
 
 ```python
-from generators import SineGenerator, RampGenerator, CompositeGenerator
+from opensourceleg.generators import SineGenerator, RampGenerator, CompositeGenerator
 
 sine = SineGenerator(frequency=2)
 ramp = RampGenerator(slope=0.2)
@@ -95,17 +108,27 @@ composite = CompositeGenerator([sine, ramp], operation='add')
 composite.plot()
 ```
 
+**NOTE:**
+
+- Child generators are time-synchronized to parent's current time
+- Original child times restored after generation
+
 ### DataReplayGenerator
 
 Replay previously recorded data:
 
 ```python
-from generators import DataReplayGenerator
+from opensourceleg.generators import DataReplayGenerator
 
 data = [0.1, 0.2, 0.5, 0.3, 0.0, -0.2]
 gen = DataReplayGenerator(data=data, sample_rate=100, loop=True)
 gen.plot(duration=0.1)
 ```
+
+**NOTE:**
+
+- `loop=True`: Restarts from beginning after last sample
+- `loop=False`: Continually outputs last value after data ends
 
 ---
 
@@ -120,7 +143,7 @@ gen.plot(duration=2.0)
 Or plot multiple signals for comparison:
 
 ```python
-from generators import plot_signals, SineGenerator, RampGenerator
+from opensourceleg.generators import plot_signals, SineGenerator, RampGenerator
 
 sine = SineGenerator()
 ramp = RampGenerator(slope=0.5)
@@ -162,6 +185,7 @@ class MyCustomGen(SignalGenerator):
 - `offset`: Additive offset
 - `duration`: Time limit (seconds)
 - `noise_amplitude`: Uniform noise added to output
+- `seed`: Random seed for reproducible noise
 - `sample_rate`: Used for default dt in sequence generation
 
 **Methods:**
@@ -175,7 +199,7 @@ class MyCustomGen(SignalGenerator):
 
 **Init params:**
 
-- `expression`: Python string (see above)
+- `expression`: Python string
 - `variables`: Dict of variable names and values
 
 ---

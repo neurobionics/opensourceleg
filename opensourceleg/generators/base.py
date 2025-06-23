@@ -66,6 +66,10 @@ class SignalGenerator(ABC):
             dt = current_time - self._last_update
         self._last_update = current_time
 
+        # Validate time step
+        if dt < 0:
+            raise ValueError("Time step must be non-negative")
+
         # Check duration limit
         if self.duration is not None and self._time >= self.duration:
             return None

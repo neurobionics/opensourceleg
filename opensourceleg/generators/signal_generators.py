@@ -6,7 +6,7 @@ from .base import SignalGenerator
 
 
 class ConstantGenerator(SignalGenerator):
-    def __init__(self, constant: float = 0.0, **kwargs):
+    def __init__(self, constant: float = 0.0, **kwargs: Any) -> None:
         """
         Constant value generator.
 
@@ -22,7 +22,7 @@ class ConstantGenerator(SignalGenerator):
 
 
 class SineGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, phase: float = 0.0, **kwargs):
+    def __init__(self, frequency: float = 1.0, phase: float = 0.0, **kwargs: Any) -> None:
         """
         Sine wave generator.
 
@@ -40,7 +40,7 @@ class SineGenerator(SignalGenerator):
 
 
 class RampGenerator(SignalGenerator):
-    def __init__(self, slope: float = 1.0, reset_at_duration: bool = False, **kwargs):
+    def __init__(self, slope: float = 1.0, reset_at_duration: bool = False, **kwargs: Any) -> None:
         """
         Linear ramp generator.
 
@@ -61,7 +61,7 @@ class RampGenerator(SignalGenerator):
 
 
 class SquareGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, duty_cycle: float = 0.5, **kwargs):
+    def __init__(self, frequency: float = 1.0, duty_cycle: float = 0.5, **kwargs: Any) -> None:
         """
         Square wave generator.
 
@@ -86,7 +86,7 @@ class SquareGenerator(SignalGenerator):
 
 
 class SawtoothGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, **kwargs):
+    def __init__(self, frequency: float = 1.0, **kwargs: Any) -> None:
         """
         Sawtooth wave generator (rising ramp with reset).
 
@@ -105,7 +105,7 @@ class SawtoothGenerator(SignalGenerator):
 
 
 class TriangleGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, symmetry: float = 0.5, **kwargs):
+    def __init__(self, frequency: float = 1.0, symmetry: float = 0.5, **kwargs: Any) -> None:
         """
         Triangle wave generator.
 
@@ -135,7 +135,7 @@ class TriangleGenerator(SignalGenerator):
 
 
 class ExponentialGenerator(SignalGenerator):
-    def __init__(self, time_constant: float = 1.0, growth: bool = False, **kwargs):
+    def __init__(self, time_constant: float = 1.0, growth: bool = False, **kwargs: Any) -> None:
         """
         Exponential decay/growth generator.
 
@@ -157,7 +157,7 @@ class ExponentialGenerator(SignalGenerator):
 
 
 class ImpulseGenerator(SignalGenerator):
-    def __init__(self, impulse_time: float = 1.0, impulse_value: float = 1.0, **kwargs):
+    def __init__(self, impulse_time: float = 1.0, impulse_value: float = 1.0, **kwargs: Any) -> None:
         """
         Impulse generator (single step at specified time).
 
@@ -175,7 +175,7 @@ class ImpulseGenerator(SignalGenerator):
 
 
 class UniformNoiseGenerator(SignalGenerator):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """Uniform noise generator"""
         super().__init__(**kwargs)
 
@@ -184,7 +184,7 @@ class UniformNoiseGenerator(SignalGenerator):
 
 
 class GaussianNoiseGenerator(SignalGenerator):
-    def __init__(self, std_dev: float = 1.0, **kwargs):
+    def __init__(self, std_dev: float = 1.0, **kwargs: Any) -> None:
         """
         Gaussian noise generator.
 
@@ -200,7 +200,7 @@ class GaussianNoiseGenerator(SignalGenerator):
 
 
 class DataReplayGenerator(SignalGenerator):
-    def __init__(self, data: list[float], sample_rate: float, loop: bool = True, **kwargs):
+    def __init__(self, data: list[float], sample_rate: float, loop: bool = True, **kwargs: Any) -> None:
         """
         Replay recorded data from a list.
 
@@ -225,7 +225,7 @@ class DataReplayGenerator(SignalGenerator):
             if self.loop:
                 self._index = 0
             else:
-                return None
+                return self.data[-1]
 
         value = self.data[self._index]
         self._index += 1
@@ -234,8 +234,11 @@ class DataReplayGenerator(SignalGenerator):
 
 class CompositeGenerator(SignalGenerator):
     def __init__(
-        self, generators: list[SignalGenerator], operation: Union[str, Callable[[list[float]], float]] = "add", **kwargs
-    ):
+        self,
+        generators: list[SignalGenerator],
+        operation: Union[str, Callable[[list[float]], float]] = "add",
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.generators = generators
         self.operation = operation
@@ -280,6 +283,8 @@ class CompositeGenerator(SignalGenerator):
             for v in values:
                 result *= v
             return result
+        else:
+            raise ValueError(f"Unsupported operation: {self.operation}")
 
 
 def plot_signals(
