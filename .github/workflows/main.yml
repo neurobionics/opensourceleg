@@ -60,6 +60,7 @@ jobs:
       - name: Run tests
         run: |
           uv run pytest --cov --cov-config=pyproject.toml --cov-report=xml
+        shell: bash
 
       - name: Upload coverage reports to Codecov with GitHub Action on Ubuntu
         uses: codecov/codecov-action@v4
