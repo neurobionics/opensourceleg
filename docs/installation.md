@@ -21,7 +21,7 @@ We offer two ways to install opensourceleg:
 
 #### Prerequisites Explained
 
-- **Python 3.9 or newer**: The library requires modern Python features. [Download Python here](https://www.python.org/downloads/)
+- **Python 3.10 or newer**: The library requires modern Python features. [Download Python here](https://www.python.org/downloads/)
   > 💡 When installing Python, make sure to check "Add Python to PATH" on Windows!
 - **pip**: Python's package installer (comes with Python)
   > 💡 To verify your installation, open a terminal and run:
@@ -109,29 +109,12 @@ This section is for those who want to contribute to opensourceleg or need to mod
 
 #### Prerequisites in Detail
 
-- **Python 3.9+**: Same as above
-- **Poetry**: A modern dependency management tool, see [Poetry installation guide](https://python-poetry.org/docs/#installation)
-   - The quickest way to install poetry is to use pipx, run the following command:
-     ```bash
-     pip install pipx
-     ```
-     Now add pipx to your PATH:
-     ```bash
-     nano ~/.bashrc
-     ```
-     Add the following line to the end of the file:
-     ```bash
-     export PATH="$HOME/.local/bin:$PATH"
-     ```
-     Save (CTRL+O) and exit (CTRL+X) the editor.
-     Source the bashrc file to update your PATH:
-     ```bash
-     source ~/.bashrc
-     ```
-     Now you can install poetry using pipx:
-     ```bash
-     pipx install poetry
-     ```
+- **Python 3.10+**: Same as above (we support Python 3.10, 3.11, 3.12, and 3.13)
+- **UV**: A fast Python package manager. The easiest way to install UV is via pip:
+   ```bash
+   pip install uv
+   ```
+   For other installation methods (including standalone installers), see the [UV installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
 - **Git**: Version control system, see [Git installation guide](https://git-scm.com/downloads)
 
@@ -155,14 +138,19 @@ This section is for those who want to contribute to opensourceleg or need to mod
    # Connect your fork to the main repository for updates
    git remote add upstream https://github.com/neurobionics/opensourceleg.git
 
-   # Install project dependencies using Poetry
-   poetry install  # This might take a few minutes
+   # Create and activate a virtual environment with UV
+   uv venv
 
-   # Activate the Poetry environment
-   poetry shell # for older versions of poetry
-   eval $(poetry env activate)
+   # Activate the virtual environment
+   # On Linux/macOS:
+   source .venv/bin/activate
+   # On Windows:
+   .venv\Scripts\activate
 
-   # Install pre-commit hooks for code quality
+   # Install project dependencies using UV
+   uv sync  # This is much faster than traditional pip installs!
+
+   # Install pre-commit hooks and setup development tools
    make install
    ```
 
@@ -176,8 +164,11 @@ This section is for those who want to contribute to opensourceleg or need to mod
    # Use a descriptive name like 'add-new-sensor' or 'fix-motor-bug'
 
    # After making changes, run the quality checks
-   make check    # Runs linting, type checking, and tests
-   make format   # Automatically formats your code to match our style
+   make check    # Runs linting, type checking, and dependency validation
+   make test     # Runs the full test suite with coverage
+
+   # Run documentation locally to preview changes
+   make docs     # Serves documentation at http://localhost:8000
 
    # Commit your changes
    git add .
@@ -185,7 +176,28 @@ This section is for those who want to contribute to opensourceleg or need to mod
    git push origin feature-name
    ```
 
-4. **Contributing to opensourceleg**
+4. **UV Development Commands**
+
+   UV makes development much faster and more reliable:
+
+   ```bash
+   # Add a new dependency
+   uv add package-name
+
+   # Add a development dependency
+   uv add --group dev package-name
+
+   # Run commands in the project environment
+   uv run python script.py
+   uv run pytest tests/
+   uv run mypy opensourceleg/
+
+   # Check your environment
+   uv pip list              # See installed packages
+   uv python list           # See available Python versions
+   ```
+
+5. **Contributing to opensourceleg**
    If you want to contribute your modifications to the `opensourceleg` library so that others can use them, please read our [contribution guidelines](contributing.md).
 
 ## Troubleshooting Common Issues
@@ -214,15 +226,34 @@ where python  # on Windows
 # Example: .venv/bin/python
 ```
 
-### 3. Poetry Installation Issues
+### 3. UV Installation Issues
 
-If Poetry isn't working:
+If UV isn't working:
 
 ```bash
-# Verify Poetry installation
-poetry --version
+# Verify UV installation
+uv --version
+
+# Check if UV is in your PATH
+which uv  # on Unix/macOS
+where uv  # on Windows
 
 # If not found, try adding to PATH or reinstalling
+```
+
+### 4. Development Environment Issues
+
+If you encounter issues with the development setup:
+
+```bash
+# Clean and reinstall everything
+rm -rf .venv uv.lock
+uv sync
+
+# Verify development tools are working
+uv run pre-commit --version
+uv run pytest --version
+uv run mypy --version
 ```
 
 ## Getting Help

@@ -1,55 +1,66 @@
-[tool.poetry]
+[project]
 name = "opensourceleg"
 version = "3.1.0"
 description = "An open-source SDK for developing and testing algorithms on commonly used robotic hardware."
-authors = ["Open-Source Leg <opensourceleg@gmail.com>"]
-repository = "https://github.com/neurobionics/opensourceleg"
-documentation = "https://neurobionics.github.io/opensourceleg/"
+authors = [{ name = "Open-Source Leg", email = "opensourceleg@gmail.com" }]
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
-packages = [
-  {include = "opensourceleg"}
+dependencies = [
+    "numpy>=1.24.3,<2",
+    "board~=1.0",
+    "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "pandas>=2.2.3,<3",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-numpy = "^1.24.3"
-flexsea = [
-    {version = "^12.0.3", python = ">=3.11"},
-    {version = "==8.0.1", python = "<3.11"}
-]
-smbus2 = ">=0.4.2"
-grpcio = "^1.65.5"
-grpcio-tools = "^1.65.5"
-types-protobuf = "^4.21.0"
-moteus = "^0.3.72"
-moteus-pi3hat = {version = "^0.3.29", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
-board = "^1.0"
-adafruit-circuitpython-bno055 = {version = "^5.4.13", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
-adafruit-circuitpython-lis3dh = {version = "^5.2.2", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
-
-pandas = "^2.2.3"
-[tool.poetry.extras]
+[project.optional-dependencies]
 dephy = ["flexsea"]
-moteus = ["moteus", "moteus-pi3hat"]
-communication = ["smbus2"]
-messaging = ["grpcio", "grpcio-tools", "types-protobuf"]
+moteus = [
+    "moteus>=0.3.72,<0.4",
+    "moteus-pi3hat>=0.3.29,<0.4 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+communication = ["smbus2>=0.4.2"]
+messaging = [
+    "grpcio>=1.65.5,<2",
+    "grpcio-tools>=1.65.5,<2",
+    "types-protobuf>=4.21.0,<5",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.16.2"
-mypy = "^1.5.1"
-pre-commit = "^3.4.0"
-tox = "^4.11.1"
+[project.urls]
+Repository = "https://github.com/neurobionics/opensourceleg"
+Documentation = "https://neurobionics.github.io/opensourceleg/"
 
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.4.2"
-mkdocs-material = "^9.2.7"
-mkdocstrings = {extras = ["python"], version = "^0.26.1"}
+[dependency-groups]
+dev = [
+    "pytest>=7.2.0,<8",
+    "pytest-cov>=4.0.0,<5",
+    "deptry>=0.16.2,<0.17",
+    "mypy>=1.5.1,<2",
+    "pre-commit>=3.4.0,<4",
+    "tox>=4.11.1,<5",
+]
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.27.0",
+    "mkdocs-autorefs>=1.4.0",
+]
+
+[tool.uv]
+default-groups = [
+    "dev",
+    "docs",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["opensourceleg"]
+
+[tool.hatch.build.targets.wheel]
+include = ["opensourceleg"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.mypy]
 files = ["opensourceleg"]
@@ -62,7 +73,6 @@ check_untyped_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
-
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

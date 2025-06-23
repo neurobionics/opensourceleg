@@ -3,7 +3,6 @@ name: release-main
 on:
   release:
     types: [published]
-    branches: [main]
 
 jobs:
   publish:
@@ -13,16 +12,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-poetry-env
+        uses: ./.github/actions/setup-uv-env
 
       - name: Export tag
         id: vars
         run: echo tag=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
 
+      - name: Update version in pyproject.toml
+        run: |
+          # Update the version in pyproject.toml
+          sed -i 's/version = "[^"]*"/version = "${{ steps.vars.outputs.tag }}"/' pyproject.toml
+
       - name: Build and publish
         run: |
-          source .venv/bin/activate
-          poetry version $RELEASE_VERSION
           make build-and-publish
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
@@ -36,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-poetry-env
+        uses: ./.github/actions/setup-uv-env
 
       - name: Deploy documentation
-        run: poetry run mkdocs gh-deploy --force
+        run: make docs-deploy

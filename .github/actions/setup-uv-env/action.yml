@@ -1,0 +1,65 @@
+name: "setup-uv-env"
+description: "Composite action to setup the Python and UV environment."
+
+inputs:
+  python-version:
+    required: false
+    description: "The python version to use"
+    default: "3.11"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install UV
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      shell: bash
+
+    - name: Add UV to Path
+      run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      shell: bash
+
+    # Cache UV's cache directory and virtual environment
+    - name: Load cached UV environment
+      id: cached-uv-dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          .venv
+          ~/.cache/uv
+        # Include uv.lock in the cache key to catch dependency changes
+        key: uv-${{ runner.os }}-py${{ inputs.python-version }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}-v1
+
+    - name: Install dependencies
+      run: |
+        if [ "${{ steps.cached-uv-dependencies.outputs.cache-hit }}" == 'true' ]; then
+          echo "Using cached UV environment"
+
+          # Validate the cached environment contains expected tools
+          if ! uv run pre-commit --version &>/dev/null || \
+             ! uv run pytest --version &>/dev/null || \
+             ! uv run mypy --version &>/dev/null; then
+            echo "Cached environment is missing required tools. Reinstalling..."
+            rm -rf .venv
+            uv sync
+          fi
+        else
+          echo "Installing dependencies with UV"
+          rm -rf .venv || true
+          uv sync
+        fi
+      shell: bash
+
+    - name: Verify development tools installation
+      run: |
+        echo "Verifying pre-commit installation..."
+        uv run pre-commit --version
+        echo "Verifying pytest installation..."
+        uv run pytest --version
+        echo "Verifying mypy installation..."
+        uv run mypy --version
+      shell: bash
