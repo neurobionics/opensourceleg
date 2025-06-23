@@ -1,0 +1,17 @@
+[package]
+name = "opensourceleg_rs"
+version = "3.1.0"
+edition = "2021"
+description = "Rust backend for opensourceleg - high-performance robotics algorithms"
+authors = ["Open-Source Leg <opensourceleg@gmail.com>"]
+license = "MIT"
+
+[lib]
+name = "opensourceleg_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+numpy = "0.22"
+nalgebra = "0.33"
+serde = { version = "1.0", features = ["derive"] }
