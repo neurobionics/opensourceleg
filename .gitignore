@@ -168,3 +168,6 @@ cython_debug/
 
 *.csv
 *.log.*
+*.npy
+
+*.DS_Store

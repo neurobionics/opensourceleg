@@ -2,6 +2,16 @@ from typing import Any, Optional, Union
 
 import numpy as np
 
+__all__ = [
+    "EdgeDetector",
+    "SaturatingRamp",
+    "ThermalModel",
+    "clamp_within_vector_range",
+    "from_twos_complement",
+    "to_twos_complement",
+    "Counter",
+]
+
 
 class ThermalModel:
     """
@@ -248,3 +258,90 @@ def clamp_within_vector_range(
     min_allowed = min(input_vector)
     max_allowed = max(input_vector)
     return max(min(input_value, max_allowed), min_allowed)
+
+
+def to_twos_complement(value: int, bit_length: int) -> int:
+    """Converts a signed integer to 2's complement for a defined number of bits
+    as an unsigned integer
+
+    Args:
+        value (int): Signed integer to convert
+        bit_length (int): Number of bits of 2's complement representation
+
+    Returns:
+        int: Unsigned integer 2's complement
+
+    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
+
+    Raises:
+        ValueError: If value is too small or too large for the given bit length
+    """
+    min_value = -(2 ** (bit_length - 1))
+    max_value = 2 ** (bit_length - 1) - 1
+
+    if value < min_value:
+        raise ValueError(f"Value {value} is too small for {bit_length} bits")
+    if value > max_value:
+        raise ValueError(f"Value {value} is too large for {bit_length} bits")
+
+    if value >= 0:
+        return value
+
+    return int(value + 2**bit_length)
+
+
+def from_twos_complement(value: int, bit_length: int) -> int:
+    """Converts a 2's complement integer to a signed integer
+
+    Args:
+        value (int): 2's complement integer
+        bit_length (int): Number of bits of 2's complement representation
+
+    Returns:
+        int: Signed integer
+
+    Author: Axel Sjögren Holtz (axel.sjogren.holtz@vgregion.se)
+
+    Raises:
+        TypeError: If value or bit_length is not an integer
+        ValueError: If value is negative, bit_length is negative, or value exceeds bit_length
+    """
+    if not isinstance(value, int):
+        raise TypeError("value must be an integer")
+    if value < 0:
+        raise ValueError("value must be non-negative")
+    if not isinstance(bit_length, int):
+        raise TypeError("bit_length must be an integer")
+    if bit_length < 0:
+        raise ValueError("bit_length must be non-negative")
+    if value.bit_length() > bit_length:
+        raise ValueError(f"value ({value}) exceeds the specified bit_length ({bit_length})")
+
+    if value >= 2 ** (bit_length - 1):
+        return int(value - (2**bit_length))
+    else:
+        return int(value)
+
+
+class Counter:
+    """
+    A simple counter class that increments a counter each time the increment_counter argument is set true.
+    To reset the counter, call update with increment_counter set to false.
+
+    Author: Kevin Best, 9/25/2024
+    https://github.com/tkevinbest
+    """
+
+    def __init__(self) -> None:
+        self._count: int = 0
+
+    def update(self, increment_counter: bool) -> None:
+        if increment_counter:
+            self._count += 1
+        else:
+            self._count = 0
+
+    @property
+    def current_count(self) -> int:
+        """Returns the current count"""
+        return self._count

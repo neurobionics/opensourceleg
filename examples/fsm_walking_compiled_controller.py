@@ -15,9 +15,8 @@ import numpy as np
 
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.control.compiled import CompiledController
-from opensourceleg.sensors.loadcell import SRILoadcell
-from opensourceleg.time import SoftRealtimeLoop
-from opensourceleg.units import units
+from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
+from opensourceleg.utilities import SoftRealtimeLoop, units
 
 use_offline_mode = False
 FREQUENCY = 200
@@ -51,7 +50,7 @@ LOADCELL_MATRIX = np.array([
     (-0.65100, -28.28700, 0.02200, -25.23000, 0.47300, -27.3070),
 ])
 
-loadcell = SRILoadcell(
+loadcell = DephyLoadcellAmplifier(
     calibration_matrix=LOADCELL_MATRIX,
     bus=1,
 )

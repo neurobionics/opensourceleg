@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - "feature/**"
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
@@ -22,6 +21,12 @@ jobs:
 
       - name: Set up the environment
         uses: ./.github/actions/setup-poetry-env
+
+      - name: Verify tools before running checks
+        run: |
+          poetry run which pre-commit
+          poetry run which mypy
+          poetry run which pytest
 
       - name: Run checks
         run: make check
@@ -44,8 +49,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Verify pytest before running tests
+        run: poetry run which pytest
+
       - name: Run tests
         run: poetry run pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+
+      - name: Verify mypy before type checking
+        run: poetry run which mypy
 
       - name: Check typing
         run: poetry run mypy
@@ -65,16 +76,3 @@ jobs:
 
       - name: Check if documentation can be built
         run: poetry run mkdocs build -s
-
-  deploy-docs:
-    runs-on: ubuntu-latest
-    needs: check-docs
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-
-      - name: Set up the environment
-        uses: ./.github/actions/setup-poetry-env
-
-      - name: Deploy documentation
-        run: poetry run mkdocs gh-deploy --force

@@ -13,41 +13,13 @@ Ensure that the required libraries are installed and that the library paths are 
 to PYTHONPATH or sys.path if necessary.
 """
 
+import os
 from typing import Any, Union
+
+import numpy as np
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
-
-# Attempt to import the MSCL library and add its path.
-try:
-    import sys
-
-    sys.path.append("/usr/share/python3-mscl")
-    import mscl
-except ImportError:
-    print(
-        "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
-        "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
-        "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
-    )
-
-# Attempt to import the Adafruit BNO055 library.
-try:
-    import adafruit_bno055
-except ImportError:
-    print("Failed to import adafruit_bno055")
-
-# Attempt to import board module.
-try:
-    import board
-except ImportError:
-    print("Failed to import board")
-
-# Attempt to import busio module.
-try:
-    import busio
-except ImportError:
-    print("Failed to import busio")
 
 
 class LordMicrostrainIMU(IMUBase):
@@ -59,20 +31,23 @@ class LordMicrostrainIMU(IMUBase):
     and linear accelerations (in m/s^2).
 
     Resources:
-        - Download MSCL pre-built package for Raspbian:
-          https://github.com/LORD-MicroStrain/MSCL/tree/master
-        - MSCL API Documentation:
-          https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html
+        - Download v0.65 MSCL pre-built package for Raspbian:
+          https://github.com/LORD-MicroStrain/MSCL/releases/download/v65.0.0/python3-mscl_65.0.0_arm64.deb
+        - Read the MSCL installation instructions:
+          https://github.com/LORD-MicroStrain/MSCL/blob/master/HowToUseMSCL.md
+        - We assume that the MSCL library is installed in /usr/share/python3-mscl
     """
 
     def __init__(
         self,
-        port: str = "/dev/ttyUSB0",
+        tag: str = "LordMicrostrainIMU",
+        port: str = r"/dev/ttyUSB0",
         baud_rate: int = 921600,
         frequency: int = 200,
         update_timeout: int = 500,
         max_packets: int = 1,
         return_packets: bool = False,
+        offline: bool = False,
     ) -> None:
         """
         Initialize the LordMicrostrainIMU sensor.
@@ -85,6 +60,46 @@ class LordMicrostrainIMU(IMUBase):
             max_packets (int, optional): Maximum number of data packets to retrieve. Defaults to 1.
             return_packets (bool, optional): If True, returns the raw data packets. Defaults to False.
         """
+        # Attempt to import the MSCL library and add its path.
+        try:
+            import sys
+
+            sys.path.append("/usr/share/python3-mscl")
+
+            import mscl
+
+            self.mscl = mscl
+        except ImportError:
+            LOGGER.warning(
+                "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
+                "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
+                "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+            )
+            exit(1)
+
+        self._init_variables(
+            tag=tag,
+            port=port,
+            baud_rate=baud_rate,
+            frequency=frequency,
+            update_timeout=update_timeout,
+            max_packets=max_packets,
+            return_packets=return_packets,
+            offline=offline,
+        )
+
+    def _init_variables(
+        self,
+        tag: str,
+        port: str,
+        baud_rate: int,
+        frequency: int,
+        update_timeout: int,
+        max_packets: int,
+        return_packets: bool,
+        offline: bool,
+    ) -> None:
+        super().__init__(tag=tag, offline=offline)
         self._port = port
         self._baud_rate = baud_rate
         self._frequency = frequency
@@ -108,29 +123,29 @@ class LordMicrostrainIMU(IMUBase):
         Returns:
             Any: A configured MipChannels object for the MSCL InertialNode.
         """
-        channels = mscl.MipChannels()
+        channels = self.mscl.MipChannels()
         channels.append(
-            mscl.MipChannel(
-                mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER,
-                mscl.SampleRate.Hertz(self.frequency),
+            self.mscl.MipChannel(
+                self.mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ORIENT_EULER,
+                self.mscl.SampleRate.Hertz(self.frequency),
             )
         )
         channels.append(
-            mscl.MipChannel(
-                mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE,
-                mscl.SampleRate.Hertz(self.frequency),
+            self.mscl.MipChannel(
+                self.mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_ANGULAR_RATE,
+                self.mscl.SampleRate.Hertz(self.frequency),
             )
         )
         channels.append(
-            mscl.MipChannel(
-                mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL,
-                mscl.SampleRate.Hertz(self.frequency),
+            self.mscl.MipChannel(
+                self.mscl.MipTypes.CH_FIELD_ESTFILTER_ESTIMATED_LINEAR_ACCEL,
+                self.mscl.SampleRate.Hertz(self.frequency),
             )
         )
         channels.append(
-            mscl.MipChannel(
-                mscl.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP,
-                mscl.SampleRate.Hertz(self.frequency),
+            self.mscl.MipChannel(
+                self.mscl.MipTypes.CH_FIELD_ESTFILTER_GPS_TIMESTAMP,
+                self.mscl.SampleRate.Hertz(self.frequency),
             )
         )
 
@@ -161,10 +176,16 @@ class LordMicrostrainIMU(IMUBase):
         Establishes a serial connection, configures the MIP channels, enables data streaming,
         and sets the streaming flag to True.
         """
-        self._connection = mscl.Connection.Serial(self.port, self.baud_rate)
-        self._node = mscl.InertialNode(self._connection)
-        self._node.setActiveChannelFields(mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels())
-        self._node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
+        try:
+            self._connection = self.mscl.Connection.Serial(os.path.realpath(self.port), self.baud_rate)
+        except RuntimeError as e:
+            LOGGER.error(f"Failed to connect to the IMU at {self.port}: {e}")
+            exit(1)
+
+        self._node = self.mscl.InertialNode(self._connection)
+        self._validate_frequency()
+        self._node.setActiveChannelFields(self.mscl.MipTypes.CLASS_ESTFILTER, self._configure_mip_channels())
+        self._node.enableDataStream(self.mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
 
     @check_sensor_stream
@@ -213,15 +234,6 @@ class LordMicrostrainIMU(IMUBase):
             return data_packets
         else:
             return None
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the LordMicrostrainIMU sensor.
-
-        Returns:
-            str: "IMULordMicrostrain"
-        """
-        return "IMULordMicrostrain"
 
     @property
     def port(self) -> str:
@@ -439,6 +451,32 @@ class LordMicrostrainIMU(IMUBase):
         """
         return self._data["estFilterGpsTimeTow"]
 
+    def _validate_frequency(self) -> None:
+        """
+        Check and adjust frequency for compatibility with IMU refresh rate.
+        """
+
+        imu_sample_rate = self._node.getDataRateBase(self.mscl.MipTypes.CLASS_ESTFILTER)
+
+        if self._frequency > imu_sample_rate or imu_sample_rate % self._frequency != 0:
+            min_dist = float("inf")
+            best_frequency = 200
+
+            for divisor in range(1, int(np.sqrt(imu_sample_rate)) + 1):
+                if imu_sample_rate % divisor == 0:
+                    for candidate in [divisor, imu_sample_rate // divisor]:
+                        dist = abs(self._frequency - candidate)
+                        if dist < min_dist:
+                            min_dist = dist
+                            best_frequency = candidate
+
+            LOGGER.info(
+                f"""{self._frequency} is not a valid decimation of {imu_sample_rate},
+                choosing closest decimation: {best_frequency}"""
+            )
+
+            self._frequency = best_frequency
+
 
 class BNO055(IMUBase):
     """
@@ -465,7 +503,9 @@ class BNO055(IMUBase):
 
     def __init__(
         self,
+        tag: str = "BNO055",
         addr: int = 40,
+        offline: bool = False,
     ) -> None:
         """
         Initialize the BNO055 sensor.
@@ -473,19 +513,24 @@ class BNO055(IMUBase):
         Args:
             addr (int, optional): I2C address of the BNO055 sensor. Defaults to 40.
         """
+        # Attempt to import the required libraries.
+        try:
+            import adafruit_bno055
+            import board
+            import busio
+
+            self.adafruit_bno055 = adafruit_bno055
+            self.board = board
+            self.busio = busio
+        except ImportError as e:
+            LOGGER.error("BNO055IMU requires adafruit_bno055, board, and busio packages. " f"Error: {e}")
+            exit(1)
+
+        super().__init__(tag=tag, offline=offline)
         self._address: int = addr
         self._gyro_data: list[float] = [0.0, 0.0, 0.0]
         self._acc_data: list[float] = [0.0, 0.0, 0.0]
         self._is_streaming = False
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the BNO055 sensor.
-
-        Returns:
-            str: "BNO055_IMU"
-        """
-        return "BNO055_IMU"
 
     def start(self) -> None:
         """
@@ -494,9 +539,9 @@ class BNO055(IMUBase):
         Initializes the I2C bus, creates an instance of the Adafruit BNO055 sensor,
         configures the sensor settings, and sets the streaming flag to True.
         """
-        i2c = busio.I2C(board.SCL, board.SDA)
+        i2c = self.busio.I2C(self.board.SCL, self.board.SDA)
         try:
-            self._adafruit_imu = adafruit_bno055.BNO055_I2C(i2c, address=self._address)
+            self._adafruit_imu = self.adafruit_bno055.BNO055_I2C(i2c, address=self._address)
         except ValueError:
             print("BNO055 IMU Not Found on i2c bus! Check wiring!")
         self.configure_IMU_settings()
@@ -530,11 +575,11 @@ class BNO055(IMUBase):
             - Configures gyroscope range to GYRO_1000_DPS and bandwidth to GYRO_23HZ.
         """
         self._adafruit_imu.use_external_crystal = True
-        self._adafruit_imu.mode = adafruit_bno055.ACCGYRO_MODE
-        self._adafruit_imu.accel_range = adafruit_bno055.ACCEL_2G
-        self._adafruit_imu.accel_bandwidth = adafruit_bno055.ACCEL_15_63HZ
-        self._adafruit_imu.gyro_range = adafruit_bno055.GYRO_1000_DPS
-        self._adafruit_imu.gyro_bandwidth = adafruit_bno055.GYRO_23HZ
+        self._adafruit_imu.mode = self.adafruit_bno055.ACCGYRO_MODE
+        self._adafruit_imu.accel_range = self.adafruit_bno055.ACCEL_2G
+        self._adafruit_imu.accel_bandwidth = self.adafruit_bno055.ACCEL_15_63HZ
+        self._adafruit_imu.gyro_range = self.adafruit_bno055.GYRO_1000_DPS
+        self._adafruit_imu.gyro_bandwidth = self.adafruit_bno055.GYRO_23HZ
 
     @property
     def acc_x(self) -> float:

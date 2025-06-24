@@ -15,13 +15,13 @@ DEFAULT_CAL_MATRIX = np.ones(shape=(6, 6), dtype=np.double)
 def test_SRILoadcell_init():
     invalid_cal_matrix = np.ones(shape=(5, 6), dtype=np.double)
     with pytest.raises(TypeError):
-        SRI = loadcell.SRILoadcell(calibration_matrix=invalid_cal_matrix)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=invalid_cal_matrix)
     with pytest.raises(ValueError):
-        SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX, amp_gain=0)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, amp_gain=0)
     with pytest.raises(ValueError):
-        SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX, exc=0)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, exc=0)
 
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
 
     assert SRI._amp_gain == 125.0
     assert SRI._exc == 5.0
@@ -51,7 +51,7 @@ def test_SRILoadcell_init():
 
 
 def test_SRILoadcell_reset():
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
     SRI._calibration_offset = np.ones(shape=(1, 6), dtype=np.double)
     SRI.reset()
     assert np.array_equal(SRI._calibration_offset, np.zeros(shape=(1, 6), dtype=np.double))
@@ -59,7 +59,7 @@ def test_SRILoadcell_reset():
 
 def test_SRILoadcell_update():
     # Test basic call execution
-    SRI = loadcell.SRILoadcell(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
     SRI.update(data_callback=_read_data)
 
     # Ensuring self._calibration_offset was used
@@ -75,6 +75,28 @@ def test_SRILoadcell_update():
     assert np.array_equal(SRI._data, data)
 
 
+def test_SRILoadcell_BrokenWire_high():
+    # Test basic call execution
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    for _i in range(SRI._num_broken_wire_pre_exception - 1):
+        SRI.update(data_callback=_read_data_high)
+    # Assert that the broken wire condition raises an exception after correct number of iterations
+
+    with pytest.raises(loadcell.LoadcellBrokenWireDetectedException):
+        SRI.update(data_callback=_read_data_high)
+
+
+def test_SRILoadcell_BrokenWire_low():
+    # Test basic call execution
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    for _i in range(SRI._num_broken_wire_pre_exception - 1):
+        SRI.update(data_callback=_read_data_low)
+    # Assert that the broken wire condition raises an exception after correct number of iterations
+
+    with pytest.raises(loadcell.LoadcellBrokenWireDetectedException):
+        SRI.update(data_callback=_read_data_low)
+
+
 def test_SRILoadcell_calibrate():
     # Test reset, else statement
 
@@ -86,13 +108,27 @@ def _read_data() -> npt.NDArray[np.uint8]:
     return np.ones(shape=(1, 6))
 
 
+# Function to bypass _read_compressed_strain() with an array of ones with one broken wire pulled high
+def _read_data_high() -> npt.NDArray[np.uint8]:
+    data = np.ones(shape=(1, 6))
+    data[0, 2] = loadcell.DephyLoadcellAmplifier.ADC_RANGE
+    return data
+
+
+# Function to bypass _read_compressed_strain() with an array of ones with one broken wire pulled low
+def _read_data_low() -> npt.NDArray[np.uint8]:
+    data = np.ones(shape=(1, 6))
+    data[0, 2] = 0
+    return data
+
+
 # Function to bypass _read_compressed_strain() with random data
 def _read_random_data() -> npt.NDArray[np.uint8]:
     return np.random.randint(low=0, high=255, size=(1, 6), dtype=np.uint8)
 
 
 # Function to run update calculations from inside the update method
-def _update_calculations(SRI: loadcell.SRILoadcell, calibration_offset: float):
+def _update_calculations(SRI: loadcell.DephyLoadcellAmplifier, calibration_offset: float):
     test_data = _read_data()
     signed_data = ((test_data - SRI.OFFSET) / SRI.ADC_RANGE) * SRI._exc
     coupled_data = signed_data * 1000 / (SRI._exc * SRI._amp_gain)

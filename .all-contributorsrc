@@ -1,0 +1,184 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "senthurayyappan",
+      "name": "Senthur Ayyappan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25511437?v=4",
+      "profile": "https://senthurayyappan.com",
+      "contributions": [
+        "infra",
+        "security",
+        "maintenance",
+        "code"
+      ]
+    },
+    {
+      "login": "tkevinbest",
+      "name": "tkevinbest",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70407790?v=4",
+      "profile": "http://tkevinbest.github.io",
+      "contributions": [
+        "bug",
+        "test",
+        "example",
+        "code"
+      ]
+    },
+    {
+      "login": "jderosia",
+      "name": "jderosia",
+      "avatar_url": "https://avatars.githubusercontent.com/u/134736683?v=4",
+      "profile": "https://github.com/jderosia",
+      "contributions": [
+        "doc",
+        "test",
+        "example",
+        "code"
+      ]
+    },
+    {
+      "login": "Robin0265",
+      "name": "Yuanshao Yang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69673450?v=4",
+      "profile": "https://github.com/Robin0265",
+      "contributions": [
+        "test",
+        "bug",
+        "doc",
+        "code"
+      ]
+    },
+    {
+      "login": "shreyhas",
+      "name": "shreyhas",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68916446?v=4",
+      "profile": "https://github.com/shreyhas",
+      "contributions": [
+        "doc",
+        "test",
+        "example"
+      ]
+    },
+    {
+      "login": "jkotar3",
+      "name": "jkotar3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/166853036?v=4",
+      "profile": "https://github.com/jkotar3",
+      "contributions": [
+        "test",
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "esharnow",
+      "name": "esharnow",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99085536?v=4",
+      "profile": "https://github.com/esharnow",
+      "contributions": [
+        "test",
+        "bug",
+        "doc"
+      ]
+    },
+    {
+      "login": "JapmanGill",
+      "name": "Japman Gill",
+      "avatar_url": "https://avatars.githubusercontent.com/u/82068921?v=4",
+      "profile": "https://github.com/JapmanGill",
+      "contributions": [
+        "test",
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "unshrawal",
+      "name": "unshrawal",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32817861?v=4",
+      "profile": "https://github.com/unshrawal",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "anujtaosf",
+      "name": "anujtaosf",
+      "avatar_url": "https://avatars.githubusercontent.com/u/123828257?v=4",
+      "profile": "https://github.com/anujtaosf",
+      "contributions": [
+        "doc",
+        "example"
+      ]
+    },
+    {
+      "login": "VarunSatyadevShetty",
+      "name": "Varun Satyadev Shetty",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62276853?v=4",
+      "profile": "https://github.com/VarunSatyadevShetty",
+      "contributions": [
+        "doc",
+        "example"
+      ]
+    },
+    {
+      "login": "Katharine-Walters",
+      "name": "Katharine-Walters",
+      "avatar_url": "https://avatars.githubusercontent.com/u/111811694?v=4",
+      "profile": "https://github.com/Katharine-Walters",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "zachbons",
+      "name": "zachbons",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74107027?v=4",
+      "profile": "https://github.com/zachbons",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "anushkarathi",
+      "name": "Anushka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98593597?v=4",
+      "profile": "https://github.com/anushkarathi",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "nundinir",
+      "name": "Nundini Rawal",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90918772?v=4",
+      "profile": "https://nundinir.github.io/",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "matteo-crotti",
+      "name": "matteo-crotti",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32237604?v=4",
+      "profile": "https://github.com/matteo-crotti",
+      "contributions": [
+        "bug"
+      ]
+    }
+  ],
+  "contributorsPerLine": 5,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "opensourceleg",
+  "projectOwner": "neurobionics"
+}

@@ -1,6 +1,7 @@
 import time
 import warnings
 from math import isfinite
+from typing import Optional
 
 import can
 import numpy as np
@@ -25,7 +26,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_stream,
 )
 from opensourceleg.math import ThermalModel
-from opensourceleg.time import SoftRealtimeLoop
+from opensourceleg.utilities import SoftRealtimeLoop
 
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
@@ -189,7 +190,15 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         print("Turning off control for device: " + self.device_info_string())
         self.power_off()
 
-    def home(self):
+    def home(
+        self,
+        homing_voltage: int = 2000,
+        homing_frequency: Optional[int] = None,
+        homing_direction: int = -1,
+        output_position_offset: float = 0.0,
+        current_threshold: int = 5000,
+        velocity_threshold: float = 0.001,
+    ):
         pass
 
     def update(self):  # noqa: C901
@@ -534,7 +543,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self._command.current = value
 
     # used for either current or MIT Mode to set current, based on desired torque
-    def set_joint_torque(self, value: float) -> None:
+    def set_output_torque(self, value: float) -> None:
         """
         Used for either current or MIT Mode to set current, based on desired torque.
         If a more complicated torque model is available for the motor, that will be used.

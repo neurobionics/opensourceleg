@@ -169,24 +169,30 @@ def test_ensure_file_handler(isolated_logger: Logger):
     isolated_logger.reset()
 
 
-# Test track & untrack variable
-def test_track_and_untrack_variable(isolated_logger: Logger):
+# Test track function
+def test_track_function(isolated_logger: Logger):
     def test_func() -> list:
         return [1, 2, 3]
 
     assert test_func() == [1, 2, 3]
 
-    isolated_logger.track_variable(test_func, "Testing")
+    isolated_logger.track_function(test_func, "Testing")
     assert all([
         test_func in list(isolated_logger._tracked_vars.values()),
         "Testing" in list(isolated_logger._var_names.values()),
     ])
 
-    isolated_logger.untrack_variable(test_func)
-    assert all([
-        test_func not in list(isolated_logger._tracked_vars.values()),
-        "Testing" not in list(isolated_logger._var_names.values()),
-    ])
+
+def test_track_attributes_nonexistent_attribute(isolated_logger: Logger):
+    class TestClass:
+        def __init__(self):
+            self.existing_attr = 42
+
+    test_obj = TestClass()
+
+    # Attempt to track a nonexistent attribute and assert that AttributeError is raised
+    with pytest.raises(AttributeError, match="Object .* does not have attribute 'nonexistent_attr'"):
+        isolated_logger.track_attributes(test_obj, "nonexistent_attr")
 
 
 # Test repr
@@ -280,15 +286,47 @@ def test_update(isolated_logger: Logger):
     def test_func2() -> int:
         return 8
 
+    class TestClass:
+        def __init__(self):
+            self.val1 = 1
+            self.val2 = 2
+            self.val3 = 3
+
+    test_class = TestClass()
+
     assert not isolated_logger._tracked_vars
-    isolated_logger.track_variable(test_func, "first")
+    isolated_logger.track_function(test_func, "first")
     isolated_logger.update()
-    isolated_logger.track_variable(test_func2, "second")
+    isolated_logger.track_function(test_func2, "second")
     isolated_logger.update()
+    val1_func = lambda: test_class.val1
+    val2_func = lambda: test_class.val2
+    val3_func = lambda: test_class.val3
+    isolated_logger.track_function(val1_func, "third")
+    isolated_logger.track_function([val2_func, val3_func], ["fourth", "fifth"])
+    isolated_logger.update()
+
     assert all([
         isolated_logger._buffer[0] == ["18"],
         isolated_logger._buffer[1] == ["18", "8"],
-        len(isolated_logger._buffer) == 2,
+        isolated_logger._buffer[2] == ["18", "8", "1", "2", "3"],
+        isolated_logger.get_tracked_variables()
+        == [("first", 18), ("second", 8), ("third", 1), ("fourth", 2), ("fifth", 3)],
+        len(isolated_logger._buffer) == 3,
+    ])
+
+    test_class2 = TestClass()
+    isolated_logger.track_attributes(test_class2, ["val1", "val2"])
+    isolated_logger.update()
+    assert all([
+        len(isolated_logger._buffer) == 4,
+        isolated_logger._buffer[3] == ["18", "8", "1", "2", "3", "1", "2"],
+    ])
+    test_class2.val1 = 88
+    isolated_logger.update()
+    assert all([
+        len(isolated_logger._buffer) == 5,
+        isolated_logger._buffer[4] == ["18", "8", "1", "2", "3", "88", "2"],
     ])
 
 
@@ -298,11 +336,11 @@ def test_update_size_exceeded(isolated_logger: Logger):
         return -2
 
     isolated_logger.set_buffer_size(2)
-    isolated_logger.track_variable(test_func, "test")
+    isolated_logger.track_function(test_func, "test")
     isolated_logger.update()
     assert len(isolated_logger._buffer) == 1
 
-    isolated_logger.track_variable(test_func, "test2")
+    isolated_logger.track_function(test_func, "test2")
     isolated_logger.update()
     assert len(isolated_logger._buffer) == 0
 
@@ -312,7 +350,7 @@ def test_flush_buffer(isolated_logger: Logger):
     def test_func() -> int:
         return -2
 
-    isolated_logger.track_variable(test_func, "test")
+    isolated_logger.track_function(test_func, "test")
     isolated_logger.update()
     assert len(isolated_logger._buffer) == 1
 
@@ -330,8 +368,8 @@ def test_flush_buffer(isolated_logger: Logger):
 
 # Test write header
 def test_write_header(isolated_logger: Logger):
-    isolated_logger.track_variable(lambda: 2, "first")
-    isolated_logger.track_variable(lambda: 4, "second")
+    isolated_logger.track_function(lambda: 2, "first")
+    isolated_logger.track_function(lambda: 4, "second")
 
     isolated_logger._ensure_file_handler()
     isolated_logger._file = open(isolated_logger._csv_path, "w", newline="")
@@ -372,7 +410,7 @@ def test_enter(isolated_logger: Logger):
 def test_exit(isolated_logger: Logger):
     with isolated_logger:
         # Perform some logging operations
-        isolated_logger.track_variable(lambda: 1, "test_var")
+        isolated_logger.track_function(lambda: 1, "test_var")
         isolated_logger.update()
 
     # After exiting the context, the logger should be closed
@@ -383,7 +421,7 @@ def test_exit(isolated_logger: Logger):
 
 # Test reset
 def test_reset(isolated_logger: Logger):
-    isolated_logger.track_variable(lambda: 2, "test")
+    isolated_logger.track_function(lambda: 2, "test")
     isolated_logger.update()
     isolated_logger._setup_file_handler()
     assert all([
@@ -403,7 +441,7 @@ def test_reset(isolated_logger: Logger):
 
 
 def test_reset_header(isolated_logger: Logger):
-    isolated_logger.track_variable(lambda: 2, "test")
+    isolated_logger.track_function(lambda: 2, "test")
     isolated_logger.update()
     isolated_logger.flush_buffer()
     assert isolated_logger._header_written is True
@@ -414,7 +452,7 @@ def test_reset_header(isolated_logger: Logger):
 
 # Test close
 def test_close(isolated_logger: Logger):
-    isolated_logger.track_variable(lambda: 2, "first")
+    isolated_logger.track_function(lambda: 2, "first")
     isolated_logger.update()
     isolated_logger.flush_buffer()
 
