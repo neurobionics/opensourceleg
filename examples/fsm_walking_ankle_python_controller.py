@@ -212,30 +212,31 @@ if __name__ == "__main__":
 
     osl_fsm = create_simple_walking_fsm(osl)
 
-    with osl, osl_fsm:
-        osl.update()
-        osl.home()
-
-        input("Press Enter to start walking...")
-
-        # ankle
-        osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
-        osl.ankle.set_impedance_gains()
-
-        for t in clock:
+    with fsm_logger:
+        with osl, osl_fsm:
             osl.update()
-            osl_fsm.update(osl=osl)
-            osl.ankle.set_output_impedance(
-                k=osl_fsm.current_state.ankle_stiffness,
-                b=osl_fsm.current_state.ankle_damping,
-            )
+            osl.home()
 
-            osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
+            input("Press Enter to start walking...")
 
-            fsm_logger.info(
-                f"T: {t:.3f}s, "
-                f"Current state: {osl_fsm.current_state.name}; "
-                f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "
-                f"Ankle theta: {np.rad2deg(osl.ankle.output_position):.3f} deg; "
-                f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} c; "
-            )
+            # ankle
+            osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+            osl.ankle.set_impedance_gains()
+
+            for t in clock:
+                osl.update()
+                osl_fsm.update(osl=osl)
+                osl.ankle.set_output_impedance(
+                    k=osl_fsm.current_state.ankle_stiffness,
+                    b=osl_fsm.current_state.ankle_damping,
+                )
+
+                osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
+
+                fsm_logger.info(
+                    f"T: {t:.3f}s, "
+                    f"Current state: {osl_fsm.current_state.name}; "
+                    f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "
+                    f"Ankle theta: {np.rad2deg(osl.ankle.output_position):.3f} deg; "
+                    f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} c; "
+                )
