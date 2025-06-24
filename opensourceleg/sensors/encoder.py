@@ -7,6 +7,7 @@ from smbus2 import SMBus
 from opensourceleg.logging import LOGGER
 from opensourceleg.math import from_twos_complement, to_twos_complement
 from opensourceleg.sensors.base import EncoderBase
+from opensourceleg.sensors.decorators import no_op_offline
 from opensourceleg.utilities import SoftRealtimeLoop
 
 
@@ -76,6 +77,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         self._encoder_map: Union[np.polynomial.polynomial.Polynomial, None] = None
 
+    @no_op_offline()
     def start(self) -> None:
         LOGGER.info(f"Opening encoder communication: {self.__repr__()}")
         self._SMBus = SMBus(self.bus)
@@ -86,6 +88,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
 
         self._is_streaming = True
 
+    @no_op_offline()
     def stop(self) -> None:
         if self._SMBus:
             self._SMBus.close()
@@ -145,16 +148,19 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         self._encdata_new = bytearray(6)
         self._encdata_new_timestamp = 0
 
+    @no_op_offline()
     def _write_registers(self, register: int, data: bytes) -> None:
         if self._SMBus is None:
             raise RuntimeError("SMBus not initialized. Call start() first.")
         self._SMBus.write_i2c_block_data(self.addr, register, data)
 
+    @no_op_offline()
     def _read_registers(self, register: int, length: int) -> bytes:
         if self._SMBus is None:
             raise RuntimeError("SMBus not initialized. Call start() first.")
         return bytes(self._SMBus.read_i2c_block_data(self.addr, register, length))
 
+    @no_op_offline()
     def _read_data_registers(self) -> None:
         """
         Read data output registers
@@ -174,6 +180,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         self._encdata_new[:] = data
         self._data = data
 
+    @no_op_offline()
     def _check_diagnostics(self) -> None:
         if not self.diag_OCF:
             raise OSError("Invalid data returned on read, DIAG_OCF != 1")

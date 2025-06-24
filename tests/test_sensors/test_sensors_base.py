@@ -8,8 +8,8 @@ from opensourceleg.sensors.base import (
     LoadcellBase,
     SensorBase,
     SensorNotStreamingException,
-    check_sensor_stream,
 )
+from opensourceleg.sensors.decorators import check_sensor_stream
 
 
 # Test SensorNotStreamingException init

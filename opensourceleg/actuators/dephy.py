@@ -18,6 +18,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_connection,
     check_actuator_open,
     check_actuator_stream,
+    no_op_offline,
 )
 from opensourceleg.extras.safety import I2tLimitException, ThermalLimitException
 from opensourceleg.logging import LOGGER
@@ -58,8 +59,9 @@ def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
 
 def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Voltage control mode.")
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
+    if not dephy_actuator.is_offline:
+        dephy_actuator.stop_motor()
+        time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
@@ -68,8 +70,9 @@ def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
 
 def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Current control mode.")
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
+    if not dephy_actuator.is_offline:
+        dephy_actuator.stop_motor()
+        time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
@@ -78,8 +81,9 @@ def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
 
 def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Position control mode.")
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
+    if not dephy_actuator.is_offline:
+        dephy_actuator.stop_motor()
+        time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
@@ -88,8 +92,9 @@ def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
 
 def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
     LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Impedance control mode.")
-    dephy_actuator.stop_motor()
-    time.sleep(DEPHY_SLEEP_DURATION)
+    if not dephy_actuator.is_offline:
+        dephy_actuator.stop_motor()
+        time.sleep(DEPHY_SLEEP_DURATION)
 
 
 DEPHY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -240,6 +245,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.stop_streaming()
         self.close()
 
+    @no_op_offline
     def update(self) -> None:
         """
         Updates the actuator's data by reading new values and updating the thermal model.
@@ -283,6 +289,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             LOGGER.error(msg=f"[{str.upper(self.tag)}] I2t limit exceeded. " f"Current: {self.motor_current} mA. ")
             raise I2tLimitException()
 
+    @no_op_offline
     def home(
         self,
         homing_voltage: int = 2000,
@@ -354,6 +361,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self._is_homed = True
         LOGGER.info(f"[{str.upper(self.tag)}] Homing complete.")
 
+    @no_op_offline
     def set_motor_torque(self, value: float) -> None:
         """
         Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
@@ -370,6 +378,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             value / self.MOTOR_CONSTANTS.NM_PER_MILLIAMP,
         )
 
+    @no_op_offline
     def set_output_torque(self, value: float) -> None:
         """
         Set the output torque of the joint.
@@ -388,6 +397,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
+    @no_op_offline
     def set_motor_current(
         self,
         value: float,
@@ -408,9 +418,11 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.command_motor_current(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_current)
+    @no_op_offline
     def set_current(self, value: float) -> None:
         self.command_motor_current(value=int(value))
 
+    @no_op_offline
     def set_motor_voltage(self, value: float) -> None:
         """
         Sets the motor voltage in mV.
@@ -429,9 +441,11 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.command_motor_voltage(value=int(value))
 
     @deprecated_with_routing(alternative_func=set_motor_voltage)
+    @no_op_offline
     def set_voltage(self, value: float) -> None:
         self.command_motor_voltage(value=int(value))
 
+    @no_op_offline
     def set_motor_position(self, value: float) -> None:
         """
         Sets the motor position in radians.
@@ -460,6 +474,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         else:
             raise ControlModeException(tag=self._tag, attribute="set_motor_position", mode=self._mode.name)
 
+    @no_op_offline
     def set_position_gains(
         self,
         kp: float = DEFAULT_POSITION_GAINS.kp,
@@ -493,6 +508,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             ff=int(ff),
         )
 
+    @no_op_offline
     def set_current_gains(
         self,
         kp: float = DEFAULT_CURRENT_GAINS.kp,
@@ -526,6 +542,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             ff=int(ff),
         )
 
+    @no_op_offline
     def set_output_impedance(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
@@ -568,6 +585,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             ff=ff,
         )
 
+    @no_op_offline
     def set_impedance_gains(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
@@ -606,6 +624,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             ff=int(ff),
         )
 
+    @no_op_offline
     def set_motor_impedance(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
@@ -1018,6 +1037,22 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
+
+    @property
+    def is_streaming(self) -> bool:
+        return self._is_streaming
+
+    @is_streaming.setter
+    def is_streaming(self, value: bool) -> None:
+        self._is_streaming = value
+
+    @property
+    def is_open(self) -> bool:
+        return self._is_open
+
+    @is_open.setter
+    def is_open(self, value: bool) -> None:
+        self._is_open = value
 
     @property
     def gyroz(self) -> float:
