@@ -10,7 +10,7 @@ authors = [{ name = "Open-Source Leg", email = "opensourceleg@gmail.com" }]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 dependencies = [
-    "numpy>=1.24.3,<2",
+    "numpy>=1.24.3,<3",
     "board~=1.0",
     "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",

@@ -1193,7 +1193,7 @@ requires-dist = [
     { name = "grpcio-tools", marker = "extra == 'messaging'", specifier = ">=1.65.5,<2" },
     { name = "moteus", marker = "extra == 'moteus'", specifier = ">=0.3.72,<0.4" },
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'moteus'", specifier = ">=0.3.29,<0.4" },
-    { name = "numpy", specifier = ">=1.24.3,<2" },
+    { name = "numpy", specifier = ">=1.24.3,<3" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
     { name = "smbus2", marker = "sys_platform != 'win32'", specifier = ">=0.4.2" },
     { name = "types-protobuf", marker = "extra == 'messaging'", specifier = ">=4.21.0,<5" },
