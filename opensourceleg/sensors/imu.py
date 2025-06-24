@@ -19,7 +19,8 @@ from typing import Any, Union
 import numpy as np
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import IMUBase, check_sensor_stream
+from opensourceleg.sensors.base import IMUBase
+from opensourceleg.sensors.decorators import check_sensor_stream
 
 
 class LordMicrostrainIMU(IMUBase):

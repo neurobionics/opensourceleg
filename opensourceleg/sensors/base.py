@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 
 class SensorNotStreamingException(Exception):
@@ -21,29 +20,6 @@ class SensorNotStreamingException(Exception):
             f"{sensor_name} is not streaming, please ensure that the connections are intact, "
             f"power is on, and the start method is called."
         )
-
-
-def check_sensor_stream(func: Callable) -> Callable:
-    """
-    Decorator to ensure that a sensor is streaming before executing the decorated method.
-
-    If the sensor is not streaming, a SensorNotStreamingException is raised.
-
-    Args:
-        func (Callable): The sensor method to be wrapped.
-
-    Returns:
-        Callable: The wrapped method that checks streaming status before execution.
-    """
-
-    @wraps(func)
-    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-        # TODO: This could be a generic type that points to actuator, sensor, etc.
-        if not self.is_streaming:
-            raise SensorNotStreamingException(sensor_name=self.__repr__())
-        return func(self, *args, **kwargs)
-
-    return wrapper
 
 
 class SensorBase(ABC):
