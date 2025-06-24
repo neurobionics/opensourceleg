@@ -14,8 +14,11 @@ def func():
     Logger.init(time_format = None, log_directory = None, log_name = None, print_stdout = False)
 
     t = time.time()
+    make_simple = simple()
     for i in range(1, 1000000):
-        Logger.warn("yolo")
+        #Logger.warn("yolo")
+        Logger.trace_variables(dict(one=1, two=make_simple))
+        Logger.flush_record()
         
     print(time.time() - t)
 cProfile.run('func()')

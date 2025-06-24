@@ -2,18 +2,16 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value};
-use tracing::trace;
+use tracing::{enabled, trace, Level};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
-    label: String,
     variables: HashMap::<String, Value>
 }
 
 impl Record {
-    pub fn new(label: String) -> Self{
+    pub fn new() -> Self{
         Self {
-            label,
             variables: HashMap::<String, Value>::new(),
         }
     }

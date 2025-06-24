@@ -38,7 +38,7 @@ impl Logger {
             let log_name = log_name.unwrap_or(String::from("logfile.log"));
 
             let mut layers = vec![];
-            let _ = RECORD.set(Mutex::new(Record::new(String::from("base"))));
+            let _ = RECORD.set(Mutex::new(Record::new()));
 
             if print_stdout {
                 layers.push(create_stdout_layer(time.clone()).boxed());
