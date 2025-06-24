@@ -357,7 +357,7 @@ class SoftRealtimeLoop:
 
         # Busy wait until the time we should be running at
         while time.monotonic() < self.loop_deadline and not self.killer.kill_now:
-            if os.name == "posix" and signal.sigtimedwait(self.killer.signals, 0):
+            if os.name == "posix" and hasattr(signal, "sigtimedwait") and signal.sigtimedwait(self.killer.signals, 0):
                 self.stop()
 
         # If the loop is killed while we were waiting, raise a StopIteration
@@ -402,7 +402,7 @@ class SoftRealtimeLoop:
         # Busy wait to compensate for sleep durations precision
         time_to_busy_wait = time.monotonic() + PRECISION_OF_SLEEP
         while time.monotonic() < time_to_busy_wait and not self.killer.kill_now:
-            if os.name == "posix" and signal.sigtimedwait(self.killer.signals, 0):
+            if os.name == "posix" and hasattr(signal, "sigtimedwait") and signal.sigtimedwait(self.killer.signals, 0):
                 self.stop()
                 raise StopIteration
 

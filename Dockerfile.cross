@@ -1,0 +1,61 @@
+# Multi-stage Dockerfile for cross-compilation
+FROM rust:1.75-slim-bookworm as cross-compiler
+
+# Install cross-compilation dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    gcc-aarch64-linux-gnu \
+    gcc-arm-linux-gnueabihf \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add ARM targets
+RUN rustup target add aarch64-unknown-linux-gnu \
+    && rustup target add armv7-unknown-linux-gnueabihf
+
+# Install UV
+RUN pip install uv
+
+# Configure cross-compilation
+RUN mkdir -p ~/.cargo && \
+    echo '[target.aarch64-unknown-linux-gnu]' >> ~/.cargo/config.toml && \
+    echo 'linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml && \
+    echo '' >> ~/.cargo/config.toml && \
+    echo '[target.armv7-unknown-linux-gnueabihf]' >> ~/.cargo/config.toml && \
+    echo 'linker = "arm-linux-gnueabihf-gcc"' >> ~/.cargo/config.toml
+
+WORKDIR /workspace
+
+# Copy project files
+COPY uv.lock pyproject.toml Cargo.toml ./
+COPY src/ src/
+COPY opensourceleg/ opensourceleg/
+
+# Install Python dependencies
+RUN uv sync
+
+# Build script
+COPY <<EOF /build.sh
+#!/bin/bash
+set -e
+
+echo "Building for native platform..."
+uv run maturin build --release --out /workspace/dist
+
+echo "Building for ARM64 (Raspberry Pi 4/5)..."
+uv run maturin build --release --target aarch64-unknown-linux-gnu --out /workspace/dist
+
+echo "Building for ARMhf (Raspberry Pi 3/older)..."
+uv run maturin build --release --target armv7-unknown-linux-gnueabihf --out /workspace/dist
+
+echo "✅ Cross-compilation complete! Wheels available in dist/"
+ls -la /workspace/dist/
+EOF
+
+RUN chmod +x /build.sh
+
+CMD ["/build.sh"]

@@ -25,7 +25,16 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
-from smbus2 import SMBus
+
+# Conditional import for platform-specific modules
+try:
+    from smbus2 import SMBus
+
+    HAS_SMBUS = True
+except ImportError:
+    # SMBus is not available on Windows - set a placeholder
+    HAS_SMBUS = False
+    SMBus = None
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.math.math import Counter
@@ -179,8 +188,11 @@ class DephyLoadcellAmplifier(LoadcellBase):
         If using I2C Mode, it opens the I2C connection using SMBus, waits briefly for hardware stabilization,
         and sets the streaming flag to True.
         """
-        self._smbus = SMBus(self._bus)
-        time.sleep(1)
+        if not self.is_offline and HAS_SMBUS:
+            self._smbus = SMBus(self._bus)
+            time.sleep(1)
+        elif not self.is_offline and not HAS_SMBUS:
+            LOGGER.warning(f"[{self.__repr__()}] SMBus not available. Running in offline mode.")
         self._is_streaming = True
 
     def reset(self) -> None:
@@ -298,7 +310,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Sets the streaming flag to False and closes the I2C connection if it is open.
         """
         self._is_streaming = False
-        if hasattr(self, "_smbus"):
+        if hasattr(self, "_smbus") and self._smbus is not None:
             self._smbus.close()
 
     def _read_compressed_strain(self) -> npt.NDArray[np.uint16]:
@@ -312,14 +324,18 @@ class DephyLoadcellAmplifier(LoadcellBase):
         Returns:
             Any: The unpacked strain data.
         """
-        try:
-            data = self._smbus.read_i2c_block_data(self._i2c_address, DEPHY_AMPLIFIER_MEMORY_CHANNELS.CH1_H, 10)
-            self.failed_reads = 0
-        except OSError:
-            self.failed_reads += 1
+        if self.is_offline or not HAS_SMBUS or not hasattr(self, "_smbus"):
+            # Return dummy data for offline mode or when SMBus is not available
+            data = [0] * 10
+        else:
+            try:
+                data = self._smbus.read_i2c_block_data(self._i2c_address, DEPHY_AMPLIFIER_MEMORY_CHANNELS.CH1_H, 10)
+                self._failed_reads = 0
+            except OSError:
+                self._failed_reads += 1
 
-            if self.failed_reads >= 5:
-                raise LoadcellNotRespondingException("Load cell unresponsive.") from None
+                if self._failed_reads >= 5:
+                    raise LoadcellNotRespondingException("Load cell unresponsive.") from None
 
         return self._unpack_compressed_strain(np.array(object=data, dtype=np.uint8))
 
