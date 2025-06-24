@@ -105,7 +105,10 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
             raise ValueError("Loadcell is not connected")
         if osl.ankle is None:
             raise ValueError("Ankle is not connected")
-        return bool(-(osl.loadcell.fz) > LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
+        return bool(
+            -(osl.loadcell.fz) > LOAD_LSTANCE
+            and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
+        )
 
     def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
         """
@@ -125,7 +128,10 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         if osl.ankle is None:
             raise ValueError("Ankle is not connected")
 
-        return bool (osl.ankle.output_position > ANKLE_THETA_ESWING_TO_LSWING and osl.ankle.output_velocity < ANKLE_DTHETA_ESWING_TO_LSWING)
+        return bool (
+            osl.ankle.output_position > ANKLE_THETA_ESWING_TO_LSWING
+            and osl.ankle.output_velocity < ANKLE_DTHETA_ESWING_TO_LSWING
+        )
 
     def lswing_to_estance(osl: OpenSourceLeg) -> bool:
         """
@@ -137,7 +143,10 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
             raise ValueError("Loadcell is not connected")
         if osl.ankle is None:
             raise ValueError("Ankle is not connected")
-        return bool(-osl.loadcell.fz > LOAD_ESTANCE or osl.ankle.output_position < ANKLE_THETA_LSWING_TO_ESTANCE)
+        return bool(
+            -osl.loadcell.fz > LOAD_ESTANCE 
+            or osl.ankle.output_position < ANKLE_THETA_LSWING_TO_ESTANCE
+        )
 
     fsm = StateMachine(
         states=[
