@@ -15,9 +15,8 @@ def func():
 
     t = time.time()
     for i in range(1, 1000000):
-        #Logger.debug("yolo")
-        Logger.trace_variables(dict(one=1, two=simple()))
-        Logger.flush_record()
+        Logger.warn("yolo")
+        
     print(time.time() - t)
 cProfile.run('func()')
 #func()

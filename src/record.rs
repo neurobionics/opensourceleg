@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value};
 use tracing::trace;
 
 #[derive(Serialize, Deserialize, Debug)]

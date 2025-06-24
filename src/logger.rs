@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use once_cell::sync::OnceCell;
 use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyStringMethods};
-use pyo3::{pyclass, pymethods, Bound, PyResult};
+use pyo3::{pyclass, pymethods, Bound, FromPyObject, PyAny, PyResult};
 use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn, Level};
@@ -81,15 +81,28 @@ impl Logger {
     pub fn trace_variables<'py>(dict: &Bound<'_, PyDict>) -> PyResult<()>{
         if let Some(lock) = RECORD.get() {
             let mut record = lock.lock().unwrap();
-
             for (key, val) in dict.iter() {
-                let key_str = key.str()?.to_str()?.to_owned();
-                let val_str = val.str()?.to_str()?.to_owned();
-                let json_str = Value::String(val_str);
-                record.insert_variable(key_str, json_str);
+                let val_str = if let Ok(v) = val.extract::<bool>() {
+                    serde_json::to_value(v).expect("Error converting to JSON Value")
+                }
+                else if let Ok(v) = val.extract::<i64>() {
+                    serde_json::to_value(v).expect("Error converting to JSON Value")
+                }
+                else if let Ok(v) = val.extract::<f64>() {
+                    serde_json::to_value(v).expect("Error converting to JSON Value")
+                }
+                else if let Ok(v) = val.extract::<&str>() {
+                    serde_json::to_value(v).expect("Error converting to JSON Value")
+                }
+                else {
+                    let repr = val.str()?.to_str()?.to_owned();
+                    serde_json::to_value(repr).expect("Error converting to JSON Value")
+                };
+
+                let key_str = key.extract::<&str>()?.to_owned();
+                record.insert_variable(key_str, val_str);
             }
         }
-
         Ok(())
     }
     
