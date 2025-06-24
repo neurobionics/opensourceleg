@@ -44,6 +44,7 @@ def check_actuator_connection(func: Callable) -> Callable:
         if not hasattr(self, "is_offline") or not hasattr(self, "tag"):
             raise AttributeError("Object missing required attributes for actuator decorators.")
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -82,6 +83,7 @@ def check_actuator_open(func: Callable) -> Callable:
         if not self.is_open:
             raise ActuatorConnectionException(tag=self.tag)
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -120,4 +122,19 @@ def check_actuator_stream(func: Callable) -> Callable:
         if not self.is_streaming:
             raise ActuatorStreamException(tag=self.tag)
         return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def no_op_offline(func: Callable) -> Callable:
+    """
+    Decorator that makes the method a no-op if the actuator is in offline mode.
+    """
+
+    @wraps(func)
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+        if getattr(self, "is_offline", False):
+            return None
+        return func(self, *args, **kwargs)
+
     return wrapper
