@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fs::{File}, io::{Write}, sync::Mutex};
 use serde_json::{Value};
+use tracing::warn;
 
 pub struct Record {
     variables: HashMap::<String, Value>,
@@ -16,7 +17,11 @@ impl Record {
     }
 
     pub fn insert_variable(&mut self, key: String, value: Value) {
-        self.variables.insert(key, value);
+        let prev_value = self.variables.insert(key, value);
+
+        if let Some(old) = prev_value {
+            warn!("{} is being overwritten", old);
+        }
     }
 
     pub fn flush(&mut self) {

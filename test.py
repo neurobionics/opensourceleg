@@ -16,12 +16,13 @@ def func():
 
     t = time.time()
     make_simple = simple()
-    for i in range(1, 100000):
+    for i in range(1, 1000):
         Logger.debug("debug msg")
         Logger.warn("this is a warning")
         make_simple.add(3)
         Logger.trace_variables(dict(one=1, two=make_simple))
-        Logger.flush_record()
+    
+    Logger.flush_record()
     print(time.time() - t)
 cProfile.run('func()')
 #func()
