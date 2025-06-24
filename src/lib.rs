@@ -8,7 +8,7 @@ fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", "3.1.0")?;
 
     // Add math submodule
-    let math_module = PyModule::new_bound(m.py(), "math")?;
+    let math_module = PyModule::new(m.py(), "math")?;
     math::register_module(&math_module)?;
     m.add_submodule(&math_module)?;
 

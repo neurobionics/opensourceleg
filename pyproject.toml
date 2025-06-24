@@ -15,7 +15,7 @@ dependencies = [
     "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "pandas>=2.2.3,<3",
-    "smbus2>=0.4.2",
+    "smbus2>=0.4.2 ; sys_platform != 'win32'",
 ]
 
 [project.optional-dependencies]
