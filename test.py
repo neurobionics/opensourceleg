@@ -4,10 +4,11 @@ import cProfile
 
 class simple:
     z = 5
-    def add(x, y):
-        return x + y
+    def add(self, x):
+        self.z+=x
     def __str__(self):
         return f"Simple({self.z})"
+    
 
 def func():
     # None values default
@@ -15,11 +16,8 @@ def func():
 
     t = time.time()
     make_simple = simple()
-    for i in range(1, 100000):
-        Logger.error("error msg")
-        Logger.warn("warn msg")
-        Logger.debug("debug msg")
-        Logger.trace_variables(dict(one=1, two=make_simple))
+    for i in range(1, 1000000):
+        Logger.trace_variables(dict(one=1, two=2))
         Logger.flush_record()
         
     print(time.time() - t)

@@ -1,4 +1,6 @@
 use crate::record::Record;
+use std::fs;
+use std::path::Path;
 use std::sync::Mutex;
 
 use once_cell::sync::OnceCell;
@@ -39,7 +41,16 @@ impl Logger {
             let log_name = log_name.unwrap_or(String::from("logfile.log"));
 
             let mut layers = vec![];
-            let _ = RECORD.set(Mutex::new(Record::new(String::from("blob.log"))));
+            let path = Path::new(&dir).join("variables.log");
+
+            if let Some(parent) = path.parent() {
+                if !parent.exists() {
+                    let _ = fs::create_dir_all(parent);
+                }
+            }
+
+            let path_str = path.to_str().expect("error").to_owned();
+            let _ = RECORD.set(Mutex::new(Record::new(path_str)));
 
             if print_stdout {
                 layers.push(create_stdout_layer(time.clone()).boxed());

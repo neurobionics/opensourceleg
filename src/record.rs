@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::{self, File}, io::{BufWriter, Write}, sync::Mutex};
+use std::{collections::HashMap, fs::{File}, io::{Write}, sync::Mutex};
 use serde_json::{Value};
 
 pub struct Record {
@@ -20,7 +20,6 @@ impl Record {
     }
 
     pub fn flush(&mut self) {
-        //trace!(target: "variables", "{}",  serde_json::to_string(&self.variables).expect("error"));
         let mut lock = self.file.lock().expect("variable log file lock poisoned");
         let json = serde_json::to_string(&self.variables).expect("json serialization failed");
         if let Err(e) = writeln!(lock, "{json}") {
