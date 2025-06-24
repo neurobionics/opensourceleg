@@ -1,5 +1,14 @@
 from typing import Any, Dict, Optional
 
+class LogLevel:
+    """Enum for available log levels."""
+    Trace: "LogLevel"
+    Debug: "LogLevel"
+    Info: "LogLevel"
+    Warn: "LogLevel"
+    Error: "LogLevel"
+
+
 class Logger:
     """
     A class for configuring and using a logger.
