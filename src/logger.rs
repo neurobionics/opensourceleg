@@ -8,9 +8,10 @@ use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn, Level};
 use tracing::debug;
-use tracing_appender::non_blocking::{NonBlocking};
+use tracing_appender::non_blocking::{NonBlocking, NonBlockingBuilder};
 use tracing_appender::rolling;
 use tracing_subscriber::fmt::format::{DefaultFields, Format};
+use tracing_subscriber::fmt::writer;
 use tracing_subscriber::{filter, fmt, Registry};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
@@ -38,14 +39,14 @@ impl Logger {
             let log_name = log_name.unwrap_or(String::from("logfile.log"));
 
             let mut layers = vec![];
-            let _ = RECORD.set(Mutex::new(Record::new()));
+            let _ = RECORD.set(Mutex::new(Record::new(String::from("blob.log"))));
 
             if print_stdout {
                 layers.push(create_stdout_layer(time.clone()).boxed());
             }
 
             layers.push(create_file_layer(dir.clone(), log_name, time).boxed());
-            layers.push(create_variable_layer(dir).boxed());
+            //layers.push(create_variable_layer(dir).boxed());
             let subscriber = Registry::default().with(layers);
 
             tracing::subscriber::set_global_default(subscriber).expect("error");
@@ -166,6 +167,7 @@ fn create_variable_layer(dir: String) -> filter::Filtered<
                                                 .with_target("variables" ,Level::TRACE);
 
     let var_fw = rolling::daily(dir, "variables.log");
+
     let (writer, guard) = tracing_appender::non_blocking(var_fw);
     let _ = VAR_GUARD.set(guard);
     let variable_layer = fmt::layer()

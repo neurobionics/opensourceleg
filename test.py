@@ -15,8 +15,10 @@ def func():
 
     t = time.time()
     make_simple = simple()
-    for i in range(1, 1000000):
-        #Logger.warn("yolo")
+    for i in range(1, 100000):
+        Logger.error("error msg")
+        Logger.warn("warn msg")
+        Logger.debug("debug msg")
         Logger.trace_variables(dict(one=1, two=make_simple))
         Logger.flush_record()
         
