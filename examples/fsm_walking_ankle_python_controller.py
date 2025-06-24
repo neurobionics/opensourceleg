@@ -65,6 +65,58 @@ ANKLE_THETA_LSWING_TO_ESTANCE = np.deg2rad(15.0)
 
 # ---------------------------------------------------- #
 
+def estance_to_lstance(osl: OpenSourceLeg) -> bool:
+    """
+    Transition from early stance to late stance when the loadcell
+    reads a force greater than a threshold and the ankle position
+    is greater than a threshold.
+    """
+    if osl.loadcell is None:
+        raise ValueError("Loadcell is not connected")
+    if osl.ankle is None:
+        raise ValueError("Ankle is not connected")
+    return bool(
+        -(osl.loadcell.fz) > LOAD_LSTANCE
+        and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
+    )
+
+def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
+    """
+    Transition from late stance to early swing when the loadcell
+    reads a force less than a threshold.
+    """
+    if osl.loadcell is None:
+        raise ValueError("Loadcell is not connected")
+    return bool(-(osl.loadcell.fz) < LOAD_ESWING)
+
+def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
+    """
+    Transition from early swing to late swing when the ankle angle
+    is greater than a threshold and the ankle velocity is less than
+    a threshold.
+    """
+    if osl.ankle is None:
+        raise ValueError("Ankle is not connected")
+
+    return bool (
+        osl.ankle.output_position > ANKLE_THETA_ESWING_TO_LSWING
+        and osl.ankle.output_velocity < ANKLE_DTHETA_ESWING_TO_LSWING
+    )
+
+def lswing_to_estance(osl: OpenSourceLeg) -> bool:
+    """
+    Transition from late swing to early stance when the loadcell
+    reads a force greater than a threshold or the ankle angle is
+    less than a threshold.
+    """
+    if osl.loadcell is None:
+        raise ValueError("Loadcell is not connected")
+    if osl.ankle is None:
+        raise ValueError("Ankle is not connected")
+    return bool(
+        -osl.loadcell.fz > LOAD_ESTANCE 
+        or osl.ankle.output_position < ANKLE_THETA_LSWING_TO_ESTANCE
+    )
 
 def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
     e_stance = State(
@@ -94,59 +146,6 @@ def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
         ankle_stiffness=ANKLE_K_LSWING,
         ankle_damping=ANKLE_B_LSWING,
     )
-
-    def estance_to_lstance(osl: OpenSourceLeg) -> bool:
-        """
-        Transition from early stance to late stance when the loadcell
-        reads a force greater than a threshold and the ankle position
-        is greater than a threshold.
-        """
-        if osl.loadcell is None:
-            raise ValueError("Loadcell is not connected")
-        if osl.ankle is None:
-            raise ValueError("Ankle is not connected")
-        return bool(
-            -(osl.loadcell.fz) > LOAD_LSTANCE
-            and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
-        )
-
-    def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
-        """
-        Transition from late stance to early swing when the loadcell
-        reads a force less than a threshold.
-        """
-        if osl.loadcell is None:
-            raise ValueError("Loadcell is not connected")
-        return bool(-(osl.loadcell.fz) < LOAD_ESWING)
-
-    def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
-        """
-        Transition from early swing to late swing when the ankle angle
-        is greater than a threshold and the ankle velocity is less than
-        a threshold.
-        """
-        if osl.ankle is None:
-            raise ValueError("Ankle is not connected")
-
-        return bool (
-            osl.ankle.output_position > ANKLE_THETA_ESWING_TO_LSWING
-            and osl.ankle.output_velocity < ANKLE_DTHETA_ESWING_TO_LSWING
-        )
-
-    def lswing_to_estance(osl: OpenSourceLeg) -> bool:
-        """
-        Transition from late swing to early stance when the loadcell
-        reads a force greater than a threshold or the ankle angle is
-        less than a threshold.
-        """
-        if osl.loadcell is None:
-            raise ValueError("Loadcell is not connected")
-        if osl.ankle is None:
-            raise ValueError("Ankle is not connected")
-        return bool(
-            -osl.loadcell.fz > LOAD_ESTANCE 
-            or osl.ankle.output_position < ANKLE_THETA_LSWING_TO_ESTANCE
-        )
 
     fsm = StateMachine(
         states=[
