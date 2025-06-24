@@ -91,6 +91,6 @@ If you encounter any issues or need assistance:
 
 Choose a tutorial to get started:
 
-- [Home OSL Joints](homing_joints.md)
+- [Homing OSL Joints](homing_joints.md)
 
 Each tutorial includes specific setup instructions and code examples.
