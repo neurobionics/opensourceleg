@@ -1,4 +1,5 @@
 use crate::record::Record;
+use crate::rotator::RotatingFileWriter;
 use std::fs;
 use std::path::Path;
 use std::sync::Mutex;
@@ -32,9 +33,10 @@ pub struct Logger{}
 impl Logger {
     //#[new]
     #[staticmethod]
-    #[pyo3(signature = (time_format = None, log_directory = None, log_name = None, print_stdout = false))]
+    #[pyo3(signature = (time_format = None, log_directory = None, log_name = None, print_stdout = false, file_max_bytes = 0, backup_count = 0))]
     pub fn init(time_format: Option<String>,
-                log_directory: Option<String>, log_name: Option<String>, print_stdout: bool){
+                log_directory: Option<String>, log_name: Option<String>, print_stdout: bool,
+                file_max_bytes: u64, backup_count: u64){
         SUBSCRIBER.get_or_init(|| {
             let time = time_format.unwrap_or(String::from("%Y-%m-%d %H:%M:%S%.3f"));
             let dir = log_directory.unwrap_or(String::from("./logs"));
@@ -56,7 +58,7 @@ impl Logger {
                 layers.push(create_stdout_layer(time.clone()).boxed());
             }
 
-            layers.push(create_file_layer(dir.clone(), log_name, time).boxed());
+            layers.push(create_file_layer(dir.clone(), log_name, time, file_max_bytes, backup_count).boxed());
             //layers.push(create_variable_layer(dir).boxed());
             let subscriber = Registry::default().with(layers);
 
@@ -147,13 +149,13 @@ fn create_stdout_layer(time: String) -> tracing_subscriber::fmt::Layer<
     base
 }
 
-fn create_file_layer(dir: String, log_name: String, time: String) -> filter::Filtered<
+fn create_file_layer(dir: String, log_name: String, time: String, file_max_size: u64, backup_count: u64) -> filter::Filtered<
     fmt::Layer<Registry, DefaultFields, Format<fmt::format::Full, ChronoLocal>, NonBlocking>,
     LevelFilter,
     Registry
 >{
     //Create file layer
-    let file_appender = rolling::daily(dir, log_name);
+    let file_appender = RotatingFileWriter::new(Path::new(&dir).join(String::from(log_name)).to_path_buf(), file_max_size, backup_count);
     let (non_blocking_writer, _guard) = tracing_appender::non_blocking(file_appender);
     
     //Must keep guard in memory

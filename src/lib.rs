@@ -1,5 +1,6 @@
 pub mod logger;
 pub mod record;
+pub mod rotator;
 use pyo3::{prelude::*};
 
 use crate::logger::Logger;
