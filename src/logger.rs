@@ -6,15 +6,13 @@ use std::sync::Mutex;
 
 use once_cell::sync::OnceCell;
 use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyStringMethods};
-use pyo3::{pyclass, pymethods, Bound, FromPyObject, PyAny, PyResult};
-use serde_json::Value;
+use pyo3::{pyclass, pymethods, Bound, PyResult};
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn, Level};
 use tracing::debug;
-use tracing_appender::non_blocking::{NonBlocking, NonBlockingBuilder};
+use tracing_appender::non_blocking::{NonBlocking};
 use tracing_appender::rolling;
 use tracing_subscriber::fmt::format::{DefaultFields, Format};
-use tracing_subscriber::fmt::writer;
 use tracing_subscriber::{filter, fmt, Registry};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
