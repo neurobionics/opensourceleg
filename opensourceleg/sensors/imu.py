@@ -20,7 +20,7 @@ import numpy as np
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import IMUBase
-from opensourceleg.sensors.decorators import check_sensor_stream
+from opensourceleg.sensors.decorators import check_sensor_stream, no_op_offline
 
 
 class LordMicrostrainIMU(IMUBase):
@@ -170,6 +170,7 @@ class LordMicrostrainIMU(IMUBase):
         """
         self._return_packets = return_packets
 
+    @no_op_offline()
     def start(self) -> None:
         """
         Start the Lord Microstrain IMU sensor.
@@ -202,6 +203,7 @@ class LordMicrostrainIMU(IMUBase):
         self._node.setToIdle()
         self._is_streaming = False
 
+    @no_op_offline()
     @check_sensor_stream
     def ping(self) -> None:
         """
@@ -219,6 +221,7 @@ class LordMicrostrainIMU(IMUBase):
         else:
             LOGGER.error(f"Failed to ping the IMU at {self.port}")
 
+    @no_op_offline()
     def update(self) -> Union[None, Any]:
         """
         Retrieve and update IMU data from the sensor. To modify update parameters, use the set_update_timeout,
