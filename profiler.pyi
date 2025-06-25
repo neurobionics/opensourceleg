@@ -1,12 +1,13 @@
+from enum import Enum
 from typing import Any, Dict, Optional
 
-class LogLevel:
+class LogLevel(Enum):
     """Enum for available log levels."""
-    Trace: "LogLevel"
-    Debug: "LogLevel"
-    Info: "LogLevel"
-    Warn: "LogLevel"
-    Error: "LogLevel"
+    TRACE: LogLevel
+    DEBUG: LogLevel
+    INFO: LogLevel
+    WARN: LogLevel
+    ERROR: LogLevel
 
 
 class Logger:

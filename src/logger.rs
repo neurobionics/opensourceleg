@@ -27,21 +27,21 @@ static RECORD: OnceCell<Mutex<Record>> = OnceCell::new();
 #[pyclass(name = "LogLevel")]
 #[derive(Clone)]
 pub enum PyLogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warn,
-    Error
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR
 }
 
 impl From<PyLogLevel> for LevelFilter {
     fn from(level: PyLogLevel) -> Self {
         match level {
-            PyLogLevel::Trace => LevelFilter::TRACE,
-            PyLogLevel::Debug => LevelFilter::DEBUG,
-            PyLogLevel::Info => LevelFilter::INFO,
-            PyLogLevel::Warn => LevelFilter::WARN,
-            PyLogLevel::Error => LevelFilter::ERROR
+            PyLogLevel::TRACE => LevelFilter::TRACE,
+            PyLogLevel::DEBUG => LevelFilter::DEBUG,
+            PyLogLevel::INFO => LevelFilter::INFO,
+            PyLogLevel::WARN => LevelFilter::WARN,
+            PyLogLevel::ERROR => LevelFilter::ERROR
         }
     }
 }
@@ -70,9 +70,10 @@ impl Logger {
             let path = Path::new(&dir).join("variables.log");
 
             if let Some(parent) = path.parent() {
-                if !parent.exists() {
-                    let _ = fs::create_dir_all(parent);
+                if parent.exists() {
+                    let _ = fs::remove_dir_all(parent);
                 }
+                let _ = fs::create_dir_all(parent);
             }
 
             let path_str = path.to_str().expect("error").to_owned();

@@ -14,12 +14,12 @@ class simple:
 def func():
     # None values default
     Logger.init(time_format = None, log_directory = None, log_name = None, print_stdout = True, file_max_bytes = 1028, backup_count = 5, 
-                stdout_level = LogLevel.Warn, logfile_level = LogLevel.Debug)
+                stdout_level = LogLevel.WARN, logfile_level = LogLevel.TRACE)
 
     t = time.time()
     make_simple = simple()
     for i in range(1, 10):
-        Logger.error("debug msg")
+        Logger.info("info msg")
         Logger.warn("this is a warning")
         # make_simple.add(3)
         # Logger.trace_variables(dict(one=1, two=make_simple))

@@ -26,6 +26,11 @@ impl Record {
 
     pub fn flush(&mut self) {
         let mut lock = self.file.lock().expect("variable log file lock poisoned");
+        
+        if self.variables.is_empty() {
+            return;
+        }
+
         let json = serde_json::to_string(&self.variables).expect("json serialization failed");
         if let Err(e) = writeln!(lock, "{json}") {
             eprintln!("Failed to write to file: {e}");
