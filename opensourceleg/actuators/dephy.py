@@ -536,7 +536,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
-        This sets the impedance at the output and automatically scales based on gear raitos.
+        This sets the impedance at the output and automatically scales based on gear ratios.
 
         Conversion:
             K_motor = K_joint / (gear_ratio ** 2)
@@ -560,7 +560,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             b=b / (self.gear_ratio**2),
         )
 
-    def save_impedance_gains(
+    def save_impedance_control_gains(
         self,
         kp: float,
         ki: float,
@@ -568,7 +568,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         ff: float,
     ) -> None:
         """
-        Caches the gains, should be called before set_output_impedence
+        Caches the control gains used for the impedance control mode.
+        This should be called before set_output_impedance.
 
         Args:
             kp (float): Proportional gain. Defaults to 40.
@@ -632,6 +633,14 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> actuator.start()
             >>> actuator.set_motor_impedance(k=0.08922, b=0.0038070) TODO: Validate numbers
         """
+        MIN_K, MAX_K = 0.001, 1
+        MIN_B, MAX_B = 0.0001, 1
+
+        if k < MIN_K or k > MAX_K:
+            raise ValueError(f"Stiffness k={k} is out of the range {MIN_K}-{MAX_K}")
+        if b < MIN_B or b > MAX_B:
+            raise ValueError(f"Damping b={b} is out of the range {MIN_B}-{MAX_B}")
+
         self.set_impedance_gains(
             k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
             b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
