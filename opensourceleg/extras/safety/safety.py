@@ -1,5 +1,6 @@
 from collections import deque
 from dataclasses import dataclass
+from types import TracebackType
 from typing import Any, Callable, Optional
 
 import numpy as np
@@ -418,7 +419,7 @@ class SafetyManager:
     def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
 
-    def disable_temporarily(self):
+    def disable_temporarily(self) -> "SafetyManager.SafetyDisableContext":
         """
         Context manager to temporarily disable safety checks.
 
@@ -437,11 +438,11 @@ class SafetyManager:
 class SafetyDisableContext:
     """Context manager for temporarily disabling safety checks."""
 
-    def __init__(self, safety_manager):
+    def __init__(self, safety_manager: "SafetyManager") -> None:
         self.safety_manager = safety_manager
-        self.original_safe_objects = None
+        self.original_safe_objects: dict[object, dict[str, list[Callable]]] | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> "SafetyManager.SafetyDisableContext":
         """Store current safety state and disable safety checks."""
         # Store the current safe_objects state
         self.original_safe_objects = self.safety_manager._safe_objects.copy()
@@ -449,10 +450,13 @@ class SafetyDisableContext:
         self.safety_manager._safe_objects.clear()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> bool:
         """Restore original safety state."""
         # Restore the original safe_objects
-        self.safety_manager._safe_objects = self.original_safe_objects
+        if self.original_safe_objects is not None:
+            self.safety_manager._safe_objects = self.original_safe_objects
         # Restart safety checks
         self.safety_manager.start()
         return False  # Don't suppress exceptions
