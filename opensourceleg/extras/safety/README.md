@@ -105,27 +105,27 @@ The safety module provides a comprehensive framework for adding safety checks an
    ```python
    class MyActuator(base.ActuatorBase):
 
-   def __init__(self, *args, **kwargs):
-       super().__init__(*args, **kwargs)
-       self.safety_manager = SafetyManager()
-       # Configure safety checks
-       self._setup_safety()
+    def __init__(self, *args, **kwargs):  # ← Now properly indented
+        super().__init__(*args, **kwargs)
+        self.safety_manager = SafetyManager()
+        # Configure safety checks
+        self._setup_safety()
 
-   def _setup_safety(self):
-       # Temperature monitoring
-       self.safety_manager.add_safety(
-           self, "case_temperature",
-           SafetyDecorators.is_less_than(80, clamp=False)
-       )
-       # Should implement your own safety checks below
+    def _setup_safety(self):  # ← Also indented
+        # Temperature monitoring
+        self.safety_manager.add_safety(
+            self, "case_temperature",
+            SafetyDecorators.is_less_than(80, clamp=False)
+        )
+        # Should implement your own safety checks below
 
-   def update(self) -> None:
-       super().update()
+    def update(self) -> None:  # ← Also indented
+        super().update()
 
-       # Run safety checks
-       self.safety_manager.update()
+        # Run safety checks
+        self.safety_manager.update()
 
-       # Should implement your own update steps below
+        # Should implement your own update steps below
    ```
 
 ## Reference
@@ -133,7 +133,7 @@ The safety module provides a comprehensive framework for adding safety checks an
 ### Safety Execption Classes
 
 - **`ThermalLimitException`**: Raised when software thermal limits are exceeded
-- **`I2tLimitException`**: Raised when Dephy ActPack I²t (current-time) limits are exceeded
+- **`I2tLimitException`**: Raised when I²t (current-time) limits are exceeded
 
 ### Safety Decorators Reference
 
@@ -148,19 +148,6 @@ The safety module provides a comprehensive framework for adding safety checks an
 | `is_changing(attribute_name, max_points=10, threshold=1e-6)` | Monitors value changes         | attribute_name, max_points, threshold |
 | `custom_criteria(criteria)`                                  | Custom validation function     | criteria                              |
 
-### [DephyActuator](./dephy.py) Safety Support
-
-#### Built-in Safety Features
-
-- Automatic thermal monitoring (case and winding temperatures)
-- I²t limit detection with automatic exception raising
-- Thermal scaling factor calculation
-- Integrated exception handling in `update()` method
-
-#### Known Issues
-
-- Thermal model accuracy depends on ambient temperature calibration
-
 ### SafetyManager Methods
 
 | Method                                       | Purpose                         | Parameters                     |
@@ -171,11 +158,10 @@ The safety module provides a comprehensive framework for adding safety checks an
 
 ### Best Practices
 
-1. **Always use context managers** (`with` statements) when working with actuators
-2. **Configure safety limits before starting** actuator operation
-3. **Handle exceptions gracefully** with proper cleanup and logging
-4. **Test safety systems** thoroughly before deployment
-5. **Set reasonable thresholds** based on your hardware specifications
+1. **Configure safety limits before starting** actuator operation
+2. **Handle exceptions gracefully** with proper cleanup and logging
+3. **Test safety systems** thoroughly before deployment
+4. **Set reasonable thresholds** based on your hardware specifications
 
 ### Error Handling Example
 

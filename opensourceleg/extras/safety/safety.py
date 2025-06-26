@@ -418,6 +418,45 @@ class SafetyManager:
     def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
 
+    def disable_temporarily(self):
+        """
+        Context manager to temporarily disable safety checks.
+
+        Usage:
+            with safety_manager.disable_temporarily():
+                # Safety checks are disabled in this block
+                risky_operation()
+            # Safety checks are re-enabled here
+
+        Returns:
+            SafetyDisableContext: Context manager instance
+        """
+        return self.SafetyDisableContext(self)
+
+
+class SafetyDisableContext:
+    """Context manager for temporarily disabling safety checks."""
+
+    def __init__(self, safety_manager):
+        self.safety_manager = safety_manager
+        self.original_safe_objects = None
+
+    def __enter__(self):
+        """Store current safety state and disable safety checks."""
+        # Store the current safe_objects state
+        self.original_safe_objects = self.safety_manager._safe_objects.copy()
+        # Clear the safe_objects to disable safety checks
+        self.safety_manager._safe_objects.clear()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Restore original safety state."""
+        # Restore the original safe_objects
+        self.safety_manager._safe_objects = self.original_safe_objects
+        # Restart safety checks
+        self.safety_manager.start()
+        return False  # Don't suppress exceptions
+
 
 if __name__ == "__main__":
 
