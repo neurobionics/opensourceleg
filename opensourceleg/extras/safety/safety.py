@@ -439,7 +439,7 @@ class SafetyManager:
 
         def __init__(self, safety_manager: "SafetyManager") -> None:
             self.safety_manager = safety_manager
-            self.original_safe_objects: dict[object, dict[str, list[Callable]]] | None = None
+            self.original_safe_objects: Optional[dict[object, dict[str, list[Callable]]]] = None
 
         def __enter__(self) -> "SafetyManager.SafetyDisableContext":
             """Store current safety state and disable safety checks."""
@@ -450,7 +450,7 @@ class SafetyManager:
             return self
 
         def __exit__(
-            self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any | None
+            self, exc_type: Optional[type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[Any]
         ) -> Literal[False]:
             """Restore original safety state."""
             # Restore the original safe_objects
