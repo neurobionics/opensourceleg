@@ -434,32 +434,31 @@ class SafetyManager:
         """
         return SafetyManager.SafetyDisableContext(self)
 
+    class SafetyDisableContext:
+        """Context manager for temporarily disabling safety checks."""
 
-class SafetyDisableContext:
-    """Context manager for temporarily disabling safety checks."""
+        def __init__(self, safety_manager: "SafetyManager") -> None:
+            self.safety_manager = safety_manager
+            self.original_safe_objects: dict[object, dict[str, list[Callable]]] | None = None
 
-    def __init__(self, safety_manager: "SafetyManager") -> None:
-        self.safety_manager = safety_manager
-        self.original_safe_objects: dict[object, dict[str, list[Callable]]] | None = None
+        def __enter__(self) -> "SafetyManager.SafetyDisableContext":
+            """Store current safety state and disable safety checks."""
+            # Store the current safe_objects state
+            self.original_safe_objects = self.safety_manager._safe_objects.copy()
+            # Clear the safe_objects to disable safety checks
+            self.safety_manager._safe_objects.clear()
+            return self
 
-    def __enter__(self) -> "SafetyManager.SafetyDisableContext":
-        """Store current safety state and disable safety checks."""
-        # Store the current safe_objects state
-        self.original_safe_objects = self.safety_manager._safe_objects.copy()
-        # Clear the safe_objects to disable safety checks
-        self.safety_manager._safe_objects.clear()
-        return self
-
-    def __exit__(
-        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any | None
-    ) -> Literal[False]:
-        """Restore original safety state."""
-        # Restore the original safe_objects
-        if self.original_safe_objects is not None:
-            self.safety_manager._safe_objects = self.original_safe_objects
-        # Restart safety checks
-        self.safety_manager.start()
-        return False  # Don't suppress exceptions
+        def __exit__(
+            self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any | None
+        ) -> Literal[False]:
+            """Restore original safety state."""
+            # Restore the original safe_objects
+            if self.original_safe_objects is not None:
+                self.safety_manager._safe_objects = self.original_safe_objects
+            # Restart safety checks
+            self.safety_manager.start()
+            return False  # Don't suppress exceptions
 
 
 if __name__ == "__main__":
