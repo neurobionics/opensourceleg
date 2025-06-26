@@ -250,11 +250,11 @@ if __name__ == "__main__":
 
         # knee
         osl.knee.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
-        osl.knee.set_impedance_gains()
+        osl.knee.set_output_impedance()
 
         # ankle
         osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
-        osl.ankle.set_impedance_gains()
+        osl.ankle.set_output_impedance()
 
         for t in clock:
             osl.update()

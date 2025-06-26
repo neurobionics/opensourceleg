@@ -569,7 +569,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
     ) -> None:
         """
         Caches the control gains used for the impedance control mode.
-        This should be called before set_output_impedance.
+        This should be called once before set_output_impedance or set_motor_impedance
 
         Args:
             kp (float): Proportional gain. Defaults to 40.
@@ -582,13 +582,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         self._impedance_gains = ControlGains(kp, ki, kd, 0, 0, ff)
 
-    def set_impedance_gains(
+    def _set_impedance_gains(
         self,
         k: float = DEFAULT_IMPEDANCE_GAINS.k,
         b: float = DEFAULT_IMPEDANCE_GAINS.b,
     ) -> None:
         """
-        Sets the impedance gains in arbitrary actpack units.
+        Internal method which sets the impedance gains in arbitrary actpack units.
         See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
         Args:
@@ -601,7 +601,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
-            >>> actuator.set_impedance_gains(k=200, b=400)
+            >>> actuator._set_impedance_gains(k=200, b=400)
         """
         gains = self._impedance_gains
         self.set_gains(
@@ -641,7 +641,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if b < MIN_B or b > MAX_B:
             raise ValueError(f"Damping b={b} is out of the range {MIN_B}-{MAX_B}")
 
-        self.set_impedance_gains(
+        self._set_impedance_gains(
             k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
             b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
         )
