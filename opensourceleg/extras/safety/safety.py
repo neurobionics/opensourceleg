@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
 import numpy as np
+from typing_extensions import Literal
 
 __all__ = [
     "I2tLimitException",
@@ -417,6 +418,47 @@ class SafetyManager:
     @property
     def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
+
+    def disable_temporarily(self) -> "SafetyManager.SafetyDisableContext":
+        """
+        Context manager to temporarily disable safety checks.
+
+        Usage:
+            with safety_manager.disable_temporarily():
+                # Safety checks are disabled in this block
+                risky_operation()
+            # Safety checks are re-enabled here
+
+        Returns:
+            SafetyDisableContext: Context manager instance
+        """
+        return SafetyManager.SafetyDisableContext(self)
+
+    class SafetyDisableContext:
+        """Context manager for temporarily disabling safety checks."""
+
+        def __init__(self, safety_manager: "SafetyManager") -> None:
+            self.safety_manager = safety_manager
+            self.original_safe_objects: Optional[dict[object, dict[str, list[Callable]]]] = None
+
+        def __enter__(self) -> "SafetyManager.SafetyDisableContext":
+            """Store current safety state and disable safety checks."""
+            # Store the current safe_objects state
+            self.original_safe_objects = self.safety_manager._safe_objects.copy()
+            # Clear the safe_objects to disable safety checks
+            self.safety_manager._safe_objects.clear()
+            return self
+
+        def __exit__(
+            self, exc_type: Optional[type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[Any]
+        ) -> Literal[False]:
+            """Restore original safety state."""
+            # Restore the original safe_objects
+            if self.original_safe_objects is not None:
+                self.safety_manager._safe_objects = self.original_safe_objects
+            # Restart safety checks
+            self.safety_manager.start()
+            return False  # Don't suppress exceptions
 
 
 if __name__ == "__main__":
