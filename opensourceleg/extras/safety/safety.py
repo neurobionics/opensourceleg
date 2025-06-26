@@ -1,9 +1,9 @@
 from collections import deque
 from dataclasses import dataclass
-from types import TracebackType
 from typing import Any, Callable, Optional
 
 import numpy as np
+from typing_extensions import Literal
 
 __all__ = [
     "I2tLimitException",
@@ -432,7 +432,7 @@ class SafetyManager:
         Returns:
             SafetyDisableContext: Context manager instance
         """
-        return self.SafetyDisableContext(self)
+        return SafetyManager.SafetyDisableContext(self)
 
 
 class SafetyDisableContext:
@@ -451,8 +451,8 @@ class SafetyDisableContext:
         return self
 
     def __exit__(
-        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
-    ) -> bool:
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any | None
+    ) -> Literal[False]:
         """Restore original safety state."""
         # Restore the original safe_objects
         if self.original_safe_objects is not None:
