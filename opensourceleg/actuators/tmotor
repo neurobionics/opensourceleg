@@ -142,7 +142,10 @@ class servo_motor_state:
         self.acceleration = other_motor_state.acceleration
 
     def __str__(self):
-        return 'Position: {} | Velocity: {} | Current: {} | Temperature: {} | Error: {}'.format(self.position, self.velocity, self.current, self.temperature, self.error)
+        return (
+            f'Position: {self.position} | Velocity: {self.velocity} | '
+            f'Current: {self.current} | Temperature: {self.temperature} | Error: {self.error}'
+        )
 
 class servo_command:
     """Data structure to store Servo command that will be sent upon update"""
@@ -228,9 +231,9 @@ class CAN_Manager_servo(object):
         
         try:
             # Configure CAN interface
-            os.system('sudo /sbin/ip link set can0 down')
-            os.system('sudo /sbin/ip link set can0 up type can bitrate 1000000')
-            os.system('sudo ifconfig can0 txqueuelen 1000')
+            os.system('sudo /sbin/ip link set can0 down')  # noqa: S605,S607
+            os.system('sudo /sbin/ip link set can0 up type can bitrate 1000000')  # noqa: S605,S607
+            os.system('sudo ifconfig can0 txqueuelen 1000')  # noqa: S605,S607
             
             # Create CAN bus object using socketcan (standard for Linux/RPi)
             self.bus = can.interface.Bus(channel='can0', bustype='socketcan')
@@ -246,14 +249,14 @@ class CAN_Manager_servo(object):
             print("1. CAN interface is available (sudo ip link show can0)")
             print("2. User has sudo privileges")
             print("3. can-utils is installed (sudo apt install can-utils)")
-            raise RuntimeError("CAN bus initialization failed")
+            raise RuntimeError("CAN bus initialization failed") from e
 
     def __del__(self):
         """
         # shut down the CAN bus when the object is deleted
         # This may not ever get called, so keep a reference and explicitly delete if this is important.
         """
-        os.system( 'sudo /sbin/ip link set can0 down' ) 
+        os.system('sudo /sbin/ip link set can0 down')  # noqa: S605,S607 
 
     # subscribe a motor object to the CAN bus to be updated upon message reception
     def add_motor(self, motor):
@@ -366,7 +369,8 @@ class CAN_Manager_servo(object):
             data: An array of integers or bytes of data to send.
         """
         DLC = data_len
-        assert (DLC <= 8), ('Data too long in message for motor ' + str(motor_id))
+        if DLC > 8:
+            raise ValueError(f'Data too long in message for motor {motor_id}')
         
         if self.debug:
             print('ID: ' + str(hex(motor_id)) + '   Data: ' + '[{}]'.format(', '.join(hex(d) for d in data)) )
@@ -420,10 +424,12 @@ class CAN_Manager_servo(object):
         """
         buffer = []
         self.buffer_append_int32(buffer, np.int32(duty * 100000.0))
-        self.send_servo_message(controller_id|(Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_DUTY'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_DUTY'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
 
     # Send Servo control message for current loop mode
-    #*Current loop mode: given the Iq current specified by the motor, the motor output torque = Iq *KT, so it can be used as a torque loop
+    # *Current loop mode: given the Iq current specified by the motor, 
+    # the motor output torque = Iq *KT, so it can be used as a torque loop
     def comm_can_set_current(self, controller_id, current):
         """
         Send a servo control message for current loop mode
@@ -434,10 +440,12 @@ class CAN_Manager_servo(object):
         """
         buffer = []
         self.buffer_append_int32(buffer, np.int32(current * 1000.0))
-        self.send_servo_message(controller_id|(Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_CURRENT'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_CURRENT'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
 
     # Send Servo control message for current brake mode
-    #*Current brake mode: the motor is fixed at the current position by the specified brake current given by the motor (pay attention to the motor temperature when using)
+    # *Current brake mode: the motor is fixed at the current position by the specified brake
+    # current given by the motor (pay attention to the motor temperature when using)
     def comm_can_set_cb(self, controller_id, current):
         """
         Send a servo control message for current brake mode
@@ -448,7 +456,8 @@ class CAN_Manager_servo(object):
         """
         buffer = []
         self.buffer_append_int32(buffer, np.int32(current * 1000.0))
-        self.send_servo_message(controller_id|(Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_CURRENT_BRAKE'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_CURRENT_BRAKE'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
         
     # Send Servo control message for Velocity mode
     #*Velocity mode: the speed specified by the given motor
@@ -462,10 +471,12 @@ class CAN_Manager_servo(object):
         """
         buffer = []
         self.buffer_append_int32(buffer, np.int32(rpm))
-        self.send_servo_message(controller_id| (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_RPM'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_RPM'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
     
     # Send Servo control message for Position Loop mode
-    #*Position mode: Given the specified position of the motor, the motor will run to the specified position, (default speed 12000erpm acceleration 40000erpm)
+    # *Position mode: Given the specified position of the motor, the motor will run to the
+    # specified position, (default speed 12000erpm acceleration 40000erpm)
     def comm_can_set_pos(self, controller_id, pos):
         """
         Send a servo control message for position control mode
@@ -477,20 +488,26 @@ class CAN_Manager_servo(object):
         buffer = []
         # Use 10000.0 to match Arduino implementation, not 1000000.0 from protocol doc
         self.buffer_append_int32(buffer, np.int32(pos * 10000.0))
-        self.send_servo_message(controller_id|(Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_POS'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_POS'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
     
     #Set origin mode
-    #*0 means setting the temporary origin (power failure elimination), 1 means setting the permanent zero point (automatic parameter saving), 2 means restoring the default zero point (automatic parameter saving)
+    # *0 means setting the temporary origin (power failure elimination), 
+    # 1 means setting the permanent zero point (automatic parameter saving), 
+    # 2 means restoring the default zero point (automatic parameter saving)
     def comm_can_set_origin(self, controller_id, set_origin_mode):
         """
         set the origin
 
         Args:
             controller_id: CAN ID of the motor to send the message to
-            set_origin_mode: 0 means setting the temporary origin (power failure elimination), 1 means setting the permanent zero point (automatic parameter saving), 2 means restoring the default zero point (automatic parameter saving)
+            set_origin_mode: 0 means setting the temporary origin (power failure elimination), 
+                1 means setting the permanent zero point (automatic parameter saving), 
+                2 means restoring the default zero point (automatic parameter saving)
         """
         buffer = [set_origin_mode]
-        self.send_servo_message(controller_id |(Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_ORIGIN_HERE'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_ORIGIN_HERE'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
 
     #Position and Velocity Loop Mode
     #* Check documentation
@@ -510,7 +527,8 @@ class CAN_Manager_servo(object):
         self.buffer_append_int32(buffer, np.int32(pos * 10000.0))
         self.buffer_append_int16(buffer, np.int16(spd / 10.0))
         self.buffer_append_int16(buffer, np.int16(RPA / 10.0))
-        self.send_servo_message(controller_id |(Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_POS_SPD'] << 8), buffer, len(buffer))
+        message_id = controller_id | (Servo_Params['CAN_PACKET_ID']['CAN_PACKET_SET_POS_SPD'] << 8)
+        self.send_servo_message(message_id, buffer, len(buffer))
 
     #* **************************END************************************************#
  
@@ -612,7 +630,8 @@ class TMotorManager_servo_can():
         self._control_state = _TMotorManState_Servo.IDLE
 
         self.radps_per_ERPM = 5.82E-04
-        self.rad_per_Eang = np.pi/Servo_Params[self.type]['NUM_POLE_PAIRS'] # 2*(np.pi/180)/(Servo_Params[self.type]['NUM_POLE_PAIRS'])
+        # 2*(np.pi/180)/(Servo_Params[self.type]['NUM_POLE_PAIRS'])
+        self.rad_per_Eang = np.pi/Servo_Params[self.type]['NUM_POLE_PAIRS']
 
         self._entered = False
         self._start_time = time.time()
@@ -664,7 +683,10 @@ class TMotorManager_servo_can():
             traceback.print_exception(etype, value, tb)
 
     def qaxis_current_to_TMotor_current(self, iq):
-        return iq*(Servo_Params[self.type]['GEAR_RATIO']*Servo_Params[self.type]['Kt_TMotor'])/Servo_Params[self.type]['Current_Factor']
+        gear_ratio = Servo_Params[self.type]['GEAR_RATIO']
+        kt_tmotor = Servo_Params[self.type]['Kt_TMotor']
+        current_factor = Servo_Params[self.type]['Current_Factor']
+        return iq * (gear_ratio * kt_tmotor) / current_factor
 
     # this method is called by the handler every time a message is received on the bus
     # from this motor, to store the most recent state information for later
@@ -680,7 +702,10 @@ class TMotorManager_servo_can():
             RuntimeError when device sends back an error code that is not 0 (0 meaning no error)
         """
         if servo_state.error != 0:
-            raise RuntimeError('Driver board error for device: ' + self.device_info_string() + ": " + Servo_Params['ERROR_CODES'][servo_state.error])
+            error_msg = Servo_Params['ERROR_CODES'][servo_state.error]
+            raise RuntimeError(
+                f'Driver board error for device: {self.device_info_string()}: {error_msg}'
+            )
 
         now = time.time()
         dt = now - self._last_update_time
@@ -699,14 +724,20 @@ class TMotorManager_servo_can():
         """
         # check that the motor is safely turned on
         if not self._entered:
-            raise RuntimeError("Tried to update motor state before safely powering on for device: " + self.device_info_string())
+            msg = f"Tried to update motor state before safely powering on for device: {self.device_info_string()}"
+            raise RuntimeError(msg)
 
         if self.get_temperature_celsius() > self.max_temp:
             raise RuntimeError("Temperature greater than {}C for device: {}".format(self.max_temp, self.device_info_string()))
         # check that the motor data is recent
         now = time.time()
-        if self._last_command_time is not None and (now - self._last_command_time) < 0.25 and ( (now - self._last_update_time) > 0.1):
-            warnings.warn("State update requested but no data from motor. Delay longer after zeroing, decrease frequency, or check connection. " + self.device_info_string(), RuntimeWarning)
+        if (self._last_command_time is not None and 
+            (now - self._last_command_time) < 0.25 and 
+            ((now - self._last_update_time) > 0.1)):
+            msg = (f"State update requested but no data from motor. "
+                   f"Delay longer after zeroing, decrease frequency, or check connection. "
+                   f"{self.device_info_string()}")
+            warnings.warn(msg, RuntimeWarning, stacklevel=2)
         else:
             self._command_sent = False
 
@@ -718,7 +749,9 @@ class TMotorManager_servo_can():
 
         # writing to log file
         if self.csv_file_name is not None:
-            self.csv_writer.writerow([self._last_update_time - self._start_time] + [self.LOG_FUNCTIONS[var]() for var in self.log_vars])
+            timestamp = self._last_update_time - self._start_time
+            log_data = [self.LOG_FUNCTIONS[var]() for var in self.log_vars]
+            self.csv_writer.writerow([timestamp] + log_data)
 
         self._updated = False
         
@@ -739,7 +772,9 @@ class TMotorManager_servo_can():
         elif self._control_state == _TMotorManState_Servo.POSITION:
             self._canman.comm_can_set_pos(self.ID, self._command.position)
         elif self._control_state == _TMotorManState_Servo.POSITION_VELOCITY:
-            self._canman.comm_can_set_pos_spd(self.ID, self._command.position, self._command.velocity, self._command.acceleration)
+            self._canman.comm_can_set_pos_spd(
+                self.ID, self._command.position, self._command.velocity, self._command.acceleration
+            )
         elif self._control_state == _TMotorManState_Servo.IDLE:
             self._canman.comm_can_set_duty(self.ID, 0.0)
 
@@ -895,7 +930,9 @@ class TMotorManager_servo_can():
         # Convert to degrees for range checking (protocol doc specifies range in degrees)
         pos_degrees = pos * 180.0 / np.pi
         if np.abs(pos_degrees) >= 36000:  # Based on protocol doc: -36000° to 36000°
-            raise RuntimeError("Cannot control position with magnitude greater than " + str(36000) + " degrees (630 radians)!")
+            raise RuntimeError(
+                f"Cannot control position with magnitude greater than {36000} degrees (630 radians)!"
+            )
         
         pos = (pos / self.rad_per_Eang)
         vel = (vel / self.radps_per_ERPM)
@@ -907,7 +944,9 @@ class TMotorManager_servo_can():
         elif self._control_state == _TMotorManState_Servo.POSITION:
             self._command.position = pos
         else:
-            raise RuntimeError("Attempted to send position command without entering position control " + self.device_info_string())
+            raise RuntimeError(
+                f"Attempted to send position command without entering position control {self.device_info_string()}"
+            )
 
     def set_duty_cycle_percent(self, duty):
         """
@@ -919,7 +958,9 @@ class TMotorManager_servo_can():
             duty: The desired duty cycle, (-1 to 1)
         """
         if self._control_state not in [_TMotorManState_Servo.DUTY_CYCLE]:
-            raise RuntimeError("Attempted to send duty cycle command without gains for device " + self.device_info_string()) 
+            raise RuntimeError(
+                f"Attempted to send duty cycle command without gains for device {self.device_info_string()}"
+            ) 
         else:
             if np.abs(duty) > 1:
                 raise RuntimeError("Cannot control using duty cycle mode for duty cycles greater than 100%!")
@@ -935,7 +976,10 @@ class TMotorManager_servo_can():
             vel: The desired output speed in rad/s
         """
         if np.abs(vel) >= Servo_Params[self.type]["V_max"]:
-            raise RuntimeError("Cannot control using speed mode for velocities with magnitude greater than " + str(Servo_Params[self.type]["V_max"]) + "rad/s!")
+            v_max = Servo_Params[self.type]["V_max"]
+            raise RuntimeError(
+                f"Cannot control using speed mode for velocities with magnitude greater than {v_max}rad/s!"
+            )
 
         if self._control_state not in [_TMotorManState_Servo.VELOCITY]:
             raise RuntimeError("Attempted to send speed command without gains for device " + self.device_info_string()) 
@@ -952,7 +996,9 @@ class TMotorManager_servo_can():
             current: the desired current in amps.
         """
         if self._control_state not in [_TMotorManState_Servo.CURRENT_LOOP, _TMotorManState_Servo.CURRENT_BRAKE]:
-            raise RuntimeError("Attempted to send current command before entering current mode for device " + self.device_info_string()) 
+            raise RuntimeError(
+                f"Attempted to send current command before entering current mode for device {self.device_info_string()}"
+            ) 
         
         # Check current limits based on control mode
         if self._control_state == _TMotorManState_Servo.CURRENT_BRAKE:
@@ -976,7 +1022,9 @@ class TMotorManager_servo_can():
         Args:
             torque: The desired output torque in Nm.
         """
-        self.set_motor_current_qaxis_amps((torque/Servo_Params[self.type]["Kt_actual"]/Servo_Params[self.type]["GEAR_RATIO"]) )
+        kt_actual = Servo_Params[self.type]["Kt_actual"]
+        gear_ratio = Servo_Params[self.type]["GEAR_RATIO"]
+        self.set_motor_current_qaxis_amps(torque / kt_actual / gear_ratio)
 
     # motor-side functions to account for the gear ratio
     def set_motor_torque_newton_meters(self, torque):
@@ -1056,7 +1104,11 @@ class TMotorManager_servo_can():
     # Pretty stuff
     def __str__(self):
         """Prints the motor's device info and current"""
-        return self.device_info_string() + " | Position: " + '{:.3f}'.format(self.position) + " rad | Velocity: " + '{:.3f}'.format(self.velocity) + " rad/s | current: " + '{:.3f}'.format(self.current_qaxis) + " A | temp: " + '{:.0f}'.format(self.temperature) + " C"
+        return (
+            f"{self.device_info_string()} | Position: {self.position:.3f} rad | "
+            f"Velocity: {self.velocity:.3f} rad/s | current: {self.current_qaxis:.3f} A | "
+            f"temp: {self.temperature:.0f} C"
+        )
 
     def device_info_string(self):
         """Prints the motor's ID and device type."""
@@ -1072,7 +1124,10 @@ class TMotorManager_servo_can():
             True if a connection is established and False otherwise.
         """
         if not self._entered:
-            raise RuntimeError("Tried to check_can_connection before entering motor control! Enter control using the __enter__ method, or instantiating the TMotorManager in a with block.")
+            msg = ("Tried to check_can_connection before entering motor control! "
+                   "Enter control using the __enter__ method, or instantiating the "
+                   "TMotorManager in a with block.")
+            raise RuntimeError(msg)
         Listener = can.BufferedReader()
         self._canman.notifier.add_listener(Listener)
         for i in range(10):
@@ -1116,36 +1171,57 @@ class TMotorManager_servo_can():
     """
 
     # electrical variables
-    current_qaxis = property(get_current_qaxis_amps, set_motor_current_qaxis_amps, doc="current_qaxis_amps_current_only")
+    current_qaxis = property(
+        get_current_qaxis_amps, set_motor_current_qaxis_amps, doc="current_qaxis_amps_current_only"
+    )
     """Q-axis current in amps"""
 
     # output-side variables
-    position = property(get_output_angle_radians, set_output_angle_simple, doc="output_angle_radians_impedance_only")
+    position = property(
+        get_output_angle_radians, set_output_angle_simple, doc="output_angle_radians_impedance_only"
+    )
     """Output angle in rad"""
 
-    velocity = property (get_output_velocity_radians_per_second, set_output_velocity_radians_per_second, doc="output_velocity_radians_per_second")
+    velocity = property(
+        get_output_velocity_radians_per_second, 
+        set_output_velocity_radians_per_second, 
+        doc="output_velocity_radians_per_second"
+    )
     """Output velocity in rad/s"""
 
-    acceleration = property(get_output_acceleration_radians_per_second_squared, doc="output_acceleration_radians_per_second_squared")
+    acceleration = property(
+        get_output_acceleration_radians_per_second_squared, 
+        doc="output_acceleration_radians_per_second_squared"
+    )
     """Output acceleration in rad/s/s"""
 
-    torque = property(get_output_torque_newton_meters, set_output_torque_newton_meters, doc="output_torque_newton_meters")
+    torque = property(
+        get_output_torque_newton_meters, set_output_torque_newton_meters, doc="output_torque_newton_meters"
+    )
     """Output torque in Nm"""
 
     # motor-side variables       
-    angle_motorside = property(get_motor_angle_radians, set_motor_angle_simple, doc="motor_angle_radians_impedance_only")
+    angle_motorside = property(
+        get_motor_angle_radians, set_motor_angle_simple, doc="motor_angle_radians_impedance_only"
+    )
     """Motor-side angle in rad"""
     
-    velocity_motorside = property (get_motor_velocity_radians_per_second, set_motor_velocity_radians_per_second, doc="motor_velocity_radians_per_second")
+    velocity_motorside = property(
+        get_motor_velocity_radians_per_second, 
+        set_motor_velocity_radians_per_second, 
+        doc="motor_velocity_radians_per_second"
+    )
     """Motor-side velocity in rad/s"""
 
-    acceleration_motorside = property(get_motor_acceleration_radians_per_second_squared, doc="motor_acceleration_radians_per_second_squared")
+    acceleration_motorside = property(
+        get_motor_acceleration_radians_per_second_squared, 
+        doc="motor_acceleration_radians_per_second_squared"
+    )
     """Motor-side acceleration in rad/s/s"""
 
-    torque_motorside = property(get_motor_torque_newton_meters, set_motor_torque_newton_meters, doc="motor_torque_newton_meters")
+    torque_motorside = property(
+        get_motor_torque_newton_meters, set_motor_torque_newton_meters, doc="motor_torque_newton_meters"
+    )
     """Motor-side torque in Nm"""
-
-
-
 
 
