@@ -935,7 +935,7 @@ class TMotorManager_servo_can():
             vel: The desired output speed in rad/s
         """
         if np.abs(vel) >= Servo_Params[self.type]["V_max"]:
-            raise RuntimeError("Cannot control using speed mode for angles with magnitude greater than " + str(Servo_Params[self.type]["V_max"]) + "rad/s!")
+            raise RuntimeError("Cannot control using speed mode for velocities with magnitude greater than " + str(Servo_Params[self.type]["V_max"]) + "rad/s!")
 
         if self._control_state not in [_TMotorManState_Servo.VELOCITY]:
             raise RuntimeError("Attempted to send speed command without gains for device " + self.device_info_string()) 
@@ -1056,7 +1056,7 @@ class TMotorManager_servo_can():
     # Pretty stuff
     def __str__(self):
         """Prints the motor's device info and current"""
-        return self.device_info_string() + " | Position: " + '{: 1f}'.format(round(self.position,3)) + " rad | Velocity: " + '{: 1f}'.format(round(self.velocity,3)) + " rad/s | current: " + '{: 1f}'.format(round(self.current_qaxis,3)) + " A | temp: " + '{: 1f}'.format(round(self.temperature,0)) + " C"
+        return self.device_info_string() + " | Position: " + '{:.3f}'.format(self.position) + " rad | Velocity: " + '{:.3f}'.format(self.velocity) + " rad/s | current: " + '{:.3f}'.format(self.current_qaxis) + " A | temp: " + '{:.0f}'.format(self.temperature) + " C"
 
     def device_info_string(self):
         """Prints the motor's ID and device type."""
@@ -1079,18 +1079,18 @@ class TMotorManager_servo_can():
             self.power_on()
             time.sleep(0.001)
         success = True
-        # time.sleep(0.1)
-        # for i in range(10):
-        #     if Listener.get_message(timeout=0.1) is None:
-        #         success = False
-        # self._canman.notifier.remove_listener(Listener)
+        time.sleep(0.1)  # Allow time for responses
+        for i in range(10):
+            if Listener.get_message(timeout=0.1) is None:  # Check for replies
+                success = False
+        self._canman.notifier.remove_listener(Listener)  # Remove listener to prevent memory leaks
         return success
 
     # Properties
     temperature = property(get_temperature_celsius, doc="temperature_degrees_C")
     """Temperature in Degrees Celsius"""
 
-    error = property(get_motor_error_code, doc="temperature_degrees_C")
+    error = property(get_motor_error_code, doc="motor_error_code")
     """Motor error code. 0 means no error.
     
     Codes:
@@ -1144,5 +1144,8 @@ class TMotorManager_servo_can():
 
     torque_motorside = property(get_motor_torque_newton_meters, set_motor_torque_newton_meters, doc="motor_torque_newton_meters")
     """Motor-side torque in Nm"""
+
+
+
 
 
