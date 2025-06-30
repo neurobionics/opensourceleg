@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
 import numpy as np
-from typing_extensions import Literal
 
 __all__ = [
     "I2tLimitException",
@@ -344,6 +343,7 @@ class SafetyManager:
 
     def __init__(self) -> None:
         self._safe_objects: dict[object, dict[str, list[Callable]]] = {}
+        self._original_classes: dict[object, type] = {}  # NEW: Track original classes before modification
 
     def add_safety(self, instance: object, attribute: str, decorator: Callable) -> None:
         """
@@ -389,6 +389,8 @@ class SafetyManager:
         >>> safety_manager.start()
         """
         for container, safe_attributes in self.safe_objects.items():
+            if container not in self._original_classes:
+                self._original_classes[container] = container.__class__
             container_subclass = type(f"{container.__class__.__name__}:SAFE", (container.__class__,), {})
             for attribute_name, attribute_decorators in safe_attributes.items():
                 original_property = getattr(container.__class__, attribute_name)
@@ -403,6 +405,14 @@ class SafetyManager:
                 )
 
             container.__class__ = container_subclass
+
+    def stop(self) -> None:
+        """
+        Restores the original classes of the objects, thereby removing the applied safety decorators.
+        """
+        for container, original_class in self._original_classes.items():
+            container.__class__ = original_class
+        self._original_classes.clear()
 
     def update(self) -> None:
         """
@@ -419,46 +429,32 @@ class SafetyManager:
     def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
 
-    def disable_temporarily(self) -> "SafetyManager.SafetyDisableContext":
+    def with_safety(self):
         """
-        Context manager to temporarily disable safety checks.
-
+        Context manager for enabling safety on entry, and disabling on exit.
         Usage:
-            with safety_manager.disable_temporarily():
-                # Safety checks are disabled in this block
-                risky_operation()
-            # Safety checks are re-enabled here
-
-        Returns:
-            SafetyDisableContext: Context manager instance
+            with safety_manager.with_safety():
+                # safety checks active
+                ...
+            # safety checks stopped
         """
-        return SafetyManager.SafetyDisableContext(self)
+        return SafetyManager.SafetyContext(self)
 
-    class SafetyDisableContext:
-        """Context manager for temporarily disabling safety checks."""
+    class SafetyContext:
+        """
+        Context manager for enabling/disabling safety checks using 'with' context.
+        """
 
         def __init__(self, safety_manager: "SafetyManager") -> None:
             self.safety_manager = safety_manager
-            self.original_safe_objects: Optional[dict[object, dict[str, list[Callable]]]] = None
 
-        def __enter__(self) -> "SafetyManager.SafetyDisableContext":
-            """Store current safety state and disable safety checks."""
-            # Store the current safe_objects state
-            self.original_safe_objects = self.safety_manager._safe_objects.copy()
-            # Clear the safe_objects to disable safety checks
-            self.safety_manager._safe_objects.clear()
+        def __enter__(self):
+            self.safety_manager.start()  # Calls start() on enter
             return self
 
-        def __exit__(
-            self, exc_type: Optional[type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[Any]
-        ) -> Literal[False]:
-            """Restore original safety state."""
-            # Restore the original safe_objects
-            if self.original_safe_objects is not None:
-                self.safety_manager._safe_objects = self.original_safe_objects
-            # Restart safety checks
-            self.safety_manager.start()
-            return False  # Don't suppress exceptions
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.safety_manager.stop()  # Calls stop() on exit
+            return False
 
 
 if __name__ == "__main__":
