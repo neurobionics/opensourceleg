@@ -152,6 +152,14 @@ impl Logger {
             record.flush();
         }
     }
+
+    #[staticmethod]
+    pub fn flush_all() {
+        if let Some(lock) = RECORD.get() {
+            let mut record = lock.lock().unwrap();
+            record.flush_buffer();
+        }
+    }
 }
 
 fn create_stdout_layer(time: String, level: LevelFilter) -> filter::Filtered<fmt::Layer<Registry, DefaultFields, Format<fmt::format::Full, ChronoLocal>, NonBlocking>, LevelFilter, Registry>{

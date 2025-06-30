@@ -1,14 +1,22 @@
 from logger import LOGGER
 import time
+import cProfile
 
-class myClass:
-    def __init__(self):
-        self.value = 42
+class simple:
+    z = 0
+    def add(self, x):
+        self.z+=x
+    def __str__(self):
+        return f"Simple({self.z})"
 
-obj = myClass()
-t = time.time()
-for i in range(1, 1000000):
-    LOGGER.debug("blab hbhb 0gbhsotn")
-    LOGGER.track_variable(lambda: obj.value, "answer")
-    LOGGER.flush_buffer()
-print(time.time() - t)
+def func():
+    t = time.time()
+    make_simple = simple()
+    for i in range(1, 1000000):
+        LOGGER.debug("debug msg")
+        make_simple.add(3)
+        LOGGER.track_variable(lambda: make_simple.z, "answer")
+        LOGGER.flush_buffer()
+        LOGGER.info("info msg")
+    print(time.time() - t)
+cProfile.run('func()')
