@@ -459,7 +459,6 @@ class SafetyManager:
             exc_tb: Optional[Any],
         ) -> None:
             self.safety_manager.stop()  # Calls stop() on exit
-            return False
 
 
 if __name__ == "__main__":
