@@ -457,7 +457,7 @@ class SafetyManager:
             exc_type: Optional[type[BaseException]],
             exc_val: Optional[BaseException],
             exc_tb: Optional[Any],
-        ) -> bool:
+        ) -> None:
             self.safety_manager.stop()  # Calls stop() on exit
             return False
 
