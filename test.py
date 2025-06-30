@@ -13,16 +13,19 @@ class simple:
 
 def func():
     # None values default
-    Logger.init(time_format = None, log_directory = None, log_name = None, print_stdout = False, file_max_bytes = 1028, backup_count = 5, 
+    Logger.init(time_format = None, log_directory = None, log_name = None, print_stdout = False, file_max_bytes = 0, backup_count = 5, 
                 stdout_level = LogLevel.WARN, logfile_level = LogLevel.TRACE)
-
     t = time.time()
     make_simple = simple()
     for i in range(1, 1000000):
         Logger.debug("debug msg")
         make_simple.add(3)
         Logger.trace_variables(dict(variable=make_simple.z))
-        Logger.flush_record()
+        Logger.record()
+        Logger.info("info msg")
+        Logger.info("info msg")
+        Logger.info("info msg")
+        Logger.info("info msg")
         Logger.info("info msg")
     print(time.time() - t)
     # Logger.trace_variables(dict(one=1, two=2))

@@ -18,9 +18,7 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
 use tracing_subscriber::fmt::time::{ChronoLocal};
 
-static SUBSCRIBER: OnceCell<()> = OnceCell::new(); //OnceCell is thread-safe
 static GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new(); //OnceCell is thread-safe
-static VAR_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new(); //OnceCell is thread-safe
 static STDOUT_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new();
 static RECORD: OnceCell<Mutex<Record>> = OnceCell::new();
 
@@ -59,36 +57,34 @@ impl Logger {
                 log_directory: Option<String>, log_name: Option<String>, print_stdout: bool,
                 file_max_bytes: u64, backup_count: u64, stdout_level: Option<PyLogLevel>,
                 logfile_level: Option<PyLogLevel>){
-        SUBSCRIBER.get_or_init(|| {
-            let time = time_format.unwrap_or(String::from("%Y-%m-%d %H:%M:%S%.3f"));
-            let dir = log_directory.unwrap_or(String::from("./logs"));
-            let log_name = log_name.unwrap_or(String::from("logfile.log"));
-            let console_level = stdout_level.map_or(LevelFilter::TRACE, |level|level.into());
-            let log_level = logfile_level.map_or(LevelFilter::TRACE, |level| level.into());
 
-            let mut layers = vec![];
-            let path = Path::new(&dir).join("variables.log");
+        let time = time_format.unwrap_or(String::from("%Y-%m-%d %H:%M:%S%.3f"));
+        let dir = log_directory.unwrap_or(String::from("./logs"));
+        let log_name = log_name.unwrap_or(String::from("logfile.log"));
+        let console_level = stdout_level.map_or(LevelFilter::TRACE, |level|level.into());
+        let log_level = logfile_level.map_or(LevelFilter::TRACE, |level| level.into());
 
-            if let Some(parent) = path.parent() {
-                if parent.exists() {
-                    let _ = fs::remove_dir_all(parent);
-                }
-                let _ = fs::create_dir_all(parent);
+        let mut layers = vec![];
+        let path = Path::new(&dir).join("variables.log");
+
+        if let Some(parent) = path.parent() {
+            if parent.exists() {
+                let _ = fs::remove_dir_all(parent);
             }
+            let _ = fs::create_dir_all(parent);
+        }
 
-            let path_str = path.to_str().expect("error").to_owned();
-            let _ = RECORD.set(Mutex::new(Record::new(path_str)));
+        let path_str = path.to_str().expect("error").to_owned();
+        let _ = RECORD.set(Mutex::new(Record::new(path_str)));
 
-            if print_stdout {
-                layers.push(create_stdout_layer(time.clone(), console_level).boxed());
-            }
+        if print_stdout {
+            layers.push(create_stdout_layer(time.clone(), console_level).boxed());
+        }
 
-            layers.push(create_file_layer(dir.clone(), log_name, time, file_max_bytes, backup_count, log_level).boxed());
-            //layers.push(create_variable_layer(dir).boxed());
-            let subscriber = Registry::default().with(layers);
+        layers.push(create_file_layer(dir.clone(), log_name, time, file_max_bytes, backup_count, log_level).boxed());
+        let subscriber = Registry::default().with(layers);
 
-            tracing::subscriber::set_global_default(subscriber).expect("error");
-        });
+        tracing::subscriber::set_global_default(subscriber).expect("error");
     }
 
     #[staticmethod]
@@ -146,10 +142,10 @@ impl Logger {
     }
     
     #[staticmethod]
-    pub fn flush_record() {
+    pub fn record() {
         if let Some(lock) = RECORD.get() {
             let mut record = lock.lock().unwrap();
-            record.flush();
+            record.record_variables();
         }
     }
 
@@ -199,26 +195,4 @@ fn create_file_layer(dir: String, log_name: String, time: String, file_max_size:
                                                     .with_timer(ChronoLocal::new(time.clone()))
                                                     .with_filter(log_level);
     file_layer
-}
-
-fn create_variable_layer(dir: String) -> filter::Filtered<
-    fmt::Layer<Registry,DefaultFields, Format, NonBlocking>,
-    filter::Targets,
-    Registry
->{
-    let filter = filter::Targets::new()
-                                                .with_target("variables" ,Level::TRACE);
-
-    let var_fw = rolling::daily(dir, "variables.log");
-
-    let (writer, guard) = tracing_appender::non_blocking(var_fw);
-    let _ = VAR_GUARD.set(guard);
-    let variable_layer = fmt::layer()
-                                                        .with_writer(writer)
-                                                        .with_ansi(false)
-                                                        .with_level(true)
-                                                        .with_target(false)
-                                                        .with_line_number(false)
-                                                        .with_filter(filter);
-    variable_layer                          
 }

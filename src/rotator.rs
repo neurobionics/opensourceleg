@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{self, Write};
+use std::io::{self, BufWriter, Write};
 use std::path::{PathBuf};
 use std::sync::Mutex;
 use tracing_subscriber::fmt::MakeWriter;
@@ -45,6 +45,8 @@ impl Rotator {
             return Ok(())
         }
 
+        self.current_file.flush();
+
         let rotated_path = if self.backup_count == 0 {
             // Backup infinitely
             self.index += 1;
@@ -70,6 +72,7 @@ impl Rotator {
                                             .write(true)
                                             .truncate(true)
                                             .open(&self.base_path)?;
+
         self.current_size = 0;
         return Ok(())
     }

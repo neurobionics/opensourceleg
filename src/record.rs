@@ -24,7 +24,7 @@ impl Record {
         }
     }
 
-    pub fn flush(&mut self) {
+    pub fn record_variables(&mut self) {
         let mut lock = self.file.lock().expect("variable log file lock poisoned");
         
         if self.variables.is_empty() {

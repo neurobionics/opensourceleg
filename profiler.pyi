@@ -92,7 +92,7 @@ class Logger:
         """
 
     @staticmethod
-    def flush_record() -> None:
+    def record() -> None:
         """
-        Writes all currently tracked variables to the variables log file and clears the in-memory store.
+        Writes all currently tracked variables to the buffer.
         """
