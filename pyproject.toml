@@ -28,9 +28,12 @@ adafruit-circuitpython-bno055 = {version = "^5.4.13", markers = "sys_platform ==
 adafruit-circuitpython-lis3dh = {version = "^5.2.2", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'"}
 
 pandas = "^2.2.3"
+python-can = {version = "^4.0.0", optional = true}
+
 [tool.poetry.extras]
 dephy = ["flexsea"]
 moteus = ["moteus", "moteus-pi3hat"]
+tmotor = ["python-can"]
 communication = ["smbus2"]
 messaging = ["grpcio", "grpcio-tools", "types-protobuf"]
 
