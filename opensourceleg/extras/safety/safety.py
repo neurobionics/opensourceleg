@@ -429,7 +429,7 @@ class SafetyManager:
     def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
 
-    def with_safety(self):
+    def with_safety(self) -> "SafetyManager.SafetyContext":
         """
         Context manager for enabling safety on entry, and disabling on exit.
         Usage:
@@ -448,11 +448,16 @@ class SafetyManager:
         def __init__(self, safety_manager: "SafetyManager") -> None:
             self.safety_manager = safety_manager
 
-        def __enter__(self):
+        def __enter__(self) -> "SafetyManager.SafetyContext":
             self.safety_manager.start()  # Calls start() on enter
             return self
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
+        def __exit__(
+            self,
+            exc_type: Optional[type[BaseException]],
+            exc_val: Optional[BaseException],
+            exc_tb: Optional[Any],
+        ) -> bool:
             self.safety_manager.stop()  # Calls stop() on exit
             return False
 
