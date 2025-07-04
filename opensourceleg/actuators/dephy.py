@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import time
 from ctypes import c_int
@@ -178,6 +179,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self._thermal_scale: float = 1.0
 
         self._mode = CONTROL_MODES.IDLE
+
+        self._impedance_gains = dataclasses.replace(DEFAULT_IMPEDANCE_GAINS)
 
     def __repr__(self) -> str:
         return f"{self.tag}[DephyActuator]"
@@ -528,66 +531,69 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     def set_output_impedance(
         self,
-        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
-        k: float = 100.0,
-        b: float = 3.0,
-        ff: float = 128,
+        k: float = 153.66,
+        b: float = 6.56,
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
-        This sets the impedance at the output and automatically scales based on gear raitos.
-
+        This sets the impedance at the output and automatically scales based on gear ratios.
+        Note: Default k and b calculated from the default motor impedance k, b for gear ratio 41.5
         Conversion:
             K_motor = K_joint / (gear_ratio ** 2)
             B_motor = B_joint / (gear_ratio ** 2)
 
         Args:
+            k (float): Spring constant. Defaults to 100 Nm/rad.
+            b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
+
+        Returns:
+            None
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.start()
+            >>> actuator.set_output_impedance(k=100, b=3)
+        """
+
+        self.set_motor_impedance(
+            k=k / (self.gear_ratio**2),
+            b=b / (self.gear_ratio**2),
+        )
+
+    def save_impedance_control_gains(
+        self,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
+    ) -> None:
+        """
+        Caches the control gains used for the impedance control mode.
+        This should be called once before set_output_impedance or set_motor_impedance
+
+        Args:
             kp (float): Proportional gain. Defaults to 40.
             ki (float): Integral gain. Defaults to 400.
             kd (float): Derivative gain. Defaults to 0.
-            k (float): Spring constant. Defaults to 100 Nm/rad.
-            b (float): Damping constant. Defaults to 3.0 Nm/rad/s.
             ff (float): Feedforward gain. Defaults to 128.
 
         Returns:
             None
-
-        Examples:
-            >>> actuator = DephyActuator(port='/dev/ttyACM0')
-            >>> actuator.start()
-            >>> actuator.set_output_impedance(kp=40, ki=400, kd=0, k=100, b=3, ff=128)
         """
-        self.set_motor_impedance(
-            kp=kp,
-            ki=ki,
-            kd=kd,
-            k=k / (self.gear_ratio**2),
-            b=b / (self.gear_ratio**2),
-            ff=ff,
-        )
+        self._impedance_gains = ControlGains(kp, ki, kd, 0, 0, ff)
 
-    def set_impedance_gains(
+    def _set_impedance_gains(
         self,
-        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
         k: float = DEFAULT_IMPEDANCE_GAINS.k,
         b: float = DEFAULT_IMPEDANCE_GAINS.b,
-        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
-        Sets the impedance gains in arbitrary actpack units.
+        Internal method which sets the impedance gains in arbitrary actpack units.
         See Dephy's webpage for conversions or use other library methods that handle conversion for you.
 
         Args:
-            kp (float): The proportional gain
-            ki (float): The integral gain
-            kd (float): The derivative gain
             k (float): The spring constant
             b (float): The damping constant
-            ff (float): The feedforward gain
 
         Returns:
             None
@@ -595,36 +601,29 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
-            >>> actuator.set_impedance_gains(kp=40, ki=400, kd=0, k=200, b=400, ff=128)
+            >>> actuator._set_impedance_gains(k=200, b=400)
         """
+        gains = self._impedance_gains
         self.set_gains(
-            kp=int(kp),
-            ki=int(ki),
-            kd=int(kd),
+            kp=int(gains.kp),
+            ki=int(gains.ki),
+            kd=int(gains.kd),
             k=int(k),
             b=int(b),
-            ff=int(ff),
+            ff=int(gains.ff),
         )
 
     def set_motor_impedance(
         self,
-        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
         k: float = 0.08922,
         b: float = 0.0038070,
-        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
         Set the impedance gains of the motor in real units: Nm/rad and Nm/rad/s.
 
         Args:
-            kp (float): Proportional gain. Defaults to 40.
-            ki (float): Integral gain. Defaults to 400.
-            kd (float): Derivative gain. Defaults to 0.
             k (float): Spring constant. Defaults to 0.08922 Nm/rad.
             b (float): Damping constant. Defaults to 0.0038070 Nm/rad/s.
-            ff (float): Feedforward gain. Defaults to 128.
 
         Returns:
             None
@@ -632,15 +631,19 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
-            >>> actuator.set_motor_impedance(kp=40, ki=400, kd=0, k=0.08922, b=0.0038070, ff=128) TODO: Validate numbers
+            >>> actuator.set_motor_impedance(k=0.08922, b=0.0038070) TODO: Validate numbers
         """
-        self.set_impedance_gains(
-            kp=kp,
-            ki=ki,
-            kd=kd,
+        MIN_K, MAX_K = 0.001, 1
+        MIN_B, MAX_B = 0.0001, 1
+
+        if k < MIN_K or k > MAX_K:
+            raise ValueError(f"Stiffness k={k} is out of the range {MIN_K}-{MAX_K}")
+        if b < MIN_B or b > MAX_B:
+            raise ValueError(f"Damping b={b} is out of the range {MIN_B}-{MAX_B}")
+
+        self._set_impedance_gains(
             k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
             b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
-            ff=ff,
         )
 
     @property

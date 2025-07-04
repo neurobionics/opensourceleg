@@ -485,14 +485,10 @@ class MoteusActuator(ActuatorBase, Controller):
         """
         LOGGER.info(msg=f"[{self.__repr__()}] Current mode not implemented.")
 
-    def set_impedance_gains(
+    def _set_impedance_gains(
         self,
-        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
-        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
-        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
         k: float = DEFAULT_IMPEDANCE_GAINS.k,
         b: float = DEFAULT_IMPEDANCE_GAINS.b,
-        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         LOGGER.info(msg=f"[{self.__repr__()}] Impedance mode not implemented.")
 
