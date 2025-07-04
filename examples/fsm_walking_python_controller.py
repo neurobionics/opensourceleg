@@ -6,7 +6,7 @@ from opensourceleg.control.fsm import State, StateMachine
 from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
+from opensourceleg.sensors.loadcell import NBLoadcellDAQ
 from opensourceleg.utilities import SoftRealtimeLoop
 
 GEAR_RATIO = 9 * (83 / 18)
@@ -21,7 +21,7 @@ LOADCELL_CALIBRATION_MATRIX = np.array([
 ])
 
 # ------------- TUNABLE FSM PARAMETERS ---------------- #
-BODY_WEIGHT = 30 * 9.8
+BODY_WEIGHT = 10 * 9.8  # 30 * 9.8
 
 # STATE 1: EARLY STANCE
 KNEE_K_ESTANCE = 99.372
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     actuators = {
         "knee": DephyActuator(
             tag="knee",
-            port="/dev/ttyACM0",
+            port="/dev/ttyACM1",
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             debug_level=0,
@@ -198,7 +198,7 @@ if __name__ == "__main__":
         ),
         "ankle": DephyActuator(
             tag="ankle",
-            port="/dev/ttyACM1",
+            port="/dev/ttyACM0",
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             debug_level=0,
@@ -207,12 +207,15 @@ if __name__ == "__main__":
     }
 
     sensors = {
-        "loadcell": DephyLoadcellAmplifier(
-            calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
+        # "loadcell": DephyLoadcellAmplifier(
+        #     calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
+        # ),
+        "loadcell": NBLoadcellDAQ(
+            LOADCELL_CALIBRATION_MATRIX, tag="loadcell", excitation_voltage=5.0, amp_gain=[34] * 3 + [151] * 3
         ),
         "joint_encoder_knee": AS5048B(
             tag="joint_encoder_knee",
-            bus=1,
+            bus=3,
             A1_adr_pin=True,
             A2_adr_pin=False,
             zero_position=0,
@@ -220,7 +223,7 @@ if __name__ == "__main__":
         ),
         "joint_encoder_ankle": AS5048B(
             tag="joint_encoder_ankle",
-            bus=1,
+            bus=2,
             A1_adr_pin=False,
             A2_adr_pin=True,
             zero_position=0,
@@ -250,10 +253,12 @@ if __name__ == "__main__":
 
         # knee
         osl.knee.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        osl.knee.save_impedance_control_gains()
         osl.knee.set_output_impedance()
 
         # ankle
         osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        osl.ankle.save_impedance_control_gains()
         osl.ankle.set_output_impedance()
 
         for t in clock:

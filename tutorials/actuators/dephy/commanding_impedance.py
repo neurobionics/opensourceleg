@@ -10,7 +10,7 @@ from opensourceleg.utilities import SoftRealtimeLoop
 TIME_TO_STEP = 1.0
 FREQUENCY = 1000
 DT = 1 / FREQUENCY
-GEAR_RATIO = 1.0
+GEAR_RATIO = 41.5  # 1.0
 
 
 def impedance_control():
@@ -32,6 +32,7 @@ def impedance_control():
     with actpack:
         actpack.update()
         actpack.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        actpack.save_impedance_control_gains()
         actpack.set_output_impedance()
 
         current_position = actpack.output_position
@@ -46,7 +47,7 @@ def impedance_control():
             actpack.update()
 
             if t > TIME_TO_STEP:
-                command_position = current_position + np.pi / 2
+                command_position = current_position + np.deg2rad(6)
 
             actpack.set_output_position(value=command_position)
 

@@ -531,13 +531,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     def set_output_impedance(
         self,
-        k: float = 100.0,
-        b: float = 3.0,
+        k: float = 153.66,
+        b: float = 6.56,
     ) -> None:
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
         This sets the impedance at the output and automatically scales based on gear ratios.
-
+        Note: # Default k and b calculated from the default motor impedance k, b for gear ratio 41.5
         Conversion:
             K_motor = K_joint / (gear_ratio ** 2)
             B_motor = B_joint / (gear_ratio ** 2)
@@ -562,10 +562,10 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
     def save_impedance_control_gains(
         self,
-        kp: float,
-        ki: float,
-        kd: float,
-        ff: float,
+        kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
+        ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
+        kd: float = DEFAULT_IMPEDANCE_GAINS.kd,
+        ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
         Caches the control gains used for the impedance control mode.
