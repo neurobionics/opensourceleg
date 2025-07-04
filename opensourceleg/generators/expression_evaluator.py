@@ -3,8 +3,6 @@ import math
 import operator as op
 from typing import Any, Callable, Optional, cast
 
-from .base import SignalGenerator
-
 # Supported operations for safe evaluation
 UNARY_OPERATORS: dict[type[ast.unaryop], Callable[[Any], Any]] = {
     ast.USub: op.neg,
@@ -190,36 +188,3 @@ class ExpressionEvaluator:
             raise ValueError(f"Missing variable: {e}") from e
         except Exception as e:
             raise ValueError(f"Evaluation error: {e}") from e
-
-
-class CustomGenerator(SignalGenerator):
-    def __init__(self, expression: str, variables: Optional[dict[str, Any]] = None, **kwargs: Any) -> None:
-        """
-        Custom signal generator from mathematical expression.
-
-        Args:
-            expression: Mathematical expression using variables
-            variables: Dictionary of variables used in expression
-            **kwargs: Base class parameters
-
-        Example:
-            gen = CustomGenerator(
-                expression="A * sin(2*pi*f*t) + noise",
-                variables={'A': 1.0, 'f': 0.5},
-                noise_amplitude=0.1
-            )
-        """
-        super().__init__(**kwargs)
-        self.expression = expression
-        self.variables = variables or {}
-
-        # Add time to variables
-        self.variables["t"] = 0.0
-
-        # Compile expression
-        self._evaluator = ExpressionEvaluator(expression, self.variables)
-
-    def _generate(self) -> float:
-        # Update time variable
-        self.variables["t"] = self._time
-        return self._evaluator.evaluate(self.variables)

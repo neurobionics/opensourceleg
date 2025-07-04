@@ -1,8 +1,8 @@
 import random
-import time
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from collections.abc import Iterator
+from typing import Any, Optional
 
 
 class SignalGenerator(ABC):
@@ -38,51 +38,40 @@ class SignalGenerator(ABC):
         self.duration = duration
         self.noise_amplitude = noise_amplitude
         self.sample_rate = sample_rate
-        self._time = 0.0
-        self._start_time = time.monotonic()
-        self._last_update = self._start_time
         self._rng = random.Random(seed)  # noqa: S311
+        self._precomputed: list[float] = []
+        self._current_index = 0
 
     def reset(self) -> None:
-        """Reset internal time counter to zero"""
-        self._time = 0.0
-        self._start_time = time.monotonic()
-        self._last_update = self._start_time
+        """Reset internal state (if applicable)"""
+        self._current_index = 0
 
-    def __call__(self, dt: Optional[float] = None) -> Union[float, None]:
+    def update(self, t: float) -> Optional[float]:
         """
-        Generate next signal value.
+        Generate signal value for given time.
 
         Args:
-            dt: Optional time step since last call (seconds).
-                If None, uses real-time elapsed.
+            t: Current time in seconds
 
         Returns:
             Generated signal value or None if duration exceeded
         """
-        # Calculate time increment
-        current_time = time.monotonic()
-        if dt is None:
-            dt = current_time - self._last_update
-        self._last_update = current_time
-
-        # Validate time step
-        if dt < 0:
-            raise ValueError("Time step must be non-negative")
+        # Validate time input
+        if t < 0:
+            raise ValueError("Time must be non-negative")
 
         # Check duration limit
-        if self.duration is not None and self._time >= self.duration:
+        if self.duration is not None and t > self.duration:
             return None
 
         # Generate signal
-        self._time += dt
-        signal = self._generate()
+        signal = self._generate(t)
         noise = self._rng.uniform(-self.noise_amplitude, self.noise_amplitude) if self.noise_amplitude > 0 else 0.0
 
         return signal + noise + self.offset
 
     @abstractmethod
-    def _generate(self) -> float:
+    def _generate(self, t: float) -> float:
         """Core signal generation logic (to implement in subclasses)"""
         pass
 
@@ -103,17 +92,42 @@ class SignalGenerator(ABC):
 
         time_points = []
         signal_values = []
-        self.reset()
+        num_samples = int(duration / dt)
 
-        while self._time < duration:
-            t = self._time
-            value = self(dt)
+        for i in range(num_samples):
+            t = i * dt
+            value = self.update(t)
             if value is None:  # Handle finite-duration signals
                 break
             time_points.append(t)
             signal_values.append(value)
 
         return time_points, signal_values
+
+    def precompute(self, duration: float, dt: Optional[float] = None) -> None:
+        """
+        Precompute signal values for given duration and time step.
+
+        Args:
+            duration: Time length to precompute (seconds)
+            dt: Time step between samples (seconds).
+                 If None, uses 1/sample_rate.
+        """
+        _, self._precomputed = self.generate_sequence(duration, dt)
+        self._current_index = 0
+
+    def __iter__(self) -> Iterator[float]:
+        """Initialize iterator for precomputed values"""
+        self._current_index = 0
+        return self
+
+    def __next__(self) -> float:
+        """Get the next precomputed value"""
+        if self._current_index >= len(self._precomputed):
+            raise StopIteration
+        value = self._precomputed[self._current_index]
+        self._current_index += 1
+        return value
 
     def plot(
         self, duration: float = 5.0, dt: Optional[float] = None, title: Optional[str] = None, show: bool = True
