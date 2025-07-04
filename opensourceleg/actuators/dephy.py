@@ -537,7 +537,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         Set the impedance gains of the joint in real units: Nm/rad and Nm/rad/s.
         This sets the impedance at the output and automatically scales based on gear ratios.
-        Note: # Default k and b calculated from the default motor impedance k, b for gear ratio 41.5
+        Note: Default k and b calculated from the default motor impedance k, b for gear ratio 41.5
         Conversion:
             K_motor = K_joint / (gear_ratio ** 2)
             B_motor = B_joint / (gear_ratio ** 2)
