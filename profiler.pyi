@@ -96,3 +96,10 @@ class Logger:
         """
         Writes all currently tracked variables to the buffer.
         """
+
+    @staticmethod
+    def start_ros_subscriber(key_expr: str) -> None:
+        """
+        Starts a background thread which subscribes to the channel
+        defined by key_expr parameter. 
+        """
