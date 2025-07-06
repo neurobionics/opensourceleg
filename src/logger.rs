@@ -2,16 +2,16 @@ use crate::record::Record;
 use crate::rotator::RotatingFileWriter;
 use std::fs;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, OnceLock};
 
 use once_cell::sync::OnceCell;
 use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyStringMethods};
 use pyo3::{pyclass, pymethods, Bound, PyResult};
 use tracing::level_filters::LevelFilter;
-use tracing::{error, info, trace, warn, Level};
+use tracing::{error, info, trace, warn};
 use tracing::debug;
 use tracing_appender::non_blocking::{NonBlocking};
-use tracing_appender::rolling;
 use tracing_subscriber::fmt::format::{DefaultFields, Format};
 use tracing_subscriber::{filter, fmt, Registry};
 use tracing_subscriber::prelude::*;
@@ -21,6 +21,7 @@ use tracing_subscriber::fmt::time::{ChronoLocal};
 static GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new(); //OnceCell is thread-safe
 static STDOUT_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new();
 static RECORD: OnceCell<Mutex<Record>> = OnceCell::new();
+static SESSION: OnceLock<Mutex<bool>> = OnceLock::new();
 
 #[pyclass(name = "LogLevel")]
 #[derive(Clone)]
@@ -155,6 +156,33 @@ impl Logger {
             let mut record = lock.lock().unwrap();
             record.flush_buffer();
         }
+    }
+
+    #[staticmethod]
+    fn start_ros_subscriber(key_expr: String) {
+        let mutex = SESSION.get_or_init(|| Mutex::new(false));
+        let mut guard = mutex.lock().unwrap();
+        if *guard {
+            return;
+        }
+
+        std::thread::spawn(|| {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                let session = zenoh::open(zenoh::config::Config::default()).await.unwrap();
+                let subscriber = session
+                                                .declare_subscriber(key_expr)
+                                                .await
+                                                .unwrap();
+                info!("Zenoh subscriber started");
+
+                while let Ok(sample) = subscriber.recv_async().await {
+                    //info!("Received: {:?}", sample);
+                    info!("Received {} ('{}': '{}')", sample.kind(), sample.key_expr(), sample.payload().try_to_string().expect("error converting to string"));
+                };
+            });
+        });
+        *guard = true;
     }
 }
 

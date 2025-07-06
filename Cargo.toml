@@ -19,3 +19,6 @@ tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.19", features = ["chrono", "env-filter"] }
 valuable = "0.1.1"
 pythonize = "0.25.0"
+zenoh = "1.4.0"
+pyo3-asyncio = { version = "0.13", features = ["testing", "attributes", "async-std-runtime", "tokio-runtime"] }
+tokio = { version = "1.46.1", features = ["full"] }
