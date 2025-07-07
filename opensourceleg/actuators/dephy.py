@@ -631,7 +631,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
-            >>> actuator.set_motor_impedance(k=0.08922, b=0.0038070) TODO: Validate numbers
+            >>> actuator.set_motor_impedance(k=0.08922, b=0.0038070)
         """
         MIN_K, MAX_K = 0.001, 1
         MIN_B, MAX_B = 0.0001, 1
