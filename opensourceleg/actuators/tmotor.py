@@ -79,14 +79,21 @@ SERVO_PARAMS: dict[str, Any] = {
         "CAN_PACKET_SET_ORIGIN_HERE": 5,
         "CAN_PACKET_SET_POS_SPD": 6,
     },
+    "PROTOCOL": {
+        "CURRENT_TO_MILLIAMPS": 1000.0,  # A to mA conversion
+        "POSITION_SCALE": 10.0,  # 0.1 degree resolution
+        "COMMAND_TIMEOUT_SEC": 0.25,  # Command timeout
+        "UPDATE_TIMEOUT_SEC": 0.1,  # Update timeout
+        "HIGH_PRECISION_SCALE": 1000000.0,  # 0.000001° precision (future use)
+    },
 }
 
 # TMotor servo mode constants
 TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=3600,  # 360 degrees * 10
     NM_PER_AMP=0.115,  # AK80-9 approximate
-    NM_PER_RAD_TO_K=0.0,  # servo mode not needed
-    NM_S_PER_RAD_TO_B=0.0,  # servo mode not needed
+    NM_PER_RAD_TO_K=1.0,  # servo mode not needed but must be positive
+    NM_S_PER_RAD_TO_B=1.0,  # servo mode not needed but must be positive
     MAX_CASE_TEMPERATURE=80.0,
     MAX_WINDING_TEMPERATURE=110.0,
 )
@@ -179,7 +186,7 @@ class CANManagerServo:
 
     def set_current(self, controller_id: int, current: float) -> None:
         """Send current control command"""
-        current_protocol = int(current * 1000.0)  # Convert to protocol units
+        current_protocol = int(current * SERVO_PARAMS["PROTOCOL"]["CURRENT_TO_MILLIAMPS"])
         buffer = self._pack_int32(current_protocol)
         message_id = controller_id | (SERVO_PARAMS["CAN_PACKET_ID"]["CAN_PACKET_SET_CURRENT"] << 8)
         self.send_message(message_id, buffer, len(buffer))
@@ -194,8 +201,8 @@ class CANManagerServo:
         """Send position control command"""
         # NOTE(IMPORTANT): TMotor spec uses 1,000,000 scale (0.000001° resolution) per documentation
         # Current implementation uses 10 scale (0.1° resolution) for simplicity
-        # To enable high-precision position control, change to: int(position * 1000000.0)
-        buffer = self._pack_int32(int(position * 10.0))  # 0.1 degree resolution
+        # To enable high-precision position control, change to: SERVO_PARAMS["PROTOCOL"]["HIGH_PRECISION_SCALE"]
+        buffer = self._pack_int32(int(position * SERVO_PARAMS["PROTOCOL"]["POSITION_SCALE"]))
         message_id = controller_id | (SERVO_PARAMS["CAN_PACKET_ID"]["CAN_PACKET_SET_POS"] << 8)
         self.send_message(message_id, buffer, len(buffer))
 
@@ -223,9 +230,9 @@ class CANManagerServo:
         spd_int = int.from_bytes(data[2:4], byteorder="big", signed=True)
         cur_int = int.from_bytes(data[4:6], byteorder="big", signed=True)
 
-        motor_pos = float(pos_int * 0.1)  # position (degrees)
+        motor_pos = float(pos_int / SERVO_PARAMS["PROTOCOL"]["POSITION_SCALE"])  # position (degrees)
         motor_spd = float(spd_int * 10.0)  # velocity (ERPM)
-        motor_cur = float(cur_int / 1000.0)  # current (amps)
+        motor_cur = float(cur_int / SERVO_PARAMS["PROTOCOL"]["CURRENT_TO_MILLIAMPS"])  # current (amps)
         motor_temp = float(data[6])  # temperature (celsius)
         motor_error = int(data[7])  # error code
 
@@ -377,7 +384,8 @@ class TMotorServoActuator(ActuatorBase):
         """
         # Validate motor type
         if motor_type not in SERVO_PARAMS:
-            raise ValueError(f"Unsupported motor type: {motor_type}")
+            supported = [k for k in SERVO_PARAMS if k not in ["ERROR_CODES", "CAN_PACKET_ID", "PROTOCOL"]]
+            raise ValueError(f"Unsupported motor type: '{motor_type}'. Supported types: {supported}")
 
         super().__init__(
             tag=tag,
@@ -471,8 +479,8 @@ class TMotorServoActuator(ActuatorBase):
         now = time.time()
         if (
             self._last_command_time is not None
-            and (now - self._last_command_time) < 0.25
-            and (now - self._last_update_time) > 0.1
+            and (now - self._last_command_time) < SERVO_PARAMS["PROTOCOL"]["COMMAND_TIMEOUT_SEC"]
+            and (now - self._last_update_time) > SERVO_PARAMS["PROTOCOL"]["UPDATE_TIMEOUT_SEC"]
         ):
             warnings.warn(f"No data from motor: {self.device_info_string()}", RuntimeWarning, stacklevel=2)
 
@@ -533,6 +541,11 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_motor_current(self, value: float) -> None:
         """Set motor current"""
+        # Validate current range
+        max_current = self._motor_params["Curr_max"] / SERVO_PARAMS["PROTOCOL"]["CURRENT_TO_MILLIAMPS"]
+        if abs(value) > max_current:
+            raise ValueError(f"Current {value:.2f}A exceeds maximum {max_current:.2f}A for {self.motor_type}")
+
         if not self.is_offline and self._canman:
             self._canman.set_current(self.motor_id, value)
             self._last_command_time = time.time()
@@ -540,6 +553,16 @@ class TMotorServoActuator(ActuatorBase):
     def set_motor_position(self, value: float) -> None:
         """Set motor position (radians)"""
         position_deg = radians_to_degrees(value)
+
+        # Validate position range
+        pos_protocol = position_deg * SERVO_PARAMS["PROTOCOL"]["POSITION_SCALE"]
+        if pos_protocol < self._motor_params["P_min"] or pos_protocol > self._motor_params["P_max"]:
+            min_deg = self._motor_params["P_min"] / SERVO_PARAMS["PROTOCOL"]["POSITION_SCALE"]
+            max_deg = self._motor_params["P_max"] / SERVO_PARAMS["PROTOCOL"]["POSITION_SCALE"]
+            raise ValueError(
+                f"Position {position_deg:.2f}° exceeds range [{min_deg:.2f}°, {max_deg:.2f}°] for {self.motor_type}"
+            )
+
         if not self.is_offline and self._canman:
             self._canman.set_position(self.motor_id, position_deg)
             self._last_command_time = time.time()
@@ -560,6 +583,15 @@ class TMotorServoActuator(ActuatorBase):
         """Set motor velocity (rad/s)"""
         motor_params = cast(dict[str, Any], self._motor_params)
         velocity_erpm = rad_per_sec_to_erpm(value, motor_params["NUM_POLE_PAIRS"])
+
+        # Validate velocity range
+        if velocity_erpm < self._motor_params["V_min"] or velocity_erpm > self._motor_params["V_max"]:
+            min_erpm = self._motor_params["V_min"]
+            max_erpm = self._motor_params["V_max"]
+            raise ValueError(
+                f"Velocity {velocity_erpm:.2f}ERPM exceeds range [{min_erpm}, {max_erpm}] for {self.motor_type}"
+            )
+
         if not self.is_offline and self._canman:
             self._canman.set_velocity(self.motor_id, velocity_erpm)
             self._last_command_time = time.time()
@@ -568,6 +600,18 @@ class TMotorServoActuator(ActuatorBase):
         """Set output velocity (rad/s)"""
         motor_velocity = value * self.gear_ratio
         self.set_motor_velocity(motor_velocity)
+
+    def get_motor_state(self) -> dict:
+        """Get current motor state as dictionary"""
+        return {
+            "position_rad": self.motor_position,
+            "velocity_rad_s": self.motor_velocity,
+            "current_A": self.motor_current,
+            "torque_Nm": self.motor_torque,
+            "temperature_C": self.case_temperature,
+            "error_code": self.error_info[0] if self.error_info else None,
+            "error_message": self.error_info[1] if self.error_info else None,
+        }
 
     # ============ Unsupported PID Functions - TMotor Servo Mode Handles All Control Loops Internally ============
 
