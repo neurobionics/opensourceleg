@@ -1,6 +1,6 @@
 """
 A finite state machine to control the OSL ankle with impedance control.
-This script can be helpful to test the OSL ankle using the load cell. 
+This script can be helpful to test the OSL ankle using the load cell.
 The fsm runs with the motor encoder, but the joint encoder can be also used.
 
 Matteo Crotti
@@ -16,8 +16,7 @@ from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.control.fsm import State, StateMachine
 from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
-from opensourceleg.sensors.encoder import AS5048B
-from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier, NBLoadcellDAQ
+from opensourceleg.sensors.loadcell import NBLoadcellDAQ
 from opensourceleg.utilities import SoftRealtimeLoop
 
 GEAR_RATIO = 9 * (83 / 18)
@@ -43,7 +42,7 @@ ANKLE_THETA_ESTANCE = -2
 LOAD_LSTANCE: float = 1.0 * BODY_WEIGHT * 0.25
 ANKLE_THETA_ESTANCE_TO_LSTANCE = np.deg2rad(8.0)
 
-# STATE 2: LATE STANCE 
+# STATE 2: LATE STANCE
 ANKLE_K_LSTANCE = 79.498
 ANKLE_B_LSTANCE = 0.063
 ANKLE_THETA_LSTANCE = -20
@@ -63,8 +62,8 @@ ANKLE_THETA_LSWING = 15
 LOAD_ESTANCE: float = 1.0 * BODY_WEIGHT * 0.4
 ANKLE_THETA_LSWING_TO_ESTANCE = np.deg2rad(15.0)
 
-# ---------------------------------------------------- #
 
+# ---------------------------------------------------- #
 def estance_to_lstance(osl: OpenSourceLeg) -> bool:
     """
     Transition from early stance to late stance when the loadcell
@@ -75,10 +74,8 @@ def estance_to_lstance(osl: OpenSourceLeg) -> bool:
         raise ValueError("Loadcell is not connected")
     if osl.ankle is None:
         raise ValueError("Ankle is not connected")
-    return bool(
-        -(osl.loadcell.fz) > LOAD_LSTANCE
-        and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE
-    )
+    return bool(-(osl.loadcell.fz) > LOAD_LSTANCE and osl.ankle.output_position > ANKLE_THETA_ESTANCE_TO_LSTANCE)
+
 
 def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
     """
@@ -89,6 +86,7 @@ def lstance_to_eswing(osl: OpenSourceLeg) -> bool:
         raise ValueError("Loadcell is not connected")
     return bool(-(osl.loadcell.fz) < LOAD_ESWING)
 
+
 def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
     """
     Transition from early swing to late swing when the ankle angle
@@ -98,10 +96,11 @@ def eswing_to_lswing(osl: OpenSourceLeg) -> bool:
     if osl.ankle is None:
         raise ValueError("Ankle is not connected")
 
-    return bool (
+    return bool(
         osl.ankle.output_position > ANKLE_THETA_ESWING_TO_LSWING
         and osl.ankle.output_velocity < ANKLE_DTHETA_ESWING_TO_LSWING
     )
+
 
 def lswing_to_estance(osl: OpenSourceLeg) -> bool:
     """
@@ -113,10 +112,8 @@ def lswing_to_estance(osl: OpenSourceLeg) -> bool:
         raise ValueError("Loadcell is not connected")
     if osl.ankle is None:
         raise ValueError("Ankle is not connected")
-    return bool(
-        -osl.loadcell.fz > LOAD_ESTANCE 
-        or osl.ankle.output_position < ANKLE_THETA_LSWING_TO_ESTANCE
-    )
+    return bool(-osl.loadcell.fz > LOAD_ESTANCE or osl.ankle.output_position < ANKLE_THETA_LSWING_TO_ESTANCE)
+
 
 def create_simple_walking_fsm(osl: OpenSourceLeg) -> StateMachine:
     e_stance = State(
@@ -198,11 +195,11 @@ if __name__ == "__main__":
 
     sensors = {
         "loadcell": NBLoadcellDAQ(
-        LOADCELL_CALIBRATION_MATRIX_M3554E, 
-        tag="loadcell",
-        excitation_voltage=5.0,
-        amp_gain=[34] * 3 + [151] * 3,
-        spi_bus=1,
+            LOADCELL_CALIBRATION_MATRIX_M3554E,
+            tag="loadcell",
+            excitation_voltage=5.0,
+            amp_gain=[34] * 3 + [151] * 3,
+            spi_bus=1,
         ),
     }
 
@@ -220,31 +217,30 @@ if __name__ == "__main__":
 
     osl_fsm = create_simple_walking_fsm(osl)
 
-    with fsm_logger:
-        with osl, osl_fsm:
+    with fsm_logger, osl, osl_fsm:
+        osl.update()
+        osl.home()
+
+        input("Press Enter to start walking...")
+
+        # ankle
+        osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
+        osl.ankle.set_impedance_gains()
+
+        for t in clock:
             osl.update()
-            osl.home()
+            osl_fsm.update(osl=osl)
+            osl.ankle.set_output_impedance(
+                k=osl_fsm.current_state.ankle_stiffness,
+                b=osl_fsm.current_state.ankle_damping,
+            )
 
-            input("Press Enter to start walking...")
+            osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
 
-            # ankle
-            osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
-            osl.ankle.set_impedance_gains()
-
-            for t in clock:
-                osl.update()
-                osl_fsm.update(osl=osl)
-                osl.ankle.set_output_impedance(
-                    k=osl_fsm.current_state.ankle_stiffness,
-                    b=osl_fsm.current_state.ankle_damping,
-                )
-
-                osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
-
-                fsm_logger.info(
-                    f"T: {t:.3f}s, "
-                    f"Current state: {osl_fsm.current_state.name}; "
-                    f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "
-                    f"Ankle theta: {np.rad2deg(osl.ankle.output_position):.3f} deg; "
-                    f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} c; "
-                )
+            fsm_logger.info(
+                f"T: {t:.3f}s, "
+                f"Current state: {osl_fsm.current_state.name}; "
+                f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "
+                f"Ankle theta: {np.rad2deg(osl.ankle.output_position):.3f} deg; "
+                f"Ankle winding temperature: {osl.ankle.winding_temperature:.3f} c; "
+            )
