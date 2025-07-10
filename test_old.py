@@ -1,4 +1,4 @@
-from logger import LOGGER
+from benchmark.python_based_logger import LOGGER
 import time
 import cProfile
 
@@ -14,9 +14,5 @@ def func():
     make_simple = simple()
     for i in range(1, 1000000):
         LOGGER.debug("debug msg")
-        make_simple.add(3)
-        LOGGER.track_variable(lambda: make_simple.z, "answer")
-        LOGGER.flush_buffer()
-        LOGGER.info("info msg")
     print(time.time() - t)
 cProfile.run('func()')
