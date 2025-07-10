@@ -56,5 +56,4 @@ python benchmark/bench_object_logging.py # Object logging
 4. You can now use the Rust logger in Python!
 
 ### To build the logger for distribution
-Run `maturin build -r` after step 2 of the instructions above, this will generate distributable wheel.
-
+Run `maturin build -r` after step 2 of the instructions above, this will generate a distributable wheel.
