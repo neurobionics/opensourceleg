@@ -37,7 +37,7 @@ library.
 |  Track objects (1M messages) | 2.62991           | 2.24524             |
 | Track primitives (1M messages)       | 0.928524          | 2.61603             |
 
-> To track objects, rust will call the python to_string method which will add overhead of python function calls & the Python to Rust call overhead, but Rust still wins with primitive logging
+> Tracking objects in Rust requires calling Python’s __str__ method, which adds overhead from Python function calls and interop. Still, Rust maintains a performance advantage for primitive logging.
 
 ---
 
