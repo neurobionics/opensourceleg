@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{self, BufWriter, Write};
+use std::io::{self, Write};
 use std::path::{PathBuf};
 use std::sync::Mutex;
 use tracing_subscriber::fmt::MakeWriter;

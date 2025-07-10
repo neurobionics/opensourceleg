@@ -29,8 +29,6 @@ library.
 
 > Both loggers perform similarly irrespective of the size of the payload
 
----
-
 ### Logging Performance: Objects & Primitives
 | Test Case              | Rust Logger (sec) | Python Logger (sec) |
 | ---------------------- | ----------------- | ------------------- |

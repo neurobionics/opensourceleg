@@ -2,7 +2,6 @@ use crate::record::Record;
 use crate::rotator::RotatingFileWriter;
 use std::fs;
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 
 use once_cell::sync::OnceCell;
