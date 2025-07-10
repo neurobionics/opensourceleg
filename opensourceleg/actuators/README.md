@@ -67,7 +67,7 @@ classDiagram
         -bool _is_open
         -bool _is_streaming
         -bool _is_homed
-        
+
         +abstract start()
         +abstract stop()
         +abstract update()
@@ -85,7 +85,7 @@ classDiagram
         +abstract property case_temperature
         +abstract property winding_temperature
         +abstract property _CONTROL_MODE_CONFIGS
-        
+
         +set_control_mode(CONTROL_MODES)
         +set_output_position(float)
         +set_motor_zero_position(float)
@@ -102,7 +102,7 @@ classDiagram
         -ThermalModel _thermal_model
         -float _thermal_scale
         -dict _data
-        
+
         +start()
         +stop()
         +update()
@@ -132,7 +132,7 @@ classDiagram
     class MyCustomActuator {
         -object _hardware_connection
         -dict _data
-        
+
         +start()
         +stop()
         +update()
@@ -171,21 +171,20 @@ classDiagram
     ActuatorBase --> CONTROL_MODE_CONFIGS : requires
     CONTROL_MODE_CONFIGS --> ControlModeConfig : contains
     ControlModeConfig --> ControlGains : may contain
-    
+
     DephyActuator --|> ActuatorBase : inherits
     DephyActuator --> Device : uses
     DephyActuator --> ThermalModel : uses
     DephyActuator --> CONTROL_MODE_CONFIGS : implements
-    
+
     MyCustomActuator --|> ActuatorBase : inherits
     MyCustomActuator --> CONTROL_MODE_CONFIGS : implements
-    
+
     %% Notes
     note for ActuatorBase "Abstract base class defining<br/>the actuator interface and<br/>automatic method restrictions"
     note for CONTROL_MODES "Enum defining available<br/>control modes with<br/>integer values"
     note for DephyActuator "Complete implementation<br/>with thermal management<br/>and hardware integration"
 ```
-
 
 This documentation mainly focuses on how to extend the **actuators** module to support new actuators.
 
@@ -231,15 +230,15 @@ MY_MOTOR_CONSTANTS = MOTOR_CONSTANTS(
 
 The actuators module currently offers the following control mode flags:
 
-| Control Mode | Value | Description |
-|--------------|-------|-------------|
+| Control Mode | Value | Description                          |
+| ------------ | ----- | ------------------------------------ |
 | IDLE         | -1    | No active control, motor is inactive |
-| POSITION     | 0     | Position control mode |
-| VOLTAGE      | 1     | Direct voltage control mode |
-| CURRENT      | 2     | Current/torque control mode |
-| IMPEDANCE    | 3     | Impedance control mode |
-| VELOCITY     | 4     | Velocity control mode |
-| TORQUE       | 5     | Torque control mode |
+| POSITION     | 0     | Position control mode                |
+| VOLTAGE      | 1     | Direct voltage control mode          |
+| CURRENT      | 2     | Current/torque control mode          |
+| IMPEDANCE    | 3     | Impedance control mode               |
+| VELOCITY     | 4     | Velocity control mode                |
+| TORQUE       | 5     | Torque control mode                  |
 
 These flags are used to put the actuator into a specific control mode. We highly recommend using these default flags for your custom actuator to make it compatible with the default functionality in the actuators module.
 
@@ -282,14 +281,14 @@ MY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     ),
     POSITION=ControlModeConfig(
         entry_callback=lambda actuator: LOGGER.debug(f"[{actuator.tag}] Entering POSITION mode."),
-        exit_callback=lambda actuator: (LOGGER.debug(f"[{actuator.tag}] Exiting POSITION mode."), 
+        exit_callback=lambda actuator: (LOGGER.debug(f"[{actuator.tag}] Exiting POSITION mode."),
                                        actuator.stop_motor(), time.sleep(0.1)),
         has_gains=False,
         max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
     ),
     IMPEDANCE=ControlModeConfig(
         entry_callback=lambda actuator: LOGGER.debug(f"[{actuator.tag}] Entering IMPEDANCE mode."),
-        exit_callback=lambda actuator: (LOGGER.debug(f"[{actuator.tag}] Exiting IMPEDANCE mode."), 
+        exit_callback=lambda actuator: (LOGGER.debug(f"[{actuator.tag}] Exiting IMPEDANCE mode."),
                                        actuator.stop_motor(), time.sleep(0.1)),
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
@@ -386,7 +385,7 @@ class MyActuator(ActuatorBase):
         )
         self.port = port
         self._data = None  # Store current actuator data
-        
+
         # Initialize your hardware-specific attributes here
         self._hardware_connection = None
 
@@ -399,19 +398,19 @@ class MyActuator(ActuatorBase):
         try:
             # Initialize hardware connection
             LOGGER.info(f"[{self.tag}] Starting actuator on port {self.port}")
-            
+
             # Your hardware-specific initialization code here
             # Example: self._hardware_connection = open_connection(self.port)
-            
+
             self._is_open = True
             self._is_streaming = True
-            
+
             # Read initial data
             self.update()
-            
+
             # Set initial control mode
             self.set_control_mode(CONTROL_MODES.VOLTAGE)
-            
+
         except Exception as e:
             LOGGER.error(f"[{self.tag}] Failed to start actuator: {e}")
             raise
@@ -422,18 +421,18 @@ class MyActuator(ActuatorBase):
             # Safety: stop motor first
             if hasattr(self, 'stop_motor'):
                 self.stop_motor()
-            
+
             # Set to idle mode
             self.set_control_mode(CONTROL_MODES.IDLE)
-            
+
             # Close hardware connection
             # Example: self._hardware_connection.close()
-            
+
             self._is_streaming = False
             self._is_open = False
-            
+
             LOGGER.info(f"[{self.tag}] Actuator stopped")
-            
+
         except Exception as e:
             LOGGER.error(f"[{self.tag}] Error stopping actuator: {e}")
 
@@ -441,20 +440,20 @@ class MyActuator(ActuatorBase):
         """Update actuator data from hardware."""
         if not self._is_streaming:
             return
-            
+
         try:
             # Read data from hardware
             # Example: self._data = self._hardware_connection.read()
-            
+
             # Check for thermal limits (similar to Dephy implementation)
             if self.case_temperature >= self.max_case_temperature:
                 LOGGER.error(f"[{self.tag}] Case thermal limit exceeded: {self.case_temperature}°C")
                 raise ThermalLimitException()
-                
+
             if self.winding_temperature >= self.max_winding_temperature:
                 LOGGER.error(f"[{self.tag}] Winding thermal limit exceeded: {self.winding_temperature}°C")
                 raise ThermalLimitException()
-                
+
         except Exception as e:
             LOGGER.error(f"[{self.tag}] Error updating actuator data: {e}")
 
@@ -463,7 +462,7 @@ class MyActuator(ActuatorBase):
         if not self._is_streaming:
             LOGGER.warning(f"[{self.tag}] Cannot set voltage - actuator not streaming")
             return
-            
+
         # Your hardware-specific voltage setting code here
         # Example: self._hardware_connection.send_voltage_command(int(value))
         LOGGER.debug(f"[{self.tag}] Setting motor voltage to {value} mV")
@@ -473,7 +472,7 @@ class MyActuator(ActuatorBase):
         if not self._is_streaming:
             LOGGER.warning(f"[{self.tag}] Cannot set current - actuator not streaming")
             return
-            
+
         # Your hardware-specific current setting code here
         LOGGER.debug(f"[{self.tag}] Setting motor current to {value} mA")
 
@@ -482,7 +481,7 @@ class MyActuator(ActuatorBase):
         if not self._is_streaming:
             LOGGER.warning(f"[{self.tag}] Cannot set position - actuator not streaming")
             return
-            
+
         # Convert to hardware units and send command
         position_counts = int((value + self.motor_zero_position) / self.MOTOR_CONSTANTS.RAD_PER_COUNT)
         # Example: self._hardware_connection.send_position_command(position_counts)
@@ -525,21 +524,21 @@ class MyActuator(ActuatorBase):
     ) -> None:
         """Home the actuator to find its zero position."""
         LOGGER.info(f"[{self.tag}] Starting homing sequence")
-        
+
         # Implementation following Dephy pattern
         # Set voltage mode for homing
         self.set_control_mode(CONTROL_MODES.VOLTAGE)
-        
+
         # Apply homing voltage
         self.set_motor_voltage(homing_direction * homing_voltage)
-        
+
         # Monitor for hard stop (simplified version)
         # you can have a loop checking velocity and current thresholds, or use the home method in the base class
-        
+
         # Set zero position
         self.set_motor_zero_position(self.motor_position + output_position_offset * self.gear_ratio)
         self._is_homed = True
-        
+
         LOGGER.info(f"[{self.tag}] Homing complete")
 
     # Required property implementations
@@ -614,17 +613,17 @@ clock = SoftRealtimeLoop(dt=1/actuator.frequency)
 with actuator:
     # Example: Current control
     actuator.set_control_mode(CONTROL_MODES.CURRENT)
-    actuator.set_current_gains(kp=40, ki=400, kd=0, ff=128)   
-    
+    actuator.set_current_gains(kp=40, ki=400, kd=0, ff=128)
+
     # Main control loop
     for t in clock:
         actuator.update()  # Read new data
         actuator.set_motor_current(1000)  # Apply 1000 mA
-        
+
         # Your control logic here
         current_position = actuator.motor_position
         current_torque = actuator.motor_torque
-        
+
         # Check temperatures
         if actuator.case_temperature > 70:
             print(f"Warning: High case temperature: {actuator.case_temperature}°C")
@@ -647,19 +646,19 @@ The actuators framework automatically restricts which methods can be called in e
 
 The following methods are automatically restricted based on control mode:
 
-| Method | Allowed Control Modes |
-|--------|----------------------|
-| `set_motor_voltage` | VOLTAGE |
-| `set_motor_current` | CURRENT |
-| `set_motor_position` | POSITION, IMPEDANCE |
-| `set_output_position` | POSITION, IMPEDANCE |
-| `set_motor_impedance` | IMPEDANCE |
-| `set_output_impedance` | IMPEDANCE |
-| `set_motor_torque` | CURRENT, TORQUE |
-| `set_output_torque` | CURRENT, TORQUE |
-| `set_current_gains` | CURRENT, TORQUE |
-| `set_position_gains` | POSITION |
-| `set_impedance_gains` | IMPEDANCE |
+| Method                 | Allowed Control Modes |
+| ---------------------- | --------------------- |
+| `set_motor_voltage`    | VOLTAGE               |
+| `set_motor_current`    | CURRENT               |
+| `set_motor_position`   | POSITION, IMPEDANCE   |
+| `set_output_position`  | POSITION, IMPEDANCE   |
+| `set_motor_impedance`  | IMPEDANCE             |
+| `set_output_impedance` | IMPEDANCE             |
+| `set_motor_torque`     | CURRENT, TORQUE       |
+| `set_output_torque`    | CURRENT, TORQUE       |
+| `set_current_gains`    | CURRENT, TORQUE       |
+| `set_position_gains`   | POSITION              |
+| `set_impedance_gains`  | IMPEDANCE             |
 
 ### Example Behavior
 
@@ -698,7 +697,7 @@ class MyActuator(ActuatorBase):
         **ActuatorBase._METHOD_REQUIRED_MODES,
         "my_custom_method": {CONTROL_MODES.VOLTAGE, CONTROL_MODES.CURRENT},
     }
-    
+
     def my_custom_method(self):
         # This method will only work in VOLTAGE or CURRENT modes
         pass
@@ -739,7 +738,6 @@ Study these implementations for real-world examples:
 - **[DephyActpack](./dephy.py)**: Complete implementation for Dephy actuators with thermal management
 - **[Moteus Controller](./moteus.py)**: Implementation for Moteus controllers
 - **[TMotor](./tmotor.py)**: Implementation for TMotor actuators
-
 
 ### Issues and Support
 
