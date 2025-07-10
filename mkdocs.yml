@@ -32,6 +32,9 @@ nav:
           - Getting Started: tutorials/logging/getting_started.md
           - Configuring Logger: tutorials/logging/configuring_logger.md
           - Logging Data: tutorials/logging/logging_data.md
+      - Robots:
+          - Getting Started: tutorials/robots/getting_started.md
+          - Homing OSL Joints: tutorials/robots/homing_joints.md
       - Utilities:
           - SoftRealtimeLoop:
               - Getting Started: tutorials/utilities/softrealtimeloop/getting_started.md
