@@ -173,6 +173,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "gpranav162",
+      "name": "Pranav G",
+      "avatar_url": "https://avatars.githubusercontent.com/u/132157503?v=4",
+      "profile": "https://github.com/gpranav162",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 5,
