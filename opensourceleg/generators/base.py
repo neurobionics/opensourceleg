@@ -67,7 +67,7 @@ class SignalGenerator(ABC):
         """
         pass
 
-    def update(self, t: float) -> float:
+    def update(self, t: float, **kwargs: Any) -> float:
         """
         Generate signal value for given time.
 
@@ -81,7 +81,7 @@ class SignalGenerator(ABC):
             raise ValueError("Time must be non-negative")
 
         # Generate signal
-        signal = self.generate(t)
+        signal = self.generate(t, **kwargs)
 
         # Add noise if configured
         if self._has_noise:
@@ -92,7 +92,9 @@ class SignalGenerator(ABC):
 
         return signal
 
-    def generate_sequence(self, duration: float, dt: Optional[float] = None) -> tuple[list[float], list[float]]:
+    def generate_sequence(
+        self, duration: float, dt: Optional[float] = None, **kwargs: Any
+    ) -> tuple[list[float], list[float]]:
         """
         Generate a sequence of values for given duration.
 
@@ -100,6 +102,7 @@ class SignalGenerator(ABC):
             duration: Time length of sequence (seconds)
             dt: Time step between samples (seconds).
                  If None, uses 1/sample_rate.
+            **kwargs: Additional variables for CustomGenerator (e.g., A=1.0, f=2.0)
 
         Returns:
             (time_points, signal_values) tuple
@@ -118,7 +121,7 @@ class SignalGenerator(ABC):
             if self.duration is not None and t > self.duration:
                 break
 
-            value = self.update(t)
+            value = self.update(t, **kwargs)
             time_points.append(t)
             signal_values.append(value)
 

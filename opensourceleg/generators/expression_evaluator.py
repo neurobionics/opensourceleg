@@ -1,7 +1,7 @@
 import ast
 import math
 import operator as op
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Optional
 
 UNARY_OPERATORS: dict[type[ast.unaryop], Callable[[Any], Any]] = {
     ast.USub: op.neg,
@@ -54,23 +54,47 @@ SAFE_FUNCTIONS: dict[str, Callable[..., Any]] = {
 class ExpressionEvaluator:
     """Safely evaluate mathematical expressions with variables"""
 
-    def __init__(self, expression: str, variables: Optional[dict[str, Any]] = None):
+    def __init__(self, expression: str, variables: Optional[list[str]] = None):
         self.expression = expression
-        self.variables = {"pi": math.pi, "e": math.e, **(variables or {})}
-        self._compiled: Optional[Callable[[dict[str, Any]], float]] = None
+        self._variable_names = variables or []
+        self._expected_arg_count = len(self._variable_names)
+
+        # Create set of available variables for validation (much more efficient)
+        self._available_vars = {"pi", "e"} | set(self._variable_names)
+
+        self._var_positions = {name: i for i, name in enumerate(self._variable_names)}
+
+        self._compiled: Optional[Callable[..., float]] = None
         self._compile_expression()
+
+        if self._compiled is None:
+            raise RuntimeError("Expression compilation failed")
+        self._compiled_func: Callable[..., float] = self._compiled
 
     def _compile_expression(self) -> None:
         """Compile the expression into a safe function"""
+        # Track variables used during compilation for validation
+        self._used_variables: set[str] = set()
+
         try:
             node = ast.parse(self.expression, mode="eval")
             self._compiled = self._compile_node(node.body)
+
+            # Validate that all declared variables are actually used
+            if self._variable_names:
+                declared_vars = set(self._variable_names)
+                unused_vars = declared_vars - self._used_variables
+
+                if unused_vars:
+                    unused_list = ", ".join(sorted(unused_vars))
+                    raise ValueError(f"Declared variables not used in expression: {unused_list}")  # noqa: TRY301
+
         except SyntaxError as e:
             raise ValueError(f"Invalid expression syntax: {e}") from e
         except Exception as e:
             raise ValueError(f"Expression compilation failed: {e}") from e
 
-    def _compile_node(self, node: ast.AST) -> Callable[[dict[str, Any]], float]:
+    def _compile_node(self, node: ast.AST) -> Callable[..., float]:
         """Compile AST nodes by dispatching to specific node compilers based on node type"""
 
         if isinstance(node, ast.Constant):
@@ -97,44 +121,75 @@ class ExpressionEvaluator:
         else:
             raise TypeError(f"Unsupported node type: {type(node).__name__}")
 
-    def _compile_constant(self, node: ast.Constant) -> Callable[[dict[str, Any]], float]:
+    def _compile_constant(self, node: ast.Constant) -> Callable[..., float]:
         """Compile constant value node"""
-        return lambda env: node.value
+        return lambda *args: node.value
 
-    def _compile_name(self, node: ast.Name) -> Callable[[dict[str, Any]], float]:
+    def _compile_name(self, node: ast.Name) -> Callable[..., float]:
         """Compile variable name node"""
         name = node.id
-        if name not in self.variables:
+        if name not in self._available_vars:
             raise ValueError(f"Undefined variable: {name}")
-        return lambda env: env[name]
 
-    def _compile_unaryop(self, node: ast.UnaryOp) -> Callable[[dict[str, Any]], float]:
+        # Track usage of declared variables (not built-in constants unless overridden)
+        if name in self._variable_names:
+            self._used_variables.add(name)
+
+        # Handle built-in constants
+        if name == "pi" and name not in self._variable_names:
+            return lambda *args: math.pi
+        elif name == "e" and name not in self._variable_names:
+            return lambda *args: math.e
+        else:
+            # Get position of variable in argument list
+            pos = self._var_positions[name]
+            return lambda *args: args[pos]
+
+    def _compile_unaryop(self, node: ast.UnaryOp) -> Callable[..., float]:
         """Compile unary operation node"""
         operand = self._compile_node(node.operand)
         op_func: Optional[Callable[[Any], Any]] = UNARY_OPERATORS.get(type(node.op))
         if op_func is None:
             raise ValueError(f"Unsupported operator: {type(node.op).__name__}")
-        return lambda env: op_func(operand(env))
+        return lambda *args: op_func(operand(*args))
 
-    def _compile_binop(self, node: ast.BinOp) -> Callable[[dict[str, Any]], float]:
+    def _compile_binop(self, node: ast.BinOp) -> Callable[..., float]:
         """Compile binary operation node"""
         left = self._compile_node(node.left)
         right = self._compile_node(node.right)
         opr_func: Optional[Callable[[Any, Any], Any]] = BINARY_OPERATORS.get(type(node.op))
         if opr_func is None:
             raise ValueError(f"Unsupported operator: {type(node.op).__name__}")
-        return lambda env: opr_func(left(env), right(env))
+        return lambda *args: opr_func(left(*args), right(*args))
 
-    def _compile_compare(self, node: ast.Compare) -> Callable[[dict[str, Any]], float]:
+    def _compile_compare(self, node: ast.Compare) -> Callable[..., float]:
         """Compile comparison node"""
         left = self._compile_node(node.left)
         comparators = [self._compile_node(c) for c in node.comparators]
         ops: list[Optional[Callable[[Any, Any], bool]]] = [COMPARISON_OPERATORS.get(type(op)) for op in node.ops]
         if any(op_func is None for op_func in ops):
             raise ValueError("Unsupported comparison operator")
-        return lambda env: self._evaluate_compare(left, ops, comparators, env)
+        return lambda *args: self._evaluate_compare_args(left, ops, comparators, args)
 
-    def _compile_call(self, node: ast.Call) -> Callable[[dict[str, Any]], float]:
+    def _evaluate_compare_args(
+        self,
+        left: Callable[..., Any],
+        ops: list[Optional[Callable[[Any, Any], bool]]],
+        comparators: list[Callable[..., Any]],
+        args: tuple[Any, ...],
+    ) -> bool:
+        """Evaluate comparison operators with positional arguments"""
+        lval = left(*args)
+        for op_func, comp in zip(ops, comparators):
+            rval = comp(*args)
+            if op_func is None:
+                raise ValueError("Comparison operator is None")
+            if not op_func(lval, rval):
+                return False
+            lval = rval
+        return True
+
+    def _compile_call(self, node: ast.Call) -> Callable[..., float]:
         """Compile function call node"""
         if not isinstance(node.func, ast.Name):
             raise TypeError("Only simple function calls are supported")
@@ -145,48 +200,49 @@ class ExpressionEvaluator:
 
         args = [self._compile_node(arg) for arg in node.args]
         func: Callable[..., Any] = SAFE_FUNCTIONS[func_name]
-        return lambda env: func(*(arg(env) for arg in args))
+        return lambda *call_args: func(*(arg(*call_args) for arg in args))
 
-    def _compile_ifexp(self, node: ast.IfExp) -> Callable[[dict[str, Any]], float]:
+    def _compile_ifexp(self, node: ast.IfExp) -> Callable[..., float]:
         """Compile conditional expression node"""
         test = self._compile_node(node.test)
         body = self._compile_node(node.body)
         orelse = self._compile_node(node.orelse)
-        return lambda env: body(env) if test(env) else orelse(env)
+        return lambda *args: body(*args) if test(*args) else orelse(*args)
 
-    def _evaluate_compare(
-        self,
-        left: Callable[[dict[str, Any]], Any],
-        ops: list[Optional[Callable[[Any, Any], bool]]],
-        comparators: list[Callable[[dict[str, Any]], Any]],
-        env: dict[str, Any],
-    ) -> bool:
-        """Evaluate comparison operators"""
-        lval = left(env)
-        for op_func, comp in zip(ops, comparators):
-            rval = comp(env)
-            if op_func is None:
-                raise ValueError("Comparison operator is None")
-            if not op_func(lval, rval):
-                return False
-            lval = rval
-        return True
+    def evaluate(self, *args: Any) -> float:
+        """
+        Evaluate the expression with given variable values.
 
-    def evaluate(self, variables: Optional[dict[str, Any]] = None) -> float:
-        """Evaluate the expression with given variables"""
-        if self._compiled is None:
-            self._compile_expression()
+        Args:
+            *args: Variable values in the same order as specified in the variables list
+                  during initialization. Built-in constants (pi, e) are automatically included.
 
-        self._compiled = cast(Callable[[dict[str, Any]], float], self._compiled)
-        env = {**self.variables, **(variables or {})}
+        Returns:
+            The evaluated expression result as a float
+
+        Raises:
+            ValueError: If wrong number of arguments provided or evaluation fails
+        """
+        # Fast path: check argument count using cached value
+        if len(args) != self._expected_arg_count:
+            self._raise_arg_count_error(len(args))
+
         try:
-            return float(self._compiled(env))
-        except KeyError as e:
-            raise ValueError(f"Missing variable: {e}") from e
+            return self._compiled_func(*args)
         except Exception as e:
             raise ValueError(f"Evaluation error: {e}") from e
 
+    def _raise_arg_count_error(self, received_count: int) -> None:
+        """Helper method to raise argument count error with detailed message."""
+        if self._expected_arg_count == 0:
+            raise ValueError("No variables expected. Call evaluate() without arguments.")
+        else:
+            var_names = ", ".join(self._variable_names)
+            raise ValueError(
+                f"Expected {self._expected_arg_count} arguments for variables ({var_names}), got {received_count}"
+            )
+
 
 if __name__ == "__main__":
-    evaluator = ExpressionEvaluator("4 * cos(2*pi*f*t)", {"f": 1.0, "t": 0.0})
-    print(evaluator.evaluate())
+    evaluator = ExpressionEvaluator("4 * cos(2*pi*f*t)", ["f", "t"])
+    print(evaluator.evaluate(1.0, 0.0))  # f=1.0, t=0.0

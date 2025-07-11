@@ -1,6 +1,8 @@
 import math
 from typing import Any, Optional
 
+import numpy as np
+
 from .base import SignalGenerator
 from .expression_evaluator import ExpressionEvaluator
 
@@ -115,8 +117,8 @@ class SawtoothGenerator(SignalGenerator):
 
     def generate(self, t: float) -> float:
         period = 1 / self.frequency
-        position_in_cycle = t % period
-        normalized = position_in_cycle / period
+        position_in_cycle = t % period  # 0 → 1 over each period
+        normalized = position_in_cycle / period  # Scale to [-A, +A)
         value = self.amplitude * (2 * normalized - 1)
         return value
 
@@ -184,7 +186,14 @@ class ExponentialGenerator(SignalGenerator):
 
 
 class DataReplayGenerator(SignalGenerator):
-    def __init__(self, data: list[float], sample_rate: float, loop: bool = True, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        data: np.ndarray,
+        sample_rate: float,
+        loop: bool = True,
+        interpolation: str = "linear",
+        **kwargs: Any,
+    ) -> None:
         """
         Replay recorded data from a list.
 
@@ -195,49 +204,105 @@ class DataReplayGenerator(SignalGenerator):
             **kwargs: Base class parameters
         """
         super().__init__(**kwargs)
-        self.data = data
-        self.replay_rate = sample_rate
+        if interpolation not in {"linear", "nearest", "zoh"}:
+            raise ValueError("interpolation must be 'linear', 'nearest', or 'zoh'")
+
+        self.data = np.asarray(data, dtype=float)
+        self.replay_rate = float(sample_rate)
         self.loop = loop
-        self._index = 0
+        self.interpolation = interpolation
+
+        # Empty data check (avoid division/modulo by zero)
+        if len(self.data) == 0:
+            raise IndexError("Data list is empty")
+
+        self._len = len(self.data)
+        self._index = 0  # last integer index accessed for backward-compatibility
 
     def generate(self, t: float) -> float:
-        self._index = int(t * self.replay_rate)  # time based index
-        if t * self.replay_rate < 0:
-            raise ValueError("Time/Sample_Rate cannot be negative")
+        # TODO: add support for better interpolation
+        if t < 0.0:
+            raise ValueError("Time must be non-negative")
 
-        if self._index >= len(self.data):
+        index_float = t * self.replay_rate  # fractional sample index
+
+        if self.loop:
+            # Allow time to wrap seamlessly
+            index_float = index_float % self._len
+        elif index_float >= self._len:
+            return float(self.data[-1])
+
+        # Zero-order hold / nearest / linear interpolation
+        if self.interpolation == "zoh":
+            self._index = int(math.floor(index_float))
+            return float(self.data[self._index])
+
+        if self.interpolation == "nearest":
+            rounded = int(round(index_float))
             if self.loop:
-                self._index = self._index % len(self.data)
+                self._index = rounded % self._len
             else:
-                return float(self.data[-1])
+                self._index = rounded if rounded < self._len else (self._len - 1)
+            return float(self.data[self._index])
 
-        return float(self.data[self._index])
+        # Default: linear interpolation
+        idx0 = int(math.floor(index_float))
+        idx1 = idx0 + 1
+        frac = index_float - idx0
+
+        if idx1 >= self._len:
+            if self.loop:
+                idx1 = 0  # wrap to start
+            else:
+                idx1 = self._len - 1
+                frac = 0.0  # clamp at last sample
+
+        self._index = idx0
+        return float((1.0 - frac) * self.data[idx0] + frac * self.data[idx1])
 
 
 class CustomGenerator(SignalGenerator):
-    def __init__(self, expression: str, variables: Optional[dict[str, Any]] = None, **kwargs: Any) -> None:
+    def __init__(self, expression: str, variables: Optional[list[str]] = None, **kwargs: Any) -> None:
         """
         Custom signal generator from mathematical expression.
 
         Args:
-            expression: Mathematical expression using variables
-            variables: Dictionary of variables used in expression
+            expression: Mathematical expression using variables and 't' for time
+            variables: List of variable names used in expression (excluding 't' which is automatic)
             **kwargs: Base class parameters
 
         Example:
             gen = CustomGenerator(
                 expression="A * sin(2*pi*f*t)",
-                variables={'A': 1.0, 'f': 0.5},
+                variables=['A', 'f'],
             )
+            # Then call: gen.update(1.0, A=2.0, f=0.5)
         """
         super().__init__(**kwargs)
         self.expression = expression
-        self.variables = variables or {}
+        self._variable_names = variables or []
 
-        self.variables["t"] = 0.0
+        # 't' is always available and goes first in the argument list
+        all_variables = ["t", *self._variable_names]
+        self._evaluator = ExpressionEvaluator(expression, all_variables)
 
-        self._evaluator = ExpressionEvaluator(expression, self.variables)
+    def generate(self, t: float, **kwargs: Any) -> float:
+        """
+        Generate signal value with time and optional variable values.
 
-    def generate(self, t: float) -> float:
-        self.variables["t"] = t
-        return self._evaluator.evaluate(self.variables)
+        Args:
+            t: Current time in seconds
+            **kwargs: Values for variables declared in constructor
+
+        Returns:
+            Generated signal value
+        """
+        # Build argument list: t first, then variables in declared order
+        args = [t]
+        for var_name in self._variable_names:
+            if var_name not in kwargs:
+                raise ValueError(f"Missing value for variable: {var_name}")
+            args.append(kwargs[var_name])
+
+        # This will automatically error if wrong number of args due to ExpressionEvaluator validation
+        return self._evaluator.evaluate(*args)
