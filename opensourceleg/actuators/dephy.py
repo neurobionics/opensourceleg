@@ -638,13 +638,10 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> actuator.start()
             >>> actuator.set_motor_impedance(k=0.08922, b=0.0038070)
         """
-        MIN_K, MAX_K = 0.001, 1
-        MIN_B, MAX_B = 0.0001, 1
-
-        if k < MIN_K or k > MAX_K:
-            raise ValueError(f"Stiffness k={k} is out of the range {MIN_K}-{MAX_K}")
-        if b < MIN_B or b > MAX_B:
-            raise ValueError(f"Damping b={b} is out of the range {MIN_B}-{MAX_B}")
+        if k < 0:
+            raise ValueError(f"Stiffness k={k} cannot be negative")
+        if b < 0:
+            raise ValueError(f"Damping b={b} cannot be negative")
 
         self._set_impedance_gains(
             k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
