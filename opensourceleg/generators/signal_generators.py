@@ -200,10 +200,6 @@ class DataReplayGenerator(SignalGenerator):
         self.loop = loop
         self._index = 0
 
-    def reset(self) -> None:
-        super().reset()
-        self._index = 0
-
     def generate(self, t: float) -> float:
         self._index = int(t * self.replay_rate)  # time based index
         if t * self.replay_rate < 0:
@@ -213,9 +209,9 @@ class DataReplayGenerator(SignalGenerator):
             if self.loop:
                 self._index = self._index % len(self.data)
             else:
-                return self.data[-1]
+                return float(self.data[-1])
 
-        return self.data[self._index]
+        return float(self.data[self._index])
 
 
 class CustomGenerator(SignalGenerator):
