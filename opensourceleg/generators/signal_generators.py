@@ -1,6 +1,5 @@
 import math
-import warnings
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional
 
 from .base import SignalGenerator
 from .expression_evaluator import ExpressionEvaluator
@@ -9,11 +8,10 @@ from .expression_evaluator import ExpressionEvaluator
 class StepGenerator(SignalGenerator):
     def __init__(self, step_time: float = 0.0, step_value: float = 1.0, **kwargs: Any) -> None:
         """
-        Step generator (constant after specified time).
+        Step generator
 
         Args:
             step_time: Time when impulse occurs (seconds)
-                 If None, defaults to 0.0 (Constant signal)
             step_value: Amplitude of impulse
             **kwargs: Base class parameters
         """
@@ -21,57 +19,68 @@ class StepGenerator(SignalGenerator):
         self.step_time = step_time
         self.step_value = step_value
 
-    def _generate(self, t: float) -> float:
-        return self.amplitude * (self.step_value if t >= self.step_time else 0.0)
+    def generate(self, t: float) -> float:
+        value = self.step_value if t >= self.step_time else 0.0
+        return value
 
 
 class SineGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, phase: float = 0.0, **kwargs: Any) -> None:
+    def __init__(self, frequency: float = 1.0, phase: float = 0.0, amplitude: float = 1.0, **kwargs: Any) -> None:
         """
-        Sine wave generator.
+        Sine wave generator
 
         Args:
             frequency: Oscillation frequency (Hz)
             phase: Initial phase offset (radians)
+            amplitude: Amplitude of the sine wave
             **kwargs: Base class parameters
         """
         super().__init__(**kwargs)
         self.frequency = frequency
         self.phase = phase
+        self.amplitude = amplitude
 
-    def _generate(self, t: float) -> float:
-        return self.amplitude * math.sin(2 * math.pi * self.frequency * t + self.phase)
+    def generate(self, t: float) -> float:
+        value = self.amplitude * math.sin(2 * math.pi * self.frequency * t + self.phase)
+        return value
 
 
 class RampGenerator(SignalGenerator):
-    def __init__(self, slope: float = 1.0, reset_time: Optional[float] = None, **kwargs: Any) -> None:
+    def __init__(self, slope: float = 1.0, settling_value: float = 1.0, **kwargs: Any) -> None:
         """
-        Linear ramp generator.
+        Linear ramp generator that starts at zero and saturates at settling_value.
 
         Args:
             slope: Rate of change (units/second)
-            reset_time: Reset to zero when the specified time is reached
+            settling_value: Value at which the ramp saturates (stops increasing)
             **kwargs: Base class parameters
         """
         super().__init__(**kwargs)
         self.slope = slope
-        self.reset_time = reset_time
+        self.settling_value = settling_value
 
-    def _generate(self, t: float) -> float:
-        value = self.slope * t
-        if self.reset_time is not None:
-            value %= self.reset_time * self.slope
-        return self.amplitude * value
+    def generate(self, t: float) -> float:
+        ramp_value = self.slope * t
+
+        if self.slope > 0:
+            value = min(ramp_value, self.settling_value)
+        elif self.slope < 0:
+            value = max(ramp_value, self.settling_value)
+        else:
+            value = 0.0
+
+        return value
 
 
 class SquareGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, duty_cycle: float = 0.5, **kwargs: Any) -> None:
+    def __init__(self, frequency: float = 1.0, duty_cycle: float = 0.5, amplitude: float = 1.0, **kwargs: Any) -> None:
         """
         Square wave generator.
 
         Args:
             frequency: Oscillation frequency (Hz)
             duty_cycle: High duration fraction (0.0-1.0)
+            amplitude: Amplitude of the square wave
             **kwargs: Base class parameters
         """
         if not 0 <= duty_cycle <= 1:
@@ -80,42 +89,47 @@ class SquareGenerator(SignalGenerator):
         super().__init__(**kwargs)
         self.frequency = frequency
         self.duty_cycle = duty_cycle
+        self.amplitude = amplitude
 
-    def _generate(self, t: float) -> float:
+    def generate(self, t: float) -> float:
         period = 1 / self.frequency
         phase_time = t % period
         high_duration = period * self.duty_cycle
-        value = 1.0 if phase_time < high_duration else -1.0
-        return self.amplitude * value
+        value = self.amplitude * (1.0 if phase_time < high_duration else -1.0)
+        return value
 
 
 class SawtoothGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, **kwargs: Any) -> None:
+    def __init__(self, frequency: float = 1.0, amplitude: float = 1.0, **kwargs: Any) -> None:
         """
         Sawtooth wave generator (rising ramp with repeated resets).
 
         Args:
             frequency: Oscillation frequency (Hz)
+            amplitude: Amplitude of the sawtooth wave
             **kwargs: Base class parameters
         """
         super().__init__(**kwargs)
         self.frequency = frequency
+        self.amplitude = amplitude
 
-    def _generate(self, t: float) -> float:
+    def generate(self, t: float) -> float:
         period = 1 / self.frequency
         position_in_cycle = t % period
         normalized = position_in_cycle / period
-        return self.amplitude * (2 * normalized - 1)
+        value = self.amplitude * (2 * normalized - 1)
+        return value
 
 
 class TriangleGenerator(SignalGenerator):
-    def __init__(self, frequency: float = 1.0, symmetry: float = 0.5, **kwargs: Any) -> None:
+    def __init__(self, frequency: float = 1.0, symmetry: float = 0.5, amplitude: float = 1.0, **kwargs: Any) -> None:
         """
         Triangle wave generator.
 
         Args:
             frequency: Oscillation frequency (Hz)
             symmetry: Rise/fall ratio (0.0-1.0)
+            amplitude: Amplitude of the triangle wave
             **kwargs: Base class parameters
         """
         if not 0 <= symmetry <= 1:
@@ -124,8 +138,9 @@ class TriangleGenerator(SignalGenerator):
         super().__init__(**kwargs)
         self.frequency = frequency
         self.symmetry = symmetry
+        self.amplitude = amplitude
 
-    def _generate(self, t: float) -> float:
+    def generate(self, t: float) -> float:
         period = 1 / self.frequency
         position_in_cycle = t % period
         normalized = position_in_cycle / period
@@ -135,54 +150,37 @@ class TriangleGenerator(SignalGenerator):
         else:
             value = 1 - (normalized - self.symmetry) / (1 - self.symmetry)
 
-        return self.amplitude * (2 * value - 1)
+        value = self.amplitude * (2 * value - 1)
+        return value
 
 
 class ExponentialGenerator(SignalGenerator):
-    def __init__(self, time_constant: float = 1.0, growth: bool = False, **kwargs: Any) -> None:
+    def __init__(
+        self, time_constant: float = 1.0, saturation_value: float = 1.0, decay: bool = False, **kwargs: Any
+    ) -> None:
         """
-        Exponential decay/growth generator.
+        Exponential generator that approaches saturation_value asymptotically.
 
         Args:
-            time_constant: Time constant (τ) in seconds
-            growth: True for growth, False for decay
+            time_constant: Time constant (τ) in seconds - controls rate of approach
+            saturation_value: Final value that the exponential approaches
+            decay: True for decay (starts at saturation_value, decays to 0),
+                   False for growth (starts at 0, grows to saturation_value)
             **kwargs: Base class parameters
         """
         super().__init__(**kwargs)
         self.time_constant = time_constant
-        self.growth = growth
+        self.saturation_value = saturation_value
+        self.decay = decay
 
-    def _generate(self, t: float) -> float:
-        exponent = -t / self.time_constant
-        if self.growth:
-            return self.amplitude * (math.exp(exponent))
-        else:
-            return self.amplitude * (1 - math.exp(exponent))
+    def generate(self, t: float) -> float:
+        # Calculate exponential decay factor
+        decay_factor = math.exp(-t / self.time_constant)
 
+        # Use ternary operator for cleaner code
+        value = self.saturation_value * decay_factor if self.decay else self.saturation_value * (1 - decay_factor)
 
-class UniformNoiseGenerator(SignalGenerator):
-    def __init__(self, **kwargs: Any) -> None:
-        """Uniform noise generator"""
-        super().__init__(**kwargs)
-
-    def _generate(self, t: float) -> float:
-        return self.amplitude * self._rng.uniform(-1, 1)
-
-
-class GaussianNoiseGenerator(SignalGenerator):
-    def __init__(self, std_dev: float = 1.0, **kwargs: Any) -> None:
-        """
-        Gaussian noise generator.
-
-        Args:
-            std_dev: Standard deviation of distribution
-            **kwargs: Base class parameters
-        """
-        super().__init__(**kwargs)
-        self.std_dev = std_dev
-
-    def _generate(self, t: float) -> float:
-        return self.amplitude * self._rng.gauss(0, self.std_dev)
+        return value
 
 
 class DataReplayGenerator(SignalGenerator):
@@ -206,7 +204,7 @@ class DataReplayGenerator(SignalGenerator):
         super().reset()
         self._index = 0
 
-    def _generate(self, t: float) -> float:
+    def generate(self, t: float) -> float:
         self._index = int(t * self.replay_rate)  # time based index
         if t * self.replay_rate < 0:
             raise ValueError("Time/Sample_Rate cannot be negative")
@@ -217,44 +215,7 @@ class DataReplayGenerator(SignalGenerator):
             else:
                 return self.data[-1]
 
-        value = self.data[self._index]
-        return value
-
-
-class CompositeGenerator(SignalGenerator):
-    def __init__(
-        self,
-        generators: list[SignalGenerator],
-        operation: Union[str, Callable[[list[float]], float]] = "add",
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.generators = generators
-        self.operation = operation
-
-        if not callable(operation) and operation not in ["add", "multiply"]:
-            raise ValueError("Operation must be 'add', 'multiply', or a callable")
-
-    def _generate(self, t: float) -> float:
-        """Generate composite value at given time"""
-        values = []
-        for gen in self.generators:
-            signal = gen._generate(t)
-            noise = self._rng.uniform(-gen.noise_amplitude, gen.noise_amplitude) if gen.noise_amplitude > 0 else 0.0
-            values.append(signal + noise + gen.offset)
-
-        # Combination operation
-        if callable(self.operation):
-            return self.operation(values)
-        elif self.operation == "add":
-            return sum(values)
-        elif self.operation == "multiply":
-            result = 1.0
-            for v in values:
-                result *= v
-            return result
-        else:
-            raise ValueError(f"Unsupported operation: {self.operation}")
+        return self.data[self._index]
 
 
 class CustomGenerator(SignalGenerator):
@@ -269,67 +230,18 @@ class CustomGenerator(SignalGenerator):
 
         Example:
             gen = CustomGenerator(
-                expression="A * sin(2*pi*f*t) + noise",
+                expression="A * sin(2*pi*f*t)",
                 variables={'A': 1.0, 'f': 0.5},
-                noise_amplitude=0.1
             )
         """
         super().__init__(**kwargs)
         self.expression = expression
         self.variables = variables or {}
 
-        # Add time to variables
         self.variables["t"] = 0.0
 
-        # Compile expression
         self._evaluator = ExpressionEvaluator(expression, self.variables)
 
-    def _generate(self, t: float) -> float:
-        # Update time variable
+    def generate(self, t: float) -> float:
         self.variables["t"] = t
         return self._evaluator.evaluate(self.variables)
-
-
-def plot_signals(
-    generators: list[tuple[SignalGenerator, str]],
-    duration: float = 5.0,
-    dt: Optional[float] = None,
-    title: str = "Signal Comparison",
-    show: bool = True,
-) -> Any:
-    """
-    Plot multiple signals for comparison.
-
-    Args:
-        generators: List of (generator, label) tuples
-        duration: Time to plot (seconds)
-        dt: Time step between samples (seconds)
-        title: Plot title
-        show: Whether to immediately show the plot
-
-    Returns:
-        Matplotlib figure and axes objects
-    """
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        warnings.warn("Plotting requires matplotlib. Install with 'pip install matplotlib'", stacklevel=2)
-        return None, None
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    for gen, label in generators:
-        time_points, signal_values = gen.generate_sequence(duration, dt)
-        ax.plot(time_points, signal_values, label=label)
-
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Amplitude")
-    ax.set_title(title)
-    ax.grid(True)
-    ax.legend()
-    fig.tight_layout()
-
-    if show:
-        plt.show()
-
-    return fig, ax

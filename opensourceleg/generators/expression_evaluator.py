@@ -3,7 +3,6 @@ import math
 import operator as op
 from typing import Any, Callable, Optional, cast
 
-# Supported operations for safe evaluation
 UNARY_OPERATORS: dict[type[ast.unaryop], Callable[[Any], Any]] = {
     ast.USub: op.neg,
     ast.UAdd: op.pos,
@@ -49,8 +48,6 @@ SAFE_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "sqrt": math.sqrt,
     "ceil": math.ceil,
     "floor": math.floor,
-    "radians": math.radians,
-    "degrees": math.degrees,
 }
 
 
@@ -188,3 +185,8 @@ class ExpressionEvaluator:
             raise ValueError(f"Missing variable: {e}") from e
         except Exception as e:
             raise ValueError(f"Evaluation error: {e}") from e
+
+
+if __name__ == "__main__":
+    evaluator = ExpressionEvaluator("4 * cos(2*pi*f*t)", {"f": 1.0, "t": 0.0})
+    print(evaluator.evaluate())
