@@ -560,7 +560,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             b=b / (self.gear_ratio**2),
         )
 
-    def set_impedance_pidf_gains(
+    def set_impedance_cc_pidf_gains(
         self,
         kp: float = DEFAULT_IMPEDANCE_GAINS.kp,
         ki: float = DEFAULT_IMPEDANCE_GAINS.ki,
@@ -568,7 +568,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         ff: float = DEFAULT_IMPEDANCE_GAINS.ff,
     ) -> None:
         """
-        Caches the PID & feedforward gains used for the impedance control mode.
+        Caches the PID & feedforward gains used in the current controller within the impedance control mode.
 
         This does not configure the physical parameters (`k` and `b`)
         which are set via `set_output_impedance` or `set_motor_impedance`.

@@ -429,7 +429,7 @@ class MockActuator(ActuatorBase):
     def set_output_impedance(self, value):
         pass
 
-    def set_impedance_pidf_gains(self, kp, ki, kd, ff):
+    def set_impedance_cc_pidf_gains(self, kp, ki, kd, ff):
         pass
 
     def set_current_gains(self, kp, ki, kd, ff):

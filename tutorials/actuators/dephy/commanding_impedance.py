@@ -32,7 +32,7 @@ def impedance_control():
     with actpack:
         actpack.update()
         actpack.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
-        actpack.set_impedance_pidf_gains()
+        actpack.set_impedance_cc_pidf_gains()
         actpack.set_output_impedance()
 
         current_position = actpack.output_position
