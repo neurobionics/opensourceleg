@@ -8,7 +8,7 @@ name = "profiler"
 crate-type=["cdylib"]
 
 [dependencies]
-chrono = "0.4.41"
+chrono = {version = "0.4.41", features = ["serde"]}
 dashmap = { version = "6.1.0", features = ["serde"] }
 once_cell = "1.21.3"
 serde = "1.0.219"

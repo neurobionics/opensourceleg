@@ -1,4 +1,5 @@
 use std::{collections::HashMap, fs::File, io::{BufWriter, Write}, sync::Mutex};
+use chrono::Utc;
 use serde_json::{Value};
 use tracing::warn;
 
@@ -31,7 +32,12 @@ impl Record {
             return;
         }
 
-        let json = serde_json::to_string(&self.variables).expect("json serialization failed");
+        let record = serde_json::json!({
+            "timestamp": Utc::now(),
+            "variables": self.variables
+        });
+
+        let json = serde_json::to_string(&record).expect("json serialization failed");
         if let Err(e) = writeln!(lock, "{json}") {
             eprintln!("Failed to write to file: {e}");
         }

@@ -22,7 +22,7 @@ def func():
         Logger.debug("debug msg")
         make_simple.add(3)
         Logger.trace_variables(dict(variable=make_simple.z))
-        Logger.flush_record()
+        Logger.record()
         Logger.info("info msg")
     print(time.time() - t)
     # Logger.trace_variables(dict(one=1, two=2))
