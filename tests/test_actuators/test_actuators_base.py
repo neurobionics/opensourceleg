@@ -255,7 +255,7 @@ def test_control_mode_configs_init():
 def test_control_mode_methods():
     assert type(CONTROL_MODE_METHODS) is list
     assert all(type(x) is str for x in CONTROL_MODE_METHODS)
-    assert len(CONTROL_MODE_METHODS) >= 12
+    assert len(CONTROL_MODE_METHODS) >= 11
 
 
 def test_typevar_usage():
@@ -429,13 +429,16 @@ class MockActuator(ActuatorBase):
     def set_output_impedance(self, value):
         pass
 
+    def set_impedance_cc_pidf_gains(self, kp, ki, kd, ff):
+        pass
+
     def set_current_gains(self, kp, ki, kd, ff):
         pass
 
     def set_position_gains(self, kp, ki, kd, ff):
         pass
 
-    def set_impedance_gains(self, kp, ki, kd, k, b, ff):
+    def _set_impedance_gains(self, k, p):
         pass
 
     def home(self):
