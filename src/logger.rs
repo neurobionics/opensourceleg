@@ -74,8 +74,7 @@ impl Logger {
             let _ = fs::create_dir_all(parent);
         }
 
-        let path_str = path.to_str().expect("error").to_owned();
-        let _ = RECORD.set(Mutex::new(Record::new(path_str)));
+        let _ = RECORD.set(Mutex::new(Record::new(path)));
 
         if print_stdout {
             layers.push(create_stdout_layer(time.clone(), console_level).boxed());

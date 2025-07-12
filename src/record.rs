@@ -1,19 +1,26 @@
-use std::{collections::HashMap, fs::File, io::{BufWriter, Write}, sync::Mutex};
+use std::{collections::HashMap, fs::File, io::{BufWriter, Write}, path::PathBuf, sync::Mutex};
 use chrono::Utc;
 use serde_json::{Value};
 use tracing::warn;
+use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
 
 pub struct Record {
     variables: HashMap::<String, Value>,
-    file: Mutex<BufWriter<File>>
+    writer: NonBlocking,
+    _guard: WorkerGuard
 }
 
 impl Record {
-    pub fn new(path: String) -> Self{
-        let file = File::create(path).expect("Could not create variable tracing file");
+    pub fn new(path: PathBuf) -> Self{
+        let parent_dir = path.parent().unwrap_or(std::path::Path::new("."));
+        let file_name = path.file_name().unwrap().to_str().unwrap();
+        let file_appender = tracing_appender::rolling::never(parent_dir, file_name);
+        let (non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
+
         Self {
             variables: HashMap::<String, Value>::new(),
-            file: Mutex::new(BufWriter::new(file))
+            writer: non_blocking_writer,
+            _guard: guard
         }
     }
 
@@ -26,8 +33,6 @@ impl Record {
     }
 
     pub fn record_variables(&mut self) {
-        let mut lock = self.file.lock().expect("variable log file lock poisoned");
-        
         if self.variables.is_empty() {
             return;
         }
@@ -38,14 +43,13 @@ impl Record {
         });
 
         let json = serde_json::to_string(&record).expect("json serialization failed");
-        if let Err(e) = writeln!(lock, "{json}") {
+        if let Err(e) = writeln!(self.writer, "{json}") {
             eprintln!("Failed to write to file: {e}");
         }
         self.variables.clear();
     }
     
     pub fn flush_buffer(&mut self) {
-        let mut lock = self.file.lock().expect("variable log file lock poisoned");
-        let _ = lock.flush();
+        self.writer.flush().expect("Error flushing writer");
     }
 }
