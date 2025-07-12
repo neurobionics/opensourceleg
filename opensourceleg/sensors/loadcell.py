@@ -515,7 +515,7 @@ class NBLoadcellDAQ(LoadcellBase):
             amp_gain = [34, 34, 34, 151, 151, 151]
         super().__init__(tag=tag, offline=offline)
 
-        self._adc = ADS131M0x(**kwargs)
+        self._adc = ADS131M0x(offline=offline, **kwargs)
         self.calibration_matrix = calibration_matrix
         self.excitation_voltage = excitation_voltage
         self._offset = np.zeros(self.adc.num_channels)

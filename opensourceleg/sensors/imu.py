@@ -19,7 +19,8 @@ from typing import Any, Union
 import numpy as np
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import IMUBase, check_sensor_stream
+from opensourceleg.sensors.base import IMUBase
+from opensourceleg.sensors.decorators import check_sensor_stream, no_op_offline
 
 
 class LordMicrostrainIMU(IMUBase):
@@ -169,6 +170,7 @@ class LordMicrostrainIMU(IMUBase):
         """
         self._return_packets = return_packets
 
+    @no_op_offline()
     def start(self) -> None:
         """
         Start the Lord Microstrain IMU sensor.
@@ -188,6 +190,7 @@ class LordMicrostrainIMU(IMUBase):
         self._node.enableDataStream(self.mscl.MipTypes.CLASS_ESTFILTER)
         self._is_streaming = True
 
+    @no_op_offline()
     @check_sensor_stream
     def stop(self) -> None:
         """
@@ -201,6 +204,7 @@ class LordMicrostrainIMU(IMUBase):
         self._node.setToIdle()
         self._is_streaming = False
 
+    @no_op_offline()
     @check_sensor_stream
     def ping(self) -> None:
         """
@@ -218,6 +222,7 @@ class LordMicrostrainIMU(IMUBase):
         else:
             LOGGER.error(f"Failed to ping the IMU at {self.port}")
 
+    @no_op_offline()
     def update(self) -> Union[None, Any]:
         """
         Retrieve and update IMU data from the sensor. To modify update parameters, use the set_update_timeout,
@@ -307,6 +312,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data
 
     @property
+    @no_op_offline(return_value=0)
     def roll(self) -> float:
         """
         Get the estimated roll angle in radians.
@@ -317,6 +323,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estRoll"]
 
     @property
+    @no_op_offline(return_value=0)
     def pitch(self) -> float:
         """
         Get the estimated pitch angle in radians.
@@ -327,6 +334,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estPitch"]
 
     @property
+    @no_op_offline(return_value=0)
     def yaw(self) -> float:
         """
         Get the estimated yaw angle in radians.
@@ -337,6 +345,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estYaw"]
 
     @property
+    @no_op_offline(return_value=0)
     def vel_x(self) -> float:
         """
         Get the estimated angular velocity about the x-axis in rad/s.
@@ -347,6 +356,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estAngularRateX"]
 
     @property
+    @no_op_offline(return_value=0)
     def vel_y(self) -> float:
         """
         Get the estimated angular velocity about the y-axis in rad/s.
@@ -357,6 +367,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estAngularRateY"]
 
     @property
+    @no_op_offline(return_value=0)
     def vel_z(self) -> float:
         """
         Get the estimated angular velocity about the z-axis in rad/s.
@@ -367,6 +378,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estAngularRateZ"]
 
     @property
+    @no_op_offline(return_value=0)
     def acc_x(self) -> float:
         """
         Get the estimated linear acceleration along the x-axis in m/s².
@@ -377,6 +389,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estLinearAccelX"]
 
     @property
+    @no_op_offline(return_value=0)
     def acc_y(self) -> float:
         """
         Get the estimated linear acceleration along the y-axis in m/s².
@@ -387,6 +400,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estLinearAccelY"]
 
     @property
+    @no_op_offline(return_value=0)
     def acc_z(self) -> float:
         """
         Get the estimated linear acceleration along the z-axis in m/s².
@@ -397,6 +411,7 @@ class LordMicrostrainIMU(IMUBase):
         return self._data["estLinearAccelZ"]
 
     @property
+    @no_op_offline(return_value=0)
     def gyro_x(self) -> float:
         """
         Get the measured gyroscopic value for the x-axis.
@@ -412,6 +427,7 @@ class LordMicrostrainIMU(IMUBase):
         return 0.0
 
     @property
+    @no_op_offline(return_value=0)
     def gyro_y(self) -> float:
         """
         Get the measured gyroscopic value for the y-axis.
@@ -427,6 +443,7 @@ class LordMicrostrainIMU(IMUBase):
         return 0.0
 
     @property
+    @no_op_offline(return_value=0)
     def gyro_z(self) -> float:
         """
         Get the measured gyroscopic value for the z-axis.
@@ -442,6 +459,7 @@ class LordMicrostrainIMU(IMUBase):
         return 0.0
 
     @property
+    @no_op_offline(return_value=0)
     def timestamp(self) -> float:
         """
         Get the timestamp of the latest data packet in seconds.

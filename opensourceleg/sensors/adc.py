@@ -10,6 +10,7 @@ import numpy as np
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import ADCBase
+from opensourceleg.sensors.decorators import no_op_offline
 
 
 class ADS131M0x(ADCBase):
@@ -85,6 +86,7 @@ class ADS131M0x(ADCBase):
         Raises:
             ValueError: If the configuration parameters are invalid.
         """
+        super().__init__(tag=tag, offline=offline)
 
         try:
             import spidev
@@ -124,9 +126,10 @@ class ADS131M0x(ADCBase):
         and transitioning to continuous conversion mode.
         """
         LOGGER.info("Starting ADC...")
-        self._spi.open(self._spi_bus, self._spi_cs)
-        self._spi.max_speed_hz = self._clock_freq
-        self._spi.mode = self._SPI_MODE
+        if not self.is_offline:
+            self._spi.open(self._spi_bus, self._spi_cs)
+            self._spi.max_speed_hz = self._clock_freq
+            self._spi.mode = self._SPI_MODE
 
         self.reset()
         self._set_gain()
@@ -143,12 +146,14 @@ class ADS131M0x(ADCBase):
         self._spi.close()
         LOGGER.info("ADC stopped successfully.")
 
+    @no_op_offline()
     def reset(self) -> None:
         """
         Reset the ADC by sending the reset command via SPI.
         """
         self._spi.xfer2(self._RESET_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
 
+    @no_op_offline()
     def update(self) -> None:
         """
         Update the ADC data by reading the latest voltage values in millivolts.
@@ -165,6 +170,7 @@ class ADS131M0x(ADCBase):
         # if self._gain_error is not None:
         #     self._gain_calibration()
 
+    @no_op_offline(return_value=0)
     def read_register(self, address: int) -> int:
         """
         Read the value of a register at the specified address.
@@ -180,6 +186,7 @@ class ADS131M0x(ADCBase):
         rsp = self._spi_message(word)
         return int(rsp[0] << 8 | rsp[1])
 
+    @no_op_offline()
     def write_register(self, address: int, reg_val: int) -> None:
         """
         Write a value to a register at the specified address.
@@ -314,10 +321,12 @@ class ADS131M0x(ADCBase):
                 1 -- Continuous Conversion Mode.
         """
         if state == 0:
-            self._spi.xfer2(self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
+            if not self.is_offline:
+                self._spi.xfer2(self._STANDBY_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
             self._streaming = False
         elif state == 1:
-            self._spi.xfer2(self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
+            if not self.is_offline:
+                self._spi.xfer2(self._WAKEUP_WORD + self._BLANK_WORD * (self._words_per_frame - 1))
             self._streaming = True
 
     def _set_voltage_source(self, source: int) -> None:
@@ -334,6 +343,7 @@ class ADS131M0x(ADCBase):
         for i in range(0, self.num_channels):
             self.write_register(self._CHANNEL_CFG_ADDRS[i], source)
 
+    @no_op_offline()
     def _clear_stale_data(self) -> None:
         """Clears previous 2 stale data points stored in ADC registers."""
         for _ in range(2):
@@ -349,21 +359,6 @@ class ADS131M0x(ADCBase):
         msg2 = gains[7] << 12 | gains[6] << 8 | gains[5] << 4 | gains[4]
         self.write_register(self._GAIN2_REG, msg2)
         self._channel_enable(True)
-
-    def _offset_calibration(self, n_samples: int = 1000) -> None:
-        """Centers the ADC data around the measured zero value."""
-        self._set_voltage_source(1)
-        self._clear_stale_data()
-        n_samples = 2**10
-        offsets = np.empty((n_samples, self.num_channels))
-        for i in range(n_samples):
-            offsets[i] = self._read_data_counts()
-        mean_offset = offsets.mean(axis=0, dtype=int)
-
-        for i in range(0, self.num_channels):
-            self.write_register(self._OCAL_MSB_ADDRS[i], mean_offset[i].item() >> 8)
-            self.write_register(self._OCAL_LSB_ADDRS[i], (mean_offset[i].item() << 8) & 0xFF00)
-        self._set_voltage_source(0)
 
     def _gain_calibration(self) -> None:
         """Corrects actual gain to desired gain using user-calculated gain error for each channel."""
@@ -381,6 +376,7 @@ class ADS131M0x(ADCBase):
         word[1] = msg & 0xFF
         return word
 
+    @no_op_offline(return_value=False)
     def _ready_to_read(self) -> bool:
         """
         Check if all ADC channels are ready for a new data read.
@@ -424,3 +420,19 @@ class ADS131M0x(ADCBase):
         if (num >> (bits - 1)) != 0:
             val = num - (1 << bits)
         return val
+
+    @no_op_offline()
+    def _offset_calibration(self, n_samples: int = 1000) -> None:
+        """Centers the ADC data around the measured zero value."""
+        self._set_voltage_source(1)
+        self._clear_stale_data()
+        n_samples = 2**10
+        offsets = np.empty((n_samples, self.num_channels))
+        for i in range(n_samples):
+            offsets[i] = self._read_data_counts()
+        mean_offset = offsets.mean(axis=0, dtype=int)
+
+        for i in range(0, self.num_channels):
+            self.write_register(self._OCAL_MSB_ADDRS[i], mean_offset[i].item() >> 8)
+            self.write_register(self._OCAL_LSB_ADDRS[i], (mean_offset[i].item() << 8) & 0xFF00)
+        self._set_voltage_source(0)
