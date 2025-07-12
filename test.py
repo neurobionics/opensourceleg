@@ -18,7 +18,7 @@ def func():
 
     t = time.time()
     make_simple = simple()
-    for i in range(1, 1000000):
+    for i in range(1, 10000):
         Logger.debug("debug msg")
         make_simple.add(3)
         Logger.trace_variables(dict(variable=make_simple.z))
