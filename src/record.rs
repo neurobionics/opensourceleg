@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::{BufWriter, Write}, path::PathBuf, sync::Mutex};
+use std::{collections::HashMap, io::{Write}, path::PathBuf};
 use chrono::Utc;
 use serde_json::{Value};
 use tracing::warn;
@@ -11,7 +11,7 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn new(path: PathBuf) -> Self{
+    pub fn new(path: PathBuf) -> Self {
         let parent_dir = path.parent().unwrap_or(std::path::Path::new("."));
         let file_name = path.file_name().unwrap().to_str().unwrap();
         let file_appender = tracing_appender::rolling::never(parent_dir, file_name);
