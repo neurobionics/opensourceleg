@@ -16,7 +16,7 @@
 [![License](https://img.shields.io/github/license/neurobionics/opensourceleg)](https://github.com/neurobionics/opensourceleg/blob/main/LICENSE)
 [![Coverage](https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/coverage.svg)](https://github.com/neurobionics/opensourceleg/actions/workflows/main.yml)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-18-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
@@ -155,7 +155,7 @@ Thanks to all the wonderful people who have contributed to the project!
     <tr>
       <td align="center" valign="top" width="20%"><a href="https://github.com/matteo-crotti"><img src="https://avatars.githubusercontent.com/u/32237604?v=4?s=100" width="100px;" alt="matteo-crotti"/><br /><sub><b>matteo-crotti</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/issues?q=author%3Amatteo-crotti" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="20%"><a href="https://github.com/JerryGu-leiting"><img src="https://avatars.githubusercontent.com/u/178481044?v=4?s=100" width="100px;" alt="Jiarui Gu"/><br /><sub><b>Jiarui Gu</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=JerryGu-leiting" title="Documentation">📖</a></td>
-      <td align="center" valign="top" width="20%"><a href="https://github.com/gpranav162"><img src="https://avatars.githubusercontent.com/u/132157503?v=4?s=100" width="100px;" alt="Pranav G"/><br /><sub><b>Pranav G</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=gpranav162" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/gpranav162"><img src="https://avatars.githubusercontent.com/u/132157503?v=4?s=100" width="100px;" alt="Pranav G"/><br /><sub><b>Pranav G</b></sub></a><br /><a href="https://github.com/neurobionics/opensourceleg/commits?author=gpranav162" title="Documentation">📖</a> <a href="https://github.com/neurobionics/opensourceleg/commits?author=gpranav162" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
