@@ -206,8 +206,8 @@ def test_set_file_name_str(isolated_logger: Logger):
     isolated_logger.set_file_name("test_file")
     assert all([
         isolated_logger._user_file_name == "test_file",
-        isolated_logger._file_path == f"{CURR_DIR}/test_file.log",
-        isolated_logger._csv_path == f"{CURR_DIR}/test_file.csv",
+        isolated_logger._file_path == os.path.join(CURR_DIR, "test_file.log"),
+        isolated_logger._csv_path == os.path.join(CURR_DIR, "test_file.csv"),
     ])
 
 
@@ -398,7 +398,7 @@ def test_generate_file_paths_no_input_filename(isolated_logger: Logger):
 def test_generate_file_paths_with_input_filename(isolated_logger: Logger):
     isolated_logger._user_file_name = "test_file"
     isolated_logger._generate_file_paths()
-    assert isolated_logger._csv_path == f"{isolated_logger.log_path}/test_file.csv"
+    assert isolated_logger._csv_path == os.path.join(isolated_logger.log_path, "test_file.csv")
 
 
 # Test enter
