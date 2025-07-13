@@ -59,20 +59,22 @@ impl Record {
 
         let mut function_results = Map::new();
 
-        Python::with_gil(|py| {
-            for (name, func) in &self.functions {
-                match func.call0(py) {
-                    Ok(val) => {
-                        let bound_val = val.bind(py);
-                        let json_val = downcast(bound_val.clone());
-                        function_results.insert(name.clone(), json_val);
-                    }
-                    Err(e) => {
-                        eprintln!("Function '{name}' call failed: {e}");
+        if !self.functions.is_empty() {
+            Python::with_gil(|py| {
+                for (name, func) in &self.functions {
+                    match func.call0(py) {
+                        Ok(val) => {
+                            let bound_val = val.bind(py);
+                            let json_val = downcast(bound_val.clone());
+                            function_results.insert(name.clone(), json_val);
+                        }
+                        Err(e) => {
+                            eprintln!("Function '{name}' call failed: {e}");
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
         let record = serde_json::json!({
             "timestamp": Utc::now(),

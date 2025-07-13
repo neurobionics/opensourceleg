@@ -22,7 +22,7 @@ def func():
     make_simple = simple()
     Logger.track_functions(dict(track_z=make_simple.get_z))
     Logger.track_functions(dict(track_z=make_simple.get_z))
-    for i in range(1, 10000):
+    for i in range(1, 1000000):
         Logger.debug("debug msg")
         make_simple.add(3)
         Logger.record()
