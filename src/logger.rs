@@ -5,8 +5,8 @@ use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
 use once_cell::sync::OnceCell;
-use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyList, PyStringMethods};
-use pyo3::{pyclass, pymethods, Bound, PyErr, PyResult, Python};
+use pyo3::types::{PyAnyMethods, PyBool, PyDict, PyDictMethods, PyFloat, PyInt, PyList, PyString, PyStringMethods};
+use pyo3::{pyclass, pymethods, Bound, PyAny, PyErr, PyResult, Python};
 use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn};
@@ -243,18 +243,18 @@ fn create_file_layer(dir: String, log_name: String, time: String, file_max_size:
     file_layer
 }
 
-pub fn downcast(val: Bound<'_, pyo3::PyAny>) -> Value {
-    if let Ok(v) = val.extract::<bool>() {
-        serde_json::to_value(v).expect("Error converting to JSON Value")
+pub fn downcast(val: Bound<'_, PyAny>) -> Value {
+    if let Ok(v) = val.downcast::<PyBool>() {
+        serde_json::to_value(v.extract::<bool>().expect("Error converting to JSON Value")).expect("Error converting to JSON Value")
     }
-    else if let Ok(v) = val.extract::<i64>() {
-        serde_json::to_value(v).expect("Error converting to JSON Value")
+    else if let Ok(v) = val.downcast::<PyInt>() {
+        serde_json::to_value(v.extract::<i64>().expect("Error extracting i64 from PyInt")).expect("Error converting to JSON Value")
     }
-    else if let Ok(v) = val.extract::<f64>() {
-        serde_json::to_value(v).expect("Error converting to JSON Value")
+    else if let Ok(v) = val.downcast::<PyFloat>() {
+        serde_json::to_value(v.extract::<f64>().expect("Error extracting f64 from PyFloat")).expect("Error converting to JSON Value")
     }
-    else if let Ok(v) = val.extract::<&str>() {
-        serde_json::to_value(v).expect("Error converting to JSON Value")
+    else if let Ok(v) = val.downcast::<PyString>() {
+        serde_json::to_value(v.to_str().expect("Error converting PyString to &str")).expect("Error converting to JSON Value")
     }
     else {
         let repr = val.str().expect("error").to_str().expect("error").to_owned();
