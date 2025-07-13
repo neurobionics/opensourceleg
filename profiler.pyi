@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 class LogLevel(Enum):
     """Enum for available log levels."""
@@ -89,6 +89,26 @@ class Logger:
 
         Args:
             variables (Dict[str, Any]): A dictionary of variable names to their values.
+        """
+
+    @staticmethod
+    def track_functions(functions: Dict[str, Any]) -> None:
+        """
+        Keeps track of the given functions, will write the result to the
+        variable logfile every time record() is called. The key for the
+        dictionary should be a string identifier for the function. This
+        will be used to untrack a function & label the variable.
+
+        Note this only works for functions with 0 arguments.
+
+        Args:
+            functions (Dict[str, Any]): A dictionary of function ids to 0 argument functions
+        """
+
+    @staticmethod
+    def untrack_functions(untrack_list: List[Any]) -> None:
+        """
+        Untracks the function associated with the string identifier.
         """
 
     @staticmethod

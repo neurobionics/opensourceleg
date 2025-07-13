@@ -9,18 +9,18 @@ class simple:
     z = 0
     def add(self, x):
         self.z+=x
-    def ret_one(self):
-        return 1
+    def get_z(self):
+        return self.z
     def __str__(self):
         return f"Simple({self.z})"
     
-def rust_log_obj(obj, num_msgs):
+def rust_log_obj(obj: simple, num_msgs):
+    Logger.track_functions(dict(z_val=obj.get_z))
     for i in range(num_msgs):
-        Logger.trace_variables(dict=dict(simple_obj=obj))
         Logger.record()
 
-def python_log_obj(obj, num_msgs):
-    LOGGER.track_variable(lambda: str(obj), "str rep")
+def python_log_obj(obj: simple, num_msgs):
+    LOGGER.track_variable(obj.get_z, "str rep")
     for i in range(num_msgs):
         LOGGER.update()
 
@@ -34,7 +34,7 @@ def rust_log_primitives(num_msgs):
         Logger.record()
 
 def python_log_primitives(obj, num_msgs):
-    LOGGER.track_variable(obj.ret_one, "primitive")
+    LOGGER.track_variable(obj.get_z, "primitive")
     for i in range(num_msgs):
         LOGGER.update()
 

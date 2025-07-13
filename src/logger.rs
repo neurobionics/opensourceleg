@@ -5,8 +5,9 @@ use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
 use once_cell::sync::OnceCell;
-use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyStringMethods};
-use pyo3::{pyclass, pymethods, Bound, PyResult, Python};
+use pyo3::types::{PyAnyMethods, PyDict, PyDictMethods, PyList, PyStringMethods};
+use pyo3::{pyclass, pymethods, Bound, PyErr, PyResult, Python};
+use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn};
 use tracing::debug;
@@ -116,22 +117,7 @@ impl Logger {
         let mut variables = Vec::new();
         for (key, val) in dict.iter() {
             let key_str = key.extract::<&str>()?.to_owned();
-            let val_str = if let Ok(v) = val.extract::<bool>() {
-                serde_json::to_value(v).expect("Error converting to JSON Value")
-            }
-            else if let Ok(v) = val.extract::<i64>() {
-                serde_json::to_value(v).expect("Error converting to JSON Value")
-            }
-            else if let Ok(v) = val.extract::<f64>() {
-                serde_json::to_value(v).expect("Error converting to JSON Value")
-            }
-            else if let Ok(v) = val.extract::<&str>() {
-                serde_json::to_value(v).expect("Error converting to JSON Value")
-            }
-            else {
-                let repr = val.str()?.to_str()?.to_owned();
-                serde_json::to_value(repr).expect("Error converting to JSON Value")
-            };
+            let val_str = downcast(val);
 
             variables.push((key_str, val_str));
         }
@@ -146,31 +132,31 @@ impl Logger {
                 }
             })
         });
+        Ok(())
+    }
 
-        // if let Some(lock) = RECORD.get() {
-        //     let mut record = lock.lock().unwrap();
-        //     for (key, val) in dict.iter() {
-        //         let val_str = if let Ok(v) = val.extract::<bool>() {
-        //             serde_json::to_value(v).expect("Error converting to JSON Value")
-        //         }
-        //         else if let Ok(v) = val.extract::<i64>() {
-        //             serde_json::to_value(v).expect("Error converting to JSON Value")
-        //         }
-        //         else if let Ok(v) = val.extract::<f64>() {
-        //             serde_json::to_value(v).expect("Error converting to JSON Value")
-        //         }
-        //         else if let Ok(v) = val.extract::<&str>() {
-        //             serde_json::to_value(v).expect("Error converting to JSON Value")
-        //         }
-        //         else {
-        //             let repr = val.str()?.to_str()?.to_owned();
-        //             serde_json::to_value(repr).expect("Error converting to JSON Value")
-        //         };
+    #[staticmethod]
+    pub fn track_functions<'py>(dict: &Bound<'_, PyDict>) -> PyResult<()>{
+        let mut record = RECORD.get().unwrap().lock().unwrap();
+        for (name, function) in dict.iter() {
+            if !function.is_callable() {
+                return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!("Value for '{}' is not a callable function", name)
+                ));
+            }
+            record.insert_function(name.to_string(), function.into());
+        }
+        Ok(())
+    }
 
-        //         let key_str = key.extract::<&str>()?.to_owned();
-        //         record.insert_variable(key_str, val_str);
-        //     }
-        // }
+    #[staticmethod]
+    pub fn untrack_functions<'py>(list: &Bound<'_, PyList>) -> PyResult<()>{
+        let mut record = RECORD.get().unwrap().lock().unwrap();
+        for item in list {
+            let id: &str = item.extract()?;
+            record.remove_function(id.to_string());
+        }
+
         Ok(())
     }
     
@@ -255,4 +241,23 @@ fn create_file_layer(dir: String, log_name: String, time: String, file_max_size:
                                                     .with_timer(ChronoLocal::new(time.clone()))
                                                     .with_filter(log_level);
     file_layer
+}
+
+pub fn downcast(val: Bound<'_, pyo3::PyAny>) -> Value {
+    if let Ok(v) = val.extract::<bool>() {
+        serde_json::to_value(v).expect("Error converting to JSON Value")
+    }
+    else if let Ok(v) = val.extract::<i64>() {
+        serde_json::to_value(v).expect("Error converting to JSON Value")
+    }
+    else if let Ok(v) = val.extract::<f64>() {
+        serde_json::to_value(v).expect("Error converting to JSON Value")
+    }
+    else if let Ok(v) = val.extract::<&str>() {
+        serde_json::to_value(v).expect("Error converting to JSON Value")
+    }
+    else {
+        let repr = val.str().expect("error").to_str().expect("error").to_owned();
+        serde_json::to_value(repr).expect("Error converting to JSON Value")
+    }
 }
