@@ -4,9 +4,18 @@ loki.write "local" {
   }
 }
 
-loki.source.file "logger_logs" {
+loki.source.file "json_logs" {
   targets = [{
     __path__ = "/logs/variables.log",
   }]
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "plain_logs_match" {
+  path_targets = [{"__path__" = "/logs/**/logfile*.log"}]
+}
+
+loki.source.file "plain_logs" {
+  targets = local.file_match.plain_logs_match.targets
   forward_to = [loki.write.local.receiver]
 }
