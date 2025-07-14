@@ -32,10 +32,10 @@ library.
 ### Logging Performance: Objects & Primitives
 | Test Case              | Rust Logger (sec) | Python Logger (sec) |
 | ---------------------- | ----------------- | ------------------- |
-|  Track objects (1M messages) | 2.62991           | 2.24524             |
-| Track primitives (1M messages)       | 0.928524          | 2.61603             |
+|  Track objects (1M messages) | 1.96           | 2.13             |
+| Track primitives (1M messages)       | 2.64          | 2.5             |
 
-> Tracking objects in Rust requires calling Python’s __str__ method, which adds overhead from Python function calls and interop. Still, Rust maintains a performance advantage for primitive logging.
+> Tracking objects in Rust requires calling Python’s __str__ method, which adds overhead from Python function calls and interop. Still, Rust maintains a performance advantage for object logging.
 
 ---
 
@@ -57,3 +57,21 @@ python benchmark/bench_object_logging.py # Object logging
 
 ### To build the logger for distribution
 Run `maturin build -r` after step 2 of the instructions above, this will generate a distributable wheel.
+
+### Log Observability
+Since many applications built upon the Open-Source Leg 
+can produce extensive logs, this module also provides a `grafana` dashboard for realtime log observability using loki and alloy.
+
+To use the dashboard:
+  
+1. Install Docker Desktop
+2. Navigate to the directory containing `docker-compose.yml`
+3. Run `docker-compose up -d`
+4. Open your browser and go to [http://localhost:3000](http://localhost:3000)
+5. Configure the data source:
+   - Go to **Add data source**
+   - Select **Loki**
+   - Set the URL to `http://loki:3100`
+   - Click **Save & Test**
+6. Create your own dashboard using the Explore tab or panel editor
+7. Run your application, logs will stream into Grafana automatically
