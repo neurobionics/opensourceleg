@@ -1,17 +1,17 @@
-use std::{collections::HashMap, io::{Write}, path::PathBuf};
-use chrono::Utc;
+use std::{io::{Write}, path::PathBuf};
 use pyo3::{PyObject, Python};
 use serde_json::{Map, Value};
 use tracing::{error, warn};
 use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
+use fxhash::FxHashMap;
 
 use crate::logger::downcast;
 
 pub struct Record {
-    variables: HashMap::<String, Value>,
+    variables: FxHashMap::<String, Value>,
     writer: NonBlocking,
     _guard: WorkerGuard,
-    functions: HashMap<String, PyObject>
+    functions: FxHashMap<String, PyObject>
 }
 
 impl Record {
@@ -22,10 +22,10 @@ impl Record {
         let (non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
 
         Self {
-            variables: HashMap::<String, Value>::new(),
+            variables: FxHashMap::<String, Value>::default(),
             writer: non_blocking_writer,
             _guard: guard,
-            functions: HashMap::<String, PyObject>::new()
+            functions: FxHashMap::<String, PyObject>::default()
         }
     }
 

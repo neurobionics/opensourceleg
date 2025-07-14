@@ -32,5 +32,4 @@ def func():
     # Logger.trace_variables(dict(one=1, two=2))
     # Logger.flush_record()
 
-cProfile.run('func()')
-#func()
+func()

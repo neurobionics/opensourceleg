@@ -21,3 +21,4 @@ valuable = "0.1.1"
 pythonize = "0.25.0"
 zenoh = "1.4.0"
 tokio = { version = "1.46.1", features = ["full"] }
+fxhash = "0.2.1"
