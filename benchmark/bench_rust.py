@@ -1,5 +1,5 @@
-from profiler import Logger
-from profiler import LogLevel
+from observable import Logger
+from observable import LogLevel
 from util import time_taken, KB, MB
 
 def rust_log_all_msgs():

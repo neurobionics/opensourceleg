@@ -1,14 +1,17 @@
 pub mod logger;
 pub mod record;
 pub mod rotator;
+pub mod profiler;
+pub mod core;
 use pyo3::{prelude::*};
 
 use crate::logger::{Logger, PyLogLevel};
 
 #[pymodule]
-fn profiler(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()>{
+fn observable(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()>{
     m.add_class::<Logger>()?;
     m.add_class::<PyLogLevel>()?;
+    m.add_class::<profiler::PyProfiler>()?;
 
     let atexit = py.import("atexit")?;
     let logger_class = m.getattr("Logger")?;

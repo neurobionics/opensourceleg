@@ -1,5 +1,5 @@
-from profiler import Logger
-from profiler import LogLevel
+from observable import Logger
+from observable import LogLevel
 import time
 import cProfile
 

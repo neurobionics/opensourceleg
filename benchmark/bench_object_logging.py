@@ -1,4 +1,4 @@
-from profiler import Logger, LogLevel
+from observable import Logger, LogLevel
 from util import time_taken
 from python_based_logger import LOGGER
 

@@ -1,10 +1,10 @@
 [package]
-name = "logger"
+name = "observable"
 version = "0.1.0"
 edition = "2024"
 
 [lib]
-name = "profiler"
+name = "observable"
 crate-type=["cdylib"]
 
 [dependencies]
