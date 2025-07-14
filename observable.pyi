@@ -125,7 +125,6 @@ class Logger:
         defined by key_expr parameter. 
         """
 
-P = ParamSpec('P')
 T = TypeVar('T')
 class PyProfiler:
     """
