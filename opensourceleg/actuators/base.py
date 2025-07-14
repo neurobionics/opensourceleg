@@ -211,7 +211,6 @@ CONTROL_MODE_METHODS: list[str] = [
     "set_current_gains",
     "set_motor_impedance",
     "set_output_impedance",
-    "set_impedance_gains",
 ]
 
 
@@ -315,7 +314,7 @@ class ActuatorBase(ABC):
         ...         print("Current gains set")
         ...     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         ...         print("Position gains set")
-        ...     def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
+        ...     def _set_impedance_gains(self, k: float, b: float) -> None:
         ...         print("Impedance gains set")
         ...     def home(self) -> None:
         ...         print("Homed")
@@ -361,7 +360,6 @@ class ActuatorBase(ABC):
         "set_output_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_current_gains": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_position_gains": {CONTROL_MODES.POSITION},
-        "set_impedance_gains": {CONTROL_MODES.IMPEDANCE},
     }
 
     def __init__(
@@ -741,22 +739,18 @@ class ActuatorBase(ABC):
         pass
 
     @abstractmethod
-    def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
+    def _set_impedance_gains(self, k: float, b: float) -> None:
         """
         Set the impedance control gains.
 
         Args:
-            kp (float): Proportional gain.
-            ki (float): Integral gain.
-            kd (float): Derivative gain.
             k (float): Stiffness coefficient.
             b (float): Damping coefficient.
-            ff (float): Feed-forward gain.
 
         Must be implemented by subclasses.
 
         Examples:
-            >>> actuator.set_impedance_gains(1.0, 0.1, 0.01, 0.5, 0.05, 0.0)
+            >>> actuator._set_impedance_gains(0.5, 0.05)
         """
         pass
 

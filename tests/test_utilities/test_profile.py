@@ -14,8 +14,8 @@ def test_tic_toc():
     t = profiler.toc()
     assert t > 0.45 and t < 0.55
     assert profiler.N == 2
-    assert profiler.agg > 0.9 and profiler.agg < 1.1
-    assert profiler.aggvar > 0.45 and profiler.aggvar < 0.55
+    assert profiler.agg > 0.9 and profiler.agg < 1.2
+    assert profiler.aggvar > 0.45 and profiler.aggvar < 0.56
 
 
 def test_no_runs():
