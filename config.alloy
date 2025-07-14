@@ -1,0 +1,12 @@
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+loki.source.file "logger_logs" {
+  targets = [{
+    __path__ = "/logs/variables.log",
+  }]
+  forward_to = [loki.write.local.receiver]
+}

@@ -18,6 +18,7 @@ def rust_log_obj(obj: simple, num_msgs):
     Logger.track_functions(dict(z_val=obj.get_z))
     for i in range(num_msgs):
         Logger.record()
+    Logger.untrack_functions(["z_val"])
 
 def python_log_obj(obj: simple, num_msgs):
     LOGGER.track_variable(obj.get_z, "str rep")

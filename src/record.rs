@@ -77,7 +77,6 @@ impl Record {
         }
 
         let record = serde_json::json!({
-            "timestamp": Utc::now(),
             "variables": self.variables,
             "functions": function_results
         });
