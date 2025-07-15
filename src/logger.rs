@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
+use chrono::Utc;
 use once_cell::sync::OnceCell;
 use pyo3::types::{PyAnyMethods, PyBool, PyDict, PyDictMethods, PyFloat, PyInt, PyList, PyString, PyStringMethods};
 use pyo3::{pyclass, pymethods, Bound, PyAny, PyErr, PyResult, Python};
@@ -52,14 +53,13 @@ pub struct Logger{}
 impl Logger {
     //#[new]
     #[staticmethod]
-    #[pyo3(signature = (time_format = None, log_directory = None, log_name = None, print_stdout = false, file_max_bytes = 0, backup_count = 0,
+    #[pyo3(signature = (log_directory = None, log_name = None, print_stdout = false, file_max_bytes = 0, backup_count = 0,
                         stdout_level = None, logfile_level = None))]
-    pub fn init(time_format: Option<String>,
+    pub fn init(
                 log_directory: Option<String>, log_name: Option<String>, print_stdout: bool,
                 file_max_bytes: u64, backup_count: u64, stdout_level: Option<PyLogLevel>,
                 logfile_level: Option<PyLogLevel>){
 
-        let time = time_format.unwrap_or(String::from("%Y-%m-%d %H:%M:%S%.3f"));
         let dir = log_directory.unwrap_or(String::from("./logs"));
         let log_name = log_name.unwrap_or(String::from("logfile.log"));
         let console_level = stdout_level.map_or(LevelFilter::TRACE, |level|level.into());
@@ -78,10 +78,10 @@ impl Logger {
         let _ = RECORD.set(Mutex::new(Record::new(path)));
 
         if print_stdout {
-            layers.push(create_stdout_layer(time.clone(), console_level).boxed());
+            layers.push(create_stdout_layer(console_level).boxed());
         }
 
-        layers.push(create_file_layer(dir.clone(), log_name, time, file_max_bytes, backup_count, log_level).boxed());
+        layers.push(create_file_layer(dir.clone(), log_name, file_max_bytes, backup_count, log_level).boxed());
         let subscriber = Registry::default().with(layers);
 
         tracing::subscriber::set_global_default(subscriber).expect("error");
@@ -204,7 +204,7 @@ impl Logger {
     }
 }
 
-fn create_stdout_layer(time: String, level: LevelFilter) -> filter::Filtered<fmt::Layer<Registry, DefaultFields, Format<fmt::format::Full, ChronoLocal>, NonBlocking>, LevelFilter, Registry>{
+fn create_stdout_layer(level: LevelFilter) -> filter::Filtered<fmt::Layer<Registry, DefaultFields, Format, NonBlocking>, LevelFilter, Registry>{
 
     let (non_blocking_stdout, guard_stdout) = tracing_appender::non_blocking(std::io::stdout());
     let _ = STDOUT_GUARD.set(guard_stdout);
@@ -216,13 +216,12 @@ fn create_stdout_layer(time: String, level: LevelFilter) -> filter::Filtered<fmt
                                                 .with_target(false)
                                                 .with_line_number(false)
                                                 .with_ansi(true)
-                                                .with_timer(ChronoLocal::new(time))
                                                 .with_filter(level);
     base
 }
 
-fn create_file_layer(dir: String, log_name: String, time: String, file_max_size: u64, backup_count: u64, log_level: LevelFilter) -> filter::Filtered<
-    fmt::Layer<Registry, DefaultFields, Format<fmt::format::Full, ChronoLocal>, NonBlocking>,
+fn create_file_layer(dir: String, log_name: String, file_max_size: u64, backup_count: u64, log_level: LevelFilter) -> filter::Filtered<
+    fmt::Layer<Registry, DefaultFields, Format, NonBlocking>,
     LevelFilter,
     Registry
 >{
@@ -232,13 +231,12 @@ fn create_file_layer(dir: String, log_name: String, time: String, file_max_size:
     
     //Must keep guard in memory
     let _ = GUARD.set(_guard);
-    let file_layer = fmt::layer()
+    let file_layer: filter::Filtered<fmt::Layer<_, DefaultFields, Format, NonBlocking>, LevelFilter, _>  = fmt::layer()
                                                     .with_writer(non_blocking_writer)
                                                     .with_level(true)
                                                     .with_target(false)
                                                     .with_line_number(false)
                                                     .with_ansi(false)
-                                                    .with_timer(ChronoLocal::new(time.clone()))
                                                     .with_filter(log_level);
     file_layer
 }

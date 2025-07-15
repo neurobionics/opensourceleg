@@ -15,8 +15,8 @@ class simple:
 
 def func():
     # None values default
-    Logger.init(time_format = None, log_directory = None, log_name = None, print_stdout = True, file_max_bytes = 1028, backup_count = 5, 
-                stdout_level = LogLevel.WARN, logfile_level = LogLevel.TRACE)
+    Logger.init(log_directory = None, log_name = None, print_stdout = True, file_max_bytes = 1028, backup_count = 5, 
+                stdout_level = LogLevel.INFO, logfile_level = LogLevel.TRACE)
 
     t = time.time()
     make_simple = simple()

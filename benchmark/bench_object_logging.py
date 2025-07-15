@@ -2,7 +2,7 @@ from observable import Logger, LogLevel
 from util import time_taken
 from python_based_logger import LOGGER
 
-Logger.init(time_format = None, log_directory = None, log_name = None, print_stdout = False, file_max_bytes = 0, backup_count = 5, 
+Logger.init(log_directory = None, log_name = None, print_stdout = False, file_max_bytes = 0, backup_count = 5, 
             stdout_level = None, logfile_level = LogLevel.TRACE)
 
 class simple:
