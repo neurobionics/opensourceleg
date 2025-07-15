@@ -18,7 +18,7 @@ library.
 | 1,000,000     | 1.56321           | 44.6831             |
 | 10,000,000    | 15.4325           | 436.589             |
 
-> **Rust is ~20x faster** on average for high volume logging
+> **Rust is ~30x faster** on average for high volume logging
 ---
 
 ### Logging by Message Size
