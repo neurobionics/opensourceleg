@@ -1,5 +1,5 @@
-# Fast Logger for Open Source Leg
-This project aims to improve the performance of the logging module for the Open-Source Leg
+# Fast Logger & Profiler for Open Source Leg
+This project aims to improve the performance of the logging & profiling module for the Open-Source Leg
 library.
 
 ## Goals
