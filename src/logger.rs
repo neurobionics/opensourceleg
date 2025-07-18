@@ -8,6 +8,7 @@ use chrono::Utc;
 use once_cell::sync::OnceCell;
 use pyo3::types::{PyAnyMethods, PyBool, PyDict, PyDictMethods, PyFloat, PyInt, PyList, PyString, PyStringMethods};
 use pyo3::{pyclass, pymethods, Bound, PyAny, PyErr, PyResult, Python};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::level_filters::LevelFilter;
 use tracing::{error, info, trace, warn};
@@ -44,6 +45,11 @@ impl From<PyLogLevel> for LevelFilter {
             PyLogLevel::ERROR => LevelFilter::ERROR
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct StringMsg {
+    data: String,
 }
 
 #[pyclass]
@@ -187,7 +193,18 @@ impl Logger {
         std::thread::spawn(|| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                let session = zenoh::open(zenoh::config::Config::default()).await.unwrap();
+                let contents = fs::read_to_string(String::from("./zenoh.json5")).expect("error");
+                let config = match zenoh::config::Config::from_json5(&contents) {
+                    Ok(config) => {
+                        info!("Loaded config from JSON5 parameter");
+                        config
+                    },
+                    Err(e) => {
+                        warn!("Failed to parse JSON5 config: {}, using default", e);
+                        zenoh::config::Config::default()
+                    }
+                };
+                let session = zenoh::open(config).await.unwrap();
                 let subscriber = session
                                                 .declare_subscriber(key_expr)
                                                 .await
@@ -195,9 +212,22 @@ impl Logger {
                 info!("Zenoh subscriber started");
 
                 while let Ok(sample) = subscriber.recv_async().await {
-                    //info!("Received: {:?}", sample);
-                    info!("Received {} ('{}': '{}')", sample.kind(), sample.key_expr(), sample.payload().try_to_string().expect("error converting to string"));
-                };
+                    let payload = sample.payload().to_bytes().into_owned();
+
+                    match cdr::deserialize::<StringMsg>(&payload) {
+                        Ok(msg) => {
+                            info!("Received ROS2 String on '{}': {}", sample.key_expr(), msg.data);
+                        }
+                        Err(e) => {
+                            warn!(
+                                "Failed to decode CDR for key '{}': {}. Raw: {:02X?}",
+                                sample.key_expr(),
+                                e,
+                                payload
+                            );
+                        }
+                    }
+                }
             });
         });
         *guard = true;
