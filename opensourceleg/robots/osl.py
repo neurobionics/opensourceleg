@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Optional, Union
+from typing import Optional, Union, Iterable, Callable
 
 import numpy as np
 
@@ -43,6 +43,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         output_position_offset: Optional[dict[str, float]] = None,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback_functions: Optional["Iterable[Optional[Callable[[], None]]]"] = None
     ) -> None:
         """
         Call the home method for all actuators.
@@ -56,12 +57,14 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 Default is 0.0 for knee and 30.0 for ankle.
             current_threshold: The current threshold to apply to the actuators during homing. Default is 5000.
             velocity_threshold: The velocity threshold to apply to the actuators during homing. Default is 0.001.
+            callback_functions (Optional[Iterable[Optional[Callable[[], None]]]]):
+                Optional list or iterable of callback functions, one per actuator, to be called when each actuator's homing completes. Each function should take no arguments and return None. If None, no callbacks are used.
         """
         if output_position_offset is None:
             output_position_offset = {"knee": 0.0, "ankle": np.deg2rad(30.0)}
         if homing_direction is None:
             homing_direction = {"knee": -1, "ankle": -1}
-        for actuator in self.actuators.values():
+        for actuator, callback_fn in zip(self.actuators.values(), callback_functions or [None]*len(self.actuators)):
             actuator.home(
                 homing_voltage=homing_voltage,
                 homing_frequency=homing_frequency,
@@ -69,6 +72,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 output_position_offset=output_position_offset[actuator.tag],
                 current_threshold=current_threshold,
                 velocity_threshold=velocity_threshold,
+                callback_fn = callback_fn,
             )
 
         LOGGER.info(

@@ -2,7 +2,7 @@ import dataclasses
 import os
 import time
 from ctypes import c_int
-from typing import Optional
+from typing import Optional, Callable
 
 import numpy as np
 from flexsea.device import Device
@@ -294,6 +294,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback_fn: Optional[Callable[[], None]] = None
     ) -> None:
         """
 
@@ -311,6 +312,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
                 This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+            callback_fn (Optional[Callable[[], None]]): Optional callback function to be called when homing completes. The function should take no arguments and return None.
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
@@ -339,6 +341,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
                 if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
+                    if callback_fn is not None:
+                        callback_fn()
                     is_homing = False
 
         except KeyboardInterrupt:

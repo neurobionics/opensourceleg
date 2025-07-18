@@ -57,6 +57,13 @@ def home_joints():
         ),
     }
 
+    # Define callback functions for homing completion
+    def knee_homing_complete():
+        print("Knee homing complete!")
+
+    def ankle_homing_complete():
+        print("Ankle homing complete!")
+
     osl = OpenSourceLeg(
         tag="osl",
         actuators=actuators,
@@ -71,6 +78,7 @@ def home_joints():
             output_position_offset={"knee": 0.0, "ankle": np.deg2rad(30.0)},
             current_threshold=5000,
             velocity_threshold=0.001,
+            callback_functions=[knee_homing_complete, ankle_homing_complete],
         )
 
         osl.knee.set_control_mode(CONTROL_MODES.CURRENT)

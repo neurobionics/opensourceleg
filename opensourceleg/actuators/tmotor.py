@@ -1,7 +1,7 @@
 import time
 import warnings
 from math import isfinite
-from typing import Optional
+from typing import Optional, Callable
 
 import can
 import numpy as np
@@ -198,7 +198,23 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback_fn: Optional[Callable[[], None]] = None
     ):
+        """
+        Home the actuator and corresponding joint by moving it to the zero position.
+        The zero position is defined as the position where the joint is fully extended.
+
+        Args:
+            homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
+            homing_frequency (Optional[int]): Frequency in Hz to use for homing. Default is the actuator's frequency.
+            homing_direction (int): Direction to move the actuator during homing. Default is -1.
+            output_position_offset (float): Offset in radians to add to the output position. Default is 0.0.
+            current_threshold (int): Current threshold in mA to stop homing the joint or actuator. Default is 5000 mA.
+            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator. Default is 0.001 rad/s.
+            callback_fn (Optional[Callable[[], None]]): Optional callback function to be called when homing completes. The function should take no arguments and return None.
+        """
+        # TODO: implement homing
+        LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
         pass
 
     def update(self):  # noqa: C901
