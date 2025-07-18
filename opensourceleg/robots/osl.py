@@ -124,7 +124,9 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
 
         if os.path.exists(f"./{_encoder.tag}_linearization_map.npy") and not overwrite:
             LOGGER.info(msg=f"[{str.upper(_encoder.tag)}] Encoder map exists. Skipping encoder map creation.")
-            _encoder.set_encoder_map(np.load(f"./{_encoder.tag}_linearization_map.npy"))  # type: ignore[attr-defined]
+            _encoder.set_encoder_map(  # type: ignore[attr-defined]
+                np.polynomial.polynomial.Polynomial(np.load(f"./{_encoder.tag}_linearization_map.npy"))
+            )
             LOGGER.info(
                 msg=f"[{str.upper(_encoder.tag)}] Encoder map loaded from " f"'./{_encoder.tag}_linearization_map.npy'."
             )
