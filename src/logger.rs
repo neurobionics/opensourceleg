@@ -183,7 +183,7 @@ impl Logger {
     }
 
     #[staticmethod]
-    fn start_ros_subscriber(key_expr: String) {
+    fn start_ros_subscriber(config_file: String, key_expr: String) {
         let mutex = SESSION.get_or_init(|| Mutex::new(false));
         let mut guard = mutex.lock().unwrap();
         if *guard {
@@ -193,7 +193,7 @@ impl Logger {
         std::thread::spawn(|| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                let contents = fs::read_to_string(String::from("./zenoh.json5")).expect("error");
+                let contents = fs::read_to_string(String::from(config_file)).expect("Error reading from file");
                 let config = match zenoh::config::Config::from_json5(&contents) {
                     Ok(config) => {
                         info!("Loaded config from JSON5 parameter");

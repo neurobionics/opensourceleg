@@ -119,7 +119,7 @@ class Logger:
         """
 
     @staticmethod
-    def start_ros_subscriber(key_expr: str) -> None:
+    def start_ros_subscriber(config_file: str, key_expr: str) -> None:
         """
         Starts a background thread which subscribes to the channel
         defined by key_expr parameter. 
