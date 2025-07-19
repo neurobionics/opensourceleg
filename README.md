@@ -75,3 +75,15 @@ To use the dashboard:
    - Click **Save & Test**
 6. Create your own dashboard using the Explore tab or panel editor
 7. Run your application, logs will stream into Grafana automatically
+
+### Subscribing to ROS topics
+This logger provides a performant way to collect telemetry over ROS2 topics. Under the hood we use `Zenoh` which optimizes discovery overhead and data transport.
+
+In traditional ROS systems, topic data is exchanged with DDS which can generate a large amount of traffic, especially when a significant number of publishers and subscribers are active. 
+
+`Zenoh` mitigates this by giving the user the option to isolate the DDS traffic locally, relaying only pertinent topics over the network & using a single connection for all communications.
+
+#### Example setup instructions (over LAN):
+1. Download the `ros2dds` bridge provided by `zenoh` on the robot
+2. Configure the `zenoh.json5` file to match your setup - either using automatic discovery or hardcode a local ip address
+3. Run ROS nodes & bridge on the robot + call the `start_ros_subscriber` method on the host machine

@@ -1,5 +1,5 @@
 {
   connect: {
-    endpoints: ["tcp/192.168.68.118:7447"] // Modify config file
+    endpoints: ["tcp/192.168.68.125:7447"]
   }
 }
