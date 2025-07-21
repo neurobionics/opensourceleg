@@ -41,7 +41,7 @@ def home_joints():
     sensors = {
         "joint_encoder_knee": AS5048B(
             tag="joint_encoder_knee",
-            bus=1,
+            bus="/dev/i2c-2",
             A1_adr_pin=True,
             A2_adr_pin=False,
             zero_position=0,
@@ -49,7 +49,7 @@ def home_joints():
         ),
         "joint_encoder_ankle": AS5048B(
             tag="joint_encoder_ankle",
-            bus=1,
+            bus="/dev/i2c-3",
             A1_adr_pin=False,
             A2_adr_pin=True,
             zero_position=0,
@@ -59,9 +59,15 @@ def home_joints():
 
     # Define callback functions for homing completion
     def knee_homing_complete():
+        osl.joint_encoder_knee.update()
+        osl.joint_encoder_knee.zero_position = osl.joint_encoder_knee.counts
         print("Knee homing complete!")
 
     def ankle_homing_complete():
+        osl.joint_encoder_ankle.update()
+        osl.joint_encoder_ankle.zero_position = osl.joint_encoder_ankle.counts + osl.joint_encoder_ankle.deg_to_counts(
+            30
+        )
         print("Ankle homing complete!")
 
     osl = OpenSourceLeg(
