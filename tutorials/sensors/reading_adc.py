@@ -23,7 +23,7 @@ if __name__ == "__main__":
         gain_error=[0] * 6,
         offline=False,
     )
-    adc_logger.track_variable(lambda: adc.data, "Ch Voltages")
+    adc_logger.track_function(lambda: adc.data, "Ch Voltages")
 
     with adc:
         adc.calibrate()
