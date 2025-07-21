@@ -77,12 +77,12 @@ def demo_loadcell_actpack(loadcell_logger, clock):
         amp_gain=125,
         exc=5,
     )
-    loadcell_logger.track_variable(lambda: loadcell.fx, "Fx")
-    loadcell_logger.track_variable(lambda: loadcell.fy, "Fy")
-    loadcell_logger.track_variable(lambda: loadcell.fz, "Fz")
-    loadcell_logger.track_variable(lambda: loadcell.mx, "Mx")
-    loadcell_logger.track_variable(lambda: loadcell.my, "My")
-    loadcell_logger.track_variable(lambda: loadcell.mz, "Mz")
+    loadcell_logger.track_function(lambda: loadcell.fx, "Fx")
+    loadcell_logger.track_function(lambda: loadcell.fy, "Fy")
+    loadcell_logger.track_function(lambda: loadcell.fz, "Fz")
+    loadcell_logger.track_function(lambda: loadcell.mx, "Mx")
+    loadcell_logger.track_function(lambda: loadcell.my, "My")
+    loadcell_logger.track_function(lambda: loadcell.mz, "Mz")
 
     def get_raw_loadcell_actpack():
         actpack.update()
@@ -107,12 +107,12 @@ def demo_loadcell_nb_daq(loadcell_logger, clock):
         amp_gain=[34] * 3 + [151] * 3,
         spi_bus=1,
     )
-    loadcell_logger.track_variable(lambda: loadcell.fx, "Fx")
-    loadcell_logger.track_variable(lambda: loadcell.fy, "Fy")
-    loadcell_logger.track_variable(lambda: loadcell.fz, "Fz")
-    loadcell_logger.track_variable(lambda: loadcell.mx, "Mx")
-    loadcell_logger.track_variable(lambda: loadcell.my, "My")
-    loadcell_logger.track_variable(lambda: loadcell.mz, "Mz")
+    loadcell_logger.track_function(lambda: loadcell.fx, "Fx")
+    loadcell_logger.track_function(lambda: loadcell.fy, "Fy")
+    loadcell_logger.track_function(lambda: loadcell.fz, "Fz")
+    loadcell_logger.track_function(lambda: loadcell.mx, "Mx")
+    loadcell_logger.track_function(lambda: loadcell.my, "My")
+    loadcell_logger.track_function(lambda: loadcell.mz, "Mz")
 
     with loadcell:
         loadcell.calibrate()
