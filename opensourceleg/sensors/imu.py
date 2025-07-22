@@ -45,7 +45,7 @@ class LordMicrostrainIMU(IMUBase):
         baud_rate: int = 921600,
         frequency: int = 200,
         update_timeout: int = 500,
-        max_packets: int = 1,
+        max_packets: int = 0,
         return_packets: bool = False,
         offline: bool = False,
     ) -> None:
