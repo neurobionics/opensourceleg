@@ -26,7 +26,7 @@ jobs:
   test-pypi:
     runs-on: ubuntu-latest
     needs: release-please
-    if: ${{ needs.release-please.outputs.pr && secrets.TEST_PYPI_TOKEN }}
+    if: ${{ needs.release-please.outputs.pr }}
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +39,12 @@ jobs:
       - name: Publish to Test PyPI
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
-        run: uv publish --repository testpypi
+        run: |
+          if [ -n "$UV_PUBLISH_TOKEN" ]; then
+            uv publish --repository testpypi
+          else
+            echo "TEST_PYPI_TOKEN not set, skipping test PyPI publish"
+          fi
 
   publish:
     runs-on: ubuntu-latest
