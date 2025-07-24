@@ -31,13 +31,8 @@ clean-build: ## clean build artifacts
 
 .PHONY: publish
 publish: ## publish a release to pypi.
-	@echo "🚀 Publishing: Dry run."
-	@uv publish --dry-run --token $(PYPI_TOKEN)
-	@echo "🚀 Publishing."
+	@echo "🚀 Publishing to PyPI."
 	@uv publish --token $(PYPI_TOKEN)
-
-.PHONY: build-and-publish
-build-and-publish: build publish ## Build and publish.
 
 .PHONY: docs-test
 docs-test: ## Test if documentation can be built without warnings or errors
