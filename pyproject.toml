@@ -7,18 +7,23 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 dependencies = [
     "numpy>=1.24.3,<2",
-    "board~=1.0",
-    "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
-    "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "pandas>=2.2.3,<3",
-    "smbus2>=0.4.2",
 ]
 
 [project.optional-dependencies]
 dephy = ["flexsea"]
+bno055 = [
+    "board~=1.0",
+    "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
 moteus = [
     "moteus>=0.3.72,<0.4",
     "moteus-pi3hat>=0.3.29,<0.4 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+communication = [
+    "smbus2>=0.4.2",
+    "spidev>=3.7 ; sys_platform == 'linux'",
 ]
 messaging = [
     "grpcio>=1.65.5,<2",
@@ -45,10 +50,15 @@ docs = [
     "mkdocstrings[python]>=0.27.0",
     "mkdocs-autorefs>=1.4.0",
 ]
-all-extras = [
-    "flexsea",  # dephy extra
+all = [
+    "flexsea",
+    "board~=1.0",
+    "adafruit-circuitpython-bno055>=5.4.13,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "adafruit-circuitpython-lis3dh>=5.2.2,<6 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "moteus>=0.3.72,<0.4",  # moteus extra
-    "moteus-pi3hat>=0.3.29,<0.4 ; sys_platform == 'linux' and platform_machine == 'aarch64'",  # moteus extra
+    "moteus-pi3hat>=0.3.29,<0.4 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "smbus2>=0.4.2",
+    "spidev>=3.7 ; sys_platform == 'linux'",
     "grpcio>=1.65.5,<2",  # messaging extra
     "grpcio-tools>=1.65.5,<2",  # messaging extra
     "types-protobuf>=4.21.0,<5",  # messaging extra
@@ -58,7 +68,7 @@ all-extras = [
 default-groups = [
     "dev",
     "docs",
-    "all-extras",
+    "all",
 ]
 
 [tool.hatch.build.targets.sdist]

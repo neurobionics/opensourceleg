@@ -1111,15 +1111,20 @@ name = "opensourceleg"
 version = "3.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "adafruit-circuitpython-bno055", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "board" },
     { name = "numpy" },
     { name = "pandas" },
-    { name = "smbus2" },
 ]
 
 [package.optional-dependencies]
+bno055 = [
+    { name = "adafruit-circuitpython-bno055", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "board" },
+]
+communication = [
+    { name = "smbus2" },
+    { name = "spidev", marker = "sys_platform == 'linux'" },
+]
 dephy = [
     { name = "flexsea", version = "10.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "flexsea", version = "12.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1135,13 +1140,18 @@ moteus = [
 ]
 
 [package.dev-dependencies]
-all-extras = [
+all = [
+    { name = "adafruit-circuitpython-bno055", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "board" },
     { name = "flexsea", version = "10.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "flexsea", version = "12.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "grpcio" },
     { name = "grpcio-tools" },
     { name = "moteus" },
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "smbus2" },
+    { name = "spidev", marker = "sys_platform == 'linux'" },
     { name = "types-protobuf" },
 ]
 dev = [
@@ -1161,9 +1171,9 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "adafruit-circuitpython-bno055", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=5.4.13,<6" },
-    { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=5.2.2,<6" },
-    { name = "board", specifier = "~=1.0" },
+    { name = "adafruit-circuitpython-bno055", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'bno055'", specifier = ">=5.4.13,<6" },
+    { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'bno055'", specifier = ">=5.2.2,<6" },
+    { name = "board", marker = "extra == 'bno055'", specifier = "~=1.0" },
     { name = "flexsea", marker = "extra == 'dephy'" },
     { name = "grpcio", marker = "extra == 'messaging'", specifier = ">=1.65.5,<2" },
     { name = "grpcio-tools", marker = "extra == 'messaging'", specifier = ">=1.65.5,<2" },
@@ -1171,18 +1181,24 @@ requires-dist = [
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'moteus'", specifier = ">=0.3.29,<0.4" },
     { name = "numpy", specifier = ">=1.24.3,<2" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
-    { name = "smbus2", specifier = ">=0.4.2" },
+    { name = "smbus2", marker = "extra == 'communication'", specifier = ">=0.4.2" },
+    { name = "spidev", marker = "sys_platform == 'linux' and extra == 'communication'", specifier = ">=3.7" },
     { name = "types-protobuf", marker = "extra == 'messaging'", specifier = ">=4.21.0,<5" },
 ]
-provides-extras = ["dephy", "moteus", "messaging"]
+provides-extras = ["dephy", "bno055", "moteus", "communication", "messaging"]
 
 [package.metadata.requires-dev]
-all-extras = [
+all = [
+    { name = "adafruit-circuitpython-bno055", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=5.4.13,<6" },
+    { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=5.2.2,<6" },
+    { name = "board", specifier = "~=1.0" },
     { name = "flexsea" },
     { name = "grpcio", specifier = ">=1.65.5,<2" },
     { name = "grpcio-tools", specifier = ">=1.65.5,<2" },
     { name = "moteus", specifier = ">=0.3.72,<0.4" },
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=0.3.29,<0.4" },
+    { name = "smbus2", specifier = ">=0.4.2" },
+    { name = "spidev", marker = "sys_platform == 'linux'", specifier = ">=3.7" },
     { name = "types-protobuf", specifier = ">=4.21.0,<5" },
 ]
 dev = [
@@ -1818,6 +1834,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/10/c9/6d85aa809e107adf8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/85/9f/2235ba9001e3c29fc342eeb222104420bcb7bac51555f0c034376a744075/smbus2-0.5.0-py2.py3-none-any.whl", hash = "sha256:1a15c3b9fa69357beb038cc0b5d37939702f8bfde1ddc89ca9f17d8461dbe949", size = 11527 },
 ]
+
+[[package]]
+name = "spidev"
+version = "3.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/99/dd50af8200e224ce9412ad01cdbeeb5b39b2d61acd72138f2b92c4a6d619/spidev-3.7.tar.gz", hash = "sha256:ce628a5ff489f45132679879bff5f455a66abf9751af01843850155b06ae92f0", size = 11616 }
 
 [[package]]
 name = "sysv-ipc"
