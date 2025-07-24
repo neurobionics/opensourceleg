@@ -164,6 +164,8 @@ with knee, ankle, loadcell:
     knee.set_control_mode(knee.CONTROL_MODES.IMPEDANCE)
     ankle.set_control_mode(ankle.CONTROL_MODES.IMPEDANCE)
 
+    knee.set_impedance_cc_pidf_gains()
+    ankle.set_impedance_cc_pidf_gains()
     # Main Loop
     for t in clock:
         knee.update()

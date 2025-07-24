@@ -343,6 +343,7 @@ class SafetyManager:
 
     def __init__(self) -> None:
         self._safe_objects: dict[object, dict[str, list[Callable]]] = {}
+        self._original_classes: dict[object, type] = {}  # NEW: Track original classes before modification
 
     def add_safety(self, instance: object, attribute: str, decorator: Callable) -> None:
         """
@@ -388,6 +389,8 @@ class SafetyManager:
         >>> safety_manager.start()
         """
         for container, safe_attributes in self.safe_objects.items():
+            if container not in self._original_classes:
+                self._original_classes[container] = container.__class__
             container_subclass = type(f"{container.__class__.__name__}:SAFE", (container.__class__,), {})
             for attribute_name, attribute_decorators in safe_attributes.items():
                 original_property = getattr(container.__class__, attribute_name)
@@ -403,6 +406,14 @@ class SafetyManager:
 
             container.__class__ = container_subclass
 
+    def stop(self) -> None:
+        """
+        Restores the original classes of the objects, thereby removing the applied safety decorators.
+        """
+        for container, original_class in self._original_classes.items():
+            container.__class__ = original_class
+        self._original_classes.clear()
+
     def update(self) -> None:
         """
         Accesses the properties of the objects in the safe_objects dictionary, thereby triggering the decorators.
@@ -417,6 +428,37 @@ class SafetyManager:
     @property
     def safe_objects(self) -> dict[object, dict[str, list[Callable]]]:
         return self._safe_objects
+
+    def with_safety(self) -> "SafetyManager.SafetyContext":
+        """
+        Context manager for enabling safety on entry, and disabling on exit.
+        Usage:
+            with safety_manager.with_safety():
+                # safety checks active
+                ...
+            # safety checks stopped
+        """
+        return SafetyManager.SafetyContext(self)
+
+    class SafetyContext:
+        """
+        Context manager for enabling/disabling safety checks using 'with' context.
+        """
+
+        def __init__(self, safety_manager: "SafetyManager") -> None:
+            self.safety_manager = safety_manager
+
+        def __enter__(self) -> "SafetyManager.SafetyContext":
+            self.safety_manager.start()  # Calls start() on enter
+            return self
+
+        def __exit__(
+            self,
+            exc_type: Optional[type[BaseException]],
+            exc_val: Optional[BaseException],
+            exc_tb: Optional[Any],
+        ) -> None:
+            self.safety_manager.stop()  # Calls stop() on exit
 
 
 if __name__ == "__main__":
