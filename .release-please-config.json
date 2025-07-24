@@ -1,0 +1,16 @@
+{
+    "packages": {
+        ".": {
+            "release-type": "python",
+            "package-name": "opensourceleg",
+            "version-file": "pyproject.toml"
+        }
+    },
+    "bump-minor-pre-major": false,
+    "bump-patch-for-minor-pre-major": false,
+    "draft": false,
+    "prerelease": false,
+    "pull-request-title-pattern": "chore: release ${version}",
+    "release-search-depth": 400,
+    "sequential-calls": true
+}
