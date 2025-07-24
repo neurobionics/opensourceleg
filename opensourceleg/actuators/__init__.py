@@ -14,4 +14,3 @@ with suppress(ImportError):
 
 with suppress(ImportError):
     from .tmotor import *  # noqa: F403
-
