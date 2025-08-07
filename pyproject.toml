@@ -1,3 +1,7 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
 [project]
 name = "opensourceleg"
 version = "3.3.0"
@@ -43,6 +47,7 @@ dev = [
     "mypy>=1.5.1,<2",
     "pre-commit>=3.4.0,<4",
     "tox>=4.11.1,<5",
+    "maturin>=1.0,<2.0",
 ]
 docs = [
     "mkdocs>=1.6.0",
@@ -71,15 +76,15 @@ default-groups = [
     "all",
 ]
 
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "opensourceleg.rust"
+
 [tool.hatch.build.targets.sdist]
 include = ["opensourceleg"]
 
 [tool.hatch.build.targets.wheel]
 include = ["opensourceleg"]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
 [tool.mypy]
 files = ["opensourceleg"]

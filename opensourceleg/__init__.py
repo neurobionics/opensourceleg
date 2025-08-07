@@ -14,3 +14,13 @@ def get_version() -> str:
 
 
 __version__: str = get_version()
+
+# Import high-performance Rust backend if available
+try:
+    from . import rust  # noqa: F401
+
+    HAS_RUST_BACKEND = True
+except ImportError:
+    HAS_RUST_BACKEND = False
+
+__all__ = ["__version__", "HAS_RUST_BACKEND"]

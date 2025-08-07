@@ -15,13 +15,13 @@ DEFAULT_CAL_MATRIX = np.ones(shape=(6, 6), dtype=np.double)
 def test_SRILoadcell_init():
     invalid_cal_matrix = np.ones(shape=(5, 6), dtype=np.double)
     with pytest.raises(TypeError):
-        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=invalid_cal_matrix)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=invalid_cal_matrix, offline=True)
     with pytest.raises(ValueError):
-        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, amp_gain=0)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, amp_gain=0, offline=True)
     with pytest.raises(ValueError):
-        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, exc=0)
+        SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, exc=0, offline=True)
 
-    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, offline=True)
 
     assert SRI._amp_gain == 125.0
     assert SRI._exc == 5.0
@@ -51,7 +51,7 @@ def test_SRILoadcell_init():
 
 
 def test_SRILoadcell_reset():
-    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, offline=True)
     SRI._calibration_offset = np.ones(shape=(1, 6), dtype=np.double)
     SRI.reset()
     assert np.array_equal(SRI._calibration_offset, np.zeros(shape=(1, 6), dtype=np.double))
@@ -59,7 +59,7 @@ def test_SRILoadcell_reset():
 
 def test_SRILoadcell_update():
     # Test basic call execution
-    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, offline=True)
     SRI.update(data_callback=_read_data)
 
     # Ensuring self._calibration_offset was used
@@ -77,7 +77,7 @@ def test_SRILoadcell_update():
 
 def test_SRILoadcell_BrokenWire_high():
     # Test basic call execution
-    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, offline=True)
     for _i in range(SRI._num_broken_wire_pre_exception - 1):
         SRI.update(data_callback=_read_data_high)
     # Assert that the broken wire condition raises an exception after correct number of iterations
@@ -88,7 +88,7 @@ def test_SRILoadcell_BrokenWire_high():
 
 def test_SRILoadcell_BrokenWire_low():
     # Test basic call execution
-    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX)
+    SRI = loadcell.DephyLoadcellAmplifier(calibration_matrix=DEFAULT_CAL_MATRIX, offline=True)
     for _i in range(SRI._num_broken_wire_pre_exception - 1):
         SRI.update(data_callback=_read_data_low)
     # Assert that the broken wire condition raises an exception after correct number of iterations
