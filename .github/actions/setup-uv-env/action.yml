@@ -1,5 +1,5 @@
 name: "setup-uv-env"
-description: "Composite action to setup the Python and UV environment."
+description: "Composite action to setup the Python, UV, and Rust environment."
 
 inputs:
   python-version:
@@ -15,6 +15,12 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
     - name: Install UV
       run: curl -LsSf https://astral.sh/uv/install.sh | sh
       shell: bash
@@ -23,16 +29,19 @@ runs:
       run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       shell: bash
 
-    # Cache UV's cache directory and virtual environment
-    - name: Load cached UV environment
+    # Cache UV's cache directory, virtual environment, and Rust cache
+    - name: Load cached UV and Rust environment
       id: cached-uv-dependencies
       uses: actions/cache@v4
       with:
         path: |
           .venv
           ~/.cache/uv
-        # Include uv.lock in the cache key to catch dependency changes
-        key: uv-${{ runner.os }}-py${{ inputs.python-version }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}-v1
+          target
+          ~/.cargo/registry
+          ~/.cargo/git
+        # Include uv.lock and Cargo.toml in the cache key to catch dependency changes
+        key: uv-rust-${{ runner.os }}-py${{ inputs.python-version }}-${{ hashFiles('uv.lock', 'pyproject.toml', 'Cargo.toml') }}-v1
 
     - name: Install dependencies
       run: |
@@ -54,6 +63,25 @@ runs:
         fi
       shell: bash
 
+    - name: Install pip in uv environment (Windows only)
+      if: runner.os == 'Windows'
+      run: uv add pip
+      shell: bash
+
+    - name: Build Rust extension (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        echo "Building Rust extension..."
+        uv run maturin develop --release
+      shell: bash
+
+    - name: Build Rust extension (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        echo "Building Rust extension..."
+        uv run maturin develop --release
+      shell: bash
+
     - name: Verify development tools installation
       run: |
         echo "Verifying pre-commit installation..."
@@ -62,4 +90,6 @@ runs:
         uv run pytest --version
         echo "Verifying mypy installation..."
         uv run mypy --version
+        echo "Verifying Rust backend..."
+        uv run python -c "import opensourceleg; print('Rust backend available:', opensourceleg.HAS_RUST_BACKEND)"
       shell: bash
