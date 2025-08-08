@@ -10,11 +10,11 @@ June 6, 2025
 """
 
 import numpy as np
+from observable import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.control.fsm import State, StateMachine
-from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.loadcell import NBLoadcellDAQ
 from opensourceleg.utilities import SoftRealtimeLoop
@@ -204,9 +204,9 @@ if __name__ == "__main__":
     }
 
     clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
-    fsm_logger = Logger(
-        log_path="./logs",
-        file_name="fsm.log",
+    Logger.init(
+        log_directory="./logs",
+        log_name="fsm.log",
     )
 
     osl = OpenSourceLeg(
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
     osl_fsm = create_simple_walking_fsm(osl)
 
-    with fsm_logger, osl, osl_fsm:
+    with osl, osl_fsm:
         osl.update()
         osl.home()
 
@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
             osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
 
-            fsm_logger.info(
+            Logger.info(
                 f"T: {t:.3f}s, "
                 f"Current state: {osl_fsm.current_state.name}; "
                 f"Loadcell Fz: {osl.loadcell.fz:.3f} N; "

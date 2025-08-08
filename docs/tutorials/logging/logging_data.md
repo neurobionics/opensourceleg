@@ -19,17 +19,11 @@ Here's how to set it up:
 
 In this example:
 
-- `track_function()` tells the logger to monitor a specific variable
-    - The first argument is a function that returns the current value
-    - The second argument is the variable name (used in CSV headers)
-    - You can track multiple variables simultaneously
-- `track_attributes()` tells the logger to monitor attributes of the `robot` object.
-    - The first argument is the object to track from
-    - The second argument is the attribute name(s)
-    - In the logs, the specific attributes will be prefixed with the name of the object.
-- Variables are added to a buffer every time `update()` is called
-- The buffer is flushed based on the `buffer_size` parameter in the `Logger` constructor or manually with `flush_buffer()`
-- The buffer is automatically flushed when the Logger is destroyed
+- `track_functions()` tells the logger to monitor a specific variable
+    - This function takes one argument, a dictionary where the key defines the identifier/tag, the value defines the function to be called when `Logger.record()` is called
+- `trace_variables()` tells the logger to monitor variables.
+    - This function takes one argument, a dictionary where the key defines the identifier/tag, the value defines what will be logged
+- Variables are added to a buffer every time `record()` is called
 
 
 ```python
