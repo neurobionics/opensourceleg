@@ -7,8 +7,8 @@ from time import sleep
 from typing import Any, ClassVar, Optional
 
 import numpy as np
+from observable import Logger
 
-from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import ADCBase
 
 
@@ -91,7 +91,7 @@ class ADS131M0x(ADCBase):
 
             self._spi = spidev.SpiDev()
         except ImportError as e:
-            LOGGER.error("spidev is not installed. Please install it to use this module.")
+            Logger.error("spidev is not installed. Please install it to use this module.")
             raise ImportError("spidev is required but not installed.") from e
 
         if len(gains) != num_channels:
@@ -123,7 +123,7 @@ class ADS131M0x(ADCBase):
         Start the ADC by opening the SPI port, resetting the device, configuring gain settings,
         and transitioning to continuous conversion mode.
         """
-        LOGGER.info("Starting ADC...")
+        Logger.info("Starting ADC...")
         self._spi.open(self._spi_bus, self._spi_cs)
         self._spi.max_speed_hz = self._clock_freq
         self._spi.mode = self._SPI_MODE
@@ -132,16 +132,16 @@ class ADS131M0x(ADCBase):
         self._set_gain()
         self._set_device_state(1)
         self._clear_stale_data()
-        LOGGER.info("ADC started successfully.")
+        Logger.info("ADC started successfully.")
 
     def stop(self) -> None:
         """
         Stop the ADC by transitioning to standby mode and closing the SPI port.
         """
-        LOGGER.info("Stopping ADC...")
+        Logger.info("Stopping ADC...")
         self._set_device_state(0)
         self._spi.close()
-        LOGGER.info("ADC stopped successfully.")
+        Logger.info("ADC stopped successfully.")
 
     def reset(self) -> None:
         """

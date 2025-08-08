@@ -1,6 +1,6 @@
 import pytest
+from observable import Logger
 
-from opensourceleg.logging import LOGGER
 from opensourceleg.sensors.base import SensorNotStreamingException
 from opensourceleg.sensors.imu import LordMicrostrainIMU
 
@@ -93,7 +93,7 @@ class MockLordMicrostrainIMU(LordMicrostrainIMU):
         max_packets: int = 1,
         return_packets: bool = False,
     ):
-        LOGGER.info("Initializing MockLordMicrostrainIMU")
+        Logger.info("Initializing MockLordMicrostrainIMU")
         self._init_variables(tag, port, baud_rate, frequency, update_timeout, max_packets, return_packets, offline=True)
 
     def _configure_mip_channels(self):
@@ -227,14 +227,14 @@ def test_ping_not_started(sample_imu: MockLordMicrostrainIMU):
 def test_ping_not_success(sample_imu: MockLordMicrostrainIMU):
     sample_imu.start()
 
-    file = open(LOGGER._file_path)
+    file = open(Logger._file_path)
     contents = file.read()
     assert (f"ERROR: Failed to ping the IMU at {sample_imu.port}") not in contents
     file.close()
 
     sample_imu._node.ping_var = False
     sample_imu.ping()
-    file = open(LOGGER._file_path)
+    file = open(Logger._file_path)
     contents = file.read()
     assert (f"ERROR: Failed to ping the IMU at {sample_imu.port}") in contents
     file.close()
@@ -243,14 +243,14 @@ def test_ping_not_success(sample_imu: MockLordMicrostrainIMU):
 def test_ping_success(sample_imu: MockLordMicrostrainIMU):
     sample_imu.start()
 
-    file = open(LOGGER._file_path)
+    file = open(Logger._file_path)
     contents = file.read()
     assert (f"INFO: Successfully pinged the IMU at {sample_imu.port}") not in contents
     file.close()
 
     sample_imu._node.ping_var = True
     sample_imu.ping()
-    file = open(LOGGER._file_path)
+    file = open(Logger._file_path)
     contents = file.read()
     assert (f"INFO: Successfully pinged the IMU at {sample_imu.port}") in contents
     file.close()

@@ -2,9 +2,9 @@ import asyncio
 
 import pandas as pd
 from moteus import Register
+from observable import Logger
 
 from opensourceleg.actuators.moteus import MoteusActuator
-from opensourceleg.logging.logger import LOGGER
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
@@ -48,7 +48,7 @@ async def main():
                 await mc1.update()
 
             print("######")
-            LOGGER.info("".join(f"Output Torque: {mc1._data[0].values[Register.TORQUE] * mc1.gear_ratio}\t"))
+            Logger.info("".join(f"Output Torque: {mc1._data[0].values[Register.TORQUE] * mc1.gear_ratio}\t"))
 
             print("------")
             torque_data = pd.concat(

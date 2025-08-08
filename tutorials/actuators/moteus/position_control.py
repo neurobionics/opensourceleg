@@ -2,9 +2,9 @@ import asyncio
 
 import numpy as np
 import pandas as pd
+from observable import Logger
 
 from opensourceleg.actuators.moteus import MoteusActuator
-from opensourceleg.logging.logger import LOGGER
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
@@ -53,7 +53,7 @@ async def main():
                 command_position = position
 
             print("######")
-            LOGGER.info("".join(f"Motor Position: {mc1.output_position}\t" + f"Command_Position: {command_position}\t"))
+            Logger.info("".join(f"Motor Position: {mc1.output_position}\t" + f"Command_Position: {command_position}\t"))
 
             position_data = pd.concat(
                 [

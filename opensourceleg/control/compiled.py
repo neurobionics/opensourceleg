@@ -2,8 +2,7 @@ import ctypes
 from typing import Any, Callable, Optional
 
 import numpy.ctypeslib as ctl
-
-from opensourceleg.logging.logger import LOGGER
+from observable import Logger
 
 
 class CompiledController:
@@ -82,7 +81,7 @@ class CompiledController:
             try:
                 function_handle = getattr(self.lib, function_name)
             except AttributeError:
-                LOGGER.warning(f"Function {function_name} not found in library {self.lib}")
+                Logger.warning(f"Function {function_name} not found in library {self.lib}")
             return function_handle
 
     def define_inputs(self, input_list: list[Any]) -> None:

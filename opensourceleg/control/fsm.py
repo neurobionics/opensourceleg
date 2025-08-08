@@ -19,7 +19,8 @@ import time
 from collections.abc import Iterator
 from typing import Any, Callable, Optional
 
-from opensourceleg.logging.logger import LOGGER
+from observable import Logger
+
 from opensourceleg.utilities import SoftRealtimeLoop
 
 
@@ -267,7 +268,7 @@ class Transition:
 
                 criteria_met = self._criteria(**filtered_kwargs)
             except Exception as e:
-                LOGGER.warning(f"Failed to call criteria function for transition {self}: {e}")
+                Logger.warning(f"Failed to call criteria function for transition {self}: {e}")
                 return self._source_state
 
         if criteria_met:
@@ -281,7 +282,7 @@ class Transition:
 
                     self._action(**filtered_kwargs)
                 except Exception as e:
-                    LOGGER.warning(f"Failed to call action function for transition {self}: {e}")
+                    Logger.warning(f"Failed to call action function for transition {self}: {e}")
 
             self._source_state.exit(**kwargs)
             self._destination_state.enter(**kwargs)
@@ -401,17 +402,17 @@ class StateMachine:
                 if state not in self._transition_map:
                     self._transition_map[state] = []
             else:
-                LOGGER.warning(f"State {state.name} already exists in state machine")
+                Logger.warning(f"State {state.name} already exists in state machine")
 
         # Set initial state if specified and warn if overwriting
         if initial_state_name:
             user_defined_initial_state = self.get_state_by_name(initial_state_name)
             if user_defined_initial_state:
                 if self.initial_state is not None:
-                    LOGGER.warning(f"Overwriting initial state from {self.initial_state.name} to {initial_state_name}")
+                    Logger.warning(f"Overwriting initial state from {self.initial_state.name} to {initial_state_name}")
                 self._initial_state = user_defined_initial_state
             else:
-                LOGGER.warning(f"Initial state {initial_state_name} not found in added states")
+                Logger.warning(f"Initial state {initial_state_name} not found in added states")
 
     def add_events(self, events: list[Event]) -> None:
         """
@@ -427,7 +428,7 @@ class StateMachine:
             if event not in self._events:
                 self._events.append(event)
             else:
-                LOGGER.warning(f"Event {event.name} already exists in state machine")
+                Logger.warning(f"Event {event.name} already exists in state machine")
 
     def create_state(self, name: str, **kwargs: Any) -> State:
         """
@@ -542,7 +543,7 @@ class StateMachine:
         transitions = self._transition_map.get(self._current_state, [])
 
         if not transitions:
-            LOGGER.debug(f"No transitions defined for state {self._current_state.name}")
+            Logger.debug(f"No transitions defined for state {self._current_state.name}")
             return
 
         for transition in transitions:
@@ -554,7 +555,7 @@ class StateMachine:
 
                 return
 
-        LOGGER.debug(f"No valid transitions from state {self._current_state.name}")
+        Logger.debug(f"No valid transitions from state {self._current_state.name}")
 
     def start(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -712,15 +713,15 @@ if __name__ == "__main__":
     with sm:
         for t in clock:
             sm.update(t=t)
-            LOGGER.info(f"Current state: {sm.current_state.name if sm.current_state else 'None'}, Time: {t:.2f}")
+            Logger.info(f"Current state: {sm.current_state.name if sm.current_state else 'None'}, Time: {t:.2f}")
 
-    LOGGER.info(f"State machine exited, current state: {sm.current_state.name if sm.current_state else 'None'}")
+    Logger.info(f"State machine exited, current state: {sm.current_state.name if sm.current_state else 'None'}")
     clock.stop()
 
     # Test the state machine iterator (offline)
     with sm:
         for state in sm:
-            LOGGER.info(f"Current state: {state.name}")
+            Logger.info(f"Current state: {state.name}")
             time.sleep(1)
 
-    LOGGER.info(f"State machine exited, current state: {sm.current_state.name if sm.current_state else 'None'}")
+    Logger.info(f"State machine exited, current state: {sm.current_state.name if sm.current_state else 'None'}")
