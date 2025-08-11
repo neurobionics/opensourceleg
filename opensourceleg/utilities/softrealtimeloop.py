@@ -35,7 +35,10 @@ class LoopKiller:
     """
 
     def __init__(self, fade_time: float = 0.0):
-        signals = [signal.SIGTERM, signal.SIGINT]
+        # Explicitly annotate the list type to avoid mypy inferring a list of
+        # literals [Signals.SIGTERM, Signals.SIGINT], which would reject
+        # appending other valid signal members such as SIGHUP.
+        signals: list[signal.Signals] = [signal.SIGTERM, signal.SIGINT]
         if hasattr(signal, "SIGHUP"):
             signals.append(signal.SIGHUP)
         self.signals = signals
