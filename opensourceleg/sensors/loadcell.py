@@ -193,7 +193,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
             self._smbus = SMBus(self._bus)
             time.sleep(1)
         elif not self.is_offline and not HAS_SMBUS:
-            Logger.warning(f"[{self.__repr__()}] SMBus not available. Running in offline mode.")
+            Logger.warn(f"[{self.__repr__()}] SMBus not available. Running in offline mode.")
         self._is_streaming = True
 
     def reset(self) -> None:

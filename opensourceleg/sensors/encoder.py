@@ -212,7 +212,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """Calculate angular velocity in radians per second"""
         try:
             # TODO: Add linearization logic here for the velocity attribute
-            Logger.warning(
+            Logger.warn(
                 "Velocity attribute does not use the linearization map. "
                 "Please calculate the velocity using the position attribute."
             )
@@ -384,7 +384,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         if self._encoder_map is not None:
             return self._encoder_map
         else:
-            Logger.warning(msg="Encoder map is not set. Please create one using a rbot")
+            Logger.warn(msg="Encoder map is not set. Please create one using a rbot")
             return None
 
 

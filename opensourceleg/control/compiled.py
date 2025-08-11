@@ -81,7 +81,7 @@ class CompiledController:
             try:
                 function_handle = getattr(self.lib, function_name)
             except AttributeError:
-                Logger.warning(f"Function {function_name} not found in library {self.lib}")
+                Logger.warn(f"Function {function_name} not found in library {self.lib}")
             return function_handle
 
     def define_inputs(self, input_list: list[Any]) -> None:

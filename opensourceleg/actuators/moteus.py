@@ -156,7 +156,7 @@ class MoteusInterface:
 
     async def update(self):
         if not self.batch:
-            Logger.warning("Batching is disabled. Use the update method of MoteusActuator")
+            Logger.warn("Batching is disabled. Use the update method of MoteusActuator")
 
         commands = []
         for servo_id in self.actuator_map:
@@ -180,7 +180,7 @@ class MoteusInterface:
 
     async def stop(self):
         if not self.batch:
-            Logger.warning("Batching is disabled. Use the stop method of MoteusActuator")
+            Logger.warn("Batching is disabled. Use the stop method of MoteusActuator")
 
         if not self._stop_servos:
             return
@@ -285,7 +285,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @check_actuator_open
     async def stop(self) -> None:
         if self._interface.batch:
-            Logger.warning("Batching is enabled. Use the stop method of MoteusInterface")
+            Logger.warn("Batching is enabled. Use the stop method of MoteusInterface")
 
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
 
@@ -294,7 +294,7 @@ class MoteusActuator(ActuatorBase, Controller):
 
     async def update(self):
         if self._interface.batch:
-            Logger.warning("Batching is enabled. Use the update method of MoteusInterface")
+            Logger.warn("Batching is enabled. Use the update method of MoteusInterface")
 
         self._data = await self._interface.transport.cycle([self._command])
         self.check_thermals()
@@ -498,7 +498,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.VOLTAGE])
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -508,7 +508,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.Q_CURRENT])
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -518,7 +518,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP) / self.gear_ratio
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -528,7 +528,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi) - self.motor_zero_position
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -538,7 +538,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.VELOCITY] * 2 * np.pi)
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -549,7 +549,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.VOLTAGE])
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -560,7 +560,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.Q_CURRENT])
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -578,7 +578,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.TEMPERATURE])
         else:
-            Logger.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0

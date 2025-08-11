@@ -4,7 +4,7 @@ The `opensourceleg` library provides an easy-to-use yet powerful logging system 
 
 ## Overview
 
-Our `Logger` class builds upon Python's native `logging` module and adds several powerful features:
+Our `Logger` class utilizes the Rust ecosystem's `tracing-subscriber` crate and adds several powerful features:
 
 - **Data Logging**: Easily track variables and measurements over time
 - **Flexible Output**: Write to both console and files simultaneously

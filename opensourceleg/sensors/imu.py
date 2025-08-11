@@ -70,7 +70,7 @@ class LordMicrostrainIMU(IMUBase):
 
             self.mscl = mscl
         except ImportError:
-            Logger.warning(
+            Logger.warn(
                 "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
@@ -403,12 +403,12 @@ class LordMicrostrainIMU(IMUBase):
 
         Note:
             Gyro data is not available for the Lord Microstrain IMU, so this returns 0.0
-            and logs a warning.
+            and logs a warn.
 
         Returns:
             float: 0.0
         """
-        Logger.warning("Gyro data not available for Lord Microstrain IMU")
+        Logger.warn("Gyro data not available for Lord Microstrain IMU")
         return 0.0
 
     @property
@@ -418,12 +418,12 @@ class LordMicrostrainIMU(IMUBase):
 
         Note:
             Gyro data is not available for the Lord Microstrain IMU, so this returns 0.0
-            and logs a warning.
+            and logs a warn.
 
         Returns:
             float: 0.0
         """
-        Logger.warning("Gyro data not available for Lord Microstrain IMU")
+        Logger.warn("Gyro data not available for Lord Microstrain IMU")
         return 0.0
 
     @property
@@ -433,12 +433,12 @@ class LordMicrostrainIMU(IMUBase):
 
         Note:
             Gyro data is not available for the Lord Microstrain IMU, so this returns 0.0
-            and logs a warning.
+            and logs a warn.
 
         Returns:
             float: 0.0
         """
-        Logger.warning("Gyro data not available for Lord Microstrain IMU")
+        Logger.warn("Gyro data not available for Lord Microstrain IMU")
         return 0.0
 
     @property

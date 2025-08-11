@@ -460,7 +460,7 @@ class MyActuator(ActuatorBase):
     def set_motor_voltage(self, value: float) -> None:
         """Set motor voltage in mV."""
         if not self._is_streaming:
-            Logger.warning(f"[{self.tag}] Cannot set voltage - actuator not streaming")
+            Logger.warn(f"[{self.tag}] Cannot set voltage - actuator not streaming")
             return
 
         # Your hardware-specific voltage setting code here
@@ -470,7 +470,7 @@ class MyActuator(ActuatorBase):
     def set_motor_current(self, value: float) -> None:
         """Set motor current in mA."""
         if not self._is_streaming:
-            Logger.warning(f"[{self.tag}] Cannot set current - actuator not streaming")
+            Logger.warn(f"[{self.tag}] Cannot set current - actuator not streaming")
             return
 
         # Your hardware-specific current setting code here
@@ -479,7 +479,7 @@ class MyActuator(ActuatorBase):
     def set_motor_position(self, value: float) -> None:
         """Set motor position in radians."""
         if not self._is_streaming:
-            Logger.warning(f"[{self.tag}] Cannot set position - actuator not streaming")
+            Logger.warn(f"[{self.tag}] Cannot set position - actuator not streaming")
             return
 
         # Convert to hardware units and send command

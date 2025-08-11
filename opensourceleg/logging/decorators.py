@@ -34,7 +34,7 @@ def deprecated(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        Logger.warning(f"Function `{func.__name__}` is deprecated.")
+        Logger.warn(f"Function `{func.__name__}` is deprecated.")
         return func(*args, **kwargs)
 
     return wrapper
@@ -57,9 +57,7 @@ def deprecated_with_suggestion(alternative_func: Callable) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            Logger.warning(
-                f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead."
-            )
+            Logger.warn(f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead.")
             return func(*args, **kwargs)
 
         return wrapper
@@ -85,7 +83,7 @@ def deprecated_with_routing(alternative_func: Callable) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            Logger.warning(
+            Logger.warn(
                 f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead, "
                 "which will be called automatically now."
             )

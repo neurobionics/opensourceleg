@@ -268,7 +268,7 @@ class Transition:
 
                 criteria_met = self._criteria(**filtered_kwargs)
             except Exception as e:
-                Logger.warning(f"Failed to call criteria function for transition {self}: {e}")
+                Logger.warn(f"Failed to call criteria function for transition {self}: {e}")
                 return self._source_state
 
         if criteria_met:
@@ -282,7 +282,7 @@ class Transition:
 
                     self._action(**filtered_kwargs)
                 except Exception as e:
-                    Logger.warning(f"Failed to call action function for transition {self}: {e}")
+                    Logger.warn(f"Failed to call action function for transition {self}: {e}")
 
             self._source_state.exit(**kwargs)
             self._destination_state.enter(**kwargs)
@@ -402,17 +402,17 @@ class StateMachine:
                 if state not in self._transition_map:
                     self._transition_map[state] = []
             else:
-                Logger.warning(f"State {state.name} already exists in state machine")
+                Logger.warn(f"State {state.name} already exists in state machine")
 
         # Set initial state if specified and warn if overwriting
         if initial_state_name:
             user_defined_initial_state = self.get_state_by_name(initial_state_name)
             if user_defined_initial_state:
                 if self.initial_state is not None:
-                    Logger.warning(f"Overwriting initial state from {self.initial_state.name} to {initial_state_name}")
+                    Logger.warn(f"Overwriting initial state from {self.initial_state.name} to {initial_state_name}")
                 self._initial_state = user_defined_initial_state
             else:
-                Logger.warning(f"Initial state {initial_state_name} not found in added states")
+                Logger.warn(f"Initial state {initial_state_name} not found in added states")
 
     def add_events(self, events: list[Event]) -> None:
         """
@@ -428,7 +428,7 @@ class StateMachine:
             if event not in self._events:
                 self._events.append(event)
             else:
-                Logger.warning(f"Event {event.name} already exists in state machine")
+                Logger.warn(f"Event {event.name} already exists in state machine")
 
     def create_state(self, name: str, **kwargs: Any) -> State:
         """

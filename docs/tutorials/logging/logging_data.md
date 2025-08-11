@@ -101,7 +101,6 @@ Your logged data can be easily analyzed using common data analysis packages like
 
 1. **High-Frequency Data**
 
-    - Increase buffer size for better performance
     - Consider logging only essential variables
     - Use appropriate data types
 
@@ -114,7 +113,6 @@ Your logged data can be easily analyzed using common data analysis packages like
 3. **System Performance**
 
     - Profile your logging impact
-    - Adjust buffer sizes as needed
     - Balance logging frequency with requirements
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).

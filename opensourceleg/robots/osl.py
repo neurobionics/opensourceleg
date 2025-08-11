@@ -102,7 +102,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                     overwrite=overwrite,
                 )
             else:
-                Logger.warning(
+                Logger.warn(
                     f"[{actuator_key}] No joint encoder found. Skipping. "
                     f"Encoder tags should be of the form 'joint_encoder_{actuator_key}'."
                 )
@@ -117,7 +117,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         _encoder: SensorBase = self.sensors[encoder_key]
 
         if not _actuator.is_homed:
-            Logger.warning(
+            Logger.warn(
                 msg=f"[{str.upper(_actuator.tag)}] Please home the {_actuator.tag} joint before making the encoder map."
             )
             return None
@@ -170,7 +170,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 time.sleep(1 / _actuator.frequency)
 
             except KeyboardInterrupt:
-                Logger.warning(msg="Encoder map interrupted.")
+                Logger.warn(msg="Encoder map interrupted.")
                 return None
 
         Logger.info(msg=f"[{str.upper(_actuator.tag)}] You may now stop moving the {_actuator.tag} joint.")
