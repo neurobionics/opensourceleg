@@ -214,6 +214,37 @@ CONTROL_MODE_METHODS: list[str] = [
 ]
 
 
+HARDWARE_REQUIRED_METHODS: list[str] = [
+    "start",
+    "stop",
+    "update",
+    "home",
+    "set_motor_voltage",
+    "set_motor_current",
+    "set_motor_position",
+    "set_motor_torque",
+    "set_output_torque",
+    "set_current_gains",
+    "set_position_gains",
+    "_set_impedance_gains",
+    "set_motor_impedance",
+    "set_output_impedance",
+    "set_output_position",
+    "set_motor_velocity",
+]
+
+
+HARDWARE_REQUIRED_PROPERTIES: list[str] = [
+    "motor_position",
+    "motor_velocity",
+    "motor_voltage",
+    "motor_current",
+    "motor_torque",
+    "case_temperature",
+    "winding_temperature",
+]
+
+
 T = TypeVar("T", bound=Callable[..., Any])
 
 
@@ -405,9 +436,13 @@ class ActuatorBase(ABC):
         self._is_streaming: bool = False
 
         self._original_methods: dict[str, MethodWithRequiredModes] = {}
+        self._original_hardware_methods: dict[str, Callable[..., Any]] = {}
 
         self._set_original_methods()
         self._set_mutated_methods()
+
+        if self._is_offline:
+            self._set_offline_mode()
 
     def __enter__(self) -> "ActuatorBase":
         """
@@ -501,10 +536,99 @@ class ActuatorBase(ABC):
             >>> actuator._set_mutated_methods()
         """
         for method_name, method in self._original_methods.items():
-            if self._mode in self._METHOD_REQUIRED_MODES[method_name]:
+            # In offline mode, keep hardware methods stubbed regardless of control mode
+            if self._is_offline and method_name in HARDWARE_REQUIRED_METHODS:
+                setattr(self, method_name, partial(self._offline_method_stub, method_name))
+            elif self._mode in self._METHOD_REQUIRED_MODES[method_name]:
                 setattr(self, method_name, method)
             else:
                 setattr(self, method_name, partial(self._restricted_method, method_name))
+
+    def _offline_method_stub(self, method_name: str, *args: Any, **kwargs: Any) -> None:
+        """
+        Stub method for hardware-required methods in offline mode.
+
+        Args:
+            method_name (str): Name of the offline method.
+            *args (Any): Positional arguments passed to the method.
+            **kwargs (Any): Keyword arguments passed to the method.
+
+        Examples:
+            >>> actuator._offline_method_stub("set_motor_voltage", 12.0)
+        """
+        LOGGER.debug(msg=f"[{self.tag}] {method_name}() called in offline mode - no action taken")
+
+    def _offline_property_stub(self, property_name: str) -> float:
+        """
+        Stub method for hardware-required properties in offline mode.
+
+        Args:
+            property_name (str): Name of the offline property.
+
+        Returns:
+            float: Default sensible value (0.0).
+
+        Examples:
+            >>> actuator._offline_property_stub("motor_position")
+            0.0
+        """
+        LOGGER.debug(msg=f"[{self.tag}] {property_name} accessed in offline mode - returning default value")
+        return 0.0
+
+    def _set_offline_mode(self) -> None:
+        """
+        Patch hardware-required methods and properties for offline mode.
+
+        This method stores original hardware methods and replaces them with stubs
+        that provide sensible default behavior without requiring hardware access.
+
+        Examples:
+            >>> actuator._set_offline_mode()
+        """
+        # Store original hardware methods
+        for method_name in HARDWARE_REQUIRED_METHODS:
+            try:
+                method = getattr(self, method_name)
+                if callable(method):
+                    self._original_hardware_methods[method_name] = method
+                    setattr(self, method_name, partial(self._offline_method_stub, method_name))
+                    LOGGER.debug(msg=f"[{self.tag}] Patched {method_name}() for offline mode")
+            except AttributeError:
+                LOGGER.debug(msg=f"[{self.tag}] {method_name}() not found - skipping offline patch")
+
+        # Create a dynamic subclass with patched properties to avoid __getattribute__ overhead
+        # This approach has zero runtime overhead for online mode
+        original_class = type(self)
+
+        # Create a new class name
+        offline_class_name = f"Offline{original_class.__name__}"
+
+        # Create property stubs for hardware properties
+        offline_properties = {}
+        for property_name in HARDWARE_REQUIRED_PROPERTIES:
+            if hasattr(original_class, property_name):
+                original_prop = getattr(original_class, property_name)
+                if isinstance(original_prop, property):
+                    # Create a new property that returns 0.0 directly (no logging for performance)
+                    def make_offline_property(prop_name: str) -> property:
+                        def getter(instance: "ActuatorBase") -> float:
+                            return 0.0
+
+                        return property(getter)
+
+                    offline_properties[property_name] = make_offline_property(property_name)
+                    LOGGER.debug(msg=f"[{self.tag}] Prepared offline property for {property_name}")
+
+        # Create the new offline class with patched properties
+        offline_class = type(offline_class_name, (original_class,), offline_properties)
+
+        # Change this instance's class to the offline version
+        self.__class__ = offline_class
+
+        # Override connection state properties for offline mode
+        self._is_open = True
+        self._is_streaming = True
+        LOGGER.info(msg=f"[{self.tag}] Offline mode enabled - hardware methods and properties patched")
 
     @property
     @abstractmethod
