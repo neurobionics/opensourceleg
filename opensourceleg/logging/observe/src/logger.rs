@@ -109,7 +109,7 @@ impl Logger {
         }
 
         RECORD.get_or_init(|| Mutex::new(Record::new(path)));
-        
+
         let console_layer = create_stdout_layer(console_level);
         let (console_layer, reload_handle_console) = reload::Layer::new(console_layer);
         STDOUT_RELOAD_HANDLE.set(Some(reload_handle_console)).expect("Error setting STDOUT reload handler");
@@ -154,7 +154,7 @@ impl Logger {
         fs::create_dir_all(dir.clone()).expect("Error creating directory");
 
         let new_layer = create_file_layer(dir, log_name, file_max_bytes, backup_count, log_level);
-        
+
         if let Some(handle) = FILE_RELOAD_HANDLE.get().unwrap() {
             handle.reload(new_layer).expect("Error updating file configuration");
         }
@@ -162,7 +162,7 @@ impl Logger {
 
     #[staticmethod]
     pub fn debug(msg: String) {
-        debug!("{}", msg);  
+        debug!("{}", msg);
     }
 
     #[staticmethod]
@@ -232,7 +232,7 @@ impl Logger {
 
         Ok(())
     }
-    
+
     #[staticmethod]
     pub fn record() {
         if let Some(lock) = RECORD.get() {
@@ -307,7 +307,7 @@ fn create_stdout_layer(level: LevelFilter) -> filter::Filtered<fmt::Layer<Regist
     let _ = STDOUT_GUARD.set(guard_stdout);
 
     let base = fmt::layer()
-                                                
+
                                                 .with_writer(non_blocking_stdout)
                                                 .with_level(true)
                                                 .with_target(false)
@@ -325,7 +325,7 @@ fn create_file_layer(dir: String, log_name: String, file_max_size: u64, backup_c
     //Create file layer
     let file_appender = RotatingFileWriter::new(Path::new(&dir).join(String::from(log_name)).to_path_buf(), file_max_size, backup_count);
     let (non_blocking_writer, _guard) = tracing_appender::non_blocking(file_appender);
-    
+
     //Must keep guard in memory
     if let Ok(mut guard_lock) = GUARD.lock() {
         *guard_lock = Some(_guard)

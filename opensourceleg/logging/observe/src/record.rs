@@ -87,7 +87,7 @@ impl Record {
         }
         self.variables.clear();
     }
-    
+
     pub fn flush_buffer(&mut self) {
         self.writer.flush().expect("Error flushing writer");
     }
