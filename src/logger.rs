@@ -4,15 +4,13 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
-use chrono::Utc;
 use once_cell::sync::OnceCell;
-use pyo3::sync::MutexExt;
 use pyo3::types::{PyAnyMethods, PyBool, PyDict, PyDictMethods, PyFloat, PyInt, PyList, PyString, PyStringMethods};
 use pyo3::{pyclass, pymethods, Bound, PyAny, PyErr, PyResult, Python};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::level_filters::LevelFilter;
-use tracing::{error, info, trace, warn, Level};
+use tracing::{error, info, trace, warn};
 use tracing::debug;
 use tracing_appender::non_blocking::{NonBlocking};
 use tracing_subscriber::filter::Filtered;
@@ -21,7 +19,6 @@ use tracing_subscriber::reload::Handle;
 use tracing_subscriber::{filter, fmt, reload, Registry};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
-use tracing_subscriber::fmt::time::{ChronoLocal};
 
 static GUARD: Mutex<Option<tracing_appender::non_blocking::WorkerGuard>> = Mutex::new(None);
 static STDOUT_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new();
@@ -247,57 +244,6 @@ impl Logger {
             let mut record = lock.lock().unwrap();
             record.flush_buffer();
         }
-    }
-
-    #[staticmethod]
-    fn start_ros_subscriber(config_file: String, key_expr: String) {
-        let mutex = SESSION.get_or_init(|| Mutex::new(false));
-        let mut guard = mutex.lock().unwrap();
-        if *guard {
-            return;
-        }
-
-        std::thread::spawn(|| {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async {
-                let contents = fs::read_to_string(String::from(config_file)).expect("Error reading from file");
-                let config = match zenoh::config::Config::from_json5(&contents) {
-                    Ok(config) => {
-                        info!("Loaded config from JSON5 parameter");
-                        config
-                    },
-                    Err(e) => {
-                        warn!("Failed to parse JSON5 config: {}, using default", e);
-                        zenoh::config::Config::default()
-                    }
-                };
-                let session = zenoh::open(config).await.unwrap();
-                let subscriber = session
-                                                .declare_subscriber(key_expr)
-                                                .await
-                                                .unwrap();
-                info!("Zenoh subscriber started");
-
-                while let Ok(sample) = subscriber.recv_async().await {
-                    let payload = sample.payload().to_bytes().into_owned();
-
-                    match cdr::deserialize::<StringMsg>(&payload) {
-                        Ok(msg) => {
-                            info!("Received ROS2 String on '{}': {}", sample.key_expr(), msg.data);
-                        }
-                        Err(e) => {
-                            warn!(
-                                "Failed to decode CDR for key '{}': {}. Raw: {:02X?}",
-                                sample.key_expr(),
-                                e,
-                                payload
-                            );
-                        }
-                    }
-                }
-            });
-        });
-        *guard = true;
     }
 }
 

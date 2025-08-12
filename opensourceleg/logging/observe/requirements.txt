@@ -1,3 +1,0 @@
-eclipse-zenoh==1.4.0
--e git+https://github.com/unshrawal/logger.git@18027372441443477c5f593396a1ccc1f2c7a138#egg=logger
-maturin==1.8.7

@@ -44,7 +44,7 @@ impl Rotator {
             // Don't rotate yet
             return Ok(())
         }
-        
+
         let rotated_path = if self.backup_count == 0 {
             // Backup infinitely
             self.index += 1;
