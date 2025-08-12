@@ -124,6 +124,24 @@ class Logger:
         defined by key_expr parameter. 
         """
 
+    @staticmethod
+    def set_console_level(log_level: LogLevel) -> None:
+        """
+        Changes the level of log messages output to console at runtime.
+        """
+
+    @staticmethod
+    def set_file_level(log_level: LogLevel) -> None:
+        """
+        Changes the level of log messages being logged to file at runtime.
+        """
+
+    @staticmethod
+    def update_log_file_configuration(log_directory: str, log_name: str, file_max_bytes: int, backup_count: int, file_level: LogLevel) -> None:
+        """
+        Update the file logging configuration for the Logger without restarting the logger.
+        """
+
 T = TypeVar('T')
 class PyProfiler:
     """
