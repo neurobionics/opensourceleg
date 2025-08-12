@@ -1,6 +1,6 @@
 import time
 
-from observable import Logger
+from opensourceleg_rs import Logger
 
 
 class Sensor:

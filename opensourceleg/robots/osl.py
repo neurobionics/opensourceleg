@@ -3,7 +3,7 @@ import time
 from typing import Optional, Union
 
 import numpy as np
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
 from opensourceleg.actuators.dephy import DEFAULT_CURRENT_GAINS, DEFAULT_POSITION_GAINS, DephyLegacyActuator

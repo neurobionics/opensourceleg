@@ -1,5 +1,5 @@
 import numpy as np
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator

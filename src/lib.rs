@@ -30,7 +30,7 @@ fn opensourceleg_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 // #[pymodule]
-// fn observable(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()>{
+// fn opensourceleg_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()>{
 //     m.add_class::<Logger>()?;
 //     m.add_class::<PyLogLevel>()?;
 //     m.add_class::<profiler::PyProfiler>()?;

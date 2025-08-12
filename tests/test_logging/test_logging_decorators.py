@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.logging.decorators import deprecated, deprecated_with_routing, deprecated_with_suggestion
 

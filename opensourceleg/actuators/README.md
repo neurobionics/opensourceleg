@@ -248,7 +248,7 @@ Each control mode can be configured using `ControlModeConfig` and `CONTROL_MODE_
 
 ```python
 import time
-from observable import Logger
+from opensourceleg_rs import Logger
 
 def entry_voltage_mode(actuator):
     Logger.debug(f"[{actuator.tag}] Entering VOLTAGE mode.")

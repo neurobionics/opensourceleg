@@ -18,7 +18,7 @@ Our `Logger` class utilizes the Rust ecosystem's `tracing-subscriber` crate and 
 First, create a logger instance in your Python file:
 
 ```python
-from observable import Logger, LogLevel
+from opensourceleg_rs import Logger, LogLevel
 
 Logger.init(
     log_directory="./logs",

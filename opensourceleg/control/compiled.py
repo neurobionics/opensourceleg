@@ -2,7 +2,7 @@ import ctypes
 from typing import Any, Callable, Optional
 
 import numpy.ctypeslib as ctl
-from observable import Logger
+from opensourceleg_rs import Logger
 
 
 class CompiledController:

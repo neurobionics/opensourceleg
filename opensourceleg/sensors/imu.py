@@ -17,7 +17,7 @@ import os
 from typing import Any, Union
 
 import numpy as np
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 

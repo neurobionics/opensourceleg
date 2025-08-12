@@ -15,7 +15,7 @@ Decorators:
 from functools import wraps
 from typing import Any, Callable
 
-from observable import Logger
+from opensourceleg_rs import Logger
 
 
 def deprecated(func: Callable) -> Callable:

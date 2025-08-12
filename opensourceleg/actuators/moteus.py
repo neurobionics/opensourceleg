@@ -6,7 +6,7 @@ import numpy as np
 from moteus import Command, Controller, Stream
 from moteus import Register as MoteusRegister
 from moteus import multiplex as mp
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,

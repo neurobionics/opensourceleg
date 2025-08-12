@@ -1,5 +1,5 @@
 import pytest
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.sensors.base import SensorNotStreamingException
 from opensourceleg.sensors.imu import LordMicrostrainIMU

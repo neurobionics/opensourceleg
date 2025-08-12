@@ -1,4 +1,4 @@
-from observable import Logger, LogLevel
+from opensourceleg_rs import Logger, LogLevel
 
 
 def basic_configuration():

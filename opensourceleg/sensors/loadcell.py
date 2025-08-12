@@ -36,7 +36,7 @@ except ImportError:
     HAS_SMBUS = False
     SMBus = None
 
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.math.math import Counter
 from opensourceleg.sensors.adc import ADS131M0x

@@ -7,7 +7,7 @@ from time import sleep
 from typing import Any, ClassVar, Optional
 
 import numpy as np
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.sensors.base import ADCBase
 

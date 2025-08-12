@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 from flexsea.device import Device
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,

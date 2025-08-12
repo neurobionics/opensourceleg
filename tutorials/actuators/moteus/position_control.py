@@ -2,7 +2,7 @@ import asyncio
 
 import numpy as np
 import pandas as pd
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.moteus import MoteusActuator
 from opensourceleg.utilities import SoftRealtimeLoop

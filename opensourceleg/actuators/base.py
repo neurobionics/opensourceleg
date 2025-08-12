@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from observable import Logger
+from opensourceleg_rs import Logger
 
 from opensourceleg.logging.exceptions import ControlModeException
 
