@@ -9,6 +9,7 @@ class LogLevel(Enum):
     INFO: LogLevel
     WARN: LogLevel
     ERROR: LogLevel
+    OFF: LogLevel
 
 
 class Logger:
@@ -22,7 +23,6 @@ class Logger:
         time_format: Optional[str] = None,
         log_directory: Optional[str] = None,
         log_name: Optional[str] = None,
-        print_stdout: bool = False,
         file_max_bytes: int = 0,
         backup_count: int = 0,
     ) -> None:
@@ -33,7 +33,6 @@ class Logger:
             time_format (Optional[str]): The format for timestamps in the log, using chrono format specifiers. Defaults to "%Y-%m-%d %H:%M:%S%.3f".
             log_directory (Optional[str]): The directory to save log files. Defaults to "./logs".
             log_name (Optional[str]): The base name for the log file. Defaults to "logfile.log".
-            print_stdout (bool): Whether to print log messages to standard output. Defaults to False.
             file_max_bytes (int): The maximum size in bytes for a log file before it is rotated. A value of 0 means no rotation based on size. Defaults to 0.
             backup_count (int): The number of backup log files to keep. A value of 0 means infinite backups. Defaults to 0.
         """
