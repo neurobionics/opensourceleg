@@ -6,7 +6,7 @@ use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
 use fxhash::FxHashMap;
 
 use crate::logger::downcast;
-
+#[derive(Debug)]
 pub struct Record {
     variables: FxHashMap::<String, Value>,
     writer: NonBlocking,

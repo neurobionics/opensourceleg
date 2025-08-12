@@ -6,24 +6,49 @@ use std::sync::{Mutex, OnceLock};
 
 use chrono::Utc;
 use once_cell::sync::OnceCell;
+use pyo3::sync::MutexExt;
 use pyo3::types::{PyAnyMethods, PyBool, PyDict, PyDictMethods, PyFloat, PyInt, PyList, PyString, PyStringMethods};
 use pyo3::{pyclass, pymethods, Bound, PyAny, PyErr, PyResult, Python};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::level_filters::LevelFilter;
-use tracing::{error, info, trace, warn};
+use tracing::{error, info, trace, warn, Level};
 use tracing::debug;
 use tracing_appender::non_blocking::{NonBlocking};
+use tracing_subscriber::filter::Filtered;
 use tracing_subscriber::fmt::format::{DefaultFields, Format};
-use tracing_subscriber::{filter, fmt, Registry};
+use tracing_subscriber::reload::Handle;
+use tracing_subscriber::{filter, fmt, reload, Registry};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::Layer;
 use tracing_subscriber::fmt::time::{ChronoLocal};
 
-static GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new(); //OnceCell is thread-safe
+static GUARD: Mutex<Option<tracing_appender::non_blocking::WorkerGuard>> = Mutex::new(None);
 static STDOUT_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new();
 static RECORD: OnceCell<Mutex<Record>> = OnceCell::new();
 static SESSION: OnceLock<Mutex<bool>> = OnceLock::new();
+
+
+type ConsoleHandle = Handle<
+    Filtered<
+        fmt::Layer<Registry, DefaultFields, Format, NonBlocking>,
+        LevelFilter,
+        Registry
+    >,
+    Registry
+>;
+
+type FileHandle = Handle<
+    Filtered<
+        fmt::Layer<Registry, DefaultFields, Format, NonBlocking>,
+        LevelFilter,
+        Registry
+    >,
+    Registry
+>;
+
+static STDOUT_RELOAD_HANDLE: OnceLock<Option<ConsoleHandle>> = OnceLock::new();
+static FILE_RELOAD_HANDLE: OnceLock<Option<FileHandle>> = OnceLock::new();
 
 #[pyclass(name = "LogLevel")]
 #[derive(Clone)]
@@ -32,7 +57,8 @@ pub enum PyLogLevel {
     DEBUG,
     INFO,
     WARN,
-    ERROR
+    ERROR,
+    OFF
 }
 
 impl From<PyLogLevel> for LevelFilter {
@@ -42,7 +68,8 @@ impl From<PyLogLevel> for LevelFilter {
             PyLogLevel::DEBUG => LevelFilter::DEBUG,
             PyLogLevel::INFO => LevelFilter::INFO,
             PyLogLevel::WARN => LevelFilter::WARN,
-            PyLogLevel::ERROR => LevelFilter::ERROR
+            PyLogLevel::ERROR => LevelFilter::ERROR,
+            PyLogLevel::OFF => LevelFilter::OFF
         }
     }
 }
@@ -59,10 +86,10 @@ pub struct Logger{}
 impl Logger {
     //#[new]
     #[staticmethod]
-    #[pyo3(signature = (log_directory = None, log_name = None, print_stdout = false, file_max_bytes = 0, backup_count = 0,
+    #[pyo3(signature = (log_directory = None, log_name = None, file_max_bytes = 0, backup_count = 0,
                         stdout_level = None, logfile_level = None))]
     pub fn init(
-                log_directory: Option<String>, log_name: Option<String>, print_stdout: bool,
+                log_directory: Option<String>, log_name: Option<String>,
                 file_max_bytes: u64, backup_count: u64, stdout_level: Option<PyLogLevel>,
                 logfile_level: Option<PyLogLevel>){
 
@@ -81,16 +108,56 @@ impl Logger {
             let _ = fs::create_dir_all(parent);
         }
 
-        let _ = RECORD.set(Mutex::new(Record::new(path)));
+        RECORD.get_or_init(|| Mutex::new(Record::new(path)));
+        
+        let console_layer = create_stdout_layer(console_level);
+        let (console_layer, reload_handle_console) = reload::Layer::new(console_layer);
+        STDOUT_RELOAD_HANDLE.set(Some(reload_handle_console)).expect("Error setting STDOUT reload handler");
+        layers.push(console_layer.boxed());
 
-        if print_stdout {
-            layers.push(create_stdout_layer(console_level).boxed());
-        }
+        let file_layer = create_file_layer(dir.clone(), log_name, file_max_bytes, backup_count, log_level);
+        let (file_layer, reload_handle_file) = reload::Layer::new(file_layer);
+        FILE_RELOAD_HANDLE.set(Some(reload_handle_file)).expect("Error setting file reload handler");
+        layers.push(file_layer.boxed());
 
-        layers.push(create_file_layer(dir.clone(), log_name, file_max_bytes, backup_count, log_level).boxed());
         let subscriber = Registry::default().with(layers);
-
         tracing::subscriber::set_global_default(subscriber).expect("error");
+    }
+
+    #[staticmethod]
+    pub fn set_console_level(log_level: Option<PyLogLevel>) {
+        if let Some(handle) = STDOUT_RELOAD_HANDLE.get().unwrap() {
+            let console_level = log_level.map_or(LevelFilter::TRACE, |level|level.into());
+            handle.modify(|layer| {
+                *layer.filter_mut() = console_level;
+            }).expect("Failed to modify console level");
+        }
+    }
+
+    #[staticmethod]
+    pub fn set_file_level(log_level: Option<PyLogLevel>) {
+        if let Some(handle) = FILE_RELOAD_HANDLE.get().unwrap() {
+            let file_level = log_level.map_or(LevelFilter::TRACE, |level|level.into());
+            handle.modify(|layer| {
+                *layer.filter_mut() = file_level;
+            }).expect("Failed to modify file level");
+        }
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (log_directory = None, log_name = None, file_max_bytes = 0, backup_count = 0, file_level = None))]
+    pub fn update_log_file_configuration(log_directory: Option<String>, log_name: Option<String>, file_max_bytes: u64, backup_count: u64, file_level: Option<PyLogLevel>) {
+        let dir = log_directory.unwrap_or(String::from("./logs"));
+        let log_name = log_name.unwrap_or(String::from("logfile.log"));
+        let log_level = file_level.map_or(LevelFilter::TRACE, |level| level.into());
+
+        fs::create_dir_all(dir.clone()).expect("Error creating directory");
+
+        let new_layer = create_file_layer(dir, log_name, file_max_bytes, backup_count, log_level);
+        
+        if let Some(handle) = FILE_RELOAD_HANDLE.get().unwrap() {
+            handle.reload(new_layer).expect("Error updating file configuration");
+        }
     }
 
     #[staticmethod]
@@ -260,7 +327,10 @@ fn create_file_layer(dir: String, log_name: String, file_max_size: u64, backup_c
     let (non_blocking_writer, _guard) = tracing_appender::non_blocking(file_appender);
     
     //Must keep guard in memory
-    let _ = GUARD.set(_guard);
+    if let Ok(mut guard_lock) = GUARD.lock() {
+        *guard_lock = Some(_guard)
+    }
+
     let file_layer: filter::Filtered<fmt::Layer<_, DefaultFields, Format, NonBlocking>, LevelFilter, _>  = fmt::layer()
                                                     .with_writer(non_blocking_writer)
                                                     .with_level(true)
