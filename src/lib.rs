@@ -26,18 +26,7 @@ fn opensourceleg_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let flush_all_method = logger_class.getattr("flush_all")?;
     atexit.call_method1("register", (flush_all_method,))?;
 
+    Logger::init(None, None, 0, 0, None, None);
+
     Ok(())
 }
-
-// #[pymodule]
-// fn opensourceleg_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()>{
-//     m.add_class::<Logger>()?;
-//     m.add_class::<PyLogLevel>()?;
-//     m.add_class::<profiler::PyProfiler>()?;
-
-//     let atexit = py.import("atexit")?;
-//     let logger_class = m.getattr("Logger")?;
-//     let flush_all_method = logger_class.getattr("flush_all")?;
-//     atexit.call_method1("register", (flush_all_method,))?;
-//     Ok(())
-// }
