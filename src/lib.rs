@@ -26,7 +26,8 @@ fn opensourceleg_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let flush_all_method = logger_class.getattr("flush_all")?;
     atexit.call_method1("register", (flush_all_method,))?;
 
-    Logger::init(None, None, 0, 0, None, None);
+    let init = logger_class.getattr("init")?;
+    init.call0()?;
 
     Ok(())
 }
