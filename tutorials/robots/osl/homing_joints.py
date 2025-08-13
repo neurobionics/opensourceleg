@@ -1,8 +1,8 @@
 import numpy as np
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.utilities import SoftRealtimeLoop
@@ -14,9 +14,9 @@ GEAR_RATIO = 9 * (83 / 18)
 
 
 def home_joints():
-    homing_logger = Logger(
-        log_path="./logs",
-        file_name="homing_joint",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="homing_joint",
     )
 
     clock = SoftRealtimeLoop(dt=DT)
@@ -86,7 +86,7 @@ def home_joints():
         for t in clock:
             osl.update()
 
-            homing_logger.info(
+            Logger.info(
                 f"Time: {t:.2f}; Knee Output Position: {np.rad2deg(osl.knee.output_position):.2f}; "
                 f"Ankle Output Position: {np.rad2deg(osl.ankle.output_position):.2f}; "
                 f"Knee Encoder Position: {np.rad2deg(osl.joint_encoder_knee.position):.2f}; "

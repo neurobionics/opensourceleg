@@ -1,8 +1,9 @@
 import time
 
+from opensourceleg_rs import Logger
+
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.logging.logger import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 1000
@@ -12,9 +13,9 @@ GEAR_RATIO = 1.0
 
 
 def voltage_control():
-    voltage_logger = Logger(
-        log_path="./logs",
-        file_name="voltage_control",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="voltage_control.log",
     )
 
     actpack = DephyActuator(
@@ -27,9 +28,11 @@ def voltage_control():
 
     command_voltage = 0
 
-    voltage_logger.track_function(lambda: command_voltage, "Command Voltage")
-    voltage_logger.track_function(lambda: actpack.motor_voltage, "Motor Voltage")
-    voltage_logger.track_function(lambda: time.time(), "Time")
+    Logger.track_functions({
+        "Command_Voltage": lambda: command_voltage,
+        "Motor_Voltage": lambda: actpack.motor_voltage,
+        "Time": lambda: time.time(),
+    })
 
     clock = SoftRealtimeLoop(dt=DT)
 
@@ -44,13 +47,13 @@ def voltage_control():
 
             actpack.set_motor_voltage(value=command_voltage)
 
-            voltage_logger.info(
+            Logger.info(
                 f"Time: {t}; "
                 f"Command Voltage: {command_voltage}; "
                 f"Motor Voltage: {actpack.motor_voltage}; "
                 f"Motor Current: {actpack.motor_current}",
             )
-            voltage_logger.update()
+            Logger.record()
 
 
 if __name__ == "__main__":

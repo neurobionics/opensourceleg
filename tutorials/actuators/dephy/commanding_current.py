@@ -1,6 +1,7 @@
+from opensourceleg_rs import Logger
+
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.logging.logger import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
@@ -12,9 +13,9 @@ CURRENT_SETPOINT = 600  # mA
 
 
 def current_control():
-    current_logger = Logger(
-        log_path="./logs",
-        file_name="current_control",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="current_control.log",
     )
     actpack = DephyActuator(
         port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
@@ -29,8 +30,10 @@ def current_control():
 
         command_current = 0
 
-        current_logger.track_function(lambda: actpack.motor_current, "Motor Current")
-        current_logger.track_function(lambda: command_current, "Command Current")
+        Logger.track_functions({
+            "Motor_Current": lambda: actpack.motor_current,
+            "Command_Current": lambda: command_current,
+        })
 
         for t in clock:
             if t > TIME_TO_STEP:
@@ -39,10 +42,10 @@ def current_control():
 
             actpack.update()
 
-            current_logger.info(
+            Logger.info(
                 f"Time: {t}; " f"Command Current: {command_current}; " f"Motor Current: {actpack.motor_current}",
             )
-            current_logger.update()
+            Logger.record()
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
-from opensourceleg.logging.logger import Logger
+from opensourceleg_rs import Logger
+
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -6,9 +7,9 @@ FREQUENCY = 1000
 DT = 1 / FREQUENCY
 
 if __name__ == "__main__":
-    encoder_logger = Logger(
-        log_path="./logs",
-        file_name="reading_encoder_data",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="reading_encoder_data.log",
     )
     clock = SoftRealtimeLoop(dt=DT)
     encoder = AS5048B(
@@ -19,10 +20,10 @@ if __name__ == "__main__":
         zero_position=0,
         enable_diagnostics=False,
     )
-    encoder_logger.track_function(lambda: encoder.position, "Encoder Position")
+    Logger.track_functions(Encoder_Position=lambda: encoder.position)
 
     with encoder:
         for t in clock:
             encoder.update()
-            encoder_logger.info(f"Time: {t}; Encoder Angle: {encoder.position};")
-            encoder_logger.update()
+            Logger.info(f"Time: {t}; Encoder Angle: {encoder.position};")
+            Logger.record()

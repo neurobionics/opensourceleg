@@ -1,5 +1,6 @@
+from opensourceleg_rs import Logger
+
 from opensourceleg.control.fsm import State, StateMachine
-from opensourceleg.logging.logger import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 
@@ -21,9 +22,9 @@ def charging_to_cleaning(battery_level: float) -> bool:
 # Main function
 if __name__ == "__main__":
     # Initialize the logger for the finite state machine
-    fsm_example_logger = Logger(
-        log_path="./logs",  # Directory to store logs
-        file_name="fsm.log",  # Log file name
+    Logger.update_log_file_configuration(
+        log_directory="./logs",  # Directory to store logs
+        log_name="fsm.log",  # Log file name
     )
 
     # Define states
@@ -73,4 +74,4 @@ if __name__ == "__main__":
             fsm.update(battery_level=battery_level)
 
             # Log the current state and battery level
-            fsm_example_logger.info(f"Current state: {fsm.current_state.name}; " f"Battery level: {battery_level}; ")
+            Logger.info(f"Current state: {fsm.current_state.name}; " f"Battery level: {battery_level}; ")

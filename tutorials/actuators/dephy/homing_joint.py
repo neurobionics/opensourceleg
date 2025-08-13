@@ -1,8 +1,8 @@
 import numpy as np
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.logging.logger import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 200
@@ -11,9 +11,9 @@ GEAR_RATIO = 9 * (83 / 18)
 
 
 def home_joint():
-    homing_logger = Logger(
-        log_path="./logs",
-        file_name="homing_joint",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="homing_joint.log",
     )
     actuator = DephyActuator(
         port="/dev/ttyACM0",
@@ -44,7 +44,7 @@ def home_joint():
         for t in clock:
             actuator.update()
 
-            homing_logger.info(
+            Logger.info(
                 f"Time: {t:.2f}; Output Position: {np.rad2deg(actuator.output_position):.2f}; "
                 f"Winding Temp: {actuator.winding_temperature:.2f}; "
                 f"Current: {actuator.motor_current:.2f} mA;"

@@ -1,4 +1,5 @@
-from opensourceleg.logging.logger import Logger
+from opensourceleg_rs import Logger
+
 from opensourceleg.sensors.imu import LordMicrostrainIMU
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -6,9 +7,9 @@ FREQUENCY = 200
 DT = 1 / FREQUENCY
 
 if __name__ == "__main__":
-    imu_logger = Logger(
-        log_path="./logs",
-        file_name="reading_imu_data",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="reading_imu_data.log",
     )
     clock = SoftRealtimeLoop(dt=DT)
     imu = LordMicrostrainIMU(
@@ -21,12 +22,10 @@ if __name__ == "__main__":
         return_packets=False,
         offline=False,
     )
-    imu_logger.track_function(lambda: imu.roll, "Roll")
-    imu_logger.track_function(lambda: imu.pitch, "Pitch")
-    imu_logger.track_function(lambda: imu.yaw, "Yaw")
+    Logger.track_functions({"Roll": lambda: imu.roll, "Pitch": lambda: imu.pitch, "Yaw": lambda: imu.yaw})
 
     with imu:
         for t in clock:
             imu.update()
-            imu_logger.info(f"Time: {t}; Roll: {imu.roll}; Pitch: {imu.pitch}; Yaw: {imu.yaw};")
-            imu_logger.update()
+            Logger.info(f"Time: {t}; Roll: {imu.roll}; Pitch: {imu.pitch}; Yaw: {imu.yaw};")
+            Logger.record()

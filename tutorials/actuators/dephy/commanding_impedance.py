@@ -1,10 +1,10 @@
 import time
 
 import numpy as np
+from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
-from opensourceleg.logging.logger import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0
@@ -14,9 +14,9 @@ GEAR_RATIO = 41.5  # 1.0
 
 
 def impedance_control():
-    impedance_logger = Logger(
-        log_path="./logs",
-        file_name="impedance_control",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="impedance_control.log",
     )
     actpack = DephyActuator(
         port="/dev/ttyACM0",
@@ -27,8 +27,6 @@ def impedance_control():
     )
     clock = SoftRealtimeLoop(dt=DT)
 
-    impedance_logger.set_stream_terminator("\r")
-
     with actpack:
         actpack.update()
         actpack.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
@@ -38,10 +36,12 @@ def impedance_control():
         current_position = actpack.output_position
         command_position = current_position
 
-        impedance_logger.track_function(lambda: actpack.output_position, "Output Position")
-        impedance_logger.track_function(lambda: command_position, "Command Position")
-        impedance_logger.track_function(lambda: actpack.motor_current, "Motor Current")
-        impedance_logger.track_function(lambda: time.time(), "Time")
+        Logger.track_functions({
+            "Output_Position": lambda: actpack.output_position,
+            "Command_Position": lambda: command_position,
+            "Motor_Current": lambda: actpack.motor_current,
+            "Time": lambda: time.time(),
+        })
 
         for t in clock:
             actpack.update()
@@ -51,14 +51,14 @@ def impedance_control():
 
             actpack.set_output_position(value=command_position)
 
-            impedance_logger.info(
+            Logger.info(
                 f"Time: {t}; "
                 f"Command Position: {command_position}; "
                 f"Output Position: {actpack.output_position}; "
                 f"Motor Current: {actpack.motor_current}",
             )
 
-            impedance_logger.update()
+            Logger.record()
 
 
 if __name__ == "__main__":
