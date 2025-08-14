@@ -1,7 +1,7 @@
 import numpy as np
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier, NBLoadcellDAQ
 from opensourceleg.utilities import SoftRealtimeLoop
 

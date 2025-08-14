@@ -6,7 +6,6 @@ from typing import Optional
 
 import numpy as np
 from flexsea.device import Device
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
@@ -27,6 +26,7 @@ from opensourceleg.logging.decorators import (
 )
 from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.math import ThermalModel
+from opensourceleg.rust import Logger
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 

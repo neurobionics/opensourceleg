@@ -1,6 +1,6 @@
 import pytest
-from opensourceleg_rs import Logger
 
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.base import SensorNotStreamingException
 from opensourceleg.sensors.imu import LordMicrostrainIMU
 

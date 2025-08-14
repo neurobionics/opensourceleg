@@ -2,9 +2,9 @@ import asyncio
 
 import numpy as np
 import pandas as pd
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.moteus import MoteusActuator
+from opensourceleg.rust import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0

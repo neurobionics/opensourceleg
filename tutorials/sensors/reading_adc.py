@@ -1,5 +1,4 @@
-from opensourceleg_rs import Logger
-
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.adc import ADS131M0x
 from opensourceleg.utilities import SoftRealtimeLoop
 

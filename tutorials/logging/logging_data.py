@@ -1,6 +1,6 @@
 import time
 
-from opensourceleg_rs import Logger
+from opensourceleg.rust import Logger
 
 
 class Sensor:

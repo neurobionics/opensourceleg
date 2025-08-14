@@ -6,7 +6,6 @@ import numpy as np
 from moteus import Command, Controller, Stream
 from moteus import Register as MoteusRegister
 from moteus import multiplex as mp
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
@@ -23,6 +22,7 @@ from opensourceleg.actuators.decorators import (
 )
 from opensourceleg.extras.safety import ThermalLimitException
 from opensourceleg.math import ThermalModel
+from opensourceleg.rust import Logger
 
 try:
     import moteus_pi3hat as pihat

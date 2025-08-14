@@ -2,10 +2,10 @@ import time
 from typing import Optional, Union
 
 import numpy as np
-from opensourceleg_rs import Logger
 from smbus2 import SMBus
 
 from opensourceleg.math import from_twos_complement, to_twos_complement
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.base import EncoderBase
 from opensourceleg.utilities import SoftRealtimeLoop
 

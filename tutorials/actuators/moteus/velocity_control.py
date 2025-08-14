@@ -3,9 +3,9 @@ import asyncio
 import numpy as np
 import pandas as pd
 from moteus import Register
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.moteus import MoteusActuator
+from opensourceleg.rust import Logger
 
 # import time
 from opensourceleg.utilities import SoftRealtimeLoop

@@ -36,9 +36,8 @@ except ImportError:
     HAS_SMBUS = False
     SMBus = None
 
-from opensourceleg_rs import Logger
-
 from opensourceleg.math.math import Counter
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.adc import ADS131M0x
 from opensourceleg.sensors.base import LoadcellBase
 

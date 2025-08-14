@@ -1,9 +1,9 @@
 import numpy as np
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.robots.osl import OpenSourceLeg
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.utilities import SoftRealtimeLoop
 

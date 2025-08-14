@@ -19,8 +19,7 @@ import time
 from collections.abc import Iterator
 from typing import Any, Callable, Optional
 
-from opensourceleg_rs import Logger
-
+from opensourceleg.rust import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 

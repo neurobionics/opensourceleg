@@ -9,7 +9,7 @@ mod math;
 
 /// High-performance math operations for robotics
 #[pymodule]
-fn opensourceleg_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", "3.1.0")?;
 
     // Add math submodule

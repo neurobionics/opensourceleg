@@ -13,9 +13,8 @@ Type Parameters:
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
-from opensourceleg_rs import Logger
-
 from opensourceleg.actuators.base import ActuatorBase
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.base import SensorBase
 
 TActuator = TypeVar("TActuator", bound=ActuatorBase)

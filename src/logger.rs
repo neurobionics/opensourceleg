@@ -23,10 +23,8 @@ use tracing_subscriber::Layer;
 static GUARD: Mutex<Option<tracing_appender::non_blocking::WorkerGuard>> = Mutex::new(None);
 static STDOUT_GUARD: OnceCell<tracing_appender::non_blocking::WorkerGuard> = OnceCell::new();
 static RECORD: OnceCell<Mutex<Record>> = OnceCell::new();
-static SESSION: OnceLock<Mutex<bool>> = OnceLock::new();
 
-
-type ConsoleHandle = Handle<
+type StreamHandle = Handle<
     Filtered<
         fmt::Layer<Registry, DefaultFields, Format, NonBlocking>,
         LevelFilter,
@@ -44,7 +42,7 @@ type FileHandle = Handle<
     Registry
 >;
 
-static STDOUT_RELOAD_HANDLE: OnceLock<Option<ConsoleHandle>> = OnceLock::new();
+static STDOUT_RELOAD_HANDLE: OnceLock<Option<StreamHandle>> = OnceLock::new();
 static FILE_RELOAD_HANDLE: OnceLock<Option<FileHandle>> = OnceLock::new();
 
 #[pyclass(name = "LogLevel")]
@@ -92,7 +90,7 @@ impl Logger {
 
         let dir = log_directory.unwrap_or(String::from("./logs"));
         let log_name = log_name.unwrap_or(String::from("logfile.log"));
-        let console_level = stdout_level.map_or(LevelFilter::TRACE, |level|level.into());
+        let stream_level = stdout_level.map_or(LevelFilter::TRACE, |level|level.into());
         let log_level = logfile_level.map_or(LevelFilter::TRACE, |level| level.into());
 
         let mut layers = vec![];
@@ -107,10 +105,10 @@ impl Logger {
 
         RECORD.get_or_init(|| Mutex::new(Record::new(path)));
 
-        let console_layer = create_stdout_layer(console_level);
-        let (console_layer, reload_handle_console) = reload::Layer::new(console_layer);
+        let stream_layer = create_stdout_layer(stream_level);
+        let (stream_layer, reload_handle_console) = reload::Layer::new(stream_layer);
         STDOUT_RELOAD_HANDLE.set(Some(reload_handle_console)).expect("Error setting STDOUT reload handler");
-        layers.push(console_layer.boxed());
+        layers.push(stream_layer.boxed());
 
         let file_layer = create_file_layer(dir.clone(), log_name, file_max_bytes, backup_count, log_level);
         let (file_layer, reload_handle_file) = reload::Layer::new(file_layer);
@@ -124,9 +122,9 @@ impl Logger {
     #[staticmethod]
     pub fn set_console_level(log_level: Option<PyLogLevel>) {
         if let Some(handle) = STDOUT_RELOAD_HANDLE.get().unwrap() {
-            let console_level = log_level.map_or(LevelFilter::TRACE, |level|level.into());
+            let stream_level = log_level.map_or(LevelFilter::TRACE, |level|level.into());
             handle.modify(|layer| {
-                *layer.filter_mut() = console_level;
+                *layer.filter_mut() = stream_level;
             }).expect("Failed to modify console level");
         }
     }

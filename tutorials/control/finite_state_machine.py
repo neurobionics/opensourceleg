@@ -1,6 +1,5 @@
-from opensourceleg_rs import Logger
-
 from opensourceleg.control.fsm import State, StateMachine
+from opensourceleg.rust import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 

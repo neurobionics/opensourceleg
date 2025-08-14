@@ -1,9 +1,9 @@
 import numpy as np
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyActuator
 from opensourceleg.math.math import SaturatingRamp
+from opensourceleg.rust import Logger
 from opensourceleg.utilities.softrealtimeloop import SoftRealtimeLoop
 
 FREQUENCY = 1000

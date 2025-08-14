@@ -1,10 +1,10 @@
 import time
 
 import numpy as np
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.rust import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TIME_TO_STEP = 1.0

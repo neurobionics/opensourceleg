@@ -1,4 +1,4 @@
-from opensourceleg_rs import Logger, LogLevel
+from opensourceleg.rust import Logger, LogLevel
 
 
 def basic_configuration():

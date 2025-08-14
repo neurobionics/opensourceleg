@@ -1,6 +1,5 @@
-from opensourceleg_rs import Logger
-
 from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.rust import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQUENCY = 1000

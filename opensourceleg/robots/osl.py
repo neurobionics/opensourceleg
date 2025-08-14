@@ -3,11 +3,11 @@ import time
 from typing import Optional, Union
 
 import numpy as np
-from opensourceleg_rs import Logger
 
 from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
 from opensourceleg.actuators.dephy import DEFAULT_CURRENT_GAINS, DEFAULT_POSITION_GAINS, DephyLegacyActuator
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
 

@@ -1,5 +1,4 @@
-from opensourceleg_rs import Logger
-
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.imu import LordMicrostrainIMU
 from opensourceleg.utilities import SoftRealtimeLoop
 
