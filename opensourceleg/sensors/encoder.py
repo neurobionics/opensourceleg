@@ -4,8 +4,8 @@ from typing import Optional, Union
 import numpy as np
 from smbus2 import SMBus
 
-from opensourceleg.logging import LOGGER
 from opensourceleg.math import from_twos_complement, to_twos_complement
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.base import EncoderBase
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -77,12 +77,12 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         self._encoder_map: Union[np.polynomial.polynomial.Polynomial, None] = None
 
     def start(self) -> None:
-        LOGGER.info(f"Opening encoder communication: {self.__repr__()}")
+        Logger.info(f"Opening encoder communication: {self.__repr__()}")
         self._SMBus = SMBus(self.bus)
         self.update()  # Use public method instead of _update
         if self.zero_position != self._zero_to_set:
             self.zero_position = self._zero_to_set
-            LOGGER.info(f"Set zero position to {self.zero_position}")
+            Logger.info(f"Set zero position to {self.zero_position}")
 
         self._is_streaming = True
 
@@ -179,13 +179,13 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
             raise OSError("Invalid data returned on read, DIAG_OCF != 1")
 
         if self.diag_COF:
-            LOGGER.info("CORDIC Overflow, sample invalid")
+            Logger.info("CORDIC Overflow, sample invalid")
 
         if self.diag_compH:
-            LOGGER.info("Low magnetic field comp triggered")
+            Logger.info("Low magnetic field comp triggered")
 
         if self.diag_compL:
-            LOGGER.info("High magnetic field comp triggered")
+            Logger.info("High magnetic field comp triggered")
 
     @property
     def position(self) -> float:
@@ -212,7 +212,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """Calculate angular velocity in radians per second"""
         try:
             # TODO: Add linearization logic here for the velocity attribute
-            LOGGER.warning(
+            Logger.warn(
                 "Velocity attribute does not use the linearization map. "
                 "Please calculate the velocity using the position attribute."
             )
@@ -296,7 +296,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         max_value = from_twos_complement(self.counts, 14)
         mid_value = (min_value + max_value) // 2
         self.zero_position = to_twos_complement(mid_value, 14)
-        LOGGER.info(f"[SET] Zero registers: {self.zero_position}")
+        Logger.info(f"[SET] Zero registers: {self.zero_position}")
 
     @property
     def diag_compH(self) -> bool:
@@ -384,7 +384,7 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         if self._encoder_map is not None:
             return self._encoder_map
         else:
-            LOGGER.warning(msg="Encoder map is not set. Please create one using a rbot")
+            Logger.warn(msg="Encoder map is not set. Please create one using a rbot")
             return None
 
 
@@ -422,5 +422,5 @@ if __name__ == "__main__":
         for _t in clock:
             knee_enc.update()
             ankle_enc.update()
-            LOGGER.info(np.rad2deg(knee_enc.position), np.rad2deg(knee_enc.abs_ang))
-            LOGGER.info(np.rad2deg(ankle_enc.position), np.rad2deg(ankle_enc.abs_ang))
+            Logger.info(np.rad2deg(knee_enc.position), np.rad2deg(knee_enc.abs_ang))
+            Logger.info(np.rad2deg(ankle_enc.position), np.rad2deg(ankle_enc.abs_ang))

@@ -248,21 +248,21 @@ Each control mode can be configured using `ControlModeConfig` and `CONTROL_MODE_
 
 ```python
 import time
-from opensourceleg.logging import LOGGER
+from opensourceleg.rust import Logger
 
 def entry_voltage_mode(actuator):
-    LOGGER.debug(f"[{actuator.tag}] Entering VOLTAGE mode.")
+    Logger.debug(f"[{actuator.tag}] Entering VOLTAGE mode.")
 
 def exit_voltage_mode(actuator):
-    LOGGER.debug(f"[{actuator.tag}] Exiting VOLTAGE mode.")
+    Logger.debug(f"[{actuator.tag}] Exiting VOLTAGE mode.")
     actuator.stop_motor()  # Safety: stop motor when exiting
     time.sleep(0.1)
 
 def entry_current_mode(actuator):
-    LOGGER.debug(f"[{actuator.tag}] Entering CURRENT mode.")
+    Logger.debug(f"[{actuator.tag}] Entering CURRENT mode.")
 
 def exit_current_mode(actuator):
-    LOGGER.debug(f"[{actuator.tag}] Exiting CURRENT mode.")
+    Logger.debug(f"[{actuator.tag}] Exiting CURRENT mode.")
     actuator.stop_motor()
     time.sleep(0.1)
 
@@ -280,15 +280,15 @@ MY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=0, b=0, ff=128),
     ),
     POSITION=ControlModeConfig(
-        entry_callback=lambda actuator: LOGGER.debug(f"[{actuator.tag}] Entering POSITION mode."),
-        exit_callback=lambda actuator: (LOGGER.debug(f"[{actuator.tag}] Exiting POSITION mode."),
+        entry_callback=lambda actuator: Logger.debug(f"[{actuator.tag}] Entering POSITION mode."),
+        exit_callback=lambda actuator: (Logger.debug(f"[{actuator.tag}] Exiting POSITION mode."),
                                        actuator.stop_motor(), time.sleep(0.1)),
         has_gains=False,
         max_gains=ControlGains(kp=1000, ki=1000, kd=1000, k=0, b=0, ff=0),
     ),
     IMPEDANCE=ControlModeConfig(
-        entry_callback=lambda actuator: LOGGER.debug(f"[{actuator.tag}] Entering IMPEDANCE mode."),
-        exit_callback=lambda actuator: (LOGGER.debug(f"[{actuator.tag}] Exiting IMPEDANCE mode."),
+        entry_callback=lambda actuator: Logger.debug(f"[{actuator.tag}] Entering IMPEDANCE mode."),
+        exit_callback=lambda actuator: (Logger.debug(f"[{actuator.tag}] Exiting IMPEDANCE mode."),
                                        actuator.stop_motor(), time.sleep(0.1)),
         has_gains=False,
         max_gains=ControlGains(kp=80, ki=800, kd=0, k=1000, b=1000, ff=128),
@@ -323,11 +323,11 @@ Make sure your control logic, configs, and actuator class use your custom Enum e
 
 ```python
 def entry_custom_mode(actuator):
-    LOGGER.info(f"[{actuator.tag}] Entering CUSTOM mode.")
+    Logger.info(f"[{actuator.tag}] Entering CUSTOM mode.")
     # Add any custom initialization logic here
 
 def exit_custom_mode(actuator):
-    LOGGER.info(f"[{actuator.tag}] Exiting CUSTOM mode.")
+    Logger.info(f"[{actuator.tag}] Exiting CUSTOM mode.")
     # Add any custom cleanup logic here
 
 # Note: Since CONTROL_MODE_CONFIGS doesn't support custom fields,
@@ -353,7 +353,7 @@ To add a new actuator, **subclass `ActuatorBase`** and implement all required ab
 ```python
 from typing import Optional
 from opensourceleg.actuators.base import ActuatorBase, CONTROL_MODES
-from opensourceleg.logging import LOGGER
+from opensourceleg.logging import Logger
 from opensourceleg.extras.safety import ThermalLimitException
 
 class MyActuator(ActuatorBase):
@@ -397,7 +397,7 @@ class MyActuator(ActuatorBase):
         """Start the actuator and establish communication."""
         try:
             # Initialize hardware connection
-            LOGGER.info(f"[{self.tag}] Starting actuator on port {self.port}")
+            Logger.info(f"[{self.tag}] Starting actuator on port {self.port}")
 
             # Your hardware-specific initialization code here
             # Example: self._hardware_connection = open_connection(self.port)
@@ -412,7 +412,7 @@ class MyActuator(ActuatorBase):
             self.set_control_mode(CONTROL_MODES.VOLTAGE)
 
         except Exception as e:
-            LOGGER.error(f"[{self.tag}] Failed to start actuator: {e}")
+            Logger.error(f"[{self.tag}] Failed to start actuator: {e}")
             raise
 
     def stop(self) -> None:
@@ -431,10 +431,10 @@ class MyActuator(ActuatorBase):
             self._is_streaming = False
             self._is_open = False
 
-            LOGGER.info(f"[{self.tag}] Actuator stopped")
+            Logger.info(f"[{self.tag}] Actuator stopped")
 
         except Exception as e:
-            LOGGER.error(f"[{self.tag}] Error stopping actuator: {e}")
+            Logger.error(f"[{self.tag}] Error stopping actuator: {e}")
 
     def update(self) -> None:
         """Update actuator data from hardware."""
@@ -447,45 +447,45 @@ class MyActuator(ActuatorBase):
 
             # Check for thermal limits (similar to Dephy implementation)
             if self.case_temperature >= self.max_case_temperature:
-                LOGGER.error(f"[{self.tag}] Case thermal limit exceeded: {self.case_temperature}°C")
+                Logger.error(f"[{self.tag}] Case thermal limit exceeded: {self.case_temperature}°C")
                 raise ThermalLimitException()
 
             if self.winding_temperature >= self.max_winding_temperature:
-                LOGGER.error(f"[{self.tag}] Winding thermal limit exceeded: {self.winding_temperature}°C")
+                Logger.error(f"[{self.tag}] Winding thermal limit exceeded: {self.winding_temperature}°C")
                 raise ThermalLimitException()
 
         except Exception as e:
-            LOGGER.error(f"[{self.tag}] Error updating actuator data: {e}")
+            Logger.error(f"[{self.tag}] Error updating actuator data: {e}")
 
     def set_motor_voltage(self, value: float) -> None:
         """Set motor voltage in mV."""
         if not self._is_streaming:
-            LOGGER.warning(f"[{self.tag}] Cannot set voltage - actuator not streaming")
+            Logger.warn(f"[{self.tag}] Cannot set voltage - actuator not streaming")
             return
 
         # Your hardware-specific voltage setting code here
         # Example: self._hardware_connection.send_voltage_command(int(value))
-        LOGGER.debug(f"[{self.tag}] Setting motor voltage to {value} mV")
+        Logger.debug(f"[{self.tag}] Setting motor voltage to {value} mV")
 
     def set_motor_current(self, value: float) -> None:
         """Set motor current in mA."""
         if not self._is_streaming:
-            LOGGER.warning(f"[{self.tag}] Cannot set current - actuator not streaming")
+            Logger.warn(f"[{self.tag}] Cannot set current - actuator not streaming")
             return
 
         # Your hardware-specific current setting code here
-        LOGGER.debug(f"[{self.tag}] Setting motor current to {value} mA")
+        Logger.debug(f"[{self.tag}] Setting motor current to {value} mA")
 
     def set_motor_position(self, value: float) -> None:
         """Set motor position in radians."""
         if not self._is_streaming:
-            LOGGER.warning(f"[{self.tag}] Cannot set position - actuator not streaming")
+            Logger.warn(f"[{self.tag}] Cannot set position - actuator not streaming")
             return
 
         # Convert to hardware units and send command
         position_counts = int((value + self.motor_zero_position) / self.MOTOR_CONSTANTS.RAD_PER_COUNT)
         # Example: self._hardware_connection.send_position_command(position_counts)
-        LOGGER.debug(f"[{self.tag}] Setting motor position to {value} rad ({position_counts} counts)")
+        Logger.debug(f"[{self.tag}] Setting motor position to {value} rad ({position_counts} counts)")
 
     def set_motor_torque(self, value: float) -> None:
         """Set motor torque in Nm."""
@@ -501,17 +501,17 @@ class MyActuator(ActuatorBase):
     def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """Set current control gains."""
         # Your hardware-specific gain setting code here
-        LOGGER.debug(f"[{self.tag}] Setting current gains: kp={kp}, ki={ki}, kd={kd}, ff={ff}")
+        Logger.debug(f"[{self.tag}] Setting current gains: kp={kp}, ki={ki}, kd={kd}, ff={ff}")
 
     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """Set position control gains."""
         # Your hardware-specific gain setting code here
-        LOGGER.debug(f"[{self.tag}] Setting position gains: kp={kp}, ki={ki}, kd={kd}, ff={ff}")
+        Logger.debug(f"[{self.tag}] Setting position gains: kp={kp}, ki={ki}, kd={kd}, ff={ff}")
 
     def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
         """Set impedance control gains."""
         # Your hardware-specific gain setting code here
-        LOGGER.debug(f"[{self.tag}] Setting impedance gains: kp={kp}, ki={ki}, kd={kd}, k={k}, b={b}, ff={ff}")
+        Logger.debug(f"[{self.tag}] Setting impedance gains: kp={kp}, ki={ki}, kd={kd}, k={k}, b={b}, ff={ff}")
 
     def home(
         self,
@@ -523,7 +523,7 @@ class MyActuator(ActuatorBase):
         velocity_threshold: float = 0.001,
     ) -> None:
         """Home the actuator to find its zero position."""
-        LOGGER.info(f"[{self.tag}] Starting homing sequence")
+        Logger.info(f"[{self.tag}] Starting homing sequence")
 
         # Implementation following Dephy pattern
         # Set voltage mode for homing
@@ -539,7 +539,7 @@ class MyActuator(ActuatorBase):
         self.set_motor_zero_position(self.motor_position + output_position_offset * self.gear_ratio)
         self._is_homed = True
 
-        LOGGER.info(f"[{self.tag}] Homing complete")
+        Logger.info(f"[{self.tag}] Homing complete")
 
     # Required property implementations
     @property

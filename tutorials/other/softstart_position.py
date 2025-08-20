@@ -2,8 +2,8 @@ import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DEFAULT_POSITION_GAINS, DephyActuator
-from opensourceleg.logging.logger import Logger
 from opensourceleg.math.math import SaturatingRamp
+from opensourceleg.rust import Logger
 from opensourceleg.utilities.softrealtimeloop import SoftRealtimeLoop
 
 FREQUENCY = 1000
@@ -13,9 +13,9 @@ SOFT_START_TIME = 1.0
 
 
 def softstart_position_control():
-    position_logger = Logger(
-        log_path="./logs",
-        file_name="position_control",
+    Logger.update_log_file_configuration(
+        log_directory="./logs",
+        log_name="position_control.log",
     )
     actpack = DephyActuator(
         port="/dev/ttyACM0", gear_ratio=GEAR_RATIO, frequency=FREQUENCY, debug_level=0, dephy_log=False
@@ -41,7 +41,7 @@ def softstart_position_control():
 
             actpack.update()
 
-            position_logger.info(f"Time: {t}; \
+            Logger.info(f"Time: {t}; \
                                  Command Position: {command_position}; \
                                  Output Position: {actpack.output_position}")
 

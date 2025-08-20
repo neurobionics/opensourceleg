@@ -6,8 +6,8 @@ import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES, ActuatorBase
 from opensourceleg.actuators.dephy import DEFAULT_CURRENT_GAINS, DEFAULT_POSITION_GAINS, DephyLegacyActuator
-from opensourceleg.logging import LOGGER
 from opensourceleg.robots.base import RobotBase, TActuator, TSensor
+from opensourceleg.rust import Logger
 from opensourceleg.sensors.base import LoadcellBase, SensorBase
 from opensourceleg.sensors.loadcell import DephyLoadcellAmplifier
 
@@ -71,7 +71,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 velocity_threshold=velocity_threshold,
             )
 
-        LOGGER.info(
+        Logger.info(
             "OSL homing complete. If you'd like to create or load encoder maps to "
             "correct for nonlinearities, call `make_encoder_linearization_map()` method."
         )
@@ -102,7 +102,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                     overwrite=overwrite,
                 )
             else:
-                LOGGER.warning(
+                Logger.warn(
                     f"[{actuator_key}] No joint encoder found. Skipping. "
                     f"Encoder tags should be of the form 'joint_encoder_{actuator_key}'."
                 )
@@ -117,17 +117,17 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         _encoder: SensorBase = self.sensors[encoder_key]
 
         if not _actuator.is_homed:
-            LOGGER.warning(
+            Logger.warn(
                 msg=f"[{str.upper(_actuator.tag)}] Please home the {_actuator.tag} joint before making the encoder map."
             )
             return None
 
         if os.path.exists(f"./{_encoder.tag}_linearization_map.npy") and not overwrite:
-            LOGGER.info(msg=f"[{str.upper(_encoder.tag)}] Encoder map exists. Skipping encoder map creation.")
+            Logger.info(msg=f"[{str.upper(_encoder.tag)}] Encoder map exists. Skipping encoder map creation.")
             _encoder.set_encoder_map(  # type: ignore[attr-defined]
                 np.polynomial.polynomial.Polynomial(np.load(f"./{_encoder.tag}_linearization_map.npy"))
             )
-            LOGGER.info(
+            Logger.info(
                 msg=f"[{str.upper(_encoder.tag)}] Encoder map loaded from " f"'./{_encoder.tag}_linearization_map.npy'."
             )
             return None
@@ -147,7 +147,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         _joint_encoder_array = []
         _output_position_array = []
 
-        LOGGER.info(
+        Logger.info(
             msg=f"[{str.upper(_actuator.tag)}] Please manually move the {_actuator.tag} joint numerous times through "
             f"its full range of motion for 10 seconds."
         )
@@ -158,7 +158,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         # TODO: Switch to SoftRealtimeLoop since it has reset method now
         while time.time() - _start_time < 10:
             try:
-                LOGGER.info(
+                Logger.info(
                     msg=f"[{str.upper(_actuator.tag)}] Mapping the {_actuator.tag} "
                     f"joint encoder: {(10 - time.time() + _start_time):.2f} seconds left."
                 )
@@ -170,10 +170,10 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 time.sleep(1 / _actuator.frequency)
 
             except KeyboardInterrupt:
-                LOGGER.warning(msg="Encoder map interrupted.")
+                Logger.warn(msg="Encoder map interrupted.")
                 return None
 
-        LOGGER.info(msg=f"[{str.upper(_actuator.tag)}] You may now stop moving the {_actuator.tag} joint.")
+        Logger.info(msg=f"[{str.upper(_actuator.tag)}] You may now stop moving the {_actuator.tag} joint.")
 
         _power = np.arange(4.0)
         _a_mat = np.array(_joint_encoder_array).reshape(-1, 1) ** _power
@@ -187,7 +187,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         _actuator.set_control_mode(mode=CONTROL_MODES.VOLTAGE)
         _actuator.set_motor_voltage(value=0.0)
 
-        LOGGER.info(
+        Logger.info(
             msg=f"[{str.upper(_encoder.tag)}] Encoder map saved to './{_encoder.tag}_linearization_map.npy' and loaded."
         )
 
@@ -202,7 +202,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         try:
             return self.actuators["knee"]
         except KeyError:
-            LOGGER.error("Knee actuator not found. Please check for `knee` key in the actuators dictionary.")
+            Logger.error("Knee actuator not found. Please check for `knee` key in the actuators dictionary.")
             exit(1)
 
     @property
@@ -216,7 +216,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         try:
             return self.actuators["ankle"]
         except KeyError:
-            LOGGER.error("Ankle actuator not found. Please check for `ankle` key in the actuators dictionary.")
+            Logger.error("Ankle actuator not found. Please check for `ankle` key in the actuators dictionary.")
             exit(1)
 
     @property
@@ -230,7 +230,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         try:
             return self.sensors["loadcell"]
         except KeyError:
-            LOGGER.error("Loadcell sensor not found. Please check for `loadcell` key in the sensors dictionary.")
+            Logger.error("Loadcell sensor not found. Please check for `loadcell` key in the sensors dictionary.")
             exit(1)
 
     @property
@@ -244,7 +244,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         try:
             return self.sensors["joint_encoder_knee"]
         except KeyError:
-            LOGGER.error(
+            Logger.error(
                 "Knee joint encoder sensor not found."
                 "Please check for `joint_encoder_knee` key in the sensors dictionary."
             )
@@ -261,7 +261,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         try:
             return self.sensors["joint_encoder_ankle"]
         except KeyError:
-            LOGGER.error(
+            Logger.error(
                 "Ankle joint encoder sensor not found."
                 "Please check for `joint_encoder_ankle` key in the sensors dictionary."
             )

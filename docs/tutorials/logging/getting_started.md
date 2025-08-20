@@ -4,7 +4,7 @@ The `opensourceleg` library provides an easy-to-use yet powerful logging system 
 
 ## Overview
 
-Our `Logger` class builds upon Python's native `logging` module and adds several powerful features:
+Our `Logger` class utilizes the Rust ecosystem's `tracing-subscriber` crate and adds several powerful features:
 
 - **Data Logging**: Easily track variables and measurements over time
 - **Flexible Output**: Write to both console and files simultaneously
@@ -18,11 +18,11 @@ Our `Logger` class builds upon Python's native `logging` module and adds several
 First, create a logger instance in your Python file:
 
 ```python
-from opensourceleg.logging import Logger, LogLevel
+from opensourceleg.rust import Logger, LogLevel
 
-logger = Logger(
-    log_path="./logs",
-    file_name="my_application"
+Logger.init(
+    log_directory="./logs",
+    log_name="my_application.log"
 )
 ```
 
@@ -32,13 +32,13 @@ It's as simple as:
 
 ```python
 # Log some basic information
-logger.info("Application started")
+Logger.info("Application started")
 
 # Log when something might be wrong
-logger.warning("Battery level below 20%")
+Logger.warning("Battery level below 20%")
 
 # Log errors when they occur
-logger.error("Failed to connect to sensor")
+Logger.error("Failed to connect to sensor")
 ```
 
 ### 3. Understanding Log Levels
@@ -47,19 +47,16 @@ We provide five log levels, from least to most severe:
 
 ```python
 # For detailed debugging information
-logger.debug("Motor position: 123.4 degrees")
+Logger.debug("Motor position: 123.4 degrees")
 
 # For general information
-logger.info("Robot initialized successfully")
+Logger.info("Robot initialized successfully")
 
 # For potential issues
-logger.warning("Battery running low")
+Logger.warn("Battery running low")
 
 # For serious problems
-logger.error("Failed to read sensor data")
-
-# For fatal errors
-logger.critical("System shutdown required")
+Logger.error("Failed to read sensor data")
 ```
 
 ### 4. Customizing Your Logger
@@ -67,11 +64,11 @@ logger.critical("System shutdown required")
 You can configure the logger to match your needs:
 
 ```python
-logger = Logger(
-    log_path="./logs",          # Where to save your log files
-    file_name="robot_test",     # Name your log files (e.g., robot_test_2024_03_20.log)
-    buffer_size=1000,           # Save to file every 1000 entries
-    console_level=LogLevel.INFO # Show INFO and above in console
+Logger.init(
+    log_directory="./logs",          # Where to save your log files
+    log_name="robot_test",     # Name your log files (e.g., robot_test_2024_03_20.log)
+    print_stdout=True
+    stdout_level=LogLevel.INFO # Show INFO and above in console
 )
 ```
 
@@ -85,14 +82,14 @@ Our logging system uses a singleton pattern, which means there's only one logger
 from opensourceleg.logging import Logger
 
 # Create your own logger instance
-logger = Logger(
-    log_path="./logs",
-    file_name="my_experiment"
+Logger.init(
+    log_directory="./logs",
+    log_name="my_experiment.log"
 )
 
 # Use your logger instance throughout your application
-logger.info("Application started")
-logger.debug("Configuration loaded")
+Logger.info("Application started")
+Logger.debug("Configuration loaded")
 ```
 
 ### About the Global Logger (For Internal Use)
@@ -113,12 +110,11 @@ from opensourceleg.logging import LOGGER  # Meant for library internal use
     - `INFO`: General operational messages
     - `WARNING`: Something unexpected but not critical
     - `ERROR`: Something failed but application continues
-    - `CRITICAL`: Application cannot continue
 
 2. **Include Relevant Details**
 
     ```python
-    logger.error(f"Sensor read failed: {sensor_id}, Error: {error_message}")
+    Logger.error(f"Sensor read failed: {sensor_id}, Error: {error_message}")
     ```
 
     f-strings are preferred over string interpolation. This is because they are more readable and easier to debug.

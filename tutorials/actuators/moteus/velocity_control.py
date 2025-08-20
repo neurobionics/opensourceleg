@@ -5,7 +5,7 @@ import pandas as pd
 from moteus import Register
 
 from opensourceleg.actuators.moteus import MoteusActuator
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.rust import Logger
 
 # import time
 from opensourceleg.utilities import SoftRealtimeLoop
@@ -51,7 +51,7 @@ async def main():
                 await mc1.update()
 
             print("######")
-            LOGGER.info(
+            Logger.info(
                 "".join(
                     f"Motor Velocity: {mc1.motor_velocity}\t"
                     + "Motor Velocity Command: "
