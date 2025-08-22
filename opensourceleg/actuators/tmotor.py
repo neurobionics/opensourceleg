@@ -1,4 +1,3 @@
-import os
 import time
 import traceback
 import warnings
@@ -25,29 +24,42 @@ from opensourceleg.logging.logger import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.utilities import SoftRealtimeLoop
 
-# TMotor servo mode parameters configuration
-SERVO_PARAMS: dict[str, Any] = {
-    "ERROR_CODES": {
-        0: "No Error",
-        1: "Over voltage fault",
-        2: "Under voltage fault",
-        3: "DRV fault",
-        4: "Absolute over current fault",
-        5: "Over temp FET fault",
-        6: "Over temp motor fault",
-        7: "Gate driver over voltage fault",
-        8: "Gate driver under voltage fault",
-        9: "MCU under voltage fault",
-        10: "Booting from watchdog reset fault",
-        11: "Encoder SPI fault",
-        12: "Encoder sincos below min amplitude fault",
-        13: "Encoder sincos above max amplitude fault",
-        14: "Flash corruption fault",
-        15: "High offset current sensor 1 fault",
-        16: "High offset current sensor 2 fault",
-        17: "High offset current sensor 3 fault",
-        18: "Unbalanced currents fault",
-    },
+# TMotor servo mode error codes
+TMOTOR_ERROR_CODES: dict[int, str] = {
+    0: "No Error",
+    1: "Over voltage fault",
+    2: "Under voltage fault",
+    3: "DRV fault",
+    4: "Absolute over current fault",
+    5: "Over temp FET fault",
+    6: "Over temp motor fault",
+    7: "Gate driver over voltage fault",
+    8: "Gate driver under voltage fault",
+    9: "MCU under voltage fault",
+    10: "Booting from watchdog reset fault",
+    11: "Encoder SPI fault",
+    12: "Encoder sincos below min amplitude fault",
+    13: "Encoder sincos above max amplitude fault",
+    14: "Flash corruption fault",
+    15: "High offset current sensor 1 fault",
+    16: "High offset current sensor 2 fault",
+    17: "High offset current sensor 3 fault",
+    18: "Unbalanced currents fault",
+}
+
+# TMotor CAN packet IDs
+CAN_PACKET_ID = {
+    "SET_DUTY": 0,
+    "SET_CURRENT": 1,
+    "SET_CURRENT_BRAKE": 2,
+    "SET_RPM": 3,
+    "SET_POS": 4,
+    "SET_ORIGIN_HERE": 5,
+    "SET_POS_SPD": 6,
+}
+
+# TMotor model specifications
+TMOTOR_MODELS: dict[str, dict[str, Any]] = {
     "AK10-9": {
         "P_min": -32000,  # -3200 deg
         "P_max": 32000,  # 3200 deg
@@ -70,21 +82,12 @@ SERVO_PARAMS: dict[str, Any] = {
         "GEAR_RATIO": 9.0,
         "NUM_POLE_PAIRS": 21,
     },
-    "CAN_PACKET_ID": {
-        "CAN_PACKET_SET_DUTY": 0,
-        "CAN_PACKET_SET_CURRENT": 1,
-        "CAN_PACKET_SET_CURRENT_BRAKE": 2,
-        "CAN_PACKET_SET_RPM": 3,
-        "CAN_PACKET_SET_POS": 4,
-        "CAN_PACKET_SET_ORIGIN_HERE": 5,
-        "CAN_PACKET_SET_POS_SPD": 6,
-    },
 }
 
-# TMotor servo mode constants
+# TMotor servo mode constants (for ActuatorBase compatibility)
 TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
-    MOTOR_COUNT_PER_REV=3600,  # 360 degrees * 10
-    NM_PER_AMP=0.115,  # AK80-9 approximate
+    MOTOR_COUNT_PER_REV=65536,  # Encoder counts per revolution (16-bit encoder)
+    NM_PER_AMP=0.115,  # AK80-9 default
     NM_PER_RAD_TO_K=1e-9,  # small positive placeholder to satisfy validation
     NM_S_PER_RAD_TO_B=1e-9,  # small positive placeholder to satisfy validation
     MAX_CASE_TEMPERATURE=80.0,
@@ -132,11 +135,11 @@ class CANManagerServo:
 
         LOGGER.info("Initializing CAN Manager for TMotor Servo Mode")
         try:
-            # Configure CAN interface
-            os.system("sudo /sbin/ip link set can0 down")  # noqa: S605, S607
-            # Configure CAN interface with bitrate
-            os.system("sudo /sbin/ip link set can0 up type can bitrate 1000000")  # noqa: S605, S607
-            os.system("sudo ifconfig can0 txqueuelen 1000")  # noqa: S605, S607
+            # NOTE: CAN interface must be configured before running this code.
+            # Please run the following commands before using TMotor servo mode:
+            # sudo /sbin/ip link set can0 down
+            # sudo /sbin/ip link set can0 up type can bitrate 1000000
+            # sudo ifconfig can0 txqueuelen 1000
 
             self.bus = can.interface.Bus(channel="can0", bustype="socketcan")
             self.notifier = can.Notifier(bus=self.bus, listeners=[])
@@ -146,13 +149,18 @@ class CANManagerServo:
 
         except Exception as e:
             LOGGER.error(f"CAN bus initialization failed: {e}")
-            raise RuntimeError("CAN bus initialization failed") from e
+            LOGGER.error("Please ensure CAN interface is configured. Run:")
+            LOGGER.error("sudo /sbin/ip link set can0 down")
+            LOGGER.error("sudo /sbin/ip link set can0 up type can bitrate 1000000")
+            LOGGER.error("sudo ifconfig can0 txqueuelen 1000")
+            raise RuntimeError("CAN bus initialization failed. Please configure CAN interface first.") from e
 
     def __del__(self) -> None:
         try:
-            os.system("sudo /sbin/ip link set can0 down")  # noqa: S605, S607
+            if hasattr(self, "bus"):
+                self.bus.shutdown()
         except Exception as e:
-            LOGGER.warning(f"Error shutting down CAN interface: {e}")
+            LOGGER.warning(f"Error shutting down CAN bus: {e}")
 
     def send_message(self, motor_id: int, data: list, data_len: int) -> None:
         """Send CAN message"""
@@ -181,13 +189,13 @@ class CANManagerServo:
         """Send current control command"""
         current_protocol = int(current * 1000.0)  # Convert to protocol units
         buffer = self._pack_int32(current_protocol)
-        message_id = (SERVO_PARAMS["CAN_PACKET_ID"]["CAN_PACKET_SET_CURRENT"] << 8) | controller_id
+        message_id = (CAN_PACKET_ID["SET_CURRENT"] << 8) | controller_id
         self.send_message(message_id, buffer, len(buffer))
 
     def set_velocity(self, controller_id: int, velocity: float) -> None:
         """Send velocity control command"""
         buffer = self._pack_int32(int(velocity))
-        message_id = (SERVO_PARAMS["CAN_PACKET_ID"]["CAN_PACKET_SET_RPM"] << 8) | controller_id
+        message_id = (CAN_PACKET_ID["SET_RPM"] << 8) | controller_id
         self.send_message(message_id, buffer, len(buffer))
 
     def set_position(self, controller_id: int, position: float) -> None:
@@ -196,13 +204,13 @@ class CANManagerServo:
         # Current implementation uses 10 scale (0.1° resolution) for simplicity
         # To enable high-precision position control, change to: int(position * 1000000.0)
         buffer = self._pack_int32(int(position * 10.0))  # 0.1 degree resolution
-        message_id = (SERVO_PARAMS["CAN_PACKET_ID"]["CAN_PACKET_SET_POS"] << 8) | controller_id
+        message_id = (CAN_PACKET_ID["SET_POS"] << 8) | controller_id
         self.send_message(message_id, buffer, len(buffer))
 
     def set_origin(self, controller_id: int, mode: int = 1) -> None:
         """Set motor origin"""
         buffer = [mode]
-        message_id = (SERVO_PARAMS["CAN_PACKET_ID"]["CAN_PACKET_SET_ORIGIN_HERE"] << 8) | controller_id
+        message_id = (CAN_PACKET_ID["SET_ORIGIN_HERE"] << 8) | controller_id
         self.send_message(message_id, buffer, len(buffer))
 
     def set_control_mode(self, controller_id: int, mode: int) -> None:
@@ -372,6 +380,14 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
 
 class TMotorServoActuator(ActuatorBase):
     """
+    TMotor servo mode actuator for AK series motors.
+
+    Important: Before using this actuator, the CAN interface must be configured:
+        sudo /sbin/ip link set can0 down
+        sudo /sbin/ip link set can0 up type can bitrate 1000000
+        sudo ifconfig can0 txqueuelen 1000
+
+    For detailed setup instructions, see docs/tutorials/actuators/tmotor_servo_setup.md
 
     Example:
         >>> with TMotorServoActuator(motor_type="AK80-9", motor_id=1) as motor:
@@ -404,7 +420,7 @@ class TMotorServoActuator(ActuatorBase):
             max_temperature: maximum temperature
         """
         # Validate motor type
-        if motor_type not in SERVO_PARAMS:
+        if motor_type not in TMOTOR_MODELS:
             raise ValueError(f"Unsupported motor type: {motor_type}")
 
         super().__init__(
@@ -420,7 +436,7 @@ class TMotorServoActuator(ActuatorBase):
         self.motor_type = motor_type
         self.motor_id = motor_id
         self.max_temperature = max_temperature
-        self._motor_params = SERVO_PARAMS[motor_type]
+        self._motor_params = TMOTOR_MODELS[motor_type]
 
         # CAN communication
         self._canman: Optional[CANManagerServo] = None
@@ -520,7 +536,7 @@ class TMotorServoActuator(ActuatorBase):
         """Asynchronously update state"""
         # More detailed error handling
         if servo_state.error != 0:
-            error_codes = cast(dict[int, str], SERVO_PARAMS["ERROR_CODES"])
+            error_codes = TMOTOR_ERROR_CODES
             error_msg = error_codes.get(servo_state.error, f"Unknown error code: {servo_state.error}")
             self._error_code = servo_state.error
             self._error_message = error_msg
@@ -704,43 +720,6 @@ class TMotorServoActuator(ActuatorBase):
             f"Current: {self.motor_current:.3f}A | "
             f"Temp: {self.case_temperature:.1f}°C"
         )
-
-    def verify_control_mode(self) -> bool:
-        """Verify current control mode matches expected mode"""
-        if self._servo_mode == ServoControlMode.CURRENT:
-            # Send small current test command
-            test_current = 0.1  # 100mA test
-            self.set_motor_current(test_current)
-            time.sleep(0.05)
-            self.update()
-
-            # Check if motor responds to current command
-            if abs(self.motor_current - test_current) < 0.5:  # 500mA tolerance
-                return True
-            else:
-                LOGGER.warning(
-                    f"Control mode verification failed. Expected: {test_current}A, Got: {self.motor_current}A"
-                )
-                return False
-        return True
-
-    def get_detailed_status(self) -> dict[str, Any]:
-        """Get detailed motor status for debugging"""
-        return {
-            "motor_id": self.motor_id,
-            "control_mode": self._servo_mode.name if self._servo_mode else "UNKNOWN",
-            "is_open": self._is_open,
-            "is_streaming": self._is_streaming,
-            "is_homed": self._is_homed,
-            "position": self.motor_position,
-            "velocity": self.motor_velocity,
-            "current": self.motor_current,
-            "temperature": self.case_temperature,
-            "error_code": self._error_code,
-            "error_message": self._error_message,
-            "last_command_time": self._last_command_time,
-            "last_update_time": self._last_update_time,
-        }
 
 
 if __name__ == "__main__":

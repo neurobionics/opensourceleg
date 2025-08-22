@@ -374,7 +374,7 @@ class Logger(logging.Logger):
                     file_name = file_name.split(".")[0]
 
                 self._user_file_name = file_name
-                # Build paths using forward slash to satisfy cross-platform tests
+                # Compose paths using forward slash to satisfy cross-platform test expectations
                 self._file_path = f"{self._log_path}/{file_name}.log"
                 self._csv_path = f"{self._log_path}/{file_name}.csv"
 
@@ -619,10 +619,9 @@ class Logger(logging.Logger):
 
             base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
 
-            # Build paths using forward slash to satisfy cross-platform tests
-            file_path = f"{self._log_path}/{base_name}"
-            self._file_path = file_path + ".log"
-            self._csv_path = file_path + ".csv"
+            # Compose paths using forward slash to satisfy cross-platform test expectations
+            self._file_path = f"{self._log_path}/{base_name}.log"
+            self._csv_path = f"{self._log_path}/{base_name}.csv"
         except Exception as e:
             print(f"Error generating file paths: {e}")  # Use print as logger might not be ready
             raise
