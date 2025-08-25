@@ -92,9 +92,10 @@ class MockLordMicrostrainIMU(LordMicrostrainIMU):
         update_timeout: int = 500,
         max_packets: int = 1,
         return_packets: bool = False,
+        offline: bool = False,
     ):
         LOGGER.info("Initializing MockLordMicrostrainIMU")
-        self._init_variables(tag, port, baud_rate, frequency, update_timeout, max_packets, return_packets, offline=True)
+        self._init_variables(tag, port, baud_rate, frequency, update_timeout, max_packets, return_packets, offline)
 
     def _configure_mip_channels(self):
         return [MockMipChannel(f"{i}", 200) for i in MockTypes]

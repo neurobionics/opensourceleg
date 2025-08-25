@@ -283,7 +283,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             # review physical setup to ensure excessive torque is not normally applied
             # If issue persists, review "Maximum Average Current", "Current Limit", and
             # "Time at current limit" settings for the Dephy ActPack Firmware using the Plan GUI software
-            LOGGER.error(msg=f"[{str.upper(self.tag)}] I2t limit exceeded. " f"Current: {self.motor_current} mA. ")
+            LOGGER.error(msg=f"[{str.upper(self.tag)}] I2t limit exceeded. Current: {self.motor_current} mA. ")
             raise I2tLimitException()
 
     def home(

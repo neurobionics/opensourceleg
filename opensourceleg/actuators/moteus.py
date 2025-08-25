@@ -26,8 +26,11 @@ from opensourceleg.math import ThermalModel
 
 try:
     import moteus_pi3hat as pihat
+
+    _PIHAT_AVAILABLE = True
 except ImportError:
-    LOGGER.info(msg="Moteus PiHat not found. Please install the moteus_pi3hat package.")
+    pihat = None
+    _PIHAT_AVAILABLE = False
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=0.07, ki=0.08, kd=0.012, k=0, b=0, ff=0)
 
@@ -152,6 +155,9 @@ class MoteusInterface:
         Initialization of Pi3HatRouter
         """
         if self.transport is None:
+            if not _PIHAT_AVAILABLE:
+                LOGGER.error(msg="Moteus PiHat not found. Please install the moteus_pi3hat package.")
+                raise ImportError("moteus_pi3hat package is required for MoteusRouter")
             self.transport = pihat.Pi3HatRouter(servo_bus_map=self.bus_map)
 
     async def update(self):
