@@ -74,8 +74,8 @@ def OSL_offline_mode():
         for t in clock:
             osl.update()
 
-            osl.knee.set_output_position(2*np.pi * 0.1 * t + np.pi/4)
-            osl.ankle.set_output_position(2*np.pi * 0.1 * t)
+            osl.knee.set_output_position(2 * np.pi * 0.1 * t + np.pi / 4)
+            osl.ankle.set_output_position(2 * np.pi * 0.1 * t)
 
             logger.info(
                 f"Time: {t:.2f}; Knee Output Position: {np.rad2deg(osl.knee.output_position):.2f}; "
