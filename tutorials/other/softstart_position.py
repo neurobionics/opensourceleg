@@ -41,9 +41,11 @@ def softstart_position_control():
 
             actpack.update()
 
-            position_logger.info(f"Time: {t}; \
+            position_logger.info(
+                f"Time: {t}; \
                                  Command Position: {command_position}; \
-                                 Output Position: {actpack.output_position}")
+                                 Output Position: {actpack.output_position}"
+            )
 
 
 if __name__ == "__main__":

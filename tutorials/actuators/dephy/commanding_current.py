@@ -40,7 +40,7 @@ def current_control():
             actpack.update()
 
             current_logger.info(
-                f"Time: {t}; " f"Command Current: {command_current}; " f"Motor Current: {actpack.motor_current}",
+                f"Time: {t}; Command Current: {command_current}; Motor Current: {actpack.motor_current}",
             )
             current_logger.update()
 

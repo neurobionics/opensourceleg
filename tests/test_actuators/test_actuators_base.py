@@ -624,14 +624,14 @@ def test_offline_mode_method_calls(mock_actuator_offline: MockActuator):
 
 def test_offline_mode_property_access(mock_actuator_offline: MockActuator):
     """Test that hardware-required properties return default values in offline mode."""
-    # These should return default values (0.0) in offline mode
+    # These should return default values in offline mode
     assert mock_actuator_offline.motor_position == 0.0
     assert mock_actuator_offline.motor_velocity == 0.0
     assert mock_actuator_offline.motor_voltage == 0.0
     assert mock_actuator_offline.motor_current == 0.0
     assert mock_actuator_offline.motor_torque == 0.0
-    assert mock_actuator_offline.case_temperature == 0.0
-    assert mock_actuator_offline.winding_temperature == 0.0
+    assert mock_actuator_offline.case_temperature == 25.0  # Room temperature default
+    assert mock_actuator_offline.winding_temperature == 25.0  # Room temperature default
 
 
 def test_offline_mode_control_modes(mock_actuator_offline: MockActuator):

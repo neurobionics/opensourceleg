@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
+
+from opensourceleg.common.offline import OfflineMixin
 
 
 class SensorNotStreamingException(Exception):
@@ -46,13 +48,21 @@ def check_sensor_stream(func: Callable) -> Callable:
     return wrapper
 
 
-class SensorBase(ABC):
+class SensorBase(OfflineMixin, ABC):
     """
     Abstract base class for sensors.
 
     Defines the common interface for sensors including starting, stopping,
     updating, and streaming status.
     """
+
+    # Base sensor offline configuration
+    _OFFLINE_METHODS: ClassVar[list[str]] = ["start", "stop", "update"]
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = ["data", "is_streaming"]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        "data": None,
+        "is_streaming": True,
+    }
 
     def __init__(
         self,
@@ -61,7 +71,8 @@ class SensorBase(ABC):
         **kwargs: Any,
     ) -> None:
         self._tag = tag
-        self._is_offline: bool = offline
+        # Initialize OfflineMixin first
+        super().__init__(offline=offline, **kwargs)
 
     def __repr__(self) -> str:
         """
@@ -160,16 +171,6 @@ class SensorBase(ABC):
         """
         return self._tag
 
-    @property
-    def is_offline(self) -> bool:
-        """
-        Get the offline status of the sensor.
-
-        Returns:
-            bool: True if the sensor is offline, False otherwise.
-        """
-        return self._is_offline
-
 
 class ADCBase(SensorBase, ABC):
     """
@@ -177,6 +178,9 @@ class ADCBase(SensorBase, ABC):
 
     ADC sensors are used to convert analog signals into digital data.
     """
+
+    # ADC-specific offline configuration
+    _OFFLINE_METHODS: ClassVar[list[str]] = [*SensorBase._OFFLINE_METHODS, "reset", "calibrate"]
 
     def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
@@ -216,6 +220,14 @@ class EncoderBase(SensorBase, ABC):
 
     Encoders are used to measure position and velocity.
     """
+
+    # Encoder-specific offline configuration
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [*SensorBase._OFFLINE_PROPERTIES, "position", "velocity"]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **SensorBase._OFFLINE_PROPERTY_DEFAULTS,
+        "position": 0.0,
+        "velocity": 0.0,
+    }
 
     def __init__(
         self,
@@ -266,6 +278,29 @@ class LoadcellBase(SensorBase, ABC):
 
     Load cells are used to measure forces and moments.
     """
+
+    # Load cell-specific offline configuration
+    _OFFLINE_METHODS: ClassVar[list[str]] = [*SensorBase._OFFLINE_METHODS, "calibrate", "reset"]
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [
+        *SensorBase._OFFLINE_PROPERTIES,
+        "fx",
+        "fy",
+        "fz",
+        "mx",
+        "my",
+        "mz",
+        "is_calibrated",
+    ]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **SensorBase._OFFLINE_PROPERTY_DEFAULTS,
+        "fx": 0.0,
+        "fy": 0.0,
+        "fz": 0.0,  # Could be -9.81 * mass for gravity simulation
+        "mx": 0.0,
+        "my": 0.0,
+        "mz": 0.0,
+        "is_calibrated": True,
+    }
 
     def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
@@ -384,6 +419,26 @@ class IMUBase(SensorBase, ABC):
 
     IMUs typically provide acceleration and gyroscopic data.
     """
+
+    # IMU-specific offline configuration
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [
+        *SensorBase._OFFLINE_PROPERTIES,
+        "acc_x",
+        "acc_y",
+        "acc_z",
+        "gyro_x",
+        "gyro_y",
+        "gyro_z",
+    ]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **SensorBase._OFFLINE_PROPERTY_DEFAULTS,
+        "acc_x": 0.0,
+        "acc_y": 0.0,
+        "acc_z": 0.0,  # Gravity in z-axis when stationary
+        "gyro_x": 0.0,
+        "gyro_y": 0.0,
+        "gyro_z": 0.0,
+    }
 
     def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
         """
