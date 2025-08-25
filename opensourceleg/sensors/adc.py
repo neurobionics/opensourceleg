@@ -160,7 +160,9 @@ class ADS131M0x(ADCBase):
             sleep(0.001)
             attempts += 1
             if attempts > MAX_ATTEMPTS:
-                raise RuntimeError("ADC not ready to read after 1 second.")
+                raise RuntimeError(
+                    "Couldn't connect to the ADC, please ensure that the device is connected and powered on."
+                )
 
         self._data = self._read_data_millivolts()
 
