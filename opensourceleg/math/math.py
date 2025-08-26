@@ -3,13 +3,13 @@ from typing import Any, Optional, Union
 import numpy as np
 
 __all__ = [
+    "Counter",
     "EdgeDetector",
     "SaturatingRamp",
     "ThermalModel",
     "clamp_within_vector_range",
     "from_twos_complement",
     "to_twos_complement",
-    "Counter",
 ]
 
 
