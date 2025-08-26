@@ -20,13 +20,12 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.extras.safety import I2tLimitException, ThermalLimitException
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
     deprecated_with_routing,
 )
 from opensourceleg.logging.exceptions import ControlModeException
-from opensourceleg.math import ThermalModel
+from opensourceleg.math import I2tLimitException, ThermalLimitException, ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -171,10 +170,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             )
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
 
@@ -259,24 +256,12 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         self._data = self.read()
 
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
+        self._thermal_scale = self._thermal_model.update(
             dt=1 / self.frequency,
             motor_current=self.motor_current,
+            case_temperature=self.case_temperature,
         )
-        if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. "
-                f"Current Case Temperature: {self.case_temperature} C. Exiting."
-            )
-            raise ThermalLimitException()
 
-        if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached."
-                f"Current Winding Temperature: {self.winding_temperature} C. Exiting."
-            )
-            raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
             # "Maximum Average Current" limit exceeded for "time at current limit,
@@ -890,7 +875,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> print(f"Winding temperature: {actuator.winding_temperature} C")
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 
@@ -1168,10 +1153,8 @@ class DephyLegacyActuator(DephyActuator):
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
 
@@ -1221,27 +1204,13 @@ class DephyLegacyActuator(DephyActuator):
 
     def update(self) -> None:
         self._data = self.read()
-
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
+        self._thermal_scale = self._thermal_model.update(
             dt=1 / self.frequency,
             motor_current=self.motor_current,
+            case_temperature=self.case_temperature,
         )
-        if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. "
-                f"Current case temperature: {self.case_temperature}. Stopping motor."
-            )
-            raise ThermalLimitException()
 
-        if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. "
-                f"Current winding temperature: {self.winding_temperature}. Stopping motor."
-            )
-            raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
-
         if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
                 f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; "
@@ -1425,7 +1394,7 @@ class DephyLegacyActuator(DephyActuator):
         This is calculated based on the thermal model using motor current.
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 

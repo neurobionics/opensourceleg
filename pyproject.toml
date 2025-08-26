@@ -101,7 +101,7 @@ testpaths = ["tests"]
 target-version = "py39"
 line-length = 120
 fix = true
-select = [
+lint.select = [
     # flake8-2020
     "YTT",
     # flake8-bandit
@@ -133,7 +133,7 @@ select = [
     # tryceratops
     "TRY",
 ]
-ignore = [
+lint.ignore = [
     # DoNotAssignLambda
     "E731",
     "TRY003",

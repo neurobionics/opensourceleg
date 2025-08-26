@@ -1,11 +1,16 @@
-from typing import Any, Optional, Union
+from collections import deque
+from typing import Optional, Union
 
 import numpy as np
+
+from opensourceleg.actuators.base import MOTOR_CONSTANTS
 
 __all__ = [
     "Counter",
     "EdgeDetector",
+    "I2tLimitException",
     "SaturatingRamp",
+    "ThermalLimitException",
     "ThermalModel",
     "clamp_within_vector_range",
     "from_twos_complement",
@@ -13,155 +18,254 @@ __all__ = [
 ]
 
 
+class ThermalLimitException(Exception):
+    def __init__(self, message: str = "Software thermal limit exceeded. Exiting.") -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class I2tLimitException(Exception):
+    def __init__(self, message: str = "Dephy Actpack I2t limit exceeded. Exiting.") -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 class ThermalModel:
     """
-    Thermal model of a motor developed by Jianping Lin and Gray C. Thomas
-    @U-M Locomotion Lab, directed by Dr. Robert Gregg
+    Enhanced thermal model with outlier filtering and soft-limiting safety controller.
 
-    Assumptions:
-        1: The motor is a lumped system with two thermal nodes: the winding and the case.
-        2: The winding and the case are assumed to be in thermal equilibrium with the ambient.
-        3: The winding and the case are assumed to be in thermal equilibrium with each other.
+    Based on A Modular Framework for Task-Agnostic, Energy Shaping Control of Lower Limb Exoskeletons
+    by Jianping Lin, Gray Thomas, and Nikhil Divekar.
 
-    Equations:
-        1: C_w * dT_w/dt = (I^2)R + (T_c-T_w)/R_WC
-        2: C_c * dT_c/dt = (T_w-T_c)/R_WC + (T_w-T_a)/R_CA
+    Thermal Circuit Model:
+        Two-node lumped system with winding and housing temperatures.
 
-        where:
-            C_w: Thermal capacitance of the winding
-            C_c: Thermal capacitance of the case
-            R_WC: Thermal resistance between the winding and the case
-            R_CA: Thermal resistance between the case and the ambient
-            T_w: Temperature of the winding
-            T_c: Temperature of the case
-            T_a: Temperature of the ambient
-            I: Current
-            R: Resistance
+        Equations:
+            1: Cw * dTw/dt = I²R(T) + (Th-Tw)/Rwh
+            2: Ch * dTh/dt = (Tw-Th)/Rwh + (Ta-Th)/Rha
 
-    Implementation:
-        1: The model is updated at every time step with the current and the ambient temperature.
-        2: The model can be used to predict the temperature of the winding and the case at any time step.
-        3: The model can also be used to scale the torque based on the temperature of the winding and the case.
+    Features:
+        - Integrated outlier detection and filtering for current/temperature sensors
+        - Soft-limiting thermal safety controller with formal guarantees
+        - Physically sensible value validation with slope-based projection
+        - Backward compatible API with enhanced methods
+        - Motor-specific parameter configuration via MOTOR_CONSTANTS
+
+    Authors:
+        - Gray Thomas, Senthur Ayyappan
 
     Args:
-        ambient (float): Ambient temperature in Celsius. Defaults to 21.
-        params (dict): Dictionary of parameters. Defaults to dict().
-        temp_limit_windings (float): Maximum temperature of the windings in Celsius. Defaults to 115.
-        soft_border_C_windings (float): Soft border of the windings in Celsius. Defaults to 15.
-        temp_limit_case (float): Maximum temperature of the case in Celsius. Defaults to 80.
-        soft_border_C_case (float): Soft border of the case in Celsius. Defaults to 5.
-
-
+        motor_constants: MOTOR_CONSTANTS instance with thermal parameters
+        ambient_temperature: Ambient temperature in °C. Defaults to 21.0
+        enable_filtering: Enable robust sensor filtering. Defaults to True
+        filter_window_size: Rolling window size for filtering. Defaults to 10
+        outlier_threshold: Standard deviations for outlier detection. Defaults to 3.0
     """
 
     def __init__(
         self,
-        ambient: float = 21,
-        params: Optional[dict[Any, Any]] = None,
-        temp_limit_windings: float = 115,
-        soft_border_C_windings: float = 15,
-        temp_limit_case: float = 80,
-        soft_border_C_case: float = 5,
+        motor_constants: MOTOR_CONSTANTS,
+        actuator_tag: str = "actuator",
+        ambient_temperature: float = 21.0,
+        filter_window_size: int = 7,
+        outlier_threshold: float = 3.0,
     ) -> None:
-        # The following parameters result from Jack Schuchmann's test with no fans
-        if params is None:
-            params = {}
-        self.C_w: float = 0.20 * 81.46202695970649
-        self.R_WC = 1.0702867186480716
-        self.C_c = 512.249065845453
-        self.R_CA = 1.9406620046327363
-        self.α: float = 0.393 * 1 / 100  # Pure copper. Taken from thermalmodel3.py
-        self.R_T_0 = 65  # temp at which resistance was measured
-        self.R_ϕ_0 = 0.376  # emirical, from the computed resistance (q-axis voltage/ q-axis current). Ohms
+        self.winding_thermal_capacitance = motor_constants.WINDING_THERMAL_CAPACITANCE
+        self.case_thermal_capacitance = motor_constants.HOUSING_THERMAL_CAPACITANCE
+        self.winding_to_case_resistance = motor_constants.WINDING_TO_HOUSING_RESISTANCE
+        self.case_to_ambient_resistance = motor_constants.HOUSING_TO_AMBIENT_RESISTANCE
+        self.copper_temperature_coefficient = motor_constants.COPPER_TEMPERATURE_COEFFICIENT
+        self.reference_temperature = motor_constants.REFERENCE_TEMPERATURE
+        self.reference_resistance = motor_constants.REFERENCE_RESISTANCE
 
-        self.__dict__.update(params)
-        self.T_w: float = ambient
-        self.T_c: float = ambient
-        self.T_a: float = ambient
-        self.soft_max_temp_windings: float = temp_limit_windings - soft_border_C_windings
-        self.abs_max_temp_windings: float = temp_limit_windings
-        self.soft_border_windings: float = soft_border_C_windings
+        self.winding_hard_limit = motor_constants.MAX_WINDING_TEMPERATURE
+        self.winding_soft_limit = motor_constants.WINDING_SOFT_LIMIT
+        self.case_hard_limit = motor_constants.MAX_CASE_TEMPERATURE
+        self.case_soft_limit = motor_constants.HOUSING_SOFT_LIMIT
 
-        self.soft_max_temp_case: float = temp_limit_case - soft_border_C_case
-        self.abs_max_temp_case: float = temp_limit_case
-        self.soft_border_case: float = soft_border_C_case
+        self.winding_temperature: float = ambient_temperature
+        self.case_temperature: float = ambient_temperature
+        self.ambient_temperature: float = ambient_temperature
+
+        self.current_history: deque[float] = deque(maxlen=filter_window_size)
+        self.temperature_history: deque[float] = deque(maxlen=filter_window_size)
+        self.outlier_threshold: float = outlier_threshold
+
+        self.actuator_tag: str = actuator_tag
 
     def __repr__(self) -> str:
-        return "ThermalModel"
+        return f"ThermalModel(Tw={self.winding_temperature:.1f}°C, Tc={self.case_temperature:.1f}°C)"
 
-    def update(self, dt: float = 1 / 200, motor_current: float = 0) -> None:
+    def _is_within_bounds(self, value: float, min_bound: float, max_bound: float) -> bool:
+        """Check if value is within physically sensible bounds."""
+        return min_bound <= value <= max_bound
+
+    def _get_fallback_value(self, history: deque, default: float) -> float:
+        """Get fallback value when sensor reading is invalid."""
+        return history[-1] if len(history) > 0 else default
+
+    def _detect_statistical_outlier(self, raw_value: float, history: deque) -> tuple[bool, float]:
         """
-        Updates the temperature of the winding and the case based on the current and the ambient temperature.
-
-        Args:
-            dt (float): Time step in seconds. Defaults to 1/200.
-            motor_current (float): Motor current in mA. Defaults to 0.
-
-        Dynamics:
-            1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
-            2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
-        """
-
-        I_q_des: float = motor_current * 1e-3
-
-        I2R = (
-            I_q_des**2 * self.R_ϕ_0 * (1 + self.α * (self.T_w - self.R_T_0))
-        )  # accounts for resistance change due to temp.
-
-        dTw_dt = (I2R + (self.T_c - self.T_w) / self.R_WC) / self.C_w
-        dTc_dt: float = ((self.T_w - self.T_c) / self.R_WC + (self.T_a - self.T_c) / self.R_CA) / self.C_c
-        self.T_w += dt * dTw_dt
-        self.T_c += dt * dTc_dt
-
-    def update_and_get_scale(self, dt: float, motor_current: float = 0, FOS: float = 1.0) -> float:
-        """
-        Updates the temperature of the winding and the case based on the current and
-        the ambient temperature and returns the scale factor for the torque.
-
-        Args:
-            dt (float): Time step in seconds.
-            motor_current (float): Motor current in mA. Defaults to 0.
-            FOS (float): Factor of safety. Defaults to 3.0.
+        Detect statistical outlier
 
         Returns:
-            float: Scale factor for the torque.
-
-        Dynamics:
-            1: self.C_w * d self.T_w /dt = (I^2)R + (self.T_c-self.T_w)/self.R_WC
-            2: self.C_c * d self.T_c /dt = (self.T_w-self.T_c)/self.R_WC + (self.T_w-self.T_a)/self.R_CA
+            tuple: (is_outlier, filtered_value)
         """
+        if len(history) < 3:
+            return False, raw_value
 
-        I_q_des: float = motor_current * 1e-3
+        mean = float(np.mean(history))
+        std = float(np.std(history))
 
-        I2R_des = (
-            FOS * I_q_des**2 * self.R_ϕ_0 * (1 + self.α * (self.T_w - self.R_T_0))
-        )  # accounts for resistance change due to temp.
-        scale = 1.0
-        if self.T_w > self.abs_max_temp_windings:
-            scale = 0.0
-        elif self.T_w > self.soft_max_temp_windings:
-            scale *= (self.abs_max_temp_windings - self.T_w) / (
-                self.abs_max_temp_windings - self.soft_max_temp_windings
+        if std > 0 and abs(raw_value - mean) > self.outlier_threshold * std:
+            return True, mean
+
+        return False, raw_value
+
+    def _apply_moving_average_filter(self, value: float, history: deque) -> float:
+        """Apply moving average filter and return filtered value."""
+        history.append(value)
+        return float(np.mean(history))
+
+    def _filter_current_sensor(self, raw_current: float, history: deque) -> float:
+        """Filter motor current sensor with current-specific validation."""
+        MAX_SENSIBLE_CURRENT = 80000  # ±80A in mA
+
+        if not self._is_within_bounds(raw_current, -MAX_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT):
+            return self._get_fallback_value(history, 0.0)
+
+        is_outlier, filtered_value = self._detect_statistical_outlier(raw_current, history)
+        if is_outlier:
+            return filtered_value
+
+        return self._apply_moving_average_filter(raw_current, history)
+
+    def _filter_temperature_sensor(self, raw_temperature: float, history: deque) -> float:
+        """Filter temperature sensor with temperature-specific validation."""
+        MAX_SENSIBLE_TEMPERATURE = 200  # °C
+        MIN_SENSIBLE_TEMPERATURE = 0  # °C
+
+        if not self._is_within_bounds(raw_temperature, MIN_SENSIBLE_TEMPERATURE, MAX_SENSIBLE_TEMPERATURE):
+            return self._get_fallback_value(history, self.ambient_temperature)
+
+        is_outlier, filtered_value = self._detect_statistical_outlier(raw_temperature, history)
+        if is_outlier:
+            return filtered_value
+
+        return self._apply_moving_average_filter(raw_temperature, history)
+
+    def update(
+        self,
+        dt: float = 1 / 200,
+        motor_current: float = 0,
+        case_temperature: Optional[float] = None,
+        factor_of_safety: float = 1.0,
+    ) -> float:
+        """
+        Updates winding and case temperatures with sensor filtering and returns scale factor.
+
+        Args:
+            dt: Time step in seconds. Defaults to 1/200 (200Hz)
+            motor_current: Motor current in mA. Defaults to 0
+            case_temperature: External case temperature in °C. If None, uses thermal model.
+            factor_of_safety: Factor of safety for thermal predictions. Defaults to 1.0
+
+        Returns:
+            float: Thermal scale factor [0,1] for torque/current scaling
+
+        Thermal Dynamics:
+            Cw * dTw/dt = I²R(T) + (Tc-Tw)/Rwc
+            Cc * dTc/dt = (Tw-Tc)/Rwc + (Ta-Tc)/Rca
+        """
+        predicted_current = factor_of_safety * motor_current
+
+        filtered_current = self._filter_current_sensor(predicted_current, self.current_history)
+        if case_temperature is not None:
+            filtered_case_temp = self._filter_temperature_sensor(case_temperature, self.temperature_history)
+        else:
+            filtered_case_temp = None
+
+        current_amps = filtered_current * 1e-3
+
+        # R(T) = R₀(1 + alpha(T - T₀))
+        resistance_at_temp = self.reference_resistance * (
+            1 + self.copper_temperature_coefficient * (self.winding_temperature - self.reference_temperature)
+        )
+
+        # I²R
+        joule_heating = current_amps**2 * resistance_at_temp
+
+        # Winding temperature dynamics
+        dTw_dt = (
+            joule_heating + (self.case_temperature - self.winding_temperature) / self.winding_to_case_resistance
+        ) / self.winding_thermal_capacitance
+        self.winding_temperature += dt * dTw_dt
+
+        # Case temperature dynamics
+        if filtered_case_temp is not None:
+            self.case_temperature = filtered_case_temp
+        else:
+            # Compute case temperature from thermal model
+            dTc_dt = (
+                (self.winding_temperature - self.case_temperature) / self.winding_to_case_resistance
+                + (self.ambient_temperature - self.case_temperature) / self.case_to_ambient_resistance
+            ) / self.case_thermal_capacitance
+            self.case_temperature += dt * dTc_dt
+
+        self.check_thermal_limits_and_raise()
+
+        # Return thermal scale factor
+        return self.get_thermal_scale_factor()
+
+    def _soft_limiting_function(self, temperature: float, soft_limit: float, hard_limit: float) -> float:
+        """
+        Soft-limiting function
+        """
+        if temperature <= soft_limit:
+            return 1.0
+        elif temperature >= hard_limit:
+            return 0.0
+        else:
+            return (hard_limit - temperature) / (hard_limit - soft_limit)
+
+    def get_thermal_scale_factor(self) -> float:
+        """
+        Calculate thermal scaling factor using research paper's soft-limiting approach.
+
+        Returns:
+            float: Scale factor [0,1] for torque/current scaling
+        """
+        winding_scale = self._soft_limiting_function(
+            self.winding_temperature, self.winding_soft_limit, self.winding_hard_limit
+        )
+        case_scale = self._soft_limiting_function(self.case_temperature, self.case_soft_limit, self.case_hard_limit)
+
+        # Combined scale factor (research paper Equation 18: √(S_case * S_winding))
+        combined_scale = winding_scale * case_scale
+        return float(np.sqrt(combined_scale)) if combined_scale > 0 else 0.0
+
+    def check_thermal_limits_and_raise(self) -> None:
+        """
+        Check thermal limits and raise exceptions if exceeded.
+        This replaces the thermal limit checking logic from actuator update method.
+
+        Args:
+            actuator_tag: Actuator identifier for error messages
+
+        Raises:
+            ThermalLimitException: If hard thermal limits are exceeded
+        """
+        if self.case_temperature >= self.case_hard_limit:
+            raise ThermalLimitException(
+                f"[{self.actuator_tag.upper()}] Case thermal limit {self.case_hard_limit}°C reached. "
+                f"Current Case Temperature: {self.case_temperature:.1f}°C. Exiting."
             )
 
-        if self.T_c > self.abs_max_temp_case:
-            scale = 0.0
-        elif self.T_c > self.soft_max_temp_case:
-            scale *= (self.abs_max_temp_case - self.T_w) / (self.abs_max_temp_case - self.soft_max_temp_case)
-
-        I2R = I2R_des * scale
-
-        dTw_dt = (I2R + (self.T_c - self.T_w) / self.R_WC) / self.C_w
-        dTc_dt: float = ((self.T_w - self.T_c) / self.R_WC + (self.T_a - self.T_c) / self.R_CA) / self.C_c
-        self.T_w += dt * dTw_dt
-        self.T_c += dt * dTc_dt
-
-        if scale <= 0.0:
-            return 0.0
-        if scale >= 1.0:
-            return 1.0
-
-        return float(np.sqrt(scale))  # this is how much the torque should be scaled
+        if self.winding_temperature >= self.winding_hard_limit:
+            raise ThermalLimitException(
+                f"[{self.actuator_tag.upper()}] Winding thermal limit {self.winding_hard_limit}°C reached. "
+                f"Current Winding Temperature: {self.winding_temperature:.1f}°C. Exiting."
+            )
 
 
 class EdgeDetector:

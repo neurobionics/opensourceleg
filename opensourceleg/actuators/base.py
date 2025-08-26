@@ -46,12 +46,24 @@ class MOTOR_CONSTANTS:
     NM_PER_AMP: float
     NM_PER_RAD_TO_K: float
     NM_S_PER_RAD_TO_B: float
-    MAX_CASE_TEMPERATURE: float
-    MAX_WINDING_TEMPERATURE: float
+    MAX_CASE_TEMPERATURE: float  # Hard limit for case/housing temperature
+    MAX_WINDING_TEMPERATURE: float  # Hard limit for winding temperature
+
+    # Thermal model parameters from research paper (with defaults from Jack Schuchmann's tests)
+    WINDING_THERMAL_CAPACITANCE: float = 0.20 * 81.46202695970649  # Cw (J/°C)
+    HOUSING_THERMAL_CAPACITANCE: float = 512.249065845453  # Ch (J/°C)
+    WINDING_TO_HOUSING_RESISTANCE: float = 1.0702867186480716  # Rw-h (°C/W)
+    HOUSING_TO_AMBIENT_RESISTANCE: float = 1.9406620046327363  # Rh-a (°C/W)
+    COPPER_TEMPERATURE_COEFFICIENT: float = 0.393 / 100  # alpha (1/°C)
+    REFERENCE_TEMPERATURE: float = 65.0  # Reference temperature for resistance (°C)
+    REFERENCE_RESISTANCE: float = 0.376  # Reference resistance at reference temp (Ohms)
+
+    WINDING_SOFT_LIMIT: float = 70.0  # soft winding limit (°C)
+    HOUSING_SOFT_LIMIT: float = 60.0  # soft housing limit (°C)
 
     def __post_init__(self) -> None:
         """
-        Function to validate the motor constants.
+        Function to validate the motor constants and thermal parameters.
 
         Examples:
             >>> # This will raise a ValueError because a negative value is invalid.
@@ -66,6 +78,14 @@ class MOTOR_CONSTANTS:
         """
         if any(x <= 0 for x in self.__dict__.values()):
             raise ValueError("All values in MOTOR_CONSTANTS must be non-zero and positive.")
+
+        # Validate thermal safety limits
+        if self.MAX_WINDING_TEMPERATURE <= self.MAX_CASE_TEMPERATURE:
+            raise ValueError("MAX_WINDING_TEMPERATURE must be greater than MAX_CASE_TEMPERATURE")
+        if self.WINDING_SOFT_LIMIT >= self.MAX_WINDING_TEMPERATURE:
+            raise ValueError("WINDING_SOFT_LIMIT must be less than MAX_WINDING_TEMPERATURE")
+        if self.HOUSING_SOFT_LIMIT >= self.MAX_CASE_TEMPERATURE:
+            raise ValueError("HOUSING_SOFT_LIMIT must be less than MAX_CASE_TEMPERATURE")
 
     @property
     def RAD_PER_COUNT(self) -> float:

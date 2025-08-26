@@ -20,7 +20,6 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.extras.safety import ThermalLimitException
 from opensourceleg.logging.logger import LOGGER
 from opensourceleg.math import ThermalModel
 
@@ -237,10 +236,8 @@ class MoteusActuator(ActuatorBase, Controller):
         self._query = query
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
 
@@ -307,23 +304,11 @@ class MoteusActuator(ActuatorBase, Controller):
         self._command = self.make_query()
 
     def check_thermals(self):
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
+        self._thermal_scale = self._thermal_model.update(
             dt=1 / self.frequency,
             motor_current=self.motor_current,
+            case_temperature=self.case_temperature,
         )
-        if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
-            )
-            raise ThermalLimitException()
-
-        if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
-                Stopping motor."
-            )
-            raise ThermalLimitException()
 
     def enqueue_command(self) -> None:
         # Set the command for this cycle
@@ -596,7 +581,7 @@ class MoteusActuator(ActuatorBase, Controller):
         This is calculated based on the thermal model using motor current.
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 
