@@ -49,7 +49,7 @@ class MOTOR_CONSTANTS:
     MAX_CASE_TEMPERATURE: float  # Hard limit for case/housing temperature
     MAX_WINDING_TEMPERATURE: float  # Hard limit for winding temperature
 
-    # Thermal model parameters from research paper (with defaults from Jack Schuchmann's tests)
+    # Thermal model parameters from research paper (with defaults from Jake Schuchmann's tests)
     WINDING_THERMAL_CAPACITANCE: float = 0.20 * 81.46202695970649  # Cw (J/°C)
     CASE_THERMAL_CAPACITANCE: float = 512.249065845453  # Ch (J/°C)
     WINDING_TO_CASE_RESISTANCE: float = 1.0702867186480716  # Rw-h (°C/W)
