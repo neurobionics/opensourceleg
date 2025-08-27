@@ -35,14 +35,15 @@ class LoopKiller:
     """
 
     def __init__(self, fade_time: float = 0.0):
-        if os.name == "posix":
-            self.signals = [signal.SIGTERM, signal.SIGINT, signal.SIGHUP]
-        else:
-            self.signals = [signal.SIGTERM, signal.SIGINT]
-
+        # Explicitly annotate the list type to avoid mypy inferring a list of
+        # literals [Signals.SIGTERM, Signals.SIGINT], which would reject
+        # appending other valid signal members such as SIGHUP.
+        signals: list[signal.Signals] = [signal.SIGTERM, signal.SIGINT]
+        if hasattr(signal, "SIGHUP"):
+            signals.append(signal.SIGHUP)
+        self.signals = signals
         for sig in self.signals:
             signal.signal(sig, self.handle_signal)
-
         self._fade_time: float = fade_time
         self._soft_kill_time: float = 0.0
 
@@ -357,6 +358,8 @@ class SoftRealtimeLoop:
 
         # Busy wait until the time we should be running at
         while time.monotonic() < self.loop_deadline and not self.killer.kill_now:
+            if not hasattr(signal, "sigtimedwait"):
+                continue
             if os.name == "posix" and signal.sigtimedwait(self.killer.signals, 0):
                 self.stop()
 
@@ -402,7 +405,7 @@ class SoftRealtimeLoop:
         # Busy wait to compensate for sleep durations precision
         time_to_busy_wait = time.monotonic() + PRECISION_OF_SLEEP
         while time.monotonic() < time_to_busy_wait and not self.killer.kill_now:
-            if os.name == "posix" and signal.sigtimedwait(self.killer.signals, 0):
+            if os.name == "posix" and hasattr(signal, "sigtimedwait") and signal.sigtimedwait(self.killer.signals, 0):
                 self.stop()
                 raise StopIteration
 
