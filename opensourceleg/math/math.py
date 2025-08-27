@@ -5,6 +5,12 @@ import numpy as np
 
 from opensourceleg.actuators.base import MOTOR_CONSTANTS
 
+# Sensor validation constants
+MIN_SENSIBLE_CURRENT = -80000  # -80A in mA
+MAX_SENSIBLE_CURRENT = 80000  # +80A in mA
+MAX_SENSIBLE_TEMPERATURE = 200  # °C
+MIN_SENSIBLE_TEMPERATURE = 0  # °C
+
 __all__ = [
     "Counter",
     "EdgeDetector",
@@ -127,32 +133,18 @@ class ThermalModel:
         history.append(value)
         return float(np.mean(history))
 
-    def _filter_current_sensor(self, raw_current: float, history: deque) -> float:
-        """Filter motor current sensor with current-specific validation."""
-        MAX_SENSIBLE_CURRENT = 80000  # ±80A in mA
+    def _filter_sensor(
+        self, raw_value: float, history: deque, min_bound: float, max_bound: float, fallback_default: float
+    ) -> float:
+        """Generic sensor filtering with bounds validation and outlier detection."""
+        if not self._is_within_bounds(raw_value, min_bound, max_bound):
+            return self._get_fallback_value(history, fallback_default)
 
-        if not self._is_within_bounds(raw_current, -MAX_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT):
-            return self._get_fallback_value(history, 0.0)
-
-        is_outlier, filtered_value = self._detect_statistical_outlier(raw_current, history)
+        is_outlier, filtered_value = self._detect_statistical_outlier(raw_value, history)
         if is_outlier:
             return filtered_value
 
-        return self._apply_moving_average_filter(raw_current, history)
-
-    def _filter_temperature_sensor(self, raw_temperature: float, history: deque) -> float:
-        """Filter temperature sensor with temperature-specific validation."""
-        MAX_SENSIBLE_TEMPERATURE = 200  # °C
-        MIN_SENSIBLE_TEMPERATURE = 0  # °C
-
-        if not self._is_within_bounds(raw_temperature, MIN_SENSIBLE_TEMPERATURE, MAX_SENSIBLE_TEMPERATURE):
-            return self._get_fallback_value(history, self.ambient_temperature)
-
-        is_outlier, filtered_value = self._detect_statistical_outlier(raw_temperature, history)
-        if is_outlier:
-            return filtered_value
-
-        return self._apply_moving_average_filter(raw_temperature, history)
+        return self._apply_moving_average_filter(raw_value, history)
 
     def update(
         self,
@@ -177,11 +169,18 @@ class ThermalModel:
             Cw * dTw/dt = I²R(T) + (Tc-Tw)/Rwc
             Cc * dTc/dt = (Tw-Tc)/Rwc + (Ta-Tc)/Rca
         """
-        predicted_current = factor_of_safety * motor_current
 
-        filtered_current = self._filter_current_sensor(predicted_current, self.current_history)
+        filtered_current = self._filter_sensor(
+            motor_current, self.current_history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0
+        )
         if case_temperature is not None:
-            filtered_case_temp = self._filter_temperature_sensor(case_temperature, self.temperature_history)
+            filtered_case_temp = self._filter_sensor(
+                case_temperature,
+                self.temperature_history,
+                MIN_SENSIBLE_TEMPERATURE,
+                MAX_SENSIBLE_TEMPERATURE,
+                self.ambient_temperature,
+            )
         else:
             filtered_case_temp = None
 
@@ -193,7 +192,7 @@ class ThermalModel:
         )
 
         # I²R
-        joule_heating = current_amps**2 * resistance_at_temp
+        joule_heating = factor_of_safety * current_amps**2 * resistance_at_temp
 
         # Winding temperature dynamics
         dTw_dt = (
