@@ -104,7 +104,6 @@ class ServoMotorState:
     current: float = 0.0  # amps
     temperature: float = 0.0  # celsius
     error: int = 0
-    acceleration: float = 0.0  # rad/s²
 
 
 class ServoControlMode(Enum):
@@ -243,7 +242,7 @@ class CANManagerServo:
         motor_temp = float(data[6])  # temperature (celsius)
         motor_error = int(data[7])  # error code
 
-        return ServoMotorState(motor_pos, motor_spd, motor_cur, motor_temp, motor_error, 0.0)
+        return ServoMotorState(motor_pos, motor_spd, motor_cur, motor_temp, motor_error)
 
     def add_motor_listener(self, motor: "TMotorServoActuator") -> None:
         """Add motor listener"""
@@ -293,13 +292,29 @@ def rad_per_sec_to_erpm(rad_per_sec: float, num_pole_pairs: int) -> float:
     return rad_per_sec * 60 * num_pole_pairs / (2 * np.pi)
 
 
+def _wait_for_mode_switch(actuator: "TMotorServoActuator", timeout: float = 0.2) -> None:
+    """Wait for control mode switch confirmation with timeout"""
+    start_time = time.time()
+    poll_interval = 0.01  # 10ms polling
+
+    while time.time() - start_time < timeout:
+        actuator.update()  # Read status
+        if actuator._motor_state.error == 0:
+            LOGGER.debug(f"Mode switch confirmed after {time.time() - start_time:.3f} seconds")
+            return
+        time.sleep(poll_interval)
+
+    # If we reach here, mode switch may not be confirmed but we continue
+    LOGGER.warning(f"Mode switch confirmation timeout after {timeout} seconds")
+
+
 # Control mode configuration
 def _servo_position_mode_entry(actuator: "TMotorServoActuator") -> None:
     actuator._servo_mode = ServoControlMode.POSITION
     # Send actual mode switch command to motor
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.POSITION.value)
-        time.sleep(0.1)  # Wait for mode switch to complete
+        _wait_for_mode_switch(actuator)
 
 
 def _servo_position_mode_exit(actuator: "TMotorServoActuator") -> None:
@@ -311,7 +326,7 @@ def _servo_current_mode_entry(actuator: "TMotorServoActuator") -> None:
     # Send actual mode switch command to motor
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.CURRENT.value)
-        time.sleep(0.1)  # Wait for mode switch to complete
+        _wait_for_mode_switch(actuator)
 
 
 def _servo_current_mode_exit(actuator: "TMotorServoActuator") -> None:
@@ -324,7 +339,7 @@ def _servo_velocity_mode_entry(actuator: "TMotorServoActuator") -> None:
     # Send actual mode switch command to motor
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.VELOCITY.value)
-        time.sleep(0.1)  # Wait for mode switch to complete
+        _wait_for_mode_switch(actuator)
 
 
 def _servo_velocity_mode_exit(actuator: "TMotorServoActuator") -> None:
@@ -337,7 +352,7 @@ def _servo_idle_mode_entry(actuator: "TMotorServoActuator") -> None:
     # Send actual mode switch command to motor
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.IDLE.value)
-        time.sleep(0.1)  # Wait for mode switch to complete
+        _wait_for_mode_switch(actuator)
 
 
 def _servo_idle_mode_exit(actuator: "TMotorServoActuator") -> None:
@@ -482,14 +497,48 @@ class TMotorServoActuator(ActuatorBase):
 
         if not self.is_offline and self._canman:
             self._canman.power_on(self.motor_id)
-            time.sleep(0.5)  # Wait for motor startup
+
+            # Poll for motor readiness (max 1 second timeout)
+            start_time = time.time()
+            timeout = 1.0
+            poll_interval = 0.01  # 10ms polling interval
+            motor_ready = False
+
+            while time.time() - start_time < timeout:
+                # The motor should start sending status messages after power on
+                # Check if we've received valid data by checking if position/velocity/current are non-zero
+                # or if the motor_state has been updated (timestamp check could be added)
+                if (
+                    self._motor_state_async.position != 0.0
+                    or self._motor_state_async.velocity != 0.0
+                    or self._motor_state_async.current != 0.0
+                    or self._motor_state_async.temperature > 0.0
+                ):
+                    motor_ready = True
+                    LOGGER.debug(f"Motor ready after {time.time() - start_time:.3f} seconds")
+                    break
+                time.sleep(poll_interval)
+
+            if not motor_ready:
+                # Fall back to minimum wait time if no status received
+                LOGGER.warning("No status received from motor, using fallback delay")
+                time.sleep(0.1)  # Minimum wait time
 
             # Set initial control mode to IDLE
             self._canman.set_control_mode(self.motor_id, ServoControlMode.IDLE.value)
-            time.sleep(0.1)
 
-            # Verify motor status
-            self.update()  # Read status once
+            # Poll for mode switch confirmation (max 200ms timeout)
+            mode_start_time = time.time()
+            mode_timeout = 0.2
+
+            while time.time() - mode_start_time < mode_timeout:
+                self.update()  # Read status
+                if self._motor_state.error == 0:
+                    LOGGER.debug(f"Mode switch confirmed after {time.time() - mode_start_time:.3f} seconds")
+                    break
+                time.sleep(poll_interval)
+
+            # Final status check
             if self._motor_state.error != 0:
                 raise RuntimeError(f"Motor startup failed with error: {self._motor_state.error}")
 
@@ -555,15 +604,6 @@ class TMotorServoActuator(ActuatorBase):
             self._error_code = None
             self._error_message = None
 
-        # Calculate acceleration
-        now = time.time()
-        dt = now - self._last_update_time
-        if dt > 0:
-            motor_params = cast(dict[str, Any], self._motor_params)
-            old_vel_rad_s = erpm_to_rad_per_sec(self._motor_state_async.velocity, motor_params["NUM_POLE_PAIRS"])
-            new_vel_rad_s = erpm_to_rad_per_sec(servo_state.velocity, motor_params["NUM_POLE_PAIRS"])
-            servo_state.acceleration = (new_vel_rad_s - old_vel_rad_s) / dt
-
         self._motor_state_async = servo_state
 
     @property
@@ -596,16 +636,47 @@ class TMotorServoActuator(ActuatorBase):
         LOGGER.warning("Voltage control not supported in servo mode")
 
     def set_motor_current(self, value: float) -> None:
-        """Set motor current"""
+        """Set motor current with clamping to motor limits"""
         if not self.is_offline and self._canman:
-            self._canman.set_current(self.motor_id, value)
+            # Get current limits from motor parameters
+            motor_params = cast(dict[str, Any], self._motor_params)
+            max_current = motor_params["Curr_max"] / 1000.0  # Convert from protocol units to amps
+            min_current = motor_params["Curr_min"] / 1000.0  # Convert from protocol units to amps
+
+            # Clamp current to safe limits
+            clamped_current = np.clip(value, min_current, max_current)
+
+            # Log warning if clamping occurred
+            if value != clamped_current:
+                LOGGER.warning(
+                    f"Current command {value:.2f}A clamped to {clamped_current:.2f}A "
+                    f"(limits: [{min_current:.1f}, {max_current:.1f}]A)"
+                )
+
+            self._canman.set_current(self.motor_id, clamped_current)
             self._last_command_time = time.time()
 
     def set_motor_position(self, value: float) -> None:
-        """Set motor position (radians)"""
+        """Set motor position (radians) with clamping to motor limits"""
         position_deg = radians_to_degrees(value)
+
         if not self.is_offline and self._canman:
-            self._canman.set_position(self.motor_id, position_deg)
+            # Get position limits from motor parameters
+            motor_params = cast(dict[str, Any], self._motor_params)
+            max_position = motor_params["P_max"] / 10.0  # Convert from protocol units to degrees
+            min_position = motor_params["P_min"] / 10.0  # Convert from protocol units to degrees
+
+            # Clamp position to safe limits
+            clamped_position = np.clip(position_deg, min_position, max_position)
+
+            # Log warning if clamping occurred
+            if position_deg != clamped_position:
+                LOGGER.warning(
+                    f"Position command {position_deg:.1f}° clamped to {clamped_position:.1f}° "
+                    f"(limits: [{min_position:.0f}, {max_position:.0f}]°)"
+                )
+
+            self._canman.set_position(self.motor_id, clamped_position)
             self._last_command_time = time.time()
 
     def set_motor_torque(self, value: float) -> None:
@@ -621,11 +692,26 @@ class TMotorServoActuator(ActuatorBase):
         self.set_motor_torque(motor_torque)
 
     def set_motor_velocity(self, value: float) -> None:
-        """Set motor velocity (rad/s)"""
+        """Set motor velocity (rad/s) with clamping to motor limits"""
         motor_params = cast(dict[str, Any], self._motor_params)
-        velocity_erpm = rad_per_sec_to_erpm(value, motor_params["NUM_POLE_PAIRS"])
+        velocity_erpm = rad_per_sec_to_erpm(value, self.num_pole_pairs)
+
         if not self.is_offline and self._canman:
-            self._canman.set_velocity(self.motor_id, velocity_erpm)
+            # Get velocity limits from motor parameters
+            max_velocity = motor_params["V_max"]  # Already in ERPM
+            min_velocity = motor_params["V_min"]  # Already in ERPM
+
+            # Clamp velocity to safe limits
+            clamped_velocity = np.clip(velocity_erpm, min_velocity, max_velocity)
+
+            # Log warning if clamping occurred
+            if velocity_erpm != clamped_velocity:
+                LOGGER.warning(
+                    f"Velocity command {velocity_erpm:.0f} ERPM clamped to {clamped_velocity:.0f} ERPM "
+                    f"(limits: [{min_velocity}, {max_velocity}] ERPM)"
+                )
+
+            self._canman.set_velocity(self.motor_id, clamped_velocity)
             self._last_command_time = time.time()
 
     def set_output_velocity(self, value: float) -> None:
@@ -671,8 +757,7 @@ class TMotorServoActuator(ActuatorBase):
     @property
     def motor_velocity(self) -> float:
         """Motor velocity (rad/s)"""
-        motor_params = cast(dict[str, Any], self._motor_params)
-        return erpm_to_rad_per_sec(self._motor_state.velocity, motor_params["NUM_POLE_PAIRS"])
+        return erpm_to_rad_per_sec(self._motor_state.velocity, self.num_pole_pairs)
 
     @property
     def output_velocity(self) -> float:
@@ -680,9 +765,18 @@ class TMotorServoActuator(ActuatorBase):
         return self.motor_velocity / self.gear_ratio
 
     @property
+    def num_pole_pairs(self) -> int:
+        """Number of motor pole pairs"""
+        motor_params = cast(dict[str, Any], self._motor_params)
+        return motor_params["NUM_POLE_PAIRS"]
+
+    @property
     def motor_voltage(self) -> float:
-        """Motor voltage (estimated)"""
-        return 24.0  # Cannot get directly in servo mode
+        """Motor voltage - not available in servo mode"""
+        raise NotImplementedError(
+            "Motor voltage reading is not available in TMotor servo mode. "
+            "The motor does not provide voltage feedback through the CAN protocol."
+        )
 
     @property
     def motor_current(self) -> float:
@@ -728,20 +822,17 @@ if __name__ == "__main__":
     try:
         actuator = TMotorServoActuator(motor_type="AK80-9", motor_id=1, offline=True)
 
-        with actuator as motor:
-            # Explicit type: motor is actually TMotorServoActuator
-            motor_actuator = cast(TMotorServoActuator, motor)
-
-            print(f"Motor initialized: {motor_actuator.device_info_string()}")
+        with actuator:
+            print(f"Motor initialized: {actuator.device_info_string()}")
 
             # Home and set current control mode
-            motor_actuator.home()
-            motor_actuator.set_control_mode(CONTROL_MODES.CURRENT)
+            actuator.home()
+            actuator.set_control_mode(CONTROL_MODES.CURRENT)
             print("Current loop mode activated")
 
             # Send 15Nm torque command
             target_torque = 15.0  # Nm
-            motor_actuator.set_output_torque(target_torque)
+            actuator.set_output_torque(target_torque)
             print(f"Sending {target_torque}Nm torque command to motor")
             print()
 
@@ -754,23 +845,23 @@ if __name__ == "__main__":
                     break
 
                 # Update motor state
-                motor_actuator.update()
+                actuator.update()
 
                 # Read motor parameters
-                motor_angle = motor_actuator.motor_position  # motor angle (rad)
-                output_angle = motor_actuator.output_position  # output angle (rad)
-                motor_velocity = motor_actuator.motor_velocity  # motor velocity (rad/s)
-                output_velocity = motor_actuator.output_velocity  # output velocity (rad/s)
-                motor_current = motor_actuator.motor_current  # motor current (A)
-                motor_torque = motor_actuator.motor_torque  # motor torque (Nm)
-                output_torque = motor_actuator.output_torque  # output torque (Nm)
-                temperature = motor_actuator.case_temperature  # temperature (°C)
-                motor_voltage = motor_actuator.motor_voltage  # voltage (V)
+                motor_angle = actuator.motor_position  # motor angle (rad)
+                output_angle = actuator.output_position  # output angle (rad)
+                motor_velocity = actuator.motor_velocity  # motor velocity (rad/s)
+                output_velocity = actuator.output_velocity  # output velocity (rad/s)
+                motor_current = actuator.motor_current  # motor current (A)
+                motor_torque = actuator.motor_torque  # motor torque (Nm)
+                output_torque = actuator.output_torque  # output torque (Nm)
+                temperature = actuator.case_temperature  # temperature (°C)
+                # motor_voltage = actuator.motor_voltage  # voltage (V) - Not available in servo mode
 
                 # Check for errors
                 error_status = "OK"
-                if motor_actuator.error_info:
-                    error_code, error_msg = motor_actuator.error_info
+                if actuator.error_info:
+                    error_code, error_msg = actuator.error_info
                     error_status = f"Error{error_code}: {error_msg}"
 
                 # Display complete status - every 0.5 seconds
@@ -785,28 +876,25 @@ if __name__ == "__main__":
                         f"Output={output_angle:8.4f}rad ({np.degrees(output_angle):7.2f}°)"
                     )
                     print(f"  Speed:  Motor={motor_velocity:8.4f}rad/s | Output={output_velocity:8.4f}rad/s")
-                    print(
-                        f"  Current: {motor_current:6.2f}A | "
-                        f"Voltage: {motor_voltage:5.1f}V | Temp: {temperature:4.1f}°C"
-                    )
+                    print(f"  Current: {motor_current:6.2f}A | " f"Temp: {temperature:4.1f}°C")
                     print(f"  Status: {error_status}")
                     print("-" * 80)
 
             # Safe stop
-            motor_actuator.set_output_torque(0.0)
-            motor_actuator.update()
+            actuator.set_output_torque(0.0)
+            actuator.update()
             print("Motor safely stopped")
             print()
 
             # Display final state
             print("   Final Motor State:")
             print(
-                f"  Final Position: {np.degrees(motor_actuator.output_position):.2f}° "
-                f"({motor_actuator.output_position:.4f} rad)"
+                f"  Final Position: {np.degrees(actuator.output_position):.2f}° "
+                f"({actuator.output_position:.4f} rad)"
             )
-            print(f"  Final Torque: {motor_actuator.output_torque:.2f} Nm")
-            print(f"  Final Current: {motor_actuator.motor_current:.2f} A")
-            print(f"  Final Temperature: {motor_actuator.case_temperature:.1f}°C")
+            print(f"  Final Torque: {actuator.output_torque:.2f} Nm")
+            print(f"  Final Current: {actuator.motor_current:.2f} A")
+            print(f"  Final Temperature: {actuator.case_temperature:.1f}°C")
 
     except Exception as e:
         print(f"Error: {e}")
