@@ -34,8 +34,8 @@ class ThermalModel:
     """
     Enhanced thermal model with outlier filtering and soft-limiting safety controller.
 
-    Based on A Modular Framework for Task-Agnostic, Energy Shaping Control of Lower Limb Exoskeletons
-    by Jianping Lin, Gray Thomas, and Nikhil Divekar.
+    Based on `A Modular Framework for Task-Agnostic, Energy Shaping Control of Lower Limb Exoskeletons`
+    by Jianping Lin, Gray C. Thomas, Nikhil V. Divekar, Vamsi Peddinti, & Robert D. Gregg
 
     Thermal Circuit Model:
         Two-node lumped system with winding and case temperatures.
@@ -230,7 +230,7 @@ class ThermalModel:
 
     def get_thermal_scale_factor(self) -> float:
         """
-        Calculate thermal scaling factor using research paper's soft-limiting approach.
+        Calculate thermal scaling factor using Jianping's soft-limiting approach.
 
         Returns:
             float: Scale factor [0,1] for torque/current scaling
@@ -240,7 +240,7 @@ class ThermalModel:
         )
         case_scale = self._soft_limiting_function(self.case_temperature, self.case_soft_limit, self.case_hard_limit)
 
-        # Combined scale factor (research paper Equation 18: √(S_case * S_winding))
+        # Combined scale factor (√(S_case * S_winding))
         combined_scale = winding_scale * case_scale
         return float(np.sqrt(combined_scale)) if combined_scale > 0 else 0.0
 
