@@ -116,9 +116,6 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         """
         self._encoder_map = encoder_map
 
-    def deg_to_counts(self, angle_deg) -> int:
-        return int((AS5048B.ENC_RESOLUTION / 360) * angle_deg)
-
     # def apply_state(self, state: Encoder.State) -> None:
     # raise NotImplementedError(f"apply_state not implemented for {self.__class__}")
 
@@ -140,6 +137,9 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
         if intToParse >= AS5048B.ENC_RESOLUTION:
             raise OverflowError(f"Argument intToParse={intToParse} >= 2^14 bit encoder resolution")
         return bytes([(intToParse >> 6), intToParse & 0x3F])
+
+    def deg_to_counts(self, angle_deg: float) -> int:
+        return int((AS5048B.ENC_RESOLUTION / 360) * angle_deg)
 
     def _reset_data(self) -> None:
         # Use bytearray for better performance when we need to modify

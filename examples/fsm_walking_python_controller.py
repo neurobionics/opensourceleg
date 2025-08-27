@@ -211,11 +211,15 @@ if __name__ == "__main__":
         #     calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
         # ),
         "loadcell": NBLoadcellDAQ(
-            LOADCELL_CALIBRATION_MATRIX, tag="loadcell", excitation_voltage=5.0, amp_gain=[34] * 3 + [151] * 3, spi_bus = 1
+            LOADCELL_CALIBRATION_MATRIX,
+            tag="loadcell",
+            excitation_voltage=5.0,
+            amp_gain=[34] * 3 + [151] * 3,
+            spi_bus=1,
         ),
         "joint_encoder_knee": AS5048B(
             tag="joint_encoder_knee",
-            bus='/dev/i2c-2',
+            bus="/dev/i2c-2",
             A1_adr_pin=False,
             A2_adr_pin=False,
             zero_position=0,
@@ -223,7 +227,7 @@ if __name__ == "__main__":
         ),
         "joint_encoder_ankle": AS5048B(
             tag="joint_encoder_ankle",
-            bus='/dev/i2c-3',
+            bus="/dev/i2c-3",
             A1_adr_pin=False,
             A2_adr_pin=False,
             zero_position=0,
@@ -244,7 +248,7 @@ if __name__ == "__main__":
     )
 
     osl_fsm = create_simple_walking_fsm(osl)
-    
+
     # Zeroing the joint encoders
     def knee_homing_complete():
         osl.joint_encoder_knee.update()
@@ -253,8 +257,10 @@ if __name__ == "__main__":
 
     def ankle_homing_complete():
         osl.joint_encoder_ankle.update()
-        # The hard stop for ankle is at 30 deg from the zero position 
-        osl.joint_encoder_ankle.zero_position = osl.joint_encoder_ankle.counts - osl.joint_encoder_ankle.deg_to_counts(30)
+        # The hard stop for ankle is at 30 deg from the zero position
+        osl.joint_encoder_ankle.zero_position = osl.joint_encoder_ankle.counts - osl.joint_encoder_ankle.deg_to_counts(
+            30
+        )
         print("Ankle homing complete!")
 
     with osl, osl_fsm:
