@@ -128,7 +128,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 np.polynomial.polynomial.Polynomial(np.load(f"./{_encoder.tag}_linearization_map.npy"))
             )
             LOGGER.info(
-                msg=f"[{str.upper(_encoder.tag)}] Encoder map loaded from " f"'./{_encoder.tag}_linearization_map.npy'."
+                msg=f"[{str.upper(_encoder.tag)}] Encoder map loaded from './{_encoder.tag}_linearization_map.npy'."
             )
             return None
 

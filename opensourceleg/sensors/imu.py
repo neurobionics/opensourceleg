@@ -14,7 +14,7 @@ to PYTHONPATH or sys.path if necessary.
 """
 
 import os
-from typing import Any, Union
+from typing import Any, ClassVar, Union
 
 import numpy as np
 
@@ -23,6 +23,39 @@ from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 
 class LordMicrostrainIMU(IMUBase):
+    # LordMicrostrain-specific offline configuration
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [
+        *IMUBase._OFFLINE_PROPERTIES,
+        "roll",
+        "pitch",
+        "yaw",
+        "vel_x",
+        "vel_y",
+        "vel_z",
+        "timestamp",
+    ]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **IMUBase._OFFLINE_PROPERTY_DEFAULTS,
+        "data": {
+            "estRoll": 0.0,
+            "estPitch": 0.0,
+            "estYaw": 0.0,
+            "estAngularRateX": 0.0,
+            "estAngularRateY": 0.0,
+            "estAngularRateZ": 0.0,
+            "estLinearAccelX": 0.0,
+            "estLinearAccelY": 0.0,
+            "estLinearAccelZ": 0.0,
+            "estFilterGpsTimeTow": 0.0,
+        },
+        "roll": 0.0,
+        "pitch": 0.0,
+        "yaw": 0.0,
+        "vel_x": 0.0,
+        "vel_y": 0.0,
+        "vel_z": 0.0,
+        "timestamp": 0.0,
+    }
     """
     Sensor class for the Lord Microstrain IMU.
 
@@ -75,7 +108,9 @@ class LordMicrostrainIMU(IMUBase):
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
             )
-            exit(1)
+
+            if not offline:
+                exit(1)
 
         self._init_variables(
             tag=tag,
@@ -523,7 +558,7 @@ class BNO055(IMUBase):
             self.board = board
             self.busio = busio
         except ImportError as e:
-            LOGGER.error("BNO055IMU requires adafruit_bno055, board, and busio packages. " f"Error: {e}")
+            LOGGER.error(f"BNO055IMU requires adafruit_bno055, board, and busio packages. Error: {e}")
             exit(1)
 
         super().__init__(tag=tag, offline=offline)

@@ -172,13 +172,13 @@ with knee, ankle, loadcell:
         ankle.update()
         loadcell.update()
 
-        controller.inputs.sensors.knee_angle = units.convert_from_default(knee.output_position, units.position.deg)
-        controller.inputs.sensors.ankle_angle = units.convert_from_default(ankle.output_position, units.position.deg)
+        controller.inputs.sensors.knee_angle = units.convert_from_default(knee.output_position, units.Position.deg)
+        controller.inputs.sensors.ankle_angle = units.convert_from_default(ankle.output_position, units.Position.deg)
         controller.inputs.sensors.knee_velocity = units.convert_from_default(
-            knee.output_velocity, units.velocity.deg_per_s
+            knee.output_velocity, units.Velocity.deg_per_s
         )
         controller.inputs.sensors.ankle_velocity = units.convert_from_default(
-            ankle.output_velocity, units.velocity.deg_per_s
+            ankle.output_velocity, units.Velocity.deg_per_s
         )
         controller.inputs.sensors.Fz = loadcell.fz
 
@@ -199,14 +199,14 @@ with knee, ankle, loadcell:
 
         # Write to the hardware
         knee.set_output_impedance(
-            k=units.convert_to_default(outputs.knee_impedance.stiffness, units.stiffness.N_m_per_rad),
-            b=units.convert_to_default(outputs.knee_impedance.damping, units.damping.N_m_per_rad_per_s),
+            k=units.convert_to_default(outputs.knee_impedance.stiffness, units.Stiffness.N_m_per_rad),
+            b=units.convert_to_default(outputs.knee_impedance.damping, units.Damping.N_m_per_rad_per_s),
         )
-        knee.set_output_position(value=units.convert_to_default(outputs.knee_impedance.eq_angle, units.position.deg))
+        knee.set_output_position(value=units.convert_to_default(outputs.knee_impedance.eq_angle, units.Position.deg))
         ankle.set_output_impedance(
-            k=units.convert_to_default(outputs.ankle_impedance.stiffness, units.stiffness.N_m_per_rad),
-            b=units.convert_to_default(outputs.ankle_impedance.damping, units.damping.N_m_per_rad_per_s),
+            k=units.convert_to_default(outputs.ankle_impedance.stiffness, units.Stiffness.N_m_per_rad),
+            b=units.convert_to_default(outputs.ankle_impedance.damping, units.Damping.N_m_per_rad_per_s),
         )
-        ankle.set_output_position(value=units.convert_to_default(outputs.ankle_impedance.eq_angle, units.position.deg))
+        ankle.set_output_position(value=units.convert_to_default(outputs.ankle_impedance.eq_angle, units.Position.deg))
 
     print("\n")

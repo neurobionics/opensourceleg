@@ -8,6 +8,8 @@ from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
     CONTROL_MODE_METHODS,
     CONTROL_MODES,
+    HARDWARE_REQUIRED_METHODS,
+    HARDWARE_REQUIRED_PROPERTIES,
     MOTOR_CONSTANTS,
     ActuatorBase,
     ControlGains,
@@ -559,3 +561,125 @@ def test_motor_constants(mock_actuator: MockActuator):
     assert mock_actuator.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B == 0.1
     assert mock_actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE == 100.0
     assert mock_actuator.MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE == 150.0
+
+
+@pytest.fixture
+def mock_actuator_offline():
+    return MockActuator(
+        "test_actuator_offline",
+        10.0,
+        MOTOR_CONSTANTS(
+            MOTOR_COUNT_PER_REV=1000,
+            NM_PER_AMP=0.1,
+            NM_PER_RAD_TO_K=1.0,
+            NM_S_PER_RAD_TO_B=0.1,
+            MAX_CASE_TEMPERATURE=100.0,
+            MAX_WINDING_TEMPERATURE=150.0,
+        ),
+        offline=True,
+    )
+
+
+def test_hardware_required_constants():
+    """Test that hardware requirement constants are defined."""
+    assert isinstance(HARDWARE_REQUIRED_METHODS, list)
+    assert isinstance(HARDWARE_REQUIRED_PROPERTIES, list)
+    assert len(HARDWARE_REQUIRED_METHODS) > 0
+    assert len(HARDWARE_REQUIRED_PROPERTIES) > 0
+
+    # Check that essential methods are included
+    essential_methods = ["start", "stop", "update", "home"]
+    for method in essential_methods:
+        assert method in HARDWARE_REQUIRED_METHODS
+
+    # Check that essential properties are included
+    essential_properties = ["motor_position", "motor_velocity", "motor_current"]
+    for prop in essential_properties:
+        assert prop in HARDWARE_REQUIRED_PROPERTIES
+
+
+def test_offline_mode_initialization(mock_actuator_offline: MockActuator):
+    """Test that offline mode is properly initialized."""
+    assert mock_actuator_offline.is_offline is True
+    assert mock_actuator_offline.is_open is True
+    assert mock_actuator_offline.is_streaming is True
+    assert mock_actuator_offline.tag == "test_actuator_offline"
+
+
+def test_offline_mode_method_calls(mock_actuator_offline: MockActuator):
+    """Test that hardware-required methods work in offline mode without errors."""
+    # These should not raise exceptions in offline mode
+    mock_actuator_offline.start()
+    mock_actuator_offline.stop()
+    mock_actuator_offline.update()
+    mock_actuator_offline.home()
+    mock_actuator_offline.set_motor_voltage(12.0)
+    mock_actuator_offline.set_motor_current(1.5)
+    mock_actuator_offline.set_motor_position(0.5)
+    mock_actuator_offline.set_motor_torque(10.0)
+    mock_actuator_offline.set_output_torque(5.0)
+    mock_actuator_offline.set_current_gains(1.0, 0.1, 0.01, 0.0)
+    mock_actuator_offline.set_position_gains(1.0, 0.1, 0.01, 0.0)
+
+
+def test_offline_mode_property_access(mock_actuator_offline: MockActuator):
+    """Test that hardware-required properties return default values in offline mode."""
+    # These should return default values in offline mode
+    assert mock_actuator_offline.motor_position == 0.0
+    assert mock_actuator_offline.motor_velocity == 0.0
+    assert mock_actuator_offline.motor_voltage == 0.0
+    assert mock_actuator_offline.motor_current == 0.0
+    assert mock_actuator_offline.motor_torque == 0.0
+    assert mock_actuator_offline.case_temperature == 25.0  # Room temperature default
+    assert mock_actuator_offline.winding_temperature == 25.0  # Room temperature default
+
+
+def test_offline_mode_control_modes(mock_actuator_offline: MockActuator):
+    """Test that control mode switching works in offline mode."""
+    # Control mode switching should work normally
+    mock_actuator_offline.set_control_mode(CONTROL_MODES.VOLTAGE)
+    assert mock_actuator_offline.mode == CONTROL_MODES.VOLTAGE
+
+    mock_actuator_offline.set_control_mode(CONTROL_MODES.CURRENT)
+    assert mock_actuator_offline.mode == CONTROL_MODES.CURRENT
+
+    mock_actuator_offline.set_control_mode(CONTROL_MODES.POSITION)
+    assert mock_actuator_offline.mode == CONTROL_MODES.POSITION
+
+
+def test_offline_vs_online_mode():
+    """Test differences between offline and online mode initialization."""
+    online_actuator = MockActuator(
+        "online",
+        10.0,
+        MOTOR_CONSTANTS(1000, 0.1, 1.0, 0.1, 100.0, 150.0),
+        offline=False,
+    )
+
+    offline_actuator = MockActuator(
+        "offline",
+        10.0,
+        MOTOR_CONSTANTS(1000, 0.1, 1.0, 0.1, 100.0, 150.0),
+        offline=True,
+    )
+
+    # Online actuator should not be open/streaming by default
+    assert online_actuator.is_offline is False
+    assert online_actuator.is_open is False
+    assert online_actuator.is_streaming is False
+
+    # Offline actuator should be open/streaming by default
+    assert offline_actuator.is_offline is True
+    assert offline_actuator.is_open is True
+    assert offline_actuator.is_streaming is True
+
+
+def test_offline_mode_with_context_manager(mock_actuator_offline: MockActuator):
+    """Test that offline mode works properly with context manager."""
+    # This should not raise any exceptions
+    with mock_actuator_offline as actuator:
+        assert actuator.is_offline is True
+        actuator.set_motor_voltage(12.0)
+        actuator.update()
+        pos = actuator.motor_position  # Should return 0.0
+        assert pos == 0.0
