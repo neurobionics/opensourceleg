@@ -38,7 +38,7 @@ def non_zero_positive_values(request):
             # Ensure soft limit is positive and less than hard limit
             values[13] = max(1, values[5] - np.random.randint(1, min(50, values[5])))
 
-        # HOUSING_SOFT_LIMIT is at index 14, must be < MAX_CASE_TEMPERATURE
+        # CASE_SOFT_LIMIT is at index 14, must be < MAX_CASE_TEMPERATURE
         if max_len > 14:
             # Ensure soft limit is positive and less than hard limit
             values[14] = max(1, values[4] - np.random.randint(1, min(50, values[4])))

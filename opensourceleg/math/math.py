@@ -38,7 +38,7 @@ class ThermalModel:
     by Jianping Lin, Gray Thomas, and Nikhil Divekar.
 
     Thermal Circuit Model:
-        Two-node lumped system with winding and housing temperatures.
+        Two-node lumped system with winding and case temperatures.
 
         Equations:
             1: Cw * dTw/dt = I²R(T) + (Th-Tw)/Rwh
@@ -71,9 +71,9 @@ class ThermalModel:
         outlier_threshold: float = 3.0,
     ) -> None:
         self.winding_thermal_capacitance = motor_constants.WINDING_THERMAL_CAPACITANCE
-        self.case_thermal_capacitance = motor_constants.HOUSING_THERMAL_CAPACITANCE
-        self.winding_to_case_resistance = motor_constants.WINDING_TO_HOUSING_RESISTANCE
-        self.case_to_ambient_resistance = motor_constants.HOUSING_TO_AMBIENT_RESISTANCE
+        self.case_thermal_capacitance = motor_constants.CASE_THERMAL_CAPACITANCE
+        self.winding_to_case_resistance = motor_constants.WINDING_TO_CASE_RESISTANCE
+        self.case_to_ambient_resistance = motor_constants.CASE_TO_AMBIENT_RESISTANCE
         self.copper_temperature_coefficient = motor_constants.COPPER_TEMPERATURE_COEFFICIENT
         self.reference_temperature = motor_constants.REFERENCE_TEMPERATURE
         self.reference_resistance = motor_constants.REFERENCE_RESISTANCE
@@ -81,7 +81,7 @@ class ThermalModel:
         self.winding_hard_limit = motor_constants.MAX_WINDING_TEMPERATURE
         self.winding_soft_limit = motor_constants.WINDING_SOFT_LIMIT
         self.case_hard_limit = motor_constants.MAX_CASE_TEMPERATURE
-        self.case_soft_limit = motor_constants.HOUSING_SOFT_LIMIT
+        self.case_soft_limit = motor_constants.CASE_SOFT_LIMIT
 
         self.winding_temperature: float = ambient_temperature
         self.case_temperature: float = ambient_temperature

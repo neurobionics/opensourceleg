@@ -51,15 +51,15 @@ class MOTOR_CONSTANTS:
 
     # Thermal model parameters from research paper (with defaults from Jack Schuchmann's tests)
     WINDING_THERMAL_CAPACITANCE: float = 0.20 * 81.46202695970649  # Cw (J/°C)
-    HOUSING_THERMAL_CAPACITANCE: float = 512.249065845453  # Ch (J/°C)
-    WINDING_TO_HOUSING_RESISTANCE: float = 1.0702867186480716  # Rw-h (°C/W)
-    HOUSING_TO_AMBIENT_RESISTANCE: float = 1.9406620046327363  # Rh-a (°C/W)
+    CASE_THERMAL_CAPACITANCE: float = 512.249065845453  # Ch (J/°C)
+    WINDING_TO_CASE_RESISTANCE: float = 1.0702867186480716  # Rw-h (°C/W)
+    CASE_TO_AMBIENT_RESISTANCE: float = 1.9406620046327363  # Rh-a (°C/W)
     COPPER_TEMPERATURE_COEFFICIENT: float = 0.393 / 100  # alpha (1/°C)
     REFERENCE_TEMPERATURE: float = 65.0  # Reference temperature for resistance (°C)
     REFERENCE_RESISTANCE: float = 0.376  # Reference resistance at reference temp (Ohms)
 
     WINDING_SOFT_LIMIT: float = 70.0  # soft winding limit (°C)
-    HOUSING_SOFT_LIMIT: float = 60.0  # soft housing limit (°C)
+    CASE_SOFT_LIMIT: float = 60.0  # soft case limit (°C)
 
     def __post_init__(self) -> None:
         """
@@ -84,8 +84,8 @@ class MOTOR_CONSTANTS:
             raise ValueError("MAX_WINDING_TEMPERATURE must be greater than MAX_CASE_TEMPERATURE")
         if self.WINDING_SOFT_LIMIT >= self.MAX_WINDING_TEMPERATURE:
             raise ValueError("WINDING_SOFT_LIMIT must be less than MAX_WINDING_TEMPERATURE")
-        if self.HOUSING_SOFT_LIMIT >= self.MAX_CASE_TEMPERATURE:
-            raise ValueError("HOUSING_SOFT_LIMIT must be less than MAX_CASE_TEMPERATURE")
+        if self.CASE_SOFT_LIMIT >= self.MAX_CASE_TEMPERATURE:
+            raise ValueError("CASE_SOFT_LIMIT must be less than MAX_CASE_TEMPERATURE")
 
     @property
     def RAD_PER_COUNT(self) -> float:
