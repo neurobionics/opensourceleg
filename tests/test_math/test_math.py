@@ -1,7 +1,15 @@
+from collections import deque
+
 import pytest
 
 from opensourceleg.actuators.base import MOTOR_CONSTANTS
 from opensourceleg.math import EdgeDetector, SaturatingRamp, ThermalLimitException, ThermalModel
+from opensourceleg.math.math import (
+    MAX_SENSIBLE_CURRENT,
+    MAX_SENSIBLE_TEMPERATURE,
+    MIN_SENSIBLE_CURRENT,
+    MIN_SENSIBLE_TEMPERATURE,
+)
 
 
 def test_edge_detector_init():
@@ -236,44 +244,46 @@ def test_moving_average_filter(enhanced_thermal_model):
 
 def test_current_sensor_filtering_valid(enhanced_thermal_model):
     """Test current sensor filtering with valid values"""
-    from collections import deque
-
     history = deque([1000, 1100, 1200])  # mA values
-    filtered = enhanced_thermal_model._filter_current_sensor(1150, history)
+    filtered = enhanced_thermal_model._filter_sensor(1150, history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0)
     assert isinstance(filtered, float)
 
 
 def test_current_sensor_filtering_out_of_bounds(enhanced_thermal_model):
     """Test current sensor filtering with out-of-bounds values"""
-    from collections import deque
-
     history = deque([1000, 1100, 1200])
     # Very high current should trigger fallback
-    filtered = enhanced_thermal_model._filter_current_sensor(100000, history)  # 100A
+    filtered = enhanced_thermal_model._filter_sensor(100000, history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0)
     assert filtered == 1200  # Should return last valid value
 
 
 def test_temperature_sensor_filtering_valid(enhanced_thermal_model):
     """Test temperature sensor filtering with valid values"""
-    from collections import deque
-
     history = deque([20.0, 25.0, 30.0])
-    filtered = enhanced_thermal_model._filter_temperature_sensor(28.0, history)
+    filtered = enhanced_thermal_model._filter_sensor(
+        28.0, history, MIN_SENSIBLE_TEMPERATURE, MAX_SENSIBLE_TEMPERATURE, enhanced_thermal_model.ambient_temperature
+    )
     assert isinstance(filtered, float)
 
 
 def test_temperature_sensor_filtering_out_of_bounds(enhanced_thermal_model):
     """Test temperature sensor filtering with out-of-bounds values"""
-    from collections import deque
-
     history = deque([20.0, 25.0, 30.0])
     # Very high temperature should trigger fallback
-    filtered = enhanced_thermal_model._filter_temperature_sensor(500.0, history)
+    filtered = enhanced_thermal_model._filter_sensor(
+        500.0, history, MIN_SENSIBLE_TEMPERATURE, MAX_SENSIBLE_TEMPERATURE, enhanced_thermal_model.ambient_temperature
+    )
     assert filtered == 30.0  # Should return last valid value
 
     # Negative temperature should use ambient as fallback
     empty_history = deque()
-    filtered = enhanced_thermal_model._filter_temperature_sensor(-50.0, empty_history)
+    filtered = enhanced_thermal_model._filter_sensor(
+        -50.0,
+        empty_history,
+        MIN_SENSIBLE_TEMPERATURE,
+        MAX_SENSIBLE_TEMPERATURE,
+        enhanced_thermal_model.ambient_temperature,
+    )
     assert filtered == 25.0  # ambient_temperature
 
 
