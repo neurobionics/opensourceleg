@@ -10,6 +10,7 @@ MIN_SENSIBLE_CURRENT = -80000  # -80A in mA
 MAX_SENSIBLE_CURRENT = 80000  # +80A in mA
 MAX_SENSIBLE_TEMPERATURE = 200  # °C
 MIN_SENSIBLE_TEMPERATURE = 0  # °C
+SENSOR_HISTORY_SIZE = 7
 
 __all__ = [
     "Counter",
@@ -51,7 +52,7 @@ class ThermalModel:
             2: Ch * dTh/dt = (Tw-Th)/Rwh + (Ta-Th)/Rha
 
     Features:
-        - Integrated outlier detection and filtering for current/temperature sensors
+        - Integrated outlier detection for current/temperature sensors
         - Soft-limiting thermal safety controller with formal guarantees
         - Physically sensible value validation with slope-based projection
         - Backward compatible API with enhanced methods
@@ -64,7 +65,6 @@ class ThermalModel:
         motor_constants: MOTOR_CONSTANTS instance with thermal parameters
         actuator_tag: Actuator identifier for error messages. Defaults to "actuator"
         ambient_temperature: Ambient temperature in °C. Defaults to 21.0
-        filter_window_size: Rolling window size for filtering. Defaults to 7
         outlier_threshold: Standard deviations for outlier detection. Defaults to 3.0
     """
 
@@ -73,7 +73,6 @@ class ThermalModel:
         motor_constants: MOTOR_CONSTANTS,
         actuator_tag: str = "actuator",
         ambient_temperature: float = 21.0,
-        filter_window_size: int = 7,
         outlier_threshold: float = 3.0,
     ) -> None:
         self.winding_thermal_capacitance = motor_constants.WINDING_THERMAL_CAPACITANCE
@@ -93,8 +92,8 @@ class ThermalModel:
         self.case_temperature: float = ambient_temperature
         self.ambient_temperature: float = ambient_temperature
 
-        self.current_history: deque[float] = deque(maxlen=filter_window_size)
-        self.temperature_history: deque[float] = deque(maxlen=filter_window_size)
+        self.current_history: deque[float] = deque(maxlen=SENSOR_HISTORY_SIZE)
+        self.temperature_history: deque[float] = deque(maxlen=SENSOR_HISTORY_SIZE)
         self.outlier_threshold: float = outlier_threshold
 
         self.actuator_tag: str = actuator_tag
@@ -128,28 +127,24 @@ class ThermalModel:
 
         return False, raw_value
 
-    def _apply_moving_average_filter(self, value: float, history: deque) -> float:
-        """Apply moving average filter and return filtered value."""
-        history.append(value)
-        return float(np.mean(history))
-
     def _filter_sensor(
         self, raw_value: float, history: deque, min_bound: float, max_bound: float, fallback_default: float
     ) -> float:
         """Generic sensor filtering with bounds validation and outlier detection."""
+        raw_value = float(raw_value)
         if not self._is_within_bounds(raw_value, min_bound, max_bound):
-            return self._get_fallback_value(history, fallback_default)
+            final_value = self._get_fallback_value(history, fallback_default)
+        else:
+            is_outlier, filtered_value = self._detect_statistical_outlier(raw_value, history)
+            final_value = filtered_value if is_outlier else raw_value
 
-        is_outlier, filtered_value = self._detect_statistical_outlier(raw_value, history)
-        if is_outlier:
-            return filtered_value
-
-        return self._apply_moving_average_filter(raw_value, history)
+        history.append(final_value)
+        return final_value
 
     def update(
         self,
-        dt: float = 1 / 200,
-        motor_current: float = 0,
+        dt: float,
+        motor_current: float,
         case_temperature: Optional[float] = None,
         factor_of_safety: float = 1.0,
     ) -> float:

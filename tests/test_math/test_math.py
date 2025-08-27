@@ -9,6 +9,7 @@ from opensourceleg.math.math import (
     MAX_SENSIBLE_TEMPERATURE,
     MIN_SENSIBLE_CURRENT,
     MIN_SENSIBLE_TEMPERATURE,
+    SENSOR_HISTORY_SIZE,
 )
 
 
@@ -115,13 +116,13 @@ def test_update():
     """
 
     # Testing the default ThermalModel update method with no args
-    scale_factor = test_model_default.update()
+    scale_factor = test_model_default.update(dt=1 / 200, motor_current=0.0)
     assert test_model_default.winding_temperature == 21.0
     assert test_model_default.case_temperature == 21.0
     assert test_model_default.ambient_temperature == 21.0
     assert isinstance(scale_factor, float)
     # Testing the default ThermalModel update method with motor_current arg
-    scale_factor = test_model_default.update(motor_current=1.0)
+    scale_factor = test_model_default.update(dt=1 / 200, motor_current=1.0)
     # The actual temperature computation involves complex thermal equations
     # We just verify the attributes exist and have reasonable values
     assert isinstance(test_model_default.winding_temperature, float)
@@ -149,7 +150,6 @@ def enhanced_thermal_model():
         motor_constants=motor_constants,
         actuator_tag="test_actuator",
         ambient_temperature=25.0,
-        filter_window_size=5,
         outlier_threshold=2.0,
     )
 
@@ -223,23 +223,6 @@ def test_outlier_detection_outlier_value(enhanced_thermal_model):
     is_outlier, filtered_value = enhanced_thermal_model._detect_statistical_outlier(50.0, history)
     assert is_outlier is True
     assert filtered_value != 50.0  # Should be filtered
-
-
-def test_moving_average_filter(enhanced_thermal_model):
-    """Test moving average filter"""
-    from collections import deque
-
-    history = deque()
-    # First value
-    result = enhanced_thermal_model._apply_moving_average_filter(10.0, history)
-    assert result == 10.0
-    assert len(history) == 1
-
-    # Add more values
-    enhanced_thermal_model._apply_moving_average_filter(20.0, history)
-    result = enhanced_thermal_model._apply_moving_average_filter(30.0, history)
-    expected_average = (10.0 + 20.0 + 30.0) / 3
-    assert abs(result - expected_average) < 0.001
 
 
 def test_current_sensor_filtering_valid(enhanced_thermal_model):
@@ -375,7 +358,7 @@ def test_update_history_management(enhanced_thermal_model):
 
     # Multiple updates should populate history
     for i in range(3):
-        enhanced_thermal_model.update(motor_current=1000 + i * 100)
+        enhanced_thermal_model.update(dt=1 / 200, motor_current=1000 + i * 100)
 
     assert len(enhanced_thermal_model.current_history) == 3
     assert len(enhanced_thermal_model.current_history) > initial_history_len
@@ -383,13 +366,12 @@ def test_update_history_management(enhanced_thermal_model):
 
 def test_filter_window_size_limit(enhanced_thermal_model):
     """Test that history respects filter window size"""
-    filter_size = 5
 
     # Add more values than filter window size
-    for i in range(filter_size + 3):
-        enhanced_thermal_model.update(motor_current=1000 + i * 100)
+    for i in range(SENSOR_HISTORY_SIZE + 3):
+        enhanced_thermal_model.update(dt=1 / 200, motor_current=1000 + i * 100)
 
     # History should be limited to window size (but may be less due to filtering)
-    assert len(enhanced_thermal_model.current_history) <= filter_size
+    assert len(enhanced_thermal_model.current_history) <= SENSOR_HISTORY_SIZE
     # Should have some history entries
     assert len(enhanced_thermal_model.current_history) > 0
