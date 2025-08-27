@@ -176,7 +176,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self._thermal_scale: float = 1.0
 
         self._i2t_fault_count: int = 0
-        self._i2t_fault_threshold: int = 3
+        self._i2t_fault_threshold: int = 2
 
         self._mode = CONTROL_MODES.IDLE
 
@@ -265,6 +265,13 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             case_temperature=self.case_temperature,
         )
 
+        self._check_i2t_fault()
+
+    def _check_i2t_fault(self) -> None:
+        """
+        Checks for I2t faults and manage fault counting.
+        Raises I2tLimitException if fault threshold is exceeded.
+        """
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
             self._i2t_fault_count += 1
@@ -287,6 +294,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                     f"({self._i2t_fault_count}/{self._i2t_fault_threshold}). "
                     f"Current: {self.motor_current} mA. Monitoring for consecutive faults."
                 )
+        else:
+            self._i2t_fault_count = 0
 
     def set_i2t_fault_threshold(self, threshold: int) -> None:
         """
@@ -297,7 +306,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         Args:
             threshold: Number of consecutive faults required to trigger exception.
-                           Default is 3. Must be >= 1.
+                           Default is 2. Must be >= 1.
 
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
