@@ -56,9 +56,9 @@ class ThermalModel:
 
     Args:
         motor_constants: MOTOR_CONSTANTS instance with thermal parameters
+        actuator_tag: Actuator identifier for error messages. Defaults to "actuator"
         ambient_temperature: Ambient temperature in °C. Defaults to 21.0
-        enable_filtering: Enable robust sensor filtering. Defaults to True
-        filter_window_size: Rolling window size for filtering. Defaults to 10
+        filter_window_size: Rolling window size for filtering. Defaults to 7
         outlier_threshold: Standard deviations for outlier detection. Defaults to 3.0
     """
 
@@ -248,9 +248,6 @@ class ThermalModel:
         """
         Check thermal limits and raise exceptions if exceeded.
         This replaces the thermal limit checking logic from actuator update method.
-
-        Args:
-            actuator_tag: Actuator identifier for error messages
 
         Raises:
             ThermalLimitException: If hard thermal limits are exceeded
