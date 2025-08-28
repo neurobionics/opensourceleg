@@ -152,10 +152,8 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         self.SF = 1.0
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
 
@@ -368,7 +366,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         This is calculated based on the thermal model using motor current.
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 

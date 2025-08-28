@@ -1,7 +1,7 @@
 import ast
 import math
 import operator as op
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 UNARY_OPERATORS: dict[type[ast.unaryop], Callable[[Any], Any]] = {
     ast.USub: op.neg,
@@ -123,7 +123,11 @@ class ExpressionEvaluator:
 
     def _compile_constant(self, node: ast.Constant) -> Callable[..., float]:
         """Compile constant value node"""
-        return lambda *args: node.value
+        if isinstance(node.value, (int, float, str)):
+            value = cast(int | float | str, node.value)
+            return lambda *args: float(value)
+        else:
+            raise TypeError(f"Unsupported constant type: {type(node.value).__name__}")
 
     def _compile_name(self, node: ast.Name) -> Callable[..., float]:
         """Compile variable name node"""
