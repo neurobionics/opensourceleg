@@ -6,14 +6,15 @@ import numpy as np
 from opensourceleg.actuators.base import MOTOR_CONSTANTS
 
 # Sensor validation constants
-MIN_SENSIBLE_CURRENT = -80000  # -80A in mA
-MAX_SENSIBLE_CURRENT = 80000  # +80A in mA
-MAX_SENSIBLE_TEMPERATURE = 200  # °C
-MIN_SENSIBLE_TEMPERATURE = 0  # °C
-SENSOR_HISTORY_SIZE = 7
+MIN_SENSIBLE_CURRENT = -80000.0  # -80A in mA
+MAX_SENSIBLE_CURRENT = 80000.0  # +80A in mA
+MAX_SENSIBLE_TEMPERATURE = 200.0  # °C
+MIN_SENSIBLE_TEMPERATURE = 0.0  # °C
+SENSOR_HISTORY_SIZE = 2
 
 __all__ = [
     "Counter",
+    "DataPacketCorruptionException",
     "EdgeDetector",
     "I2tLimitException",
     "SaturatingRamp",
@@ -33,6 +34,12 @@ class ThermalLimitException(Exception):
 
 class I2tLimitException(Exception):
     def __init__(self, message: str = "Dephy Actpack I2t limit exceeded. Exiting.") -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class DataPacketCorruptionException(Exception):
+    def __init__(self, message: str = "Data packets have been corrupted. Please check your connection.") -> None:
         self.message = message
         super().__init__(self.message)
 
@@ -73,7 +80,6 @@ class ThermalModel:
         motor_constants: MOTOR_CONSTANTS,
         actuator_tag: str = "actuator",
         ambient_temperature: float = 21.0,
-        outlier_threshold: float = 3.0,
     ) -> None:
         self.winding_thermal_capacitance = motor_constants.WINDING_THERMAL_CAPACITANCE
         self.case_thermal_capacitance = motor_constants.CASE_THERMAL_CAPACITANCE
@@ -94,9 +100,11 @@ class ThermalModel:
 
         self.current_history: deque[float] = deque(maxlen=SENSOR_HISTORY_SIZE)
         self.temperature_history: deque[float] = deque(maxlen=SENSOR_HISTORY_SIZE)
-        self.outlier_threshold: float = outlier_threshold
 
         self.actuator_tag: str = actuator_tag
+
+        self._current_sensor_faults: int = 0
+        self._case_temperature_faults: int = 0
 
     def __repr__(self) -> str:
         return f"ThermalModel(Tw={self.winding_temperature:.1f}°C, Tc={self.case_temperature:.1f}°C)"
@@ -109,37 +117,36 @@ class ThermalModel:
         """Get fallback value when sensor reading is invalid."""
         return history[-1] if len(history) > 0 else default
 
-    def _detect_statistical_outlier(self, raw_value: float, history: deque) -> tuple[bool, float]:
-        """
-        Detect statistical outlier
-
-        Returns:
-            tuple: (is_outlier, filtered_value)
-        """
-        if len(history) < 3:
-            return False, raw_value
-
-        mean = float(np.mean(history))
-        std = float(np.std(history))
-
-        if std > 0 and abs(raw_value - mean) > self.outlier_threshold * std:
-            return True, mean
-
-        return False, raw_value
-
-    def _filter_sensor(
-        self, raw_value: float, history: deque, min_bound: float, max_bound: float, fallback_default: float
-    ) -> float:
-        """Generic sensor filtering with bounds validation and outlier detection."""
+    def _diagnose_sensor_value(
+        self,
+        raw_value: float,
+        history: deque,
+        min_bound: float,
+        max_bound: float,
+        fallback_default: float,
+        dt: float,
+        fault_counter: int,
+    ) -> tuple[float, int]:
+        """Generic sensor diagnosis with bounds validation"""
+        # TODO: Move diagnostics to a separate mixin just like the offline mode
+        # that both actuators and sensors can inherit
         raw_value = float(raw_value)
+
         if not self._is_within_bounds(raw_value, min_bound, max_bound):
             final_value = self._get_fallback_value(history, fallback_default)
+            fault_counter += 1
+
+            if fault_counter >= int(1.0 / (2 * dt)):
+                raise DataPacketCorruptionException(
+                    f"[{self.actuator_tag.upper()}] data packets have been corrupted for a prolonged period. "
+                    f"Please check your connection."
+                )
         else:
-            is_outlier, filtered_value = self._detect_statistical_outlier(raw_value, history)
-            final_value = filtered_value if is_outlier else raw_value
+            final_value = raw_value
+            fault_counter = 0  # Reset fault counter on successful read
 
         history.append(final_value)
-        return final_value
+        return final_value, fault_counter
 
     def update(
         self,
@@ -149,7 +156,7 @@ class ThermalModel:
         factor_of_safety: float = 1.0,
     ) -> float:
         """
-        Updates winding and case temperatures with sensor filtering and returns scale factor.
+        Updates winding and case temperatures with sensor diagnosis and returns scale factor.
 
         Args:
             dt: Time step in seconds. Defaults to 1/200 (200Hz)
@@ -165,21 +172,29 @@ class ThermalModel:
             Cc * dTc/dt = (Tw-Tc)/Rwc + (Ta-Tc)/Rca
         """
 
-        filtered_current = self._filter_sensor(
-            motor_current, self.current_history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0
+        diagnosed_current, self._current_sensor_faults = self._diagnose_sensor_value(
+            motor_current,
+            self.current_history,
+            MIN_SENSIBLE_CURRENT,
+            MAX_SENSIBLE_CURRENT,
+            0.0,
+            dt,
+            self._current_sensor_faults,
         )
         if case_temperature is not None:
-            filtered_case_temp = self._filter_sensor(
+            diagnosed_case_temp, self._case_temperature_faults = self._diagnose_sensor_value(
                 case_temperature,
                 self.temperature_history,
                 MIN_SENSIBLE_TEMPERATURE,
                 MAX_SENSIBLE_TEMPERATURE,
                 self.ambient_temperature,
+                dt,
+                self._case_temperature_faults,
             )
         else:
-            filtered_case_temp = None
+            diagnosed_case_temp = None
 
-        current_amps = filtered_current * 1e-3
+        current_amps = diagnosed_current * 1e-3
 
         # R(T) = R₀(1 + alpha(T - T₀))
         resistance_at_temp = self.reference_resistance * (
@@ -196,8 +211,8 @@ class ThermalModel:
         self.winding_temperature += dt * dTw_dt
 
         # Case temperature dynamics
-        if filtered_case_temp is not None:
-            self.case_temperature = filtered_case_temp
+        if diagnosed_case_temp is not None:
+            self.case_temperature = diagnosed_case_temp
         else:
             # Compute case temperature from thermal model
             dTc_dt = (

@@ -166,6 +166,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 firmwareVersion=firmware_version,
                 port=port,
                 baudRate=baud_rate,
+                logLevel=self._debug_level,
+                debug=dephy_log,
                 stopMotorOnDisconnect=stop_motor_on_disconnect,
             )
 
