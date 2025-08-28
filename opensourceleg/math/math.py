@@ -72,7 +72,6 @@ class ThermalModel:
         motor_constants: MOTOR_CONSTANTS instance with thermal parameters
         actuator_tag: Actuator identifier for error messages. Defaults to "actuator"
         ambient_temperature: Ambient temperature in °C. Defaults to 21.0
-        outlier_threshold: Standard deviations for outlier detection. Defaults to 3.0
     """
 
     def __init__(

@@ -150,7 +150,6 @@ def enhanced_thermal_model():
         motor_constants=motor_constants,
         actuator_tag="test_actuator",
         ambient_temperature=25.0,
-        outlier_threshold=2.0,
     )
 
 
@@ -160,7 +159,6 @@ def test_thermal_model_initialization(enhanced_thermal_model):
     assert enhanced_thermal_model.case_temperature == 25.0
     assert enhanced_thermal_model.ambient_temperature == 25.0
     assert enhanced_thermal_model.actuator_tag == "test_actuator"
-    assert enhanced_thermal_model.outlier_threshold == 2.0
     assert len(enhanced_thermal_model.current_history) == 0
 
 
@@ -183,7 +181,6 @@ def test_is_within_bounds(enhanced_thermal_model):
 
 def test_get_fallback_value(enhanced_thermal_model):
     """Test fallback value generation"""
-    from collections import deque
 
     # Empty history should return default
     empty_history = deque()
@@ -195,79 +192,118 @@ def test_get_fallback_value(enhanced_thermal_model):
 
 
 def test_outlier_detection_insufficient_data(enhanced_thermal_model):
-    """Test outlier detection with insufficient historical data"""
-    from collections import deque
+    """Test data packet corruption detection with insufficient faults"""
 
-    history = deque([1.0, 2.0])  # Less than 3 values
-    is_outlier, filtered_value = enhanced_thermal_model._detect_statistical_outlier(10.0, history)
-    assert is_outlier is False
-    assert filtered_value == 10.0
+    history = deque([1.0, 2.0])
+    dt = 0.005  # 200Hz
+
+    # Should not raise exception with few faults
+    filtered_value, fault_count = enhanced_thermal_model._diagnose_sensor_value(
+        100000.0, history, -80000.0, 80000.0, 0.0, dt, 5
+    )
+    assert fault_count == 6
+    assert filtered_value == 2.0  # Last value in history
 
 
 def test_outlier_detection_normal_value(enhanced_thermal_model):
-    """Test outlier detection with normal values"""
-    from collections import deque
+    """Test sensor diagnosis with normal values"""
 
     history = deque([5.0, 6.0, 7.0, 8.0, 9.0])
-    is_outlier, filtered_value = enhanced_thermal_model._detect_statistical_outlier(7.5, history)
-    assert is_outlier is False
+    dt = 0.005
+
+    filtered_value, fault_count = enhanced_thermal_model._diagnose_sensor_value(7.5, history, 0.0, 100.0, 20.0, dt, 0)
+    assert fault_count == 0
     assert filtered_value == 7.5
 
 
 def test_outlier_detection_outlier_value(enhanced_thermal_model):
-    """Test outlier detection with outlier values"""
-    from collections import deque
+    """Test sensor diagnosis with out-of-bounds values"""
+    import pytest
 
     history = deque([5.0, 6.0, 7.0, 8.0, 9.0])
-    # Value far from mean should be detected as outlier
-    is_outlier, filtered_value = enhanced_thermal_model._detect_statistical_outlier(50.0, history)
-    assert is_outlier is True
-    assert filtered_value != 50.0  # Should be filtered
+    dt = 0.005  # 200Hz
+
+    # Should trigger data packet corruption exception after enough faults
+    from opensourceleg.math.math import DataPacketCorruptionException
+
+    with pytest.raises(DataPacketCorruptionException):
+        fault_count = 0
+        for _ in range(int(1.0 / (2 * dt)) + 1):  # Exceed fault threshold
+            _, fault_count = enhanced_thermal_model._diagnose_sensor_value(
+                500.0, history, 0.0, 100.0, 20.0, dt, fault_count
+            )
 
 
 def test_current_sensor_filtering_valid(enhanced_thermal_model):
     """Test current sensor filtering with valid values"""
     history = deque([1000, 1100, 1200])  # mA values
-    filtered = enhanced_thermal_model._filter_sensor(1150, history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0)
+    dt = 0.005
+    filtered, fault_count = enhanced_thermal_model._diagnose_sensor_value(
+        1150, history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0, dt, 0
+    )
     assert isinstance(filtered, float)
+    assert fault_count == 0
 
 
 def test_current_sensor_filtering_out_of_bounds(enhanced_thermal_model):
     """Test current sensor filtering with out-of-bounds values"""
     history = deque([1000, 1100, 1200])
+    dt = 0.005
     # Very high current should trigger fallback
-    filtered = enhanced_thermal_model._filter_sensor(100000, history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0)
+    filtered, fault_count = enhanced_thermal_model._diagnose_sensor_value(
+        100000, history, MIN_SENSIBLE_CURRENT, MAX_SENSIBLE_CURRENT, 0.0, dt, 0
+    )
     assert filtered == 1200  # Should return last valid value
+    assert fault_count == 1
 
 
 def test_temperature_sensor_filtering_valid(enhanced_thermal_model):
     """Test temperature sensor filtering with valid values"""
     history = deque([20.0, 25.0, 30.0])
-    filtered = enhanced_thermal_model._filter_sensor(
-        28.0, history, MIN_SENSIBLE_TEMPERATURE, MAX_SENSIBLE_TEMPERATURE, enhanced_thermal_model.ambient_temperature
+    dt = 0.005
+    filtered, fault_count = enhanced_thermal_model._diagnose_sensor_value(
+        28.0,
+        history,
+        MIN_SENSIBLE_TEMPERATURE,
+        MAX_SENSIBLE_TEMPERATURE,
+        enhanced_thermal_model.ambient_temperature,
+        dt,
+        0,
     )
     assert isinstance(filtered, float)
+    assert fault_count == 0
 
 
 def test_temperature_sensor_filtering_out_of_bounds(enhanced_thermal_model):
     """Test temperature sensor filtering with out-of-bounds values"""
     history = deque([20.0, 25.0, 30.0])
+    dt = 0.005
     # Very high temperature should trigger fallback
-    filtered = enhanced_thermal_model._filter_sensor(
-        500.0, history, MIN_SENSIBLE_TEMPERATURE, MAX_SENSIBLE_TEMPERATURE, enhanced_thermal_model.ambient_temperature
+    filtered, fault_count = enhanced_thermal_model._diagnose_sensor_value(
+        500.0,
+        history,
+        MIN_SENSIBLE_TEMPERATURE,
+        MAX_SENSIBLE_TEMPERATURE,
+        enhanced_thermal_model.ambient_temperature,
+        dt,
+        0,
     )
     assert filtered == 30.0  # Should return last valid value
+    assert fault_count == 1
 
     # Negative temperature should use ambient as fallback
     empty_history = deque()
-    filtered = enhanced_thermal_model._filter_sensor(
+    filtered, fault_count = enhanced_thermal_model._diagnose_sensor_value(
         -50.0,
         empty_history,
         MIN_SENSIBLE_TEMPERATURE,
         MAX_SENSIBLE_TEMPERATURE,
         enhanced_thermal_model.ambient_temperature,
+        dt,
+        0,
     )
     assert filtered == 25.0  # ambient_temperature
+    assert fault_count == 1
 
 
 def test_soft_limiting_function(enhanced_thermal_model):
@@ -360,7 +396,7 @@ def test_update_history_management(enhanced_thermal_model):
     for i in range(3):
         enhanced_thermal_model.update(dt=1 / 200, motor_current=1000 + i * 100)
 
-    assert len(enhanced_thermal_model.current_history) == 3
+    assert len(enhanced_thermal_model.current_history) == min(3, SENSOR_HISTORY_SIZE)
     assert len(enhanced_thermal_model.current_history) > initial_history_len
 
 
