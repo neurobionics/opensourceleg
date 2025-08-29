@@ -85,9 +85,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          setup_commands:
-            - import sys
-            - sys.path.append('../')
+          paths: [.]
 theme:
   name: material
   feature:

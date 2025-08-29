@@ -25,8 +25,25 @@ DEFAULT_VALUES = [0, 1, 1000, -1000]
 
 @pytest.fixture
 def non_zero_positive_values(request):
-    max_len = request.param
-    return np.random.randint(1, 1000, max_len)
+    max_len = request.param[0] if isinstance(request.param, tuple) else request.param
+    values = np.random.randint(1, 1000, max_len)
+
+    # Apply thermal limit constraints to avoid validation errors
+    if max_len > 5:
+        # MAX_CASE_TEMPERATURE is at index 4, MAX_WINDING_TEMPERATURE is at index 5
+        values[5] = values[4] + np.random.randint(1, 100)  # winding temp > case temp
+
+        # WINDING_SOFT_LIMIT is at index 13, must be < MAX_WINDING_TEMPERATURE
+        if max_len > 13:
+            # Ensure soft limit is positive and less than hard limit
+            values[13] = max(1, values[5] - np.random.randint(1, min(50, values[5])))
+
+        # CASE_SOFT_LIMIT is at index 14, must be < MAX_CASE_TEMPERATURE
+        if max_len > 14:
+            # Ensure soft limit is positive and less than hard limit
+            values[14] = max(1, values[4] - np.random.randint(1, min(50, values[4])))
+
+    return values
 
 
 @pytest.fixture

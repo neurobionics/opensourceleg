@@ -20,13 +20,12 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.extras.safety import I2tLimitException, ThermalLimitException
 from opensourceleg.logging import LOGGER
 from opensourceleg.logging.decorators import (
     deprecated_with_routing,
 )
 from opensourceleg.logging.exceptions import ControlModeException
-from opensourceleg.math import ThermalModel
+from opensourceleg.math import I2tLimitException, ThermalLimitException, ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -167,16 +166,19 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 firmwareVersion=firmware_version,
                 port=port,
                 baudRate=baud_rate,
+                logLevel=self._debug_level,
+                debug=dephy_log,
                 stopMotorOnDisconnect=stop_motor_on_disconnect,
             )
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
+
+        self._i2t_fault_count: int = 0
+        self._i2t_fault_threshold: int = 2
 
         self._mode = CONTROL_MODES.IDLE
 
@@ -259,32 +261,64 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         self._data = self.read()
 
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
+        self._thermal_scale = self._thermal_model.update(
             dt=1 / self.frequency,
             motor_current=self.motor_current,
+            case_temperature=self.case_temperature,
         )
-        if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. "
-                f"Current Case Temperature: {self.case_temperature} C. Exiting."
-            )
-            raise ThermalLimitException()
 
-        if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached."
-                f"Current Winding Temperature: {self.winding_temperature} C. Exiting."
-            )
-            raise ThermalLimitException()
+        self._check_i2t_fault()
+
+    def _check_i2t_fault(self) -> None:
+        """
+        Checks for I2t faults and manage fault counting.
+        Raises I2tLimitException if fault threshold is exceeded.
+        """
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data["status_ex"] & 0b00000010 == 0b00000010:
-            # "Maximum Average Current" limit exceeded for "time at current limit,
-            # review physical setup to ensure excessive torque is not normally applied
-            # If issue persists, review "Maximum Average Current", "Current Limit", and
-            # "Time at current limit" settings for the Dephy ActPack Firmware using the Plan GUI software
-            LOGGER.error(msg=f"[{str.upper(self.tag)}] I2t limit exceeded. Current: {self.motor_current} mA. ")
-            raise I2tLimitException()
+            self._i2t_fault_count += 1
+
+            # Only raise exception after multiple consecutive faults
+            if self._i2t_fault_count >= self._i2t_fault_threshold:
+                LOGGER.error(
+                    msg=f"[{str.upper(self.tag)}] I2t limit exceeded "
+                    f"(Maximum Average Current limit exceeded for time at current limit) "
+                    f"for {self._i2t_fault_count} consecutive readings. Current: {self.motor_current} mA. "
+                    f"Review physical setup to ensure excessive torque is not normally applied. "
+                    "If issue persists, review 'Maximum Average Current', "
+                    "'Current Limit', and 'Time at current limit' settings "
+                    f"for the Dephy ActPack Firmware using the Plan GUI software."
+                )
+                raise I2tLimitException()
+            else:
+                LOGGER.warning(
+                    msg=f"[{str.upper(self.tag)}] I2t fault detected "
+                    f"({self._i2t_fault_count}/{self._i2t_fault_threshold}). "
+                    f"Current: {self.motor_current} mA. Monitoring for consecutive faults."
+                )
+        else:
+            self._i2t_fault_count = 0
+
+    def set_i2t_fault_threshold(self, threshold: int) -> None:
+        """
+        Sets the threshold for consecutive I2t faults before raising an exception.
+
+        This helps filter out spurious one-off bit flips in the status_ex register
+        by requiring multiple consecutive fault detections before triggering the exception.
+
+        Args:
+            threshold: Number of consecutive faults required to trigger exception.
+                           Default is 2. Must be >= 1.
+
+        Examples:
+            >>> actuator = DephyActuator(port='/dev/ttyACM0')
+            >>> actuator.set_i2t_fault_threshold(5)  # Require 5 consecutive faults
+        """
+        if threshold < 1:
+            raise ValueError("I2t fault threshold must be >= 1")
+
+        self._i2t_fault_threshold = threshold
+        LOGGER.info(f"[{self.tag}] I2t fault threshold set to {threshold} consecutive faults")
 
     def home(
         self,
@@ -890,7 +924,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> print(f"Winding temperature: {actuator.winding_temperature} C")
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 
@@ -1168,10 +1202,8 @@ class DephyLegacyActuator(DephyActuator):
             Device.__init__(self, port=port, baud_rate=baud_rate)
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
 
@@ -1221,27 +1253,13 @@ class DephyLegacyActuator(DephyActuator):
 
     def update(self) -> None:
         self._data = self.read()
-
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
+        self._thermal_scale = self._thermal_model.update(
             dt=1 / self.frequency,
             motor_current=self.motor_current,
+            case_temperature=self.case_temperature,
         )
-        if self.case_temperature >= self.max_case_temperature:
-            LOGGER.error(
-                f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. "
-                f"Current case temperature: {self.case_temperature}. Stopping motor."
-            )
-            raise ThermalLimitException()
 
-        if self.winding_temperature >= self.max_winding_temperature:
-            LOGGER.error(
-                f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. "
-                f"Current winding temperature: {self.winding_temperature}. Stopping motor."
-            )
-            raise ThermalLimitException()
         # Check for thermal fault, bit 2 of the execute status byte
-
         if self._data.status_ex & 0b00000010 == 0b00000010:
             LOGGER.error(
                 f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; "
@@ -1425,7 +1443,7 @@ class DephyLegacyActuator(DephyActuator):
         This is calculated based on the thermal model using motor current.
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 

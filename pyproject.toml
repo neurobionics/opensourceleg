@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "opensourceleg"
-version = "3.3.0"
+version = "3.4.0"
 description = "An open-source SDK for developing and testing algorithms on commonly used robotic hardware."
 authors = [{ name = "Open-Source Leg", email = "opensourceleg@gmail.com" }]
 requires-python = ">=3.10,<4.0"
@@ -106,7 +106,7 @@ testpaths = ["tests"]
 target-version = "py39"
 line-length = 120
 fix = true
-select = [
+lint.select = [
     # flake8-2020
     "YTT",
     # flake8-bandit
@@ -138,7 +138,7 @@ select = [
     # tryceratops
     "TRY",
 ]
-ignore = [
+lint.ignore = [
     # DoNotAssignLambda
     "E731",
     "TRY003",
