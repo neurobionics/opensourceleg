@@ -5,7 +5,7 @@ use tracing::{error, warn};
 use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
 use fxhash::FxHashMap;
 
-use crate::logger::downcast;
+use crate::{logger::downcast, rotator::RotatingFileWriter};
 #[derive(Debug)]
 pub struct Record {
     variables: FxHashMap::<String, Value>,
@@ -16,9 +16,8 @@ pub struct Record {
 
 impl Record {
     pub fn new(path: PathBuf) -> Self {
-        let parent_dir = path.parent().unwrap_or(std::path::Path::new("."));
-        let file_name = path.file_name().unwrap().to_str().unwrap();
-        let file_appender = tracing_appender::rolling::never(parent_dir, file_name);
+        let arbitrary_value = 1; //this value repressents backup_count which doesn't matter since max_size is 0, meaning no rotation
+        let file_appender = RotatingFileWriter::new(path, 0, arbitrary_value);
         let (non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
 
         Self {
