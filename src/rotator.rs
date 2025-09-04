@@ -17,7 +17,7 @@ impl RotatingFileWriter {
 }
 struct Rotator {
     base_path: PathBuf,
-    current_file: File,
+    current_file: Option<File>,
     current_size: u64,
     max_size: u64,
     index: usize,
@@ -26,17 +26,23 @@ struct Rotator {
 
 impl Rotator {
     fn new(base_path: PathBuf, max_size: u64, backup_count: u64) -> io::Result<Self> {
-        let file = OpenOptions::new().create(true).append(true).open(&base_path)?;
-        let size = file.metadata()?.len();
-
         Ok(Self {
             base_path,
-            current_file: file,
-            current_size: size,
+            current_file: None,
+            current_size: 0,
             max_size,
             index: 0,
             backup_count
         })
+    }
+
+    fn ensure_file(&mut self) -> io::Result<()> {
+        if self.current_file.is_none() {
+            let file = OpenOptions::new().create(true).append(true).open(&self.base_path)?;
+            self.current_size = file.metadata()?.len();
+            self.current_file = Some(file);
+        }
+        Ok(())
     }
 
     fn maybe_rotate(&mut self) -> io::Result<()> {
@@ -64,12 +70,9 @@ impl Rotator {
             ))
         };
 
-        std::fs::rename(&self.base_path, rotated_path)?;
-        self.current_file = OpenOptions::new()
-                                            .create(true)
-                                            .write(true)
-                                            .truncate(true)
-                                            .open(&self.base_path)?;
+        if self.base_path.exists() {
+            std::fs::rename(&self.base_path, rotated_path)?;
+        }
 
         self.current_size = 0;
         return Ok(())
@@ -79,13 +82,20 @@ impl Rotator {
         if self.max_size > 0 {
             self.maybe_rotate()?;
         }
-        let written = self.current_file.write(buf)?;
+
+        self.ensure_file()?; //lazily create file
+        let file = self.current_file.as_mut().expect("File should be ensured");
+        let written = file.write(buf)?;
         self.current_size += written as u64;
         Ok(written)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.current_file.flush()
+        if let Some(file) = self.current_file.as_mut() {
+            file.flush()
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -111,10 +121,22 @@ impl<'a> MakeWriter<'a> for RotatingFileWriter {
 
 impl Clone for Rotator {
     fn clone(&self) -> Self {
-        let file = OpenOptions::new().create(true).append(true).open(&self.base_path).unwrap();
+        let cloned_file = if self.current_file.is_some() {
+            //open a new handle to the same file
+            Some(
+                OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&self.base_path)
+                    .expect("Failed to reopen file in Clone"),
+            )
+        } else {
+            None
+        };
+
         Self {
             base_path: self.base_path.clone(),
-            current_file: file,
+            current_file: cloned_file,
             current_size: self.current_size,
             max_size: self.max_size,
             index: self.index,
