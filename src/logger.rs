@@ -94,7 +94,7 @@ impl Logger {
         let log_level = logfile_level.map_or(LevelFilter::TRACE, |level| level.into());
 
         let mut layers = vec![];
-        let path = Path::new(&dir).join("variables.log");
+        let path = Path::new(&dir).join(&log_name).with_extension("json");
 
         if let Some(parent) = path.parent() {
             if parent.exists() {
@@ -148,10 +148,15 @@ impl Logger {
 
         fs::create_dir_all(dir.clone()).expect("Error creating directory");
 
-        let new_layer = create_file_layer(dir, log_name, file_max_bytes, backup_count, log_level);
+        let new_layer = create_file_layer(dir.clone(), log_name.clone(), file_max_bytes, backup_count, log_level);
 
         if let Some(handle) = FILE_RELOAD_HANDLE.get().unwrap() {
             handle.reload(new_layer).expect("Error updating file configuration");
+        }
+
+        if let Some(lock) = RECORD.get() {
+            let mut record = lock.lock().unwrap();
+            record.update_writer(&dir, &log_name);
         }
     }
 

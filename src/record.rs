@@ -1,4 +1,4 @@
-use std::{io::{Write}, path::PathBuf};
+use std::{io::Write, path::{Path, PathBuf}};
 use pyo3::{PyObject, Python};
 use serde_json::{Map, Value};
 use tracing::{error, warn};
@@ -85,6 +85,21 @@ impl Record {
             eprintln!("Failed to write to file: {e}");
         }
         self.variables.clear();
+    }
+
+    pub fn update_writer(&mut self, dir: &str, log_name: &str) {
+        let record_name = Path::new(log_name)
+            .file_stem()
+            .map(|stem| format!("{}.json", stem.to_string_lossy()))
+            .unwrap_or_else(|| "logfile.json".to_string());
+
+        let record_path = Path::new(dir).join(record_name);
+
+        let file_appender = RotatingFileWriter::new(record_path, 0, 1);
+        let (non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
+
+        self.writer = non_blocking_writer;
+        self._guard = guard;
     }
 
     pub fn flush_buffer(&mut self) {
