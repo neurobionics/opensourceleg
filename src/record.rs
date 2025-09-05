@@ -1,6 +1,6 @@
 use std::{io::Write, path::{Path, PathBuf}};
 use pyo3::{PyObject, Python};
-use serde_json::{Map, Value};
+use serde_json::{Value};
 use tracing::{error, warn};
 use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
 use fxhash::FxHashMap;
@@ -56,7 +56,7 @@ impl Record {
             return;
         }
 
-        let mut function_results = Map::new();
+        let mut attributes = self.variables.clone();
 
         if !self.functions.is_empty() {
             Python::with_gil(|py| {
@@ -65,7 +65,7 @@ impl Record {
                         Ok(val) => {
                             let bound_val = val.bind(py);
                             let json_val = downcast(bound_val.clone());
-                            function_results.insert(name.clone(), json_val);
+                            attributes.insert(name.clone(), json_val);
                         }
                         Err(e) => {
                             eprintln!("Function '{name}' call failed: {e}");
@@ -76,8 +76,7 @@ impl Record {
         }
 
         let record = serde_json::json!({
-            "variables": self.variables,
-            "functions": function_results
+            "attributes": attributes
         });
 
         let json = serde_json::to_string(&record).expect("json serialization failed");
