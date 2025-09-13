@@ -265,7 +265,7 @@ if __name__ == "__main__":
 
     with osl, osl_fsm:
         osl.update()
-        osl.home(callback_functions=[knee_homing_complete, ankle_homing_complete])
+        osl.home(callbacks=[knee_homing_complete, ankle_homing_complete])
         input("Press Enter to start walking...")
 
         # knee

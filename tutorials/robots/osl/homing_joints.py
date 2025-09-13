@@ -84,7 +84,7 @@ def home_joints():
             output_position_offset={"knee": 0.0, "ankle": np.deg2rad(30.0)},
             current_threshold=5000,
             velocity_threshold=0.001,
-            callback_functions=[knee_homing_complete, ankle_homing_complete],
+            callbacks=[knee_homing_complete, ankle_homing_complete],
         )
 
         osl.knee.set_control_mode(CONTROL_MODES.CURRENT)

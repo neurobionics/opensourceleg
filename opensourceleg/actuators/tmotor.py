@@ -199,7 +199,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
-        callback_fn: Optional[Callable[[], None]] = None,
+        callback: Optional[Callable[[], None]] = None,
     ):
         """
         Home the actuator and corresponding joint by moving it to the zero position.
@@ -218,7 +218,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                 Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
                 Default is 0.001 rad/s.
-            callback_fn (Optional[Callable[[], None]]): Optional callback function to be called when homing completes.
+            callback (Optional[Callable[[], None]]): Optional callback function to be called when homing completes.
                                                         The function should take no arguments and return None.
         """
         # TODO: implement homing
