@@ -1,6 +1,5 @@
 import os
 import time
-from collections.abc import Iterable
 from typing import Callable, Optional, Union
 
 import numpy as np
@@ -44,7 +43,7 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
         output_position_offset: Optional[dict[str, float]] = None,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
-        callbacks: Optional["Iterable[Optional[Callable[[], None]]]"] = None,
+        callbacks: Optional[dict[str, Callable]] = None,
     ) -> None:
         """
         Call the home method for all actuators.
@@ -58,16 +57,17 @@ class OpenSourceLeg(RobotBase[TActuator, TSensor]):
                 Default is 0.0 for knee and 30.0 for ankle.
             current_threshold: The current threshold to apply to the actuators during homing. Default is 5000.
             velocity_threshold: The velocity threshold to apply to the actuators during homing. Default is 0.001.
-            callbacks (Optional[Iterable[Optional[Callable[[], None]]]]):
-                Optional list or iterable of callback functions, one per actuator,
-                to be called when each actuator's homing completes.
+            callbacks  Optional[dict[str, Callable]]:
+                Optional dictionary of callback functions, one per actuator, to be called when each actuator's
+                homing completes. Only one callback per actuator is supported, and the tag must match.
                 Each function should take no arguments and return None. If None, no callbacks are used.
         """
         if output_position_offset is None:
             output_position_offset = {"knee": 0.0, "ankle": np.deg2rad(30.0)}
         if homing_direction is None:
             homing_direction = {"knee": -1, "ankle": -1}
-        for actuator, callback in zip(self.actuators.values(), callbacks or [None] * len(self.actuators)):
+        for actuator in self.actuators.values():
+            callback = callbacks.get(actuator.tag, None) if callbacks is not None else None
             actuator.home(
                 homing_voltage=homing_voltage,
                 homing_frequency=homing_frequency,
