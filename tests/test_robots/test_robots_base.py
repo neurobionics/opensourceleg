@@ -32,8 +32,6 @@ def mock_robot():
         MOTOR_CONSTANTS(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
-            NM_PER_RAD_TO_K=1.0,
-            NM_S_PER_RAD_TO_B=0.1,
             MAX_CASE_TEMPERATURE=100.0,
             MAX_WINDING_TEMPERATURE=150.0,
         ),
@@ -63,8 +61,6 @@ def test_robot_base_init():
         MOTOR_CONSTANTS(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
-            NM_PER_RAD_TO_K=1.0,
-            NM_S_PER_RAD_TO_B=0.1,
             MAX_CASE_TEMPERATURE=100.0,
             MAX_WINDING_TEMPERATURE=150.0,
         ),

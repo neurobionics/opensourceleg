@@ -51,8 +51,6 @@ def test_saturating_ramp_update():
 test_motor_constants = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=2048,
     NM_PER_AMP=0.02,
-    NM_PER_RAD_TO_K=0.001,
-    NM_S_PER_RAD_TO_B=0.0001,
     MAX_CASE_TEMPERATURE=80.0,
     MAX_WINDING_TEMPERATURE=120.0,
 )
@@ -141,8 +139,6 @@ def enhanced_thermal_model():
     motor_constants = MOTOR_CONSTANTS(
         MOTOR_COUNT_PER_REV=2048,
         NM_PER_AMP=0.02,
-        NM_PER_RAD_TO_K=0.001,
-        NM_S_PER_RAD_TO_B=0.0001,
         MAX_CASE_TEMPERATURE=80.0,
         MAX_WINDING_TEMPERATURE=120.0,
     )
