@@ -46,7 +46,7 @@ Key parameters:
 ### 2. Real-time loop and Logger
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:17:22"
+--8<-- "tutorials/robots/osl/homing_joints.py:16:22"
 ```
 
 This section:
@@ -84,7 +84,7 @@ The `home()` method also supports an optional `callback_functions` argument. Thi
 For example, to print a message when each joint completes homing:
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:60:66"
+--8<-- "tutorials/robots/osl/homing_joints.py:60:73"
 ```
 
 If you do not wish to use callbacks, you can omit the `callback_functions` argument or pass a list of `None` values.
@@ -92,7 +92,7 @@ If you do not wish to use callbacks, you can omit the `callback_functions` argum
 ### 6. Initialize OSL Platform
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:67:71"
+--8<-- "tutorials/robots/osl/homing_joints.py:75:79"
 ```
 
 This section:
@@ -102,7 +102,7 @@ This section:
 ### 7. Run Homing Routine
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:73:82"
+--8<-- "tutorials/robots/osl/homing_joints.py:81:90"
 ```
 
 This section:
@@ -116,7 +116,7 @@ This section:
 ### 8. Reset Torque and Start Logging
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:84:102"
+--8<-- "tutorials/robots/osl/homing_joints.py:92:110"
 ```
 
 This section:

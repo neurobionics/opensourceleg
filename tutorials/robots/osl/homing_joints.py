@@ -70,13 +70,13 @@ def home_joints():
         )
         print("Ankle homing complete!")
 
+    callbacks = {"knee": knee_homing_complete, "ankle": ankle_homing_complete}
+
     osl = OpenSourceLeg(
         tag="osl",
         actuators=actuators,
         sensors=sensors,
     )
-
-    callbacks = {"knee": knee_homing_complete, "ankle": ankle_homing_complete}
 
     with osl:
         osl.home(
