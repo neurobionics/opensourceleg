@@ -426,5 +426,3 @@ if __name__ == "__main__":
             ankle_enc.update()
             print("Knee ", np.rad2deg(knee_enc.position))  # , np.rad2deg(knee_enc.abs_ang))
             print("Ankle ", np.rad2deg(ankle_enc.position))
-            # LOGGER.info(np.rad2deg(knee_enc.position), np.rad2deg(knee_enc.abs_ang))
-            # LOGGER.info(np.rad2deg(ankle_enc.position), np.rad2deg(ankle_enc.abs_ang))
