@@ -69,7 +69,6 @@ def create_motor_constants(values):
 )
 def test_motor_constants_init(non_zero_positive_values):
     motor_constants = create_motor_constants(non_zero_positive_values)
-    print(motor_constants)
     assert 2 * np.pi / non_zero_positive_values[0] == motor_constants.RAD_PER_COUNT
     assert non_zero_positive_values[1] / 1000 == motor_constants.NM_PER_MILLIAMP
 
