@@ -2,7 +2,7 @@ import dataclasses
 import os
 import time
 from ctypes import c_int
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 from flexsea.device import Device
@@ -328,6 +328,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback: Optional[Callable[[], None]] = None,
     ) -> None:
         """
 
@@ -337,14 +338,22 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         to joint position in radians. This is useful for more accurate joint position estimation.
 
         Args:
-            homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
-            homing_frequency (int): Frequency in Hz to use for homing. Default is the actuator's frequency.
-            homing_direction (int): Direction to move the actuator during homing. Default is -1.
-            output_position_offset (float): Offset in radians to add to the output position. Default is 0.0.
+            homing_voltage (int): Voltage in mV to use for homing.
+                Default is 2000 mV.
+            homing_frequency (int): Frequency in Hz to use for homing.
+                Default is the actuator's frequency.
+            homing_direction (int): Direction to move the actuator during homing.
+                Default is -1.
+            output_position_offset (float): Offset in radians to add to the output position.
+                Default is 0.0.
             current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
-                This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
+                This is used to detect if the actuator or joint has hit a hard stop.
+                Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
-                This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+                This is also used to detect if the actuator or joint has hit a hard stop.
+                Default is 0.001 rad/s.
+            callback (Optional[Callable[[], None]]): Optional callback function to be called when homing completes.
+                                                        The function should take no arguments and return None.
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
@@ -373,6 +382,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
                 if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
+                    if callback is not None:
+                        callback()
                     is_homing = False
 
         except KeyboardInterrupt:

@@ -834,6 +834,7 @@ class ActuatorBase(OfflineMixin, ABC):
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback: Optional[Callable[[], None]] = None,
     ) -> None:
         """
         Home the actuator.
@@ -848,6 +849,8 @@ class ActuatorBase(OfflineMixin, ABC):
             output_position_offset (float): Offset to add to the output position.
             current_threshold (int): Current threshold to stop homing.
             velocity_threshold (float): Velocity threshold to stop homing.
+            callback (Optional[Callable[[], None]]): Optional callback function to be
+                        called when homing completes. The function should take no arguments and return None.
 
         Examples:
             >>> actuator.home()
