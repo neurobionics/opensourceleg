@@ -112,6 +112,8 @@ class LordMicrostrainIMU(IMUBase):
                 "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+                "If you are using a newer version of MSCL, you may need to add /usr/lib/python3.version/dist-packages \
+                to PYTHONPATH"
             )
 
             if not offline:
