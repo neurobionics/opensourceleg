@@ -397,7 +397,7 @@ if __name__ == "__main__":
     knee_enc = AS5048B(
         tag="knee",
         bus="/dev/i2c-2",
-        A1_adr_pin=True,
+        A1_adr_pin=False,
         A2_adr_pin=False,
         zero_position=0,
     )
@@ -406,7 +406,7 @@ if __name__ == "__main__":
         tag="ankle",
         bus="/dev/i2c-3",
         A1_adr_pin=False,
-        A2_adr_pin=True,
+        A2_adr_pin=False,
         zero_position=0,
     )
 
