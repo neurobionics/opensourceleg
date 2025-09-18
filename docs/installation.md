@@ -114,21 +114,6 @@ This section is for those who want to contribute to opensourceleg or need to mod
    ```bash
    pip install uv
    ```
-   OR
-   ```bash
-   pip install uv --break-system-packages
-   ```
-
-   In your `.bashrc` script, add the following line:
-   ```bash
-   export PATH="$PATH:/home/username/.local/bin"
-   ```
-
-   Then reload your shell configuration:
-   ```bash
-   source ~/.bashrc
-   ```
-
    For other installation methods (including standalone installers), see the [UV installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
 - **Git**: Version control system, see [Git installation guide](https://git-scm.com/downloads)
