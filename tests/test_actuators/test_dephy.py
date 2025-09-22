@@ -9,11 +9,11 @@ def test_motor_constants_setter_type_check():
     # Should work with correct type
     actuator.MOTOR_CONSTANTS = actuator.MOTOR_CONSTANTS
     # Should fail with incorrect type
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         actuator.MOTOR_CONSTANTS = 123  # Not a MOTOR_CONSTANTS instance
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         actuator.MOTOR_CONSTANTS = None  # Not a MOTOR_CONSTANTS instance
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         actuator.MOTOR_CONSTANTS = {"foo": "bar"}  # Not a MOTOR_CONSTANTS instance
 
     class FakeMotorConstants:
@@ -24,7 +24,7 @@ def test_motor_constants_setter_type_check():
             self.MAX_WINDING_TEMPERATURE = 120.0
 
     fake_constants = FakeMotorConstants()
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         actuator.MOTOR_CONSTANTS = fake_constants  # Looks like MOTOR_CONSTANTS, but isn't
 
 
