@@ -5,7 +5,7 @@ from opensourceleg.actuators.dephy import DephyActuator
 
 
 def test_motor_constants_setter_type_check():
-    actuator = DephyActuator(offline=False)
+    actuator = DephyActuator()
     # Should work with correct type
     actuator.MOTOR_CONSTANTS = actuator.MOTOR_CONSTANTS
     # Should fail with incorrect type
@@ -29,7 +29,7 @@ def test_motor_constants_setter_type_check():
 
 
 def test_derived_constants_update_on_motor_constants_change():
-    actuator = DephyActuator(offline=False)
+    actuator = DephyActuator()
     original_nm_per_rad = actuator.NM_PER_RAD_TO_MOTOR_UNITS
     original_nm_s_per_rad = actuator.NM_S_PER_RAD_TO_MOTOR_UNITS
     # Create a new MOTOR_CONSTANTS with a different NM_PER_AMP
