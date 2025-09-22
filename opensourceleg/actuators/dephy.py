@@ -151,6 +151,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             offline=offline,
         )
 
+        # Override motor constants to ensure setter is called
+        self.MOTOR_CONSTANTS = DEPHY_ACTUATOR_CONSTANTS
+
         self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
 
@@ -705,7 +708,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         Args:
             value (MOTOR_CONSTANTS): New motor constants to set.
         """
-        self._motor_constants = value
+
+        assert isinstance(value, MOTOR_CONSTANTS), f"Expected MOTOR_CONSTANTS, got {type(value)}"
+        self._MOTOR_CONSTANTS = value
         self._update_derived_constants()
 
     def _update_derived_constants(self) -> None:
