@@ -709,7 +709,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             value (MOTOR_CONSTANTS): New motor constants to set.
         """
 
-        assert isinstance(value, MOTOR_CONSTANTS), f"Expected MOTOR_CONSTANTS, got {type(value)}"
+        if not isinstance(value, MOTOR_CONSTANTS):
+            raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
         self._MOTOR_CONSTANTS = value
         self._update_derived_constants()
 
