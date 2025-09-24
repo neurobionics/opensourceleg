@@ -4,8 +4,13 @@ from opensourceleg.actuators.base import MOTOR_CONSTANTS
 from opensourceleg.actuators.dephy import DephyActuator
 
 
+class MockDephyActuator(DephyActuator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, offline=True, **kwargs)
+
+
 def test_motor_constants_setter_type_check():
-    actuator = DephyActuator()
+    actuator = MockDephyActuator()
     # Should work with correct type
     actuator.MOTOR_CONSTANTS = actuator.MOTOR_CONSTANTS
     # Should fail with incorrect type
@@ -29,7 +34,7 @@ def test_motor_constants_setter_type_check():
 
 
 def test_derived_constants_update_on_motor_constants_change():
-    actuator = DephyActuator()
+    actuator = MockDephyActuator()
     original_nm_per_rad = actuator.NM_PER_RAD_TO_MOTOR_UNITS
     original_nm_s_per_rad = actuator.NM_S_PER_RAD_TO_MOTOR_UNITS
     # Create a new MOTOR_CONSTANTS with a different NM_PER_AMP
