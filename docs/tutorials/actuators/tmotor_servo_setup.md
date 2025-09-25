@@ -128,3 +128,4 @@ If `can0` is not found:
 - The interface configuration is not persistent across reboots
 - For production use, consider adding the configuration to system startup scripts
 - Always ensure proper grounding and shielding for CAN communication
+- Unlike some motors, in this type the current reading only becomes negative when the velocity and torque directions are opposite.

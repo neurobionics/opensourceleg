@@ -359,6 +359,18 @@ def _servo_idle_mode_exit(actuator: "TMotorServoActuator") -> None:
     pass
 
 
+def _impedance_not_supported(actuator: "TMotorServoActuator") -> None:
+    """Log that impedance control is not supported"""
+    LOGGER.error(
+        "TMotor servo mode does not support impedance control. "
+        "Use position, velocity, or current control modes instead."
+    )
+    raise NotImplementedError(
+        "TMotor servo mode does not support impedance control. "
+        "Use position, velocity, or current control modes instead."
+    )
+
+
 TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
     POSITION=ControlModeConfig(
         entry_callback=_servo_position_mode_entry,
@@ -390,6 +402,13 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         has_gains=False,
         max_gains=None,
     ),
+    # Explicitly define IMPEDANCE as not supported
+    IMPEDANCE=ControlModeConfig(
+        entry_callback=_impedance_not_supported,
+        exit_callback=lambda actuator: None,
+        has_gains=False,
+        max_gains=None,
+    ),
 )
 
 
@@ -400,7 +419,6 @@ class TMotorServoActuator(ActuatorBase):
     Important: Before using this actuator, the CAN interface must be configured:
         sudo /sbin/ip link set can0 down
         sudo /sbin/ip link set can0 up type can bitrate 1000000
-        sudo ifconfig can0 txqueuelen 1000
 
     For detailed setup instructions, see docs/tutorials/actuators/tmotor_servo_setup.md
 
@@ -415,7 +433,7 @@ class TMotorServoActuator(ActuatorBase):
         self,
         tag: str = "TMotorServoActuator",
         motor_type: str = "AK80-9",
-        motor_id: int = 1,
+        motor_id: int = 104,
         gear_ratio: float = 1.0,
         frequency: int = 1000,
         offline: bool = False,
@@ -714,6 +732,22 @@ class TMotorServoActuator(ActuatorBase):
             self._canman.set_velocity(self.motor_id, clamped_velocity)
             self._last_command_time = time.time()
 
+    def set_motor_impedance(self, position: float, velocity: float, kp: float, kd: float, torque_ff: float) -> None:
+        """TMotor servo mode does not support impedance control"""
+        LOGGER.error(
+            "TMotor servo mode does not support impedance control. "
+            "Use position, velocity, or current control modes instead."
+        )
+        raise NotImplementedError("TMotor servo mode does not support impedance control.")
+
+    def set_output_impedance(self, position: float, velocity: float, kp: float, kd: float, torque_ff: float) -> None:
+        """TMotor servo mode does not support impedance control"""
+        LOGGER.error(
+            "TMotor servo mode does not support impedance control. "
+            "Use position, velocity, or current control modes instead."
+        )
+        raise NotImplementedError("TMotor servo mode does not support impedance control.")
+
     def set_output_velocity(self, value: float) -> None:
         """Set output velocity (rad/s)"""
         motor_velocity = value * self.gear_ratio
@@ -723,24 +757,30 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """TMotor servo mode does not support external current PID gains - motor handles current control internally"""
-        raise NotImplementedError(
-            "TMotor servo mode does not support external current PID gains. "
-            "The motor handles current control internally."
+        LOGGER.debug(
+            "TMotor servo mode handles current control internally. " "External current PID gains are not used."
         )
+        # Motor handles current control internally, no action needed
 
     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """TMotor servo mode does not support external position PID gains - motor handles position control internally"""
-        raise NotImplementedError(
-            "TMotor servo mode does not support external position PID gains. "
-            "The motor handles position control internally."
+        LOGGER.debug(
+            "TMotor servo mode handles position control internally. " "External position PID gains are not used."
         )
+        # Motor handles position control internally, no action needed
 
     def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
         """TMotor servo mode does not support impedance control"""
-        raise NotImplementedError(
+        LOGGER.debug(
             "TMotor servo mode does not support impedance control. "
             "Use position, velocity, or current control modes instead."
         )
+        # Impedance control not supported in servo mode, no action needed
+
+    def _set_impedance_gains(self, k: float, b: float) -> None:
+        """Internal method for impedance gains - not supported in TMotor servo mode"""
+        LOGGER.debug("TMotor servo mode handles control internally. " "Impedance gains are not used.")
+        # Motor handles control internally, no action needed
 
     # ============ State Properties ============
 
