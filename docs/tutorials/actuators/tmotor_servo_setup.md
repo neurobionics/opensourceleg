@@ -16,9 +16,6 @@ sudo /sbin/ip link set can0 down
 
 # Configure CAN interface with 1MHz bitrate
 sudo /sbin/ip link set can0 up type can bitrate 1000000
-
-# Set transmission queue length for optimal performance
-sudo ifconfig can0 txqueuelen 1000
 ```
 
 ### Verification
