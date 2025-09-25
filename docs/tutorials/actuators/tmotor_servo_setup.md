@@ -63,7 +63,7 @@ from opensourceleg.actuators.tmotor import TMotorServoActuator
 
 # Initialize motor
 motor = TMotorServoActuator(
-    motor_id=1,
+    motor_id=104, #the default CAN ID is 104
     gear_ratio=9.0,
     motor_type="AK80-9"
 )
