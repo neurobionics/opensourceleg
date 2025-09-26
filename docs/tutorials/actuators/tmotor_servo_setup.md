@@ -35,7 +35,7 @@ candump can0
 ### Supported Motors
 
 - **AK80-9**:
-  - Torque constant (Kt): 0.115 Nm/A
+  - Torque constant (Kt): 0.095 Nm/A
   - Gear ratio: 9:1
   - Pole pairs: 21
 
