@@ -45,8 +45,6 @@ IMPEDANCE_C = 0.0007812
 DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
-    NM_PER_RAD_TO_K=((2 * np.pi / 16384) / IMPEDANCE_C * 1e3 / 0.1133),
-    NM_S_PER_RAD_TO_B=((np.pi / 180) / IMPEDANCE_A * 1e3 / 0.1133),
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )
@@ -152,6 +150,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             frequency=frequency,
             offline=offline,
         )
+
+        # Override motor constants to ensure setter is called
+        self.MOTOR_CONSTANTS = DEPHY_ACTUATOR_CONSTANTS
 
         self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
@@ -689,9 +690,50 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             raise ValueError(f"Damping b={b} cannot be negative")
 
         self._set_impedance_gains(
-            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
-            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
+            k=int(k * self.NM_PER_RAD_TO_MOTOR_UNITS),
+            b=int(b * self.NM_S_PER_RAD_TO_MOTOR_UNITS),
         )
+
+    @property
+    def MOTOR_CONSTANTS(self) -> MOTOR_CONSTANTS:
+        """
+        Get the motor constants configuration.
+        Redefines the property from the ABC so we can set a setter.
+
+        Returns:
+            MOTOR_CONSTANTS: The motor constants.
+
+        Examples:
+            >>> constants = actuator.MOTOR_CONSTANTS
+            >>> constants.MAX_CASE_TEMPERATURE
+            80.0
+        """
+        return self._MOTOR_CONSTANTS
+
+    @MOTOR_CONSTANTS.setter
+    def MOTOR_CONSTANTS(self, value: MOTOR_CONSTANTS) -> None:
+        """
+        Setter for MOTOR_CONSTANTS property.
+        Updates the motor constants and recalculates derived conversion factors.
+
+        Args:
+            value (MOTOR_CONSTANTS): New motor constants to set.
+        """
+
+        if not isinstance(value, MOTOR_CONSTANTS):
+            raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
+        self._MOTOR_CONSTANTS = value
+        self._update_derived_constants()
+
+    def _update_derived_constants(self) -> None:
+        """
+        Recalculate conversion factors based on current motor constants.
+        Updates NM_PER_RAD_TO_MOTOR_UNITS and NM_S_PER_RAD_TO_MOTOR_UNITS.
+        """
+        self.NM_PER_RAD_TO_MOTOR_UNITS = (
+            (2 * np.pi / self.MOTOR_CONSTANTS.MOTOR_COUNT_PER_REV) / IMPEDANCE_C * 1e3 / self.MOTOR_CONSTANTS.NM_PER_AMP
+        )
+        self.NM_S_PER_RAD_TO_MOTOR_UNITS = (np.pi / 180) / IMPEDANCE_A * 1e3 / self.MOTOR_CONSTANTS.NM_PER_AMP
 
     @property
     def motor_voltage(self) -> float:

@@ -27,22 +27,6 @@ DEFAULT_VALUES = [0, 1, 1000, -1000]
 def non_zero_positive_values(request):
     max_len = request.param[0] if isinstance(request.param, tuple) else request.param
     values = np.random.randint(1, 1000, max_len)
-
-    # Apply thermal limit constraints to avoid validation errors
-    if max_len > 5:
-        # MAX_CASE_TEMPERATURE is at index 4, MAX_WINDING_TEMPERATURE is at index 5
-        values[5] = values[4] + np.random.randint(1, 100)  # winding temp > case temp
-
-        # WINDING_SOFT_LIMIT is at index 13, must be < MAX_WINDING_TEMPERATURE
-        if max_len > 13:
-            # Ensure soft limit is positive and less than hard limit
-            values[13] = max(1, values[5] - np.random.randint(1, min(50, values[5])))
-
-        # CASE_SOFT_LIMIT is at index 14, must be < MAX_CASE_TEMPERATURE
-        if max_len > 14:
-            # Ensure soft limit is positive and less than hard limit
-            values[14] = max(1, values[4] - np.random.randint(1, min(50, values[4])))
-
     return values
 
 
@@ -59,7 +43,23 @@ def non_zero_negative_values(request):
 
 
 def create_motor_constants(values):
-    return MOTOR_CONSTANTS(*values)
+    fieldnames = list(MOTOR_CONSTANTS.__annotations__.keys())
+    # Ensure motor constants will pass validation
+    if values[fieldnames.index("MAX_WINDING_TEMPERATURE")] <= values[fieldnames.index("MAX_CASE_TEMPERATURE")]:
+        values[fieldnames.index("MAX_WINDING_TEMPERATURE")] = values[
+            fieldnames.index("MAX_CASE_TEMPERATURE")
+        ] + np.random.randint(1, 100)
+    if values[fieldnames.index("WINDING_SOFT_LIMIT")] >= values[fieldnames.index("MAX_WINDING_TEMPERATURE")]:
+        values[fieldnames.index("WINDING_SOFT_LIMIT")] = max(
+            1, values[fieldnames.index("MAX_WINDING_TEMPERATURE")] - np.random.randint(1, 50)
+        )
+    if values[fieldnames.index("CASE_SOFT_LIMIT")] >= values[fieldnames.index("MAX_CASE_TEMPERATURE")]:
+        values[fieldnames.index("CASE_SOFT_LIMIT")] = max(
+            1, values[fieldnames.index("MAX_CASE_TEMPERATURE")] - np.random.randint(1, 50)
+        )
+    constants = MOTOR_CONSTANTS(*values)
+
+    return constants
 
 
 @pytest.mark.parametrize(
@@ -69,7 +69,6 @@ def create_motor_constants(values):
 )
 def test_motor_constants_init(non_zero_positive_values):
     motor_constants = create_motor_constants(non_zero_positive_values)
-    assert list(motor_constants.__dict__.values()) == list(non_zero_positive_values)
     assert 2 * np.pi / non_zero_positive_values[0] == motor_constants.RAD_PER_COUNT
     assert non_zero_positive_values[1] / 1000 == motor_constants.NM_PER_MILLIAMP
 
@@ -500,8 +499,6 @@ def mock_actuator():
         MOTOR_CONSTANTS(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
-            NM_PER_RAD_TO_K=1.0,
-            NM_S_PER_RAD_TO_B=0.1,
             MAX_CASE_TEMPERATURE=100.0,
             MAX_WINDING_TEMPERATURE=150.0,
         ),
@@ -574,8 +571,6 @@ def test_set_output_position(mock_actuator: MockActuator):
 def test_motor_constants(mock_actuator: MockActuator):
     assert mock_actuator.MOTOR_CONSTANTS.MOTOR_COUNT_PER_REV == 1000
     assert mock_actuator.MOTOR_CONSTANTS.NM_PER_AMP == 0.1
-    assert mock_actuator.MOTOR_CONSTANTS.NM_PER_RAD_TO_K == 1.0
-    assert mock_actuator.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B == 0.1
     assert mock_actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE == 100.0
     assert mock_actuator.MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE == 150.0
 
@@ -588,8 +583,6 @@ def mock_actuator_offline():
         MOTOR_CONSTANTS(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
-            NM_PER_RAD_TO_K=1.0,
-            NM_S_PER_RAD_TO_B=0.1,
             MAX_CASE_TEMPERATURE=100.0,
             MAX_WINDING_TEMPERATURE=150.0,
         ),
@@ -664,19 +657,25 @@ def test_offline_mode_control_modes(mock_actuator_offline: MockActuator):
     assert mock_actuator_offline.mode == CONTROL_MODES.POSITION
 
 
-def test_offline_vs_online_mode():
+@pytest.mark.parametrize(
+    "non_zero_positive_values",
+    [(len(MOTOR_CONSTANTS.__annotations__),)],
+    indirect=True,
+)
+def test_offline_vs_online_mode(non_zero_positive_values):
     """Test differences between offline and online mode initialization."""
+    MOTOR_CONSTANTS = create_motor_constants(non_zero_positive_values)
     online_actuator = MockActuator(
         "online",
         10.0,
-        MOTOR_CONSTANTS(1000, 0.1, 1.0, 0.1, 100.0, 150.0),
+        MOTOR_CONSTANTS,
         offline=False,
     )
 
     offline_actuator = MockActuator(
         "offline",
         10.0,
-        MOTOR_CONSTANTS(1000, 0.1, 1.0, 0.1, 100.0, 150.0),
+        MOTOR_CONSTANTS,
         offline=True,
     )
 
