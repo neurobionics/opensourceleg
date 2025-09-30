@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.2](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.1...opensourceleg-v3.4.2) (2025-09-30)
+
+
+### Bug Fixes
+
+* remove support for python 3.10 ([63f8a89](https://github.com/neurobionics/opensourceleg/commit/63f8a89925cda12b420fae1bde715ac3d15148b6))
+* remove support for python 3.10 ([14093d2](https://github.com/neurobionics/opensourceleg/commit/14093d2d32df1c937710839d8b12643f6d41fd8f))
+
 ## [3.4.1](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.0...opensourceleg-v3.4.1) (2025-09-19)
 
 
