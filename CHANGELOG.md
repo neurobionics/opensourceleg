@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.1](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.0...opensourceleg-v3.4.1) (2025-09-19)
+
+
+### Bug Fixes
+
+* remove unused commented lines ([f4450df](https://github.com/neurobionics/opensourceleg/commit/f4450df0176fc78354b3e6fa502b1c8ad2384340))
+* update homing tutorial for new callbacks ([6f8bfb1](https://github.com/neurobionics/opensourceleg/commit/6f8bfb10ecd7210d11cfb1dc57ac78cee0357fbd))
+
 ## [3.4.0](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.3.0...opensourceleg-v3.4.0) (2025-08-28)
 
 
