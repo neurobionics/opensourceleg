@@ -234,11 +234,11 @@ class DataReplayGenerator(SignalGenerator):
 
         # Zero-order hold / nearest / linear interpolation
         if self.interpolation == "zoh":
-            self._index = int(math.floor(index_float))
+            self._index = math.floor(index_float)
             return float(self.data[self._index])
 
         if self.interpolation == "nearest":
-            rounded = int(round(index_float))
+            rounded = round(index_float)
             if self.loop:
                 self._index = rounded % self._len
             else:
@@ -246,7 +246,7 @@ class DataReplayGenerator(SignalGenerator):
             return float(self.data[self._index])
 
         # Default: linear interpolation
-        idx0 = int(math.floor(index_float))
+        idx0 = math.floor(index_float)
         idx1 = idx0 + 1
         frac = index_float - idx0
 

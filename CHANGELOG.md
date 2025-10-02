@@ -1,5 +1,42 @@
 # Changelog
 
+## [3.4.1](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.0...opensourceleg-v3.4.1) (2025-09-19)
+
+
+### Bug Fixes
+
+* remove unused commented lines ([f4450df](https://github.com/neurobionics/opensourceleg/commit/f4450df0176fc78354b3e6fa502b1c8ad2384340))
+* update homing tutorial for new callbacks ([6f8bfb1](https://github.com/neurobionics/opensourceleg/commit/6f8bfb10ecd7210d11cfb1dc57ac78cee0357fbd))
+
+## [3.4.0](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.3.0...opensourceleg-v3.4.0) (2025-08-28)
+
+
+### Features
+
+* add offline tutorial for osl ([e397081](https://github.com/neurobionics/opensourceleg/commit/e3970817b5d0d4a0e601ca482b58ba985d6aefad))
+* move offline mode methods to a common module to make it generalizeable across actuators and sensors ([f2d2437](https://github.com/neurobionics/opensourceleg/commit/f2d2437e5c23881761e478b2ca1da192fbd8462c))
+* offline mode, fixes [#266](https://github.com/neurobionics/opensourceleg/issues/266) ([141039d](https://github.com/neurobionics/opensourceleg/commit/141039dbb6470e3619c932cec569fddb3366c231))
+
+
+### Bug Fixes
+
+* add i2t fault counts and thresholds to overcome pseudo ex bit triggers ([f92be1f](https://github.com/neurobionics/opensourceleg/commit/f92be1f7b79ce9a8db08a18dfb9e2e80c49e470d))
+* limit number of attempts in ADC's update method to 1000 ([042afe5](https://github.com/neurobionics/opensourceleg/commit/042afe5605321f5b56db7acfa972620925f7e238))
+* move FOS to I2R term instead of I; add generalized _filter_sensor method ([8ae963f](https://github.com/neurobionics/opensourceleg/commit/8ae963f3af1cf1466f00155ab4e35582004aef60))
+* move pi3hat warning to MoteusInterface ([dae3db6](https://github.com/neurobionics/opensourceleg/commit/dae3db6e340a5db5a313e740185ebc5191acefe3))
+* mypy errors on base ([87b3634](https://github.com/neurobionics/opensourceleg/commit/87b3634ced57b2336a4dac1f62ab3aeeb0c53902))
+* refactor units' classes and methods in walking_compiled_controller example script ([8ff3a5f](https://github.com/neurobionics/opensourceleg/commit/8ff3a5fc00fcd5fcaea8129dc05fa98801e08c98))
+* remove statistical outlier detection, use min-max bounds only; add consecutive fault count tracking for current and case temp; throw an exception if data packets are corrupted for more than half a second ([6abf422](https://github.com/neurobionics/opensourceleg/commit/6abf42289a4b57c6c5c5f1c87466a57ea97dc52a))
+* remove WMA filter ([8ded24a](https://github.com/neurobionics/opensourceleg/commit/8ded24ada6b69078e906112ca36ef3104534d032))
+* reset fault count to zero for every successful data read; move status-ex fault checking to a separate method ([8c5a6fa](https://github.com/neurobionics/opensourceleg/commit/8c5a6fa28b2244de90d45af2e70e01e3dc75c9d6))
+* update thermal model unit tests ([e87b86c](https://github.com/neurobionics/opensourceleg/commit/e87b86c095a482ab23845d9cee17a5fe5c9d338a))
+* update unit tests for thermal model and add a few more test ([7a98d07](https://github.com/neurobionics/opensourceleg/commit/7a98d079915d44a5dba8def6e604ea50284d62d2))
+
+
+### Documentation
+
+* remove deprecated mkdocs option; address docs-test errors ([b928bf4](https://github.com/neurobionics/opensourceleg/commit/b928bf44a317b6daa9afdc5691588f554b400733))
+
 ## [3.3.0](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.2.1...opensourceleg-v3.3.0) (2025-07-24)
 
 

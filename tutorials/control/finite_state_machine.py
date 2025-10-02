@@ -73,4 +73,4 @@ if __name__ == "__main__":
             fsm.update(battery_level=battery_level)
 
             # Log the current state and battery level
-            fsm_example_logger.info(f"Current state: {fsm.current_state.name}; " f"Battery level: {battery_level}; ")
+            fsm_example_logger.info(f"Current state: {fsm.current_state.name}; Battery level: {battery_level}; ")

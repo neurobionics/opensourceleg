@@ -1,9 +1,9 @@
 [project]
 name = "opensourceleg"
-version = "3.3.0"
+version = "3.4.1"
 description = "An open-source SDK for developing and testing algorithms on commonly used robotic hardware."
 authors = [{ name = "Open-Source Leg", email = "opensourceleg@gmail.com" }]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 dependencies = [
     "numpy>=1.24.3,<2",
@@ -43,6 +43,7 @@ dev = [
     "mypy>=1.5.1,<2",
     "pre-commit>=3.4.0,<4",
     "tox>=4.11.1,<5",
+    "ruff>=0.12.10",
 ]
 docs = [
     "mkdocs>=1.6.0",
@@ -100,7 +101,7 @@ testpaths = ["tests"]
 target-version = "py39"
 line-length = 120
 fix = true
-select = [
+lint.select = [
     # flake8-2020
     "YTT",
     # flake8-bandit
@@ -132,7 +133,7 @@ select = [
     # tryceratops
     "TRY",
 ]
-ignore = [
+lint.ignore = [
     # DoNotAssignLambda
     "E731",
     "TRY003",

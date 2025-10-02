@@ -6,8 +6,6 @@ install: ## Install the uv environment and install the pre-commit hooks
 
 .PHONY: check
 check: ## Run code quality tools.
-	@echo "🚀 Checking uv lock file consistency: Running uv sync --check"
-	@uv sync --check
 	@echo "🚀 Linting code: Running pre-commit"
 	@uv run pre-commit run -a
 	@echo "🚀 Static type checking: Running mypy"

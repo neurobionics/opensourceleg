@@ -354,7 +354,7 @@ To add a new actuator, **subclass `ActuatorBase`** and implement all required ab
 from typing import Optional
 from opensourceleg.actuators.base import ActuatorBase, CONTROL_MODES
 from opensourceleg.logging import LOGGER
-from opensourceleg.extras.safety import ThermalLimitException
+from opensourceleg.math import ThermalLimitException
 
 class MyActuator(ActuatorBase):
     """
