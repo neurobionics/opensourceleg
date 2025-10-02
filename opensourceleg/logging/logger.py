@@ -27,6 +27,7 @@ import contextlib
 import csv
 import logging
 import os
+import posixpath
 import threading
 from builtins import open  # noqa: UP029
 from collections import deque
@@ -374,8 +375,8 @@ class Logger(logging.Logger):
                     file_name = file_name.split(".")[0]
 
                 self._user_file_name = file_name
-                self._file_path = os.path.join(self._log_path, f"{file_name}.log")
-                self._csv_path = os.path.join(self._log_path, f"{file_name}.csv")
+                self._file_path = posixpath.join(self._log_path, f"{file_name}.log")
+                self._csv_path = posixpath.join(self._log_path, f"{file_name}.csv")
 
                 # If we already have a file handler, we need to recreate it
                 if hasattr(self, "_file_handler"):
@@ -618,7 +619,7 @@ class Logger(logging.Logger):
 
             base_name = self._user_file_name if self._user_file_name else f"{script_name}_{timestamp}"
 
-            file_path = os.path.join(self._log_path, base_name)
+            file_path = posixpath.join(self._log_path, base_name)
             self._file_path = file_path + ".log"
             self._csv_path = file_path + ".csv"
         except Exception as e:
