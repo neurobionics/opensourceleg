@@ -20,7 +20,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.logging import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.utilities import SoftRealtimeLoop
 
