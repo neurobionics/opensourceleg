@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.4.2](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.1...opensourceleg-v3.4.2) (2025-10-13)
+
+
+### Bug Fixes
+
+* add basic mock dephy class for unit tests ([e005704](https://github.com/neurobionics/opensourceleg/commit/e005704336419f0f9dc378f42bcd957dcd4664bf))
+* move derived actuator constants to calculated properties instead… ([136799b](https://github.com/neurobionics/opensourceleg/commit/136799be23e27b01be81ab4184d71654a3b2c0f3))
+* remove support for python 3.10 ([63f8a89](https://github.com/neurobionics/opensourceleg/commit/63f8a89925cda12b420fae1bde715ac3d15148b6))
+* remove support for python 3.10 ([14093d2](https://github.com/neurobionics/opensourceleg/commit/14093d2d32df1c937710839d8b12643f6d41fd8f))
+
 ## [3.4.1](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.0...opensourceleg-v3.4.1) (2025-09-19)
 
 
