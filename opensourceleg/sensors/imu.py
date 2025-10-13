@@ -64,8 +64,8 @@ class LordMicrostrainIMU(IMUBase):
     and linear accelerations (in m/s^2).
 
     Resources:
-        - Download v0.65 MSCL pre-built package for Raspbian:
-          https://github.com/LORD-MicroStrain/MSCL/releases/download/v65.0.0/python3-mscl_65.0.0_arm64.deb
+        - Download v67.1.0 MSCL pre-built package for Raspbian:
+          https://github.com/LORD-MicroStrain/MSCL/releases/download/v67.1.0/MSCL_arm64_Python3.11_v67.1.0.deb
         - Read the MSCL installation instructions:
           https://github.com/LORD-MicroStrain/MSCL/blob/master/HowToUseMSCL.md
         - We assume that the MSCL library is installed in /usr/share/python3-mscl
