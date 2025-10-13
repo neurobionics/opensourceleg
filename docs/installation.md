@@ -115,11 +115,13 @@ This section is for those who want to contribute to opensourceleg or need to mod
    pip install uv
    ```
    OR
+   If you are unable to install uv, do
+
    ```bash
    pip install uv --break-system-packages
    ```
 
-   If you are unable to install uv in your `.bashrc` script add the following line:
+   If you are unable to find uv command then add following line in your `.bashrc` script :
    ```bash
    export PATH="$PATH:/home/$USER/.local/bin"
    ```
