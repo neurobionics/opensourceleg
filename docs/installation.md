@@ -119,12 +119,12 @@ This section is for those who want to contribute to opensourceleg or need to mod
    pip install uv --break-system-packages
    ```
 
-   In your `.bashrc` script, add the following line:
+   If you are unable to install uv in your `.bashrc` script add the following line:
    ```bash
-   export PATH="$PATH:/home/username/.local/bin"
+   export PATH="$PATH:/home/$USER/.local/bin"
    ```
 
-   Then reload your shell configuration:
+   Then, open a new shell or reload your shell configuration:
    ```bash
    source ~/.bashrc
    ```
