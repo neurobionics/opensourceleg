@@ -38,6 +38,15 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        exclude:
+          # Exclude Python 3.13 on Windows due to NumPy compatibility issue
+          # https://github.com/numpy/numpy/issues/27894
+          - python-version: "3.13"
+            os: windows-latest
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
