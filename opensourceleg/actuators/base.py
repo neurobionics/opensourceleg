@@ -43,9 +43,7 @@ class MOTOR_CONSTANTS:
     """
 
     MOTOR_COUNT_PER_REV: float
-    NM_PER_AMP: float
-    NM_PER_RAD_TO_K: float
-    NM_S_PER_RAD_TO_B: float
+    NM_PER_AMP: float  # Motor torque constant (Nm/A)
     MAX_CASE_TEMPERATURE: float  # Hard limit for case/housing temperature
     MAX_WINDING_TEMPERATURE: float  # Hard limit for winding temperature
 
@@ -70,8 +68,6 @@ class MOTOR_CONSTANTS:
             >>> MOTOR_CONSTANTS(
             ...     MOTOR_COUNT_PER_REV=-2048,
             ...     NM_PER_AMP=0.02,
-            ...     NM_PER_RAD_TO_K=0.001,
-            ...     NM_S_PER_RAD_TO_B=0.0001,
             ...     MAX_CASE_TEMPERATURE=80.0,
             ...     MAX_WINDING_TEMPERATURE=120.0
             ... )
@@ -834,6 +830,7 @@ class ActuatorBase(OfflineMixin, ABC):
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback: Optional[Callable[[], None]] = None,
     ) -> None:
         """
         Home the actuator.
@@ -848,6 +845,8 @@ class ActuatorBase(OfflineMixin, ABC):
             output_position_offset (float): Offset to add to the output position.
             current_threshold (int): Current threshold to stop homing.
             velocity_threshold (float): Velocity threshold to stop homing.
+            callback (Optional[Callable[[], None]]): Optional callback function to be
+                        called when homing completes. The function should take no arguments and return None.
 
         Examples:
             >>> actuator.home()
@@ -1005,6 +1004,22 @@ class ActuatorBase(OfflineMixin, ABC):
             80.0
         """
         return self._MOTOR_CONSTANTS
+
+    @MOTOR_CONSTANTS.setter
+    def MOTOR_CONSTANTS(self, value: MOTOR_CONSTANTS) -> None:
+        """
+        Set the motor constants configuration.
+
+        Args:
+            value (MOTOR_CONSTANTS): The new motor constants to set.
+
+        Examples:
+            >>> new_constants = MOTOR_CONSTANTS(2048, 0.03, 0.001, 0.0001, 85.0, 125.0)
+            >>> actuator.MOTOR_CONSTANTS = new_constants
+            >>> actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
+            85.0
+        """
+        self._MOTOR_CONSTANTS = value
 
     @property
     def mode(self) -> CONTROL_MODES:

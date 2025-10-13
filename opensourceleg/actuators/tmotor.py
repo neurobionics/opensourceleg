@@ -1,7 +1,7 @@
 import time
 import warnings
 from math import isfinite
-from typing import Optional
+from typing import Callable, Optional
 
 import can
 import numpy as np
@@ -25,14 +25,13 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
+from opensourceleg.logging import LOGGER
 from opensourceleg.math import ThermalModel
 from opensourceleg.utilities import SoftRealtimeLoop
 
 TMOTOR_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
-    NM_PER_RAD_TO_K=0.0,  # TODO: Find value
-    NM_S_PER_RAD_TO_B=0.0,  # TODO: Find value
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )
@@ -196,7 +195,30 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback: Optional[Callable[[], None]] = None,
     ):
+        """
+        Home the actuator and corresponding joint by moving it to the zero position.
+        The zero position is defined as the position where the joint is fully extended.
+
+        Args:
+            homing_voltage (int): Voltage in mV to use for homing.
+                Default is 2000 mV.
+            homing_frequency (Optional[int]): Frequency in Hz to use for homing.
+                Default is the actuator's frequency.
+            homing_direction (int): Direction to move the actuator during homing.
+                Default is -1.
+            output_position_offset (float): Offset in radians to add to the output position.
+                Default is 0.0.
+            current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
+                Default is 5000 mA.
+            velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
+                Default is 0.001 rad/s.
+            callback (Optional[Callable[[], None]]): Optional callback function to be called when homing completes.
+                                                        The function should take no arguments and return None.
+        """
+        # TODO: implement homing
+        LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
         pass
 
     def update(self):  # noqa: C901

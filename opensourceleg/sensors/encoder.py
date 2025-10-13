@@ -138,6 +138,9 @@ class AS5048B(EncoderBase):  # ToDo: We use AS5048B -- need to look into name ch
             raise OverflowError(f"Argument intToParse={intToParse} >= 2^14 bit encoder resolution")
         return bytes([(intToParse >> 6), intToParse & 0x3F])
 
+    def deg_to_counts(self, angle_deg: float) -> int:
+        return int((AS5048B.ENC_RESOLUTION / 360) * angle_deg)
+
     def _reset_data(self) -> None:
         # Use bytearray for better performance when we need to modify
         self._encdata_old = bytearray(6)
@@ -393,7 +396,7 @@ if __name__ == "__main__":
 
     knee_enc = AS5048B(
         tag="knee",
-        bus="/dev/i2c-1",
+        bus="/dev/i2c-2",
         A1_adr_pin=True,
         A2_adr_pin=False,
         zero_position=0,
@@ -401,7 +404,7 @@ if __name__ == "__main__":
 
     ankle_enc = AS5048B(
         tag="ankle",
-        bus="/dev/i2c-1",
+        bus="/dev/i2c-3",
         A1_adr_pin=False,
         A2_adr_pin=True,
         zero_position=0,
@@ -413,14 +416,13 @@ if __name__ == "__main__":
         knee_enc.update()
         ankle_enc.update()
 
-        knee_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
-        ankle_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
+        # knee_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
+        # ankle_enc.set_zero_position()  # if you want 0 at the midpoint of a given range
 
         knee_enc.zero_position = knee_enc.counts  # sets the current position to 0 rad
         ankle_enc.zero_position = ankle_enc.counts  # sets the current position to 0 rad
-
         for _t in clock:
             knee_enc.update()
             ankle_enc.update()
-            LOGGER.info(np.rad2deg(knee_enc.position), np.rad2deg(knee_enc.abs_ang))
-            LOGGER.info(np.rad2deg(ankle_enc.position), np.rad2deg(ankle_enc.abs_ang))
+            print("Knee ", np.rad2deg(knee_enc.position))  # , np.rad2deg(knee_enc.abs_ang))
+            print("Ankle ", np.rad2deg(ankle_enc.position))

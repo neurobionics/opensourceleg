@@ -10,6 +10,7 @@ This example shows how to:
 - Configure `AS5048B` magnetic absolute encoders via I2C
 - Instantiate the `OpenSourceLeg` platform with the defined components
 - Use the `home()` method to detect joint limits and assign calibrated offsets
+- Use callback functions to execute code at the homed positions
 - Log joint and encoder positions to the terminal in real-time
 
 ## Hardware Setup
@@ -33,7 +34,7 @@ The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tu
 ### 1. Configuration
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:3:14"
+--8<-- "tutorials/robots/osl/homing_joints.py:1:14"
 ```
 
 Key parameters:
@@ -45,7 +46,7 @@ Key parameters:
 ### 2. Real-time loop and Logger
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:17:22"
+--8<-- "tutorials/robots/osl/homing_joints.py:16:22"
 ```
 
 This section:
@@ -56,7 +57,7 @@ This section:
 ### 3. Actuator Initialization
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:24:37"
+--8<-- "tutorials/robots/osl/homing_joints.py:24:39"
 ```
 
 This section:
@@ -67,7 +68,7 @@ This section:
 ### 4. Sensor Initialization
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:41:56"
+--8<-- "tutorials/robots/osl/homing_joints.py:41:58"
 ```
 
 This section:
@@ -76,20 +77,32 @@ This section:
 - Each encoder is tagged and assigned its A1/A2 pin configuration
 - Zero position is temporarily set to 0
 
-### 5. Initialize OSL Platform
+### 5. Using Callbacks for Homing Completion
+
+The `home()` method also supports an optional `callback_functions` argument. This allows you to specify a list of functions (one per actuator) that will be called when each actuator finishes its homing routine. This is useful for custom notifications, logging, or triggering additional actions like zeroing joint encoders.
+
+For example, to print a message when each joint completes homing:
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:60:63"
+--8<-- "tutorials/robots/osl/homing_joints.py:60:73"
+```
+
+If you do not wish to use callbacks, you can omit the `callback_functions` argument or pass a list of `None` values.
+
+### 6. Initialize OSL Platform
+
+```python
+--8<-- "tutorials/robots/osl/homing_joints.py:75:79"
 ```
 
 This section:
 
 - Creates an instance of `OpenSourceLeg` and passes in the actuator and sensor dictionaries
 
-### 6. Run Homing Routine
+### 7. Run Homing Routine
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:67:73"
+--8<-- "tutorials/robots/osl/homing_joints.py:81:90"
 ```
 
 This section:
@@ -100,10 +113,10 @@ This section:
   - Current exceeds `5000 mA`
 - Once stopped, the motor is zeroed based on its position, and a calibrated offset is added (30° for ankle, 0° for knee)
 
-### 7. Reset Torque and Start Logging
+### 8. Reset Torque and Start Logging
 
 ```python
---8<-- "tutorials/robots/osl/homing_joints.py:75:89"
+--8<-- "tutorials/robots/osl/homing_joints.py:92:110"
 ```
 
 This section:

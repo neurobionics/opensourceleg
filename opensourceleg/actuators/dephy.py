@@ -2,7 +2,7 @@ import dataclasses
 import os
 import time
 from ctypes import c_int
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 from flexsea.device import Device
@@ -45,8 +45,6 @@ IMPEDANCE_C = 0.0007812
 DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
-    NM_PER_RAD_TO_K=((2 * np.pi / 16384) / IMPEDANCE_C * 1e3 / 0.1133),
-    NM_S_PER_RAD_TO_B=((np.pi / 180) / IMPEDANCE_A * 1e3 / 0.1133),
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )
@@ -152,6 +150,9 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             frequency=frequency,
             offline=offline,
         )
+
+        # Override motor constants to ensure setter is called
+        self.MOTOR_CONSTANTS = DEPHY_ACTUATOR_CONSTANTS
 
         self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
@@ -328,6 +329,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback: Optional[Callable[[], None]] = None,
     ) -> None:
         """
 
@@ -337,14 +339,22 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         to joint position in radians. This is useful for more accurate joint position estimation.
 
         Args:
-            homing_voltage (int): Voltage in mV to use for homing. Default is 2000 mV.
-            homing_frequency (int): Frequency in Hz to use for homing. Default is the actuator's frequency.
-            homing_direction (int): Direction to move the actuator during homing. Default is -1.
-            output_position_offset (float): Offset in radians to add to the output position. Default is 0.0.
+            homing_voltage (int): Voltage in mV to use for homing.
+                Default is 2000 mV.
+            homing_frequency (int): Frequency in Hz to use for homing.
+                Default is the actuator's frequency.
+            homing_direction (int): Direction to move the actuator during homing.
+                Default is -1.
+            output_position_offset (float): Offset in radians to add to the output position.
+                Default is 0.0.
             current_threshold (int): Current threshold in mA to stop homing the joint or actuator.
-                This is used to detect if the actuator or joint has hit a hard stop. Default is 5000 mA.
+                This is used to detect if the actuator or joint has hit a hard stop.
+                Default is 5000 mA.
             velocity_threshold (float): Velocity threshold in rad/s to stop homing the joint or actuator.
-                This is also used to detect if the actuator or joint has hit a hard stop. Default is 0.001 rad/s.
+                This is also used to detect if the actuator or joint has hit a hard stop.
+                Default is 0.001 rad/s.
+            callback (Optional[Callable[[], None]]): Optional callback function to be called when homing completes.
+                                                        The function should take no arguments and return None.
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
@@ -373,6 +383,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
                 if abs(self.output_velocity) <= velocity_threshold or abs(self.motor_current) >= current_threshold:
                     self.set_motor_voltage(value=0)
+                    if callback is not None:
+                        callback()
                     is_homing = False
 
         except KeyboardInterrupt:
@@ -678,9 +690,50 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             raise ValueError(f"Damping b={b} cannot be negative")
 
         self._set_impedance_gains(
-            k=int(k * self.MOTOR_CONSTANTS.NM_PER_RAD_TO_K),
-            b=int(b * self.MOTOR_CONSTANTS.NM_S_PER_RAD_TO_B),
+            k=int(k * self.NM_PER_RAD_TO_MOTOR_UNITS),
+            b=int(b * self.NM_S_PER_RAD_TO_MOTOR_UNITS),
         )
+
+    @property
+    def MOTOR_CONSTANTS(self) -> MOTOR_CONSTANTS:
+        """
+        Get the motor constants configuration.
+        Redefines the property from the ABC so we can set a setter.
+
+        Returns:
+            MOTOR_CONSTANTS: The motor constants.
+
+        Examples:
+            >>> constants = actuator.MOTOR_CONSTANTS
+            >>> constants.MAX_CASE_TEMPERATURE
+            80.0
+        """
+        return self._MOTOR_CONSTANTS
+
+    @MOTOR_CONSTANTS.setter
+    def MOTOR_CONSTANTS(self, value: MOTOR_CONSTANTS) -> None:
+        """
+        Setter for MOTOR_CONSTANTS property.
+        Updates the motor constants and recalculates derived conversion factors.
+
+        Args:
+            value (MOTOR_CONSTANTS): New motor constants to set.
+        """
+
+        if not isinstance(value, MOTOR_CONSTANTS):
+            raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
+        self._MOTOR_CONSTANTS = value
+        self._update_derived_constants()
+
+    def _update_derived_constants(self) -> None:
+        """
+        Recalculate conversion factors based on current motor constants.
+        Updates NM_PER_RAD_TO_MOTOR_UNITS and NM_S_PER_RAD_TO_MOTOR_UNITS.
+        """
+        self.NM_PER_RAD_TO_MOTOR_UNITS = (
+            (2 * np.pi / self.MOTOR_CONSTANTS.MOTOR_COUNT_PER_REV) / IMPEDANCE_C * 1e3 / self.MOTOR_CONSTANTS.NM_PER_AMP
+        )
+        self.NM_S_PER_RAD_TO_MOTOR_UNITS = (np.pi / 180) / IMPEDANCE_A * 1e3 / self.MOTOR_CONSTANTS.NM_PER_AMP
 
     @property
     def motor_voltage(self) -> float:

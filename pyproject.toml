@@ -4,10 +4,10 @@ build-backend = "maturin"
 
 [project]
 name = "opensourceleg"
-version = "3.4.0"
+version = "3.4.2"
 description = "An open-source SDK for developing and testing algorithms on commonly used robotic hardware."
 authors = [{ name = "Open-Source Leg", email = "opensourceleg@gmail.com" }]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 dependencies = [
     "numpy>=1.24.3,<2",
