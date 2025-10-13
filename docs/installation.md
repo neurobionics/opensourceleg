@@ -21,7 +21,7 @@ We offer two ways to install opensourceleg:
 
 #### Prerequisites Explained
 
-- **Python 3.10 or newer**: The library requires modern Python features. [Download Python here](https://www.python.org/downloads/)
+- **Python 3.11 or newer**: The library requires modern Python features. [Download Python here](https://www.python.org/downloads/)
   > 💡 When installing Python, make sure to check "Add Python to PATH" on Windows!
 - **pip**: Python's package installer (comes with Python)
   > 💡 To verify your installation, open a terminal and run:
@@ -109,7 +109,7 @@ This section is for those who want to contribute to opensourceleg or need to mod
 
 #### Prerequisites in Detail
 
-- **Python 3.10+**: Same as above (we support Python 3.10, 3.11, 3.12, and 3.13)
+- **Python 3.11+**: Same as above (we support Python 3.11, 3.12, and 3.13)
 - **UV**: A fast Python package manager. The easiest way to install UV is via pip:
    ```bash
    pip install uv
@@ -130,7 +130,6 @@ This section is for those who want to contribute to opensourceleg or need to mod
    ```bash
    source ~/.bashrc
    ```
-
    For other installation methods (including standalone installers), see the [UV installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
 - **Git**: Version control system, see [Git installation guide](https://git-scm.com/downloads)
@@ -221,7 +220,7 @@ This section is for those who want to contribute to opensourceleg or need to mod
 
 ### 1. System Package Warnings
 
-If you see warnings about breaking system packages (common in Python 3.10+):
+If you see warnings about breaking system packages (common in Python 3.11+):
 
 ```bash
 # Not recommended, but works if you're in a hurry:

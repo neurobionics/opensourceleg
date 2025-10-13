@@ -95,11 +95,16 @@ class LordMicrostrainIMU(IMUBase):
         """
         # Attempt to import the MSCL library and add its path.
         try:
-            import sys
+            try:
+                import mscl
+            except (ImportError, ModuleNotFoundError):
+                # Falling back to old method of appending to sys.path for importing older versions of mscl
+                import sys
 
-            sys.path.append("/usr/share/python3-mscl")
-
-            import mscl
+                legacy_path = "/usr/share/python3-mscl"
+                if legacy_path not in sys.path:
+                    sys.path.append(legacy_path)
+                import mscl
 
             self.mscl = mscl
         except ImportError:
@@ -107,6 +112,8 @@ class LordMicrostrainIMU(IMUBase):
                 "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+                "If you are using a newer version of MSCL, you may need to add /usr/lib/python3.version/dist-packages \
+                to PYTHONPATH"
             )
 
             if not offline:
