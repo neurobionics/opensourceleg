@@ -8,6 +8,8 @@ readme = "README.md"
 dependencies = [
     "numpy>=1.24.3,<2",
     "pandas>=2.2.3,<3",
+    "sentry-sdk>=2.42.1",
+    "loguru>=0.7.0",
 ]
 
 [project.optional-dependencies]

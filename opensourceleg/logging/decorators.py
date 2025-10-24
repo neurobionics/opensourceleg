@@ -3,7 +3,7 @@ Module providing decorators to mark functions as deprecated.
 
 This module contains three decorators that can be used to mark functions as deprecated,
 optionally providing a suggested alternative or automatically routing calls to an alternative
-function. When a deprecated function is called, a warning is logged using the LOGGER from
+function. When a deprecated function is called, a warning is logged using the logger from
 opensourceleg.logging.
 
 Decorators:
@@ -15,7 +15,7 @@ Decorators:
 from functools import wraps
 from typing import Any, Callable
 
-from opensourceleg.logging import LOGGER
+from opensourceleg.logging import logger
 
 
 def deprecated(func: Callable) -> Callable:
@@ -34,7 +34,7 @@ def deprecated(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        LOGGER.warning(f"Function `{func.__name__}` is deprecated.")
+        logger.warning(f"Function `{func.__name__}` is deprecated.")
         return func(*args, **kwargs)
 
     return wrapper
@@ -57,7 +57,7 @@ def deprecated_with_suggestion(alternative_func: Callable) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            LOGGER.warning(
+            logger.warning(
                 f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead."
             )
             return func(*args, **kwargs)
@@ -85,7 +85,7 @@ def deprecated_with_routing(alternative_func: Callable) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            LOGGER.warning(
+            logger.warning(
                 f"Function `{func.__name__}` is deprecated. Please use `{alternative_func.__name__}` instead, "
                 "which will be called automatically now."
             )

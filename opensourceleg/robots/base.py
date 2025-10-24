@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from opensourceleg.actuators.base import ActuatorBase
-from opensourceleg.logging import LOGGER
+from opensourceleg.logging import logger
 from opensourceleg.sensors.base import SensorBase
 
 TActuator = TypeVar("TActuator", bound=ActuatorBase)
@@ -96,11 +96,11 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             >>> robot.start()
         """
         for actuator in self.actuators.values():
-            LOGGER.debug(f"Calling start method of {actuator.tag}")
+            logger.debug(f"Calling start method of {actuator.tag}")
             actuator.start()
 
         for sensor in self.sensors.values():
-            LOGGER.debug(f"Calling start method of {sensor}")
+            logger.debug(f"Calling start method of {sensor}")
             sensor.start()
 
     @abstractmethod
@@ -121,11 +121,11 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
             >>> robot.stop()
         """
         for actuator in self.actuators.values():
-            LOGGER.debug(f"Calling stop method of {actuator.tag}")
+            logger.debug(f"Calling stop method of {actuator.tag}")
             actuator.stop()
 
         for sensor in self.sensors.values():
-            LOGGER.debug(f"Calling stop method of {sensor}")
+            logger.debug(f"Calling stop method of {sensor}")
             sensor.stop()
 
     @abstractmethod

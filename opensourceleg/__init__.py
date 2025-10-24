@@ -5,6 +5,8 @@ and control of lower-limb robotic prostheses.
 
 from importlib import metadata as importlib_metadata
 
+from opensourceleg.logging.sentry_config import init_sentry
+
 
 def get_version() -> str:
     try:
@@ -14,3 +16,6 @@ def get_version() -> str:
 
 
 __version__: str = get_version()
+
+# Initialize Sentry (logging is already initialized in config.py module import)
+init_sentry()

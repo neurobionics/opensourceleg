@@ -25,7 +25,7 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.logging import LOGGER
+from opensourceleg.logging import logger
 from opensourceleg.math import ThermalModel
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -218,7 +218,7 @@ class TMotorMITCANActuator(ActuatorBase, TMotorManager_mit_can):
                                                         The function should take no arguments and return None.
         """
         # TODO: implement homing
-        LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
+        logger.info(msg=f"[{self.__repr__()}] Homing not implemented.")
         pass
 
     def update(self):  # noqa: C901

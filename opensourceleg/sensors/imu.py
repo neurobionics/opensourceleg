@@ -18,7 +18,7 @@ from typing import Any, ClassVar, Union
 
 import numpy as np
 
-from opensourceleg.logging import LOGGER
+from opensourceleg.logging import logger
 from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 
@@ -108,7 +108,7 @@ class LordMicrostrainIMU(IMUBase):
 
             self.mscl = mscl
         except ImportError:
-            LOGGER.warning(
+            logger.warning(
                 "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
@@ -221,7 +221,7 @@ class LordMicrostrainIMU(IMUBase):
         try:
             self._connection = self.mscl.Connection.Serial(os.path.realpath(self.port), self.baud_rate)
         except RuntimeError as e:
-            LOGGER.error(f"Failed to connect to the IMU at {self.port}: {e}")
+            logger.error(f"Failed to connect to the IMU at {self.port}: {e}")
             exit(1)
 
         self._node = self.mscl.InertialNode(self._connection)
@@ -256,9 +256,9 @@ class LordMicrostrainIMU(IMUBase):
         response = self._node.ping()
 
         if response.success():
-            LOGGER.info(f"Successfully pinged the IMU at {self.port}")
+            logger.info(f"Successfully pinged the IMU at {self.port}")
         else:
-            LOGGER.error(f"Failed to ping the IMU at {self.port}")
+            logger.error(f"Failed to ping the IMU at {self.port}")
 
     def update(self) -> Union[None, Any]:
         """
@@ -450,7 +450,7 @@ class LordMicrostrainIMU(IMUBase):
         Returns:
             float: 0.0
         """
-        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        logger.warning("Gyro data not available for Lord Microstrain IMU")
         return 0.0
 
     @property
@@ -465,7 +465,7 @@ class LordMicrostrainIMU(IMUBase):
         Returns:
             float: 0.0
         """
-        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        logger.warning("Gyro data not available for Lord Microstrain IMU")
         return 0.0
 
     @property
@@ -480,7 +480,7 @@ class LordMicrostrainIMU(IMUBase):
         Returns:
             float: 0.0
         """
-        LOGGER.warning("Gyro data not available for Lord Microstrain IMU")
+        logger.warning("Gyro data not available for Lord Microstrain IMU")
         return 0.0
 
     @property
@@ -512,7 +512,7 @@ class LordMicrostrainIMU(IMUBase):
                             min_dist = dist
                             best_frequency = candidate
 
-            LOGGER.info(
+            logger.info(
                 f"""{self._frequency} is not a valid decimation of {imu_sample_rate},
                 choosing closest decimation: {best_frequency}"""
             )
@@ -565,7 +565,7 @@ class BNO055(IMUBase):
             self.board = board
             self.busio = busio
         except ImportError as e:
-            LOGGER.error(f"BNO055IMU requires adafruit_bno055, board, and busio packages. Error: {e}")
+            logger.error(f"BNO055IMU requires adafruit_bno055, board, and busio packages. Error: {e}")
             exit(1)
 
         super().__init__(tag=tag, offline=offline)

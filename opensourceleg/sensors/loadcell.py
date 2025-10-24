@@ -27,7 +27,8 @@ import numpy as np
 import numpy.typing as npt
 from smbus2 import SMBus
 
-from opensourceleg.logging import LOGGER
+from opensourceleg.logging import logger
+from opensourceleg.logging.profiling import trace_performance
 from opensourceleg.math.math import Counter
 from opensourceleg.sensors.adc import ADS131M0x
 from opensourceleg.sensors.base import LoadcellBase
@@ -141,13 +142,13 @@ class DephyLoadcellAmplifier(LoadcellBase):
 
         # Validate input parameters.
         if calibration_matrix.shape != (6, 6):
-            LOGGER.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
+            logger.info(f"[{self.__repr__()}] calibration_matrix must be a 6x6 array of np.double.")
             raise TypeError("calibration_matrix must be a 6x6 array of np.double.")
         if amp_gain <= 0:
-            LOGGER.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
+            logger.info(f"[{self.__repr__()}] amp_gain must be a floating point value greater than 0.")
             raise ValueError("amp_gain must be a floating point value greater than 0.")
         if exc <= 0:
-            LOGGER.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
+            logger.info(f"[{self.__repr__()}] exc must be a floating point value greater than 0.")
             raise ValueError("exc must be a floating point value greater than 0.")
 
         self._amp_gain: float = amp_gain
@@ -192,6 +193,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         self._calibration_offset = self._zero_calibration_offset
         self._is_calibrated = False
 
+    @trace_performance(op="sensor.update", description="Update loadcell sensor readings")
     def update(
         self,
         calibration_offset: Optional[npt.NDArray[np.double]] = None,
@@ -263,7 +265,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
                 to provide raw data. Defaults to None.
         """
         if not self.is_calibrated:
-            LOGGER.info(
+            logger.info(
                 f"[{self.__repr__()}] Initiating zeroing routine, please ensure that there is no ground contact force."
             )
             input("Press any key to start.")
@@ -280,13 +282,13 @@ class DephyLoadcellAmplifier(LoadcellBase):
                 self._calibration_offset = (iterative_calibration_offset + self._calibration_offset) / 2.0
 
             self._is_calibrated = True
-            LOGGER.info(f"[{self.__repr__()}] Calibration routine complete.")
+            logger.info(f"[{self.__repr__()}] Calibration routine complete.")
 
         elif reset:
             self.reset()
             self.calibrate()
         else:
-            LOGGER.info(
+            logger.info(
                 f"[{self.__repr__()}] Loadcell has already been zeroed. "
                 "To recalibrate, set reset=True in the calibrate method or call reset() first."
             )
@@ -551,7 +553,7 @@ class NBLoadcellDAQ(LoadcellBase):
 
         This method initializes the ADC and begins data acquisition.
         """
-        LOGGER.info(f"[{self.__repr__()}] Starting data acquisition...")
+        logger.info(f"[{self.__repr__()}] Starting data acquisition...")
         self.adc.start()
 
     def stop(self) -> None:
@@ -560,7 +562,7 @@ class NBLoadcellDAQ(LoadcellBase):
 
         This method stops the ADC and ends data acquisition.
         """
-        LOGGER.info(f"[{self.__repr__()}] Stopping data acquisition...")
+        logger.info(f"[{self.__repr__()}] Stopping data acquisition...")
         self.adc.stop()
 
     def update(self) -> None:
@@ -588,7 +590,7 @@ class NBLoadcellDAQ(LoadcellBase):
 
         Resets the ADC and clears any calibration offsets.
         """
-        LOGGER.info(f"[{self.__repr__()}] Resetting calibration offsets...")
+        logger.info(f"[{self.__repr__()}] Resetting calibration offsets...")
         self.adc.reset()
         self._offset = np.zeros(self.adc.num_channels)
         self._is_calibrated = False
@@ -603,9 +605,9 @@ class NBLoadcellDAQ(LoadcellBase):
         Args:
             n_samples (int, optional): Number of samples to average for calibration. Defaults to 1024.
         """
-        LOGGER.info(f"[{self.__repr__()}] Calibrating ADS131M0x...")
+        logger.info(f"[{self.__repr__()}] Calibrating ADS131M0x...")
         self.adc.calibrate()
-        LOGGER.info(f"[{self.__repr__()}] Starting calibration with {n_samples} samples...")
+        logger.info(f"[{self.__repr__()}] Starting calibration with {n_samples} samples...")
         offsets = np.empty((n_samples, self.adc.num_channels))
 
         for i in range(n_samples):
@@ -614,7 +616,7 @@ class NBLoadcellDAQ(LoadcellBase):
 
         self._offset = offsets.mean(axis=0)
         self._is_calibrated = True
-        LOGGER.info(f"[{self.__repr__()}] Calibration complete.")
+        logger.info(f"[{self.__repr__()}] Calibration complete.")
 
     @property
     def is_calibrated(self) -> bool:
