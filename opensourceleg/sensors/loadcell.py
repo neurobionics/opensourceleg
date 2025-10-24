@@ -28,7 +28,6 @@ import numpy.typing as npt
 from smbus2 import SMBus
 
 from opensourceleg.logging import logger
-from opensourceleg.logging.profiling import trace_performance
 from opensourceleg.math.math import Counter
 from opensourceleg.sensors.adc import ADS131M0x
 from opensourceleg.sensors.base import LoadcellBase
@@ -193,7 +192,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
         self._calibration_offset = self._zero_calibration_offset
         self._is_calibrated = False
 
-    @trace_performance(op="sensor.update", description="Update loadcell sensor readings")
     def update(
         self,
         calibration_offset: Optional[npt.NDArray[np.double]] = None,

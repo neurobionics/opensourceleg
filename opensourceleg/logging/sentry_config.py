@@ -1,148 +1,121 @@
 """
 Sentry configuration for opensourceleg library.
 
-This module provides privacy-focused Sentry initialization with:
-- Error tracking for internal library code only
-- Performance monitoring with dynamic sampling
-- Profiling with configurable overhead
-- Complete user privacy (no PII, no user code paths)
+Provides automatic error tracking and profiling.
 
-Sentry Threading Model:
-- Profiling thread: Separate thread samples call stacks at 100Hz
-- Transport worker: Background thread queues & sends data asynchronously
-- Network I/O: Non-blocking, happens on worker thread
-- Queue: Configurable size, drops events if full (no blocking)
+To profile your code:
+    import sentry_sdk
 
-Performance Overhead:
-- Profiling: 1-5% CPU from sampling thread (pure CPU overhead)
-- Transport: <1% (async, non-blocking)
-- Total: 2-6% worst case with full profiling
+    sentry_sdk.profiler.start_profiler()
+    # Your code here - everything gets profiled automatically
+    sentry_sdk.profiler.stop_profiler()
 
-Configuration via environment variables:
-- OPENSOURCELEG_DISABLE_SENTRY=1: Completely disable Sentry
-- OPENSOURCELEG_PROFILING=none|minimal|moderate|full: Set profiling level
+Environment variables:
+- OPENSOURCELEG_DISABLE_SENTRY=1: Disable Sentry completely
 - ENVIRONMENT=production|development|staging: Set environment tag
 """
 
+import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 import sentry_sdk
 from sentry_sdk.integrations.loguru import LoguruIntegration
 
 __all__ = ["init_sentry"]
 
+OPENSOURCELEG_DSN = "https://84b6268de789ef082573af49d5a169eb@o4510241211809792.ingest.us.sentry.io/4510241340719104"
 
-def traces_sampler(sampling_context: dict[str, Any]) -> float:
-    """Simple sampling: only profile hardware I/O operations.
 
-    Sampling strategy for Raspberry Pi real-time performance monitoring:
-    - Hardware I/O (update, set_*, read_*): 10% sample rate
-    - Everything else: 0% (not profiled)
+def _get_bool_env(var_name: str, default: bool = False) -> bool:
+    """Parse environment variable as boolean.
 
-    This focuses profiling on the operations that actually matter for
-    real-time performance: hardware communication with actuators and sensors.
+    Accepts: '1', 'true', 'yes' (case-insensitive) as True
+             '0', 'false', 'no', '' as False
 
     Args:
-        sampling_context: Context about the transaction being sampled
+        var_name: Environment variable name
+        default: Default value if variable is not set or invalid
 
     Returns:
-        Sample rate between 0.0 and 1.0
+        Boolean value
     """
-    transaction_context = sampling_context.get("transaction_context", {})
-    name = transaction_context.get("name", "").lower()
-
-    # Only profile hardware I/O operations
-    # These are the critical operations that affect real-time performance
-    hardware_io_keywords = [
-        "update",      # Component updates (actuator.update, sensor.update)
-        "set_motor",   # Motor commands (set_motor_position, set_motor_current, etc.)
-        "set_output",  # Output commands
-        "set_current", # Current commands
-        "set_position",# Position commands
-        "set_voltage", # Voltage commands
-        "set_torque",  # Torque commands
-        "set_impedance", # Impedance commands
-    ]
-
-    if any(keyword in name for keyword in hardware_io_keywords):
-        return 0.1  # 10% sample rate for hardware I/O operations
-
-    # Don't profile anything else
-    return 0.0
-
-
-def init_sentry() -> None:
-    """Initialize Sentry with privacy-focused, low-overhead configuration.
-
-    Configuration:
-    - Privacy: No PII collected
-    - Performance: Dynamic sampling based on operation type
-    - Profiling: Configurable via OPENSOURCELEG_ENABLE_PROFILING environment variable
-    - Opt-out: Set OPENSOURCELEG_DISABLE_SENTRY=1 to disable
-
-    Profiling (via OPENSOURCELEG_ENABLE_PROFILING):
-    - Off (default): Only error tracking, <1% overhead
-    - On: Profile hardware I/O operations (update, set_* methods), ~1-2% overhead
-
-    When enabled, profiles 10% of hardware I/O operations:
-    - actuator.update(), sensor.update()
-    - set_motor_position(), set_motor_current(), set_motor_voltage(), etc.
-    - Other hardware communication methods
-
-    This tells you if components meet their real-time deadlines.
-
-    Example:
-        >>> # Disable Sentry entirely
-        >>> os.environ['OPENSOURCELEG_DISABLE_SENTRY'] = '1'
-        >>>
-        >>> # Enable profiling of hardware I/O operations
-        >>> os.environ['OPENSOURCELEG_ENABLE_PROFILING'] = '1'
-    """
-    # Allow opt-out via environment variable
-    if os.getenv("OPENSOURCELEG_DISABLE_SENTRY"):
-        # Import logger here to avoid circular import
-        from loguru import logger
-
-        logger.info("Sentry disabled via OPENSOURCELEG_DISABLE_SENTRY")
-        return
-
-    # Simple on/off profiling (default: off for Raspberry Pi production)
-    # When enabled, profiles ALL hardware I/O operations at 100% sample rate
-    enable_profiling = os.getenv("OPENSOURCELEG_ENABLE_PROFILING", "0") == "1"
-
-    # If profiling is enabled, profile 100% of sampled transactions
-    # If disabled, don't profile anything
-    profiles_sample_rate = 1.0 if enable_profiling else 0.0
-
-    sentry_sdk.init(
-        dsn="https://84b6268de789ef082573af49d5a169eb@o4510241211809792.ingest.us.sentry.io/4510241340719104",
-        # Privacy: no PII
-        send_default_pii=False,
-        # Performance monitoring with dynamic sampling
-        enable_tracing=True,
-        traces_sampler=traces_sampler,  # Dynamic: 50% init, 1% loops, 10% default
-        # Profiling: Simple on/off, profiles 100% of sampled traces
-        # With 10% sampling of hardware I/O operations, this gives:
-        # - Off (default): 0% profiling
-        # - On: ~10% of hardware I/O operations profiled (~1% total overhead)
-        profiles_sample_rate=profiles_sample_rate,
-        # Transport configuration for Raspberry Pi
-        # Limit queue size to prevent memory issues on resource-constrained devices
-        transport_queue_size=100,
-        # Integrations
-        integrations=[
-            LoguruIntegration(
-                level=20,  # INFO - capture INFO and above as breadcrumbs (contextual data)
-                event_level=40,  # ERROR - only send ERROR and CRITICAL as issues
-            ),
-        ],
-        # Environment
-        environment=os.getenv("ENVIRONMENT", "production"),
-    )
+    value = os.getenv(var_name, "").lower()
+    if value in ("1", "true", "yes"):
+        return True
+    if value in ("0", "false", "no", ""):
+        return False
 
     # Import logger here to avoid circular import
     from loguru import logger
+    logger.warning(f"Invalid value for {var_name}: '{value}', using default: {default}")
+    return default
 
-    profiling_status = "enabled" if enable_profiling else "disabled"
-    logger.info(f"Sentry initialized (error tracking: enabled, profiling: {profiling_status})")
+
+def process_event_before_send(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
+    """Process log events to add metadata and clean up message formatting.
+
+    This hook extracts file/function/line metadata from the log record and adds it
+    to the event's contexts for better display in Sentry UI.
+    """
+    if "logentry" in event and "log_record" in hint:
+        record = hint["log_record"]
+
+        event.setdefault("contexts", {})["source"] = {
+            "filename": getattr(record, "filename", None),
+            "function": getattr(record, "funcName", None),
+            "lineno": getattr(record, "lineno", None),
+            "module": getattr(record, "module", None),
+            "pathname": getattr(record, "pathname", None),
+        }
+
+        if hasattr(record, "created"):
+            from datetime import datetime, timezone
+            event["contexts"]["log"] = {
+                "timestamp": datetime.fromtimestamp(record.created, timezone.utc).isoformat(),
+            }
+
+    return event
+
+
+def init_sentry() -> None:
+    """Initialize Sentry for error tracking and profiling.
+
+    Uses manual profiling mode - call sentry_sdk.profiler.start_profiler() to start
+    profiling and stop_profiler() to stop. Everything in between gets profiled.
+
+    Environment variables:
+        OPENSOURCELEG_DISABLE_SENTRY=1: Disable Sentry completely
+    """
+    # Import logger here to avoid circular import
+    from loguru import logger
+
+    if _get_bool_env("OPENSOURCELEG_DISABLE_SENTRY"):
+        logger.info("Sentry disabled via OPENSOURCELEG_DISABLE_SENTRY")
+        return
+
+    try:
+        sentry_sdk.init(
+            dsn=OPENSOURCELEG_DSN,
+            send_default_pii=False,
+            # Enable tracing (not required for profiling but recommended)
+            enable_tracing=True,
+            traces_sample_rate=1.0,
+            # Manual profiling mode - you control when profiling runs
+            profile_lifecycle="manual",
+            profile_session_sample_rate=1.0,
+            before_send=process_event_before_send,
+            integrations=[
+                LoguruIntegration(
+                    level=logging.INFO,
+                    event_level=logging.ERROR,
+                    breadcrumb_format="{message}",
+                    event_format="{message}",
+                ),
+            ],
+            environment=os.getenv("ENVIRONMENT", "production"),
+        )
+
+        logger.info("Sentry initialized (error tracking + manual profiling)")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Sentry: {e}")

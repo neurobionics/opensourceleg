@@ -23,7 +23,6 @@ from opensourceleg.actuators.decorators import (
 from opensourceleg.logging import logger
 from opensourceleg.logging.decorators import deprecated_with_routing
 from opensourceleg.logging.exceptions import ControlModeException
-from opensourceleg.logging.profiling import trace_performance
 from opensourceleg.math import I2tLimitException, ThermalLimitException, ThermalModel
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
@@ -245,7 +244,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self.stop_streaming()
         self.close()
 
-    @trace_performance(op="actuator.update", description="Update Dephy actuator state and thermal model")
     def update(self) -> None:
         """
         Updates the actuator's data by reading new values and updating the thermal model.
@@ -321,7 +319,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self._i2t_fault_threshold = threshold
         logger.info(f"[{self.tag}] I2t fault threshold set to {threshold} consecutive faults")
 
-    @trace_performance(op="actuator.home", description="Home Dephy actuator to zero position")
     def home(
         self,
         homing_voltage: int = 2000,
@@ -404,7 +401,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         self._is_homed = True
         logger.info(f"[{str.upper(self.tag)}] Homing complete.")
 
-    @trace_performance(op="actuator.set_motor_torque", description="Set motor torque command")
     def set_motor_torque(self, value: float) -> None:
         """
         Sets the motor torque in Nm. This is the torque that is applied to the motor rotor, not the joint or output.
@@ -439,7 +435,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         """
         self.set_motor_torque(value=value / self.gear_ratio)
 
-    @trace_performance(op="actuator.set_motor_current", description="Set motor current command")
     def set_motor_current(
         self,
         value: float,
