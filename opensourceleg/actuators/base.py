@@ -614,7 +614,7 @@ class ActuatorBase(OfflineMixin, ABC):
         pass
 
     @abstractmethod
-    def update(self) -> None:
+    def update(self) -> None:  # !viztracer: log_instant("actuator_update")
         """
         Update the actuator's state.
 

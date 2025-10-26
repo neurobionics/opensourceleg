@@ -1,0 +1,26 @@
+[default]
+# Default low-overhead configuration for real-time robotics profiling
+
+# Limit stack depth to reduce overhead
+max_stack_depth = 2
+
+# Ignore C functions (numpy internals, builtins, etc.)
+ignore_c_function = True
+
+# Don't ignore frozen modules (stdlib)
+ignore_frozen = False
+
+# Disable function return value logging
+log_func_retval = False
+
+# Disable function argument logging
+log_func_args = False
+
+# Don't log print statements
+log_print = False
+
+# Don't log garbage collection events
+log_gc = False
+
+# Don't add PID suffix to output files
+pid_suffix = False

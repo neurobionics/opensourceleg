@@ -113,7 +113,7 @@ class SensorBase(OfflineMixin, ABC):
         pass
 
     @abstractmethod
-    def update(self) -> None:
+    def update(self) -> None:  # !viztracer: log_instant("sensor_update")
         """
         Update the sensor state or data.
 
