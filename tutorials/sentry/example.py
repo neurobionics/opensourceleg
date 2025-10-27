@@ -15,11 +15,12 @@ from opensourceleg.logging import logger
 import numpy as np
 
 FREQ = 200  # Hz
-DURATION = 10 # seconds
+DURATION = 2 # seconds
 
 DIMENSION = 100
 
-def test_function(t) -> np.ndarray:
+def some_math(t) -> np.ndarray:
+    print(f"Performing some math at time {t}")
     a = np.random.rand(DIMENSION, DIMENSION)
     b = np.random.rand(DIMENSION, DIMENSION)
     result = np.matmul(a, b)
@@ -28,16 +29,13 @@ def test_function(t) -> np.ndarray:
 
 def main():
     clock = SoftRealtimeLoop(dt=1.0 / FREQ)
-    sentry_sdk.profiler.start_profiler()
 
     for t in clock:
         if t > DURATION:
+            logger.error("Take this to sentry!")
             break
 
-        c = test_function(t)
-        print(t, c.shape)
-
-    sentry_sdk.profiler.stop_profiler()
+        c = some_math(t)
 
 if __name__ == "__main__":
     main()
