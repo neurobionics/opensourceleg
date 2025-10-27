@@ -20,11 +20,10 @@ Note: The package ships with a default config at opensourceleg/profile/.viztrace
 
 import numpy as np
 
-from opensourceleg.profile import RealtimeTracer
-from opensourceleg.utilities import SoftRealtimeLoop
 from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.logging.logger import Logger
-
+from opensourceleg.profiling import RealtimeTracer
+from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQ = 1000
 DURATION = 2
@@ -53,16 +52,14 @@ if __name__ == "__main__":
     )
     actuator_logger.track_function(lambda: actpack.motor_position, "Motor Position")
 
-
-    with tracer:
-        with actpack:
-            for t in clock:
-                if t > DURATION:
-                    break
-                tracer.mark("start")
-                actpack.update()
-                actuator_logger.info(f"Time: {t}; Motor Position: {actpack.motor_position};")
-                actuator_logger.update()
+    with tracer, actpack:
+        for t in clock:
+            if t > DURATION:
+                break
+            tracer.mark("start")
+            actpack.update()
+            actuator_logger.info(f"Time: {t}; Motor Position: {actpack.motor_position};")
+            actuator_logger.update()
 
     actuator_logger.flush_buffer()
 
@@ -70,4 +67,3 @@ if __name__ == "__main__":
     tracer.summary()
     tracer.plot_histogram(save_path="actuator_histogram.png")
     tracer.plot_timeline(save_path="actuator_timeline.png")
-

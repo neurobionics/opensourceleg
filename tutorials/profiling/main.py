@@ -20,7 +20,7 @@ Note: The package ships with a default config at opensourceleg/profile/.viztrace
 
 import numpy as np
 
-from opensourceleg.profile import RealtimeTracer
+from opensourceleg.profiling import RealtimeTracer
 from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQ = 200
@@ -51,4 +51,3 @@ if __name__ == "__main__":
     tracer.summary()
     tracer.plot_histogram(save_path="histogram.png")
     tracer.plot_timeline(save_path="timeline.png")
-

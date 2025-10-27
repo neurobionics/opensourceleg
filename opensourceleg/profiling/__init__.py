@@ -5,6 +5,6 @@ This module provides low-overhead profiling using VizTracer,
 optimized for real-time robotics applications.
 """
 
-from opensourceleg.profile.tracer import IterationStats, RealtimeTracer
+from opensourceleg.profiling.tracer import IterationStats, RealtimeTracer
 
 __all__ = ["RealtimeTracer", "IterationStats"]
