@@ -496,12 +496,7 @@ class RealtimeTracer:
 
         Call analyze() first to populate stats and timeline.
         """
-        timeline = self.get_timeline()
-        print(f"\nTrace Timeline")
-        print(f"Duration: {timeline['duration']:.3f} seconds")
-        print(f"Total Events: {timeline['total_events']}")
-        print(f"Start: {timeline['start_time']:.6f} s")
-        print(f"End: {timeline['end_time']:.6f} s\n")
+        print(self.stats)
 
     def plot_histogram(
         self, bins: int = 50, figsize: tuple = (10, 6), colormap: str = "viridis", save_path: Optional[str] = None
