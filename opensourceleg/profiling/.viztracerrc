@@ -2,7 +2,7 @@
 # Default low-overhead configuration for real-time robotics profiling
 
 # Limit stack depth to reduce overhead
-max_stack_depth = 4
+max_stack_depth = 2
 
 # Ignore C functions (numpy internals, builtins, etc.)
 ignore_c_function = True

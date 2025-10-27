@@ -25,7 +25,7 @@ from opensourceleg.logging.logger import Logger
 from opensourceleg.profiling import RealtimeTracer
 from opensourceleg.utilities import SoftRealtimeLoop
 
-FREQ = 1000
+FREQ = 500
 DURATION = 2
 MATRIX_DIMENSION = 200
 

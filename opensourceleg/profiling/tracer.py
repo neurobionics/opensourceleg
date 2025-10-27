@@ -845,11 +845,15 @@ class RealtimeTracer:
                 weight="bold",
             )
 
-            if stats["std_start"] > error_threshold_ms:
+            # Calculate asymmetric error values
+            start_lower_err = stats["mean_start"] - stats["min_start"]
+            start_upper_err = stats["max_start"] - stats["mean_start"]
+
+            if max(start_lower_err, start_upper_err) > error_threshold_ms:
                 ax.text(
                     stats["mean_start"],
                     y_pos + 0.35,
-                    f"±{stats['std_start']:.2f}",
+                    f"[-{start_lower_err:.2f}, +{start_upper_err:.2f}]",
                     ha="center",
                     va="bottom",
                     fontsize=7,
@@ -857,11 +861,15 @@ class RealtimeTracer:
                     alpha=0.7,
                 )
 
-            if stats["std_end"] > error_threshold_ms:
+            # Calculate asymmetric error values
+            end_lower_err = stats["mean_end"] - stats["min_end"]
+            end_upper_err = stats["max_end"] - stats["mean_end"]
+
+            if max(end_lower_err, end_upper_err) > error_threshold_ms:
                 ax.text(
                     stats["mean_end"],
                     y_pos + 0.35,
-                    f"±{stats['std_end']:.2f}",
+                    f"[-{end_lower_err:.2f}, +{end_upper_err:.2f}]",
                     ha="center",
                     va="bottom",
                     fontsize=7,

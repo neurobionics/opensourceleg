@@ -9,6 +9,7 @@ dependencies = [
     "matplotlib>=3.10.7",
     "numpy>=1.24.3,<2",
     "pandas>=2.2.3,<3",
+    "pyspy>=0.1.1",
     "viztracer>=1.0.4",
 ]
 

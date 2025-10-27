@@ -167,3 +167,4 @@ cython_debug/
 
 tutorials/**/*.png
 tutorials/**/*.json
+tutorials/**/*.speedscope

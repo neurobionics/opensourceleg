@@ -1226,6 +1226,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pyspy" },
     { name = "viztracer" },
 ]
 
@@ -1295,6 +1296,7 @@ requires-dist = [
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'moteus'", specifier = ">=0.3.29,<0.4" },
     { name = "numpy", specifier = ">=1.24.3,<2" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
+    { name = "pyspy", specifier = ">=0.1.1" },
     { name = "smbus2", marker = "extra == 'communication'", specifier = ">=0.4.2" },
     { name = "spidev", marker = "sys_platform == 'linux' and extra == 'communication'", specifier = ">=3.7" },
     { name = "types-protobuf", marker = "extra == 'messaging'", specifier = ">=4.21.0,<5" },
@@ -1666,6 +1668,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/1e/7d/ae3f0a63f41e4d2f6
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0", size = 90585, upload-time = "2020-11-23T03:59:13.41Z" },
 ]
+
+[[package]]
+name = "pyspy"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ff/2f/1ba3f46f4659d10db5b4182ae36003d348c84f36f7cb8812c49234598be0/pyspy-0.1.1.tar.gz", hash = "sha256:be2e55a1ceb1a4d558cfc4dbb5c51a5360c273e31fd58e0e0d7c5d64dbea0e03", size = 1779, upload-time = "2012-02-20T05:33:31.398Z" }
 
 [[package]]
 name = "pytest"
