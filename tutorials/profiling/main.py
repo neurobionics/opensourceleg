@@ -25,7 +25,7 @@ from opensourceleg.utilities import SoftRealtimeLoop
 
 FREQ = 200
 DURATION = 2
-MATRIX_DIMENSION = 100
+MATRIX_DIMENSION = 200
 
 
 def crazy_math(t: float) -> np.ndarray:
@@ -43,9 +43,11 @@ if __name__ == "__main__":
         for t in clock:
             if t > DURATION:
                 break
+            tracer.mark("start")
             crazy_math(t)
 
-    tracer.analyze(frequency=FREQ)
+    tracer.analyze(frequency=FREQ, start_marker="start")
     tracer.summary()
-    tracer.plot_histogram(save_path="iteration_histogram.png")
+    tracer.plot_histogram(save_path="histogram.png")
+    tracer.plot_timeline(save_path="timeline.png")
 
