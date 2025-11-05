@@ -161,4 +161,4 @@ LOADCELL_CALIBRATION_MATRIX = np.array([
 ```
 should be replaced with your specific loadcell's calibration values.
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

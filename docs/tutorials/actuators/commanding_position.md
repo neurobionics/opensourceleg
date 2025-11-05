@@ -84,4 +84,4 @@ The main loop:
       - t ≥ 1.0s: Motor moves to position + π/2 radians (90 degrees)
       - Data is continuously logged to `./logs/commanding_position.csv`
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

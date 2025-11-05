@@ -85,7 +85,7 @@ If you encounter any issues or need assistance:
 
 1. Check the troubleshooting section in the specific tutorial
 2. Review the [API documentation](../../api/robots/robots.md)
-3. Post questions on the [Open Source Leg community forum](https://opensourceleg.org/community)
+3. Post questions on the [Open Source Leg community forum](https://opensourceleg.discourse.group)
 
 ## Next Steps
 

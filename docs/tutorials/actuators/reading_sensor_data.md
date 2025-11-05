@@ -79,4 +79,4 @@ The main loop:
 
 The Dephy actuator provides several sensor values that can be tracked, you can find the list of all the available sensor readings in the [Actuator API](../../api/actuators/actuators.md) documentation.
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

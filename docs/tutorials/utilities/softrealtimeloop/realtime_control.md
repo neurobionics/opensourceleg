@@ -94,4 +94,4 @@ By monitoring these statistics, you can ensure your real-time applications maint
     rt_loop.reset()  # Clears statistics for new measurements
     ```
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

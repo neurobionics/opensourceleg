@@ -16,4 +16,4 @@ The iterator interface provides a more Pythonic way to work with the loop:
 2. Each iteration occurs at precise time intervals
 3. The loop can be stopped by breaking the for loop, calling `rt_loop.stop()`, or sending an interrupt signal (Ctrl+C)
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

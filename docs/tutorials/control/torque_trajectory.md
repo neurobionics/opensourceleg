@@ -156,4 +156,4 @@ The script generates:
 ```python
 --8<-- "tutorials/control/torque_trajectory/torque_trajectory.py:1:212"
 ```
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).
