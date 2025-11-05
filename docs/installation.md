@@ -275,7 +275,7 @@ uv run mypy --version
 
 ### 5. Unauthorized error or ".venv\Scripts\Activate.ps1 cannot be loaded" error
 
-While running ".venv\Scripts\activate" command, sometimes you may get an "Unaithorized error" (below error). For this error, you would need to run "Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser" command to unrestric and let the current user run the command
+While running ".venv\Scripts\activate" command, sometimes you may get an "Unauthorized error" (below error). For this error, you would need to run "Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser" command to remove the restrictions and let the current user run the command.
 
 ```bash
 #ERROR MESSAGE: .venv\Scripts\Activate.ps1 cannot be loaded because running scripts is disabled on this system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170.
