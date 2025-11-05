@@ -273,7 +273,7 @@ uv run pytest --version
 uv run mypy --version
 ```
 
-### 5. Unaithorized error or ".venv\Scripts\Activate.ps1 cannot be loaded" error
+### 5. Unauthorized error or ".venv\Scripts\Activate.ps1 cannot be loaded" error
 
 While running ".venv\Scripts\activate" command, sometimes you may get an "Unaithorized error" (below error). For this error, you would need to run "Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser" command to unrestric and let the current user run the command
 
