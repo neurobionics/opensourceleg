@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.3](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.2...opensourceleg-v3.4.3) (2025-11-05)
+
+
+### Documentation
+
+* update MSCL package link and version in IMU docstring ([8894afe](https://github.com/neurobionics/opensourceleg/commit/8894afec7ceeb4a5a0698128955fbf1efbc307a2))
+* update MSCL package link and version in IMU docstring ([c41e4c9](https://github.com/neurobionics/opensourceleg/commit/c41e4c930694192fa2f5b2b46314542e4c9c6b4d))
+
 ## [3.4.2](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.1...opensourceleg-v3.4.2) (2025-10-13)
 
 
