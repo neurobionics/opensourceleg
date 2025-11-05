@@ -142,4 +142,4 @@ You can set the zero position in two ways:
 - **Incorrect Readings**: Check encoder orientation and magnetic field strength
 - **Unstable Values**: Check for mechanical vibration or electromagnetic interference
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

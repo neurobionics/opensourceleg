@@ -123,4 +123,4 @@ Your logged data can be easily analyzed using common data analysis packages like
     - Adjust buffer sizes as needed
     - Balance logging frequency with requirements
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

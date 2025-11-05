@@ -69,6 +69,11 @@ class LordMicrostrainIMU(IMUBase):
         - Read the MSCL installation instructions:
           https://github.com/LORD-MicroStrain/MSCL/blob/master/HowToUseMSCL.md
         - We assume that the MSCL library is installed in /usr/share/python3-mscl
+
+    Note: MSCL v65 may encounter page alignment errors on some Raspberry Pi 5 kernels.
+        Updating to a newer Raspberry Pi OS image with the rpi-v8 kernel
+        or upgrading to MSCL v67.1.0 resolves the issue:
+        https://github.com/LORD-MicroStrain/MSCL/releases/download/v67.1.0/MSCL_arm64_Python3.11_v67.1.0.deb
     """
 
     def __init__(
