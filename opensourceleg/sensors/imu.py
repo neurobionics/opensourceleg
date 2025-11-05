@@ -74,7 +74,6 @@ class LordMicrostrainIMU(IMUBase):
         Updating to a newer Raspberry Pi OS image with the rpi-v8 kernel
         or upgrading to MSCL v67.1.0 resolves the issue:
         https://github.com/LORD-MicroStrain/MSCL/releases/download/v67.1.0/MSCL_arm64_Python3.11_v67.1.0.deb
-        
     """
 
     def __init__(
