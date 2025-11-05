@@ -14,8 +14,9 @@ If you're familiar with Python packages, the command above will get you started 
 
 We offer two ways to install opensourceleg:
 
-- **Standard Installation**: For users who want to use the library as-is
-- **Development Installation**: For contributors or users who need to modify the library
+- **Standard Installation**: For users who want to use the library as-is. (Suitable for beginners, end users, testers/ validators, and for anyone who is not planning to modify the library's source code or connect it to non-standard database systems, hardware, or third-party frameworks.
+)
+- **Development Installation**: For contributors or users who need to modify the library (Suitable for external contributors and advanced users who can perform bug fixes and improve functionality.)
 
 ### 1. Standard Installation (Recommended for Most Users)
 
@@ -272,12 +273,23 @@ uv run pytest --version
 uv run mypy --version
 ```
 
+### 5. Unauthorized error or ".venv\Scripts\Activate.ps1 cannot be loaded" error
+
+While running ".venv\Scripts\activate" command, sometimes you may get an "Unauthorized error" (below error). For this error, you would need to run "Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser" command to remove the restrictions and let the current user run the command.
+
+```bash
+#ERROR MESSAGE: .venv\Scripts\Activate.ps1 cannot be loaded because running scripts is disabled on this system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170.
+
+#SOLUTION: Run “Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser” command
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+```
+
 ## Getting Help
 
 Everyone was a beginner once! Don't hesitate to ask questions if you get stuck. We have several ways to get help:
 
 1. **Bug Reports**: Open an issue on [GitHub](https://github.com/neurobionics/opensourceleg/issues)
-2. **Questions**: Check our [discussions](https://www.opensourceleg.org/community)
+2. **Questions**: Check our [discussions](https://opensourceleg.discourse.group)
 
 ## Next Steps
 

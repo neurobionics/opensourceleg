@@ -76,4 +76,4 @@ This pattern provides an alternative to the `tic()` `toc()` usage that may produ
 
 The `Profiler` class provides flexible tools for measuring execution time in real-time applications. Whether you need to profile specific code blocks, repeated function calls, or entire functions, the `Profiler` class has you covered.
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

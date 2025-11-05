@@ -87,7 +87,7 @@ If you encounter any issues:
 
 1. Check the specific sensor's documentation
 2. Review the [API documentation](../../api/sensors/sensors_base.md)
-3. Post questions on the [Open Source Leg community forum](https://opensourceleg.org/community)
+3. Post questions on the [Open Source Leg community forum](https://opensourceleg.discourse.group)
 
 ## Next Steps
 

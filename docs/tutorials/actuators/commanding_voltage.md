@@ -89,4 +89,4 @@ The main loop:
 - Motor speed will vary with load under constant voltage
 - This mode is useful for basic testing and characterization of the motor
 
-If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.org/community).
+If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).

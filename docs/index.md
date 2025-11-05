@@ -35,15 +35,20 @@ The library currently supports the following hardware components:
 
 | Sensors              | Unit Tests | Hardware Tests | Benchmarks | Documentation |
 | -------------------- | ---------- | -------------- | ---------- | ------------- |
-| AS5048B Encoder      | ✅         | ✅             | ❌         | ✅            |
-| Lord Microstrain IMU | ✅         | ✅             | ❌         | ✅            |
-| SRI Loadcell         | ✅         | ✅             | ❌         | ✅            |
+| AS5048B Encoder      |     ✅    |        ✅      |     ❌    |      ✅      |
+| Lord Microstrain IMU |     ✅    |        ✅      |     ❌    |      ✅      |
+| SRI Loadcell         |     ✅    |        ✅      |     ❌    |      ✅      |
 
-| Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
-| ------------- | ---------- | -------------- | ---------- | ------------- |
-| Dephy Actpack | ⚠️         | ✅             | ⚠️         | ✅            |
-| Moteus        | ⚠️         | ⚠️             | ⚠️         | ✅            |
-| TMotor        | ❌         | ⚠️             | ❌         | ❌            |
+
+
+| Actuators         | Unit Tests | Hardware Tests | Benchmarks | Documentation |
+| ----------------- | ---------- | -------------- | ---------- | ------------- |
+| Dephy Actpack     |     ⚠️    |       ✅       |     ⚠️     |      ✅      |
+| Moteus            |     ⚠️    |       ⚠️       |     ⚠️     |      ✅      |
+| TMotor            |     ❌    |       ⚠️       |     ❌     |      ❌      |
+
+
+
 
 > Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available;
 
