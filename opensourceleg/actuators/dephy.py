@@ -20,12 +20,13 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.logging import LOGGER
+from opensourceleg.extras.safety import I2tLimitException, ThermalLimitException
 from opensourceleg.logging.decorators import (
     deprecated_with_routing,
 )
 from opensourceleg.logging.exceptions import ControlModeException
-from opensourceleg.math import I2tLimitException, ThermalLimitException, ThermalModel
+from opensourceleg.math import ThermalModel
+from opensourceleg.rust import Logger
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=30, ki=0, kd=0, k=0, b=0, ff=0)
 
@@ -51,41 +52,41 @@ DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
 
 
 def _dephy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering Voltage control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Entering Voltage control mode.")
 
 
 def _dephy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Voltage control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Exiting Voltage control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Current control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Entering Current control mode.")
 
 
 def _dephy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Current control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Exiting Current control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Position control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Entering Position control mode.")
 
 
 def _dephy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Position control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Exiting Position control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
 
 def _dephy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Entering Impedance control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Entering Impedance control mode.")
 
 
 def _dephy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}]  Exiting Impedance control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}]  Exiting Impedance control mode.")
     dephy_actuator.stop_motor()
     time.sleep(DEPHY_SLEEP_DURATION)
 
@@ -210,7 +211,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             self._is_open = True
         except OSError:
             print("\n")
-            LOGGER.error(
+            Logger.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
                     Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
@@ -281,7 +282,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
             # Only raise exception after multiple consecutive faults
             if self._i2t_fault_count >= self._i2t_fault_threshold:
-                LOGGER.error(
+                Logger.error(
                     msg=f"[{str.upper(self.tag)}] I2t limit exceeded "
                     f"(Maximum Average Current limit exceeded for time at current limit) "
                     f"for {self._i2t_fault_count} consecutive readings. Current: {self.motor_current} mA. "
@@ -292,7 +293,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 )
                 raise I2tLimitException()
             else:
-                LOGGER.warning(
+                Logger.warning(
                     msg=f"[{str.upper(self.tag)}] I2t fault detected "
                     f"({self._i2t_fault_count}/{self._i2t_fault_threshold}). "
                     f"Current: {self.motor_current} mA. Monitoring for consecutive faults."
@@ -319,7 +320,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             raise ValueError("I2t fault threshold must be >= 1")
 
         self._i2t_fault_threshold = threshold
-        LOGGER.info(f"[{self.tag}] I2t fault threshold set to {threshold} consecutive faults")
+        Logger.info(f"[{self.tag}] I2t fault threshold set to {threshold} consecutive faults")
 
     def home(
         self,
@@ -364,7 +365,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         is_homing = True
         homing_frequency = homing_frequency if homing_frequency is not None else self.frequency
 
-        LOGGER.info(
+        Logger.info(
             f"[{str.upper(self.tag)}] Homing {self.tag} joint. "
             "Please make sure the joint is free to move and press Enter to continue."
         )
@@ -389,11 +390,11 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
         except KeyboardInterrupt:
             self.set_motor_voltage(value=0)
-            LOGGER.info(msg=f"[{str.upper(self.tag)}] Homing interrupted.")
+            Logger.info(msg=f"[{str.upper(self.tag)}] Homing interrupted.")
             return
         except Exception as e:
             self.set_motor_voltage(value=0)
-            LOGGER.error(msg=f"[{str.upper(self.tag)}] Homing failed: {e}")
+            Logger.error(msg=f"[{str.upper(self.tag)}] Homing failed: {e}")
             return
 
         self.set_motor_zero_position(value=self.motor_position + output_position_offset * self.gear_ratio)
@@ -401,7 +402,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         time.sleep(0.1)
 
         self._is_homed = True
-        LOGGER.info(f"[{str.upper(self.tag)}] Homing complete.")
+        Logger.info(f"[{str.upper(self.tag)}] Homing complete.")
 
     def set_motor_torque(self, value: float) -> None:
         """
@@ -751,7 +752,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["mot_volt"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -772,7 +773,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["mot_cur"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -793,7 +794,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -814,7 +815,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["mot_ang"] * self.MOTOR_CONSTANTS.RAD_PER_COUNT) - self.motor_zero_position
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -835,7 +836,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return int(self._data["mot_ang"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
             )
             return 0
@@ -857,7 +858,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return int(self._data["mot_vel"]) * RAD_PER_DEG
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -879,7 +880,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["mot_acc"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -900,7 +901,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["batt_volt"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -921,7 +922,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["batt_curr"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -957,7 +958,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["temperature"])
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -996,7 +997,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 ]
             )
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
             )
             return np.zeros(shape=6)
@@ -1018,7 +1019,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["accelx"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1040,7 +1041,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["accely"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1062,7 +1063,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["accelz"] * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1084,7 +1085,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["gyrox"] * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1106,7 +1107,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["gyroy"] * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1128,7 +1129,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         if self._data is not None:
             return float(self._data["gyroz"] * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1155,35 +1156,35 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
 
 
 def _dephy_legacy_voltage_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_entry(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Entering {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 def _dephy_legacy_voltage_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.VOLTAGE.name} control mode.")
 
 
 def _dephy_legacy_current_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.CURRENT.name} control mode.")
 
 
 def _dephy_legacy_position_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.POSITION.name} control mode.")
 
 
 def _dephy_legacy_impedance_mode_exit(dephy_actuator: "DephyActuator") -> None:
-    LOGGER.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
+    Logger.debug(msg=f"[{dephy_actuator.tag}] Exiting {CONTROL_MODES.IMPEDANCE.name} control mode.")
 
 
 DEPHY_LEGACY_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -1279,7 +1280,7 @@ class DephyLegacyActuator(DephyActuator):
             )
         except OSError:
             print("\n")
-            LOGGER.error(
+            Logger.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port '{self.port}'. \n\n \
                     Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
@@ -1314,7 +1315,7 @@ class DephyLegacyActuator(DephyActuator):
 
         # Check for thermal fault, bit 2 of the execute status byte
         if self._data.status_ex & 0b00000010 == 0b00000010:
-            LOGGER.error(
+            Logger.error(
                 f"[{str.upper(self.tag)}] Thermal Fault: Winding temperature: {self.winding_temperature}; "
                 f"Case temperature: {self.case_temperature}."
             )
@@ -1368,7 +1369,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.mot_volt)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1378,7 +1379,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.mot_cur)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1391,7 +1392,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.mot_cur * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1404,7 +1405,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.mot_ang * self.MOTOR_CONSTANTS.RAD_PER_COUNT) - self.motor_zero_position
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1415,7 +1416,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return int(self._data.mot_ang)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0."
             )
             return 0
@@ -1428,7 +1429,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return int(self._data.mot_vel) * RAD_PER_DEG
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1441,7 +1442,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.mot_acc)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1452,7 +1453,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.batt_volt)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1463,7 +1464,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.batt_curr)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1484,7 +1485,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.temperature)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1515,7 +1516,7 @@ class DephyLegacyActuator(DephyActuator):
                 ]
             )
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning zeros"
             )
             return np.zeros(shape=6)
@@ -1529,7 +1530,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.accelx * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1543,7 +1544,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.accely * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1557,7 +1558,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.accelz * M_PER_SEC_SQUARED_ACCLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1571,7 +1572,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.gyrox * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1585,7 +1586,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.gyroy * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -1615,7 +1616,7 @@ class DephyLegacyActuator(DephyActuator):
         if self._data is not None:
             return float(self._data.gyroz * RAD_PER_SEC_GYROLSB)
         else:
-            LOGGER.debug(
+            Logger.debug(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0

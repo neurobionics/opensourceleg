@@ -6,7 +6,7 @@ This guide covers the various ways to configure the Logger for your needs. All e
 
 ### Basic Configuration
 
-The Logger can be initialized with several basic parameters that control its behavior. This configuration sets up both file and console logging, with different verbosity levels for each output. The `log_path` specifies where log files are stored, while `file_name` determines the base name for log files. The `buffer_size` parameter helps optimize performance by controlling how frequently logs are written to disk.
+The Logger can be initialized with several basic parameters that control its behavior. This configuration sets up both file and console logging, with different verbosity levels for each output. The `log_directory` specifies where log files are stored, while `log_name` determines the base name for log files.
 
 ```python
 --8<-- "tutorials/logging/configuring_logger.py:8:17"
@@ -16,7 +16,7 @@ The Logger can be initialized with several basic parameters that control its beh
 
 Log levels help you control the verbosity of your logging output. You can set different levels for file logging and console output, allowing you to have detailed logs in your files while keeping console output focused on more important messages.
 
-The levels range from `DEBUG` (most verbose) to `CRITICAL` (most severe), giving you fine-grained control over what gets logged.
+The levels range from `TRACE` (most verbose) to `ERROR` (most severe), giving you fine-grained control over what gets logged.
 
 ```python
 --8<-- "tutorials/logging/configuring_logger.py:22:32"
@@ -28,24 +28,6 @@ The Logger includes built-in file management capabilities to help maintain your 
 
 ```python
 --8<-- "tutorials/logging/configuring_logger.py:38:43"
-```
-
-## Advanced Configuration
-
-### Custom Formatting
-
-The Logger supports customizable log message formatting, allowing you to include various pieces of information in each log entry. You can include timestamps, log levels, file names, line numbers, and function names in your log messages. This flexibility helps you create log outputs that match your debugging and monitoring needs.
-
-```python
---8<-- "tutorials/logging/configuring_logger.py:48:57"
-```
-
-### Buffer Management
-
-Buffer management allows you to optimize the Logger's performance by controlling when logs are written to disk. A larger buffer size reduces I/O operations but increases the amount of memory used. You can also manually flush the buffer when needed, ensuring critical logs are written immediately.
-
-```python
---8<-- "tutorials/logging/configuring_logger.py:63:69"
 ```
 
 ## Common Configurations

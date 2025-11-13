@@ -19,7 +19,7 @@ import numpy as np
 
 from opensourceleg.common.offline import OfflineMixin
 from opensourceleg.logging.exceptions import ControlModeException
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.rust import Logger
 
 # TODO: Add validators for every custom data type
 
@@ -550,7 +550,7 @@ class ActuatorBase(OfflineMixin, ABC):
                     #     f"{[mode.name for mode in required_modes]}"
                     # )
             except AttributeError:
-                LOGGER.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.__class__.__name__}.")
+                Logger.debug(msg=f"[{self.tag}] {method_name}() is not implemented in {self.__class__.__name__}.")
 
     def _set_mutated_methods(self) -> None:
         """
@@ -661,7 +661,7 @@ class ActuatorBase(OfflineMixin, ABC):
             >>> actuator.set_control_mode(CONTROL_MODES.POSITION)
         """
         if self.mode == mode:
-            LOGGER.debug(msg=f"[{self.tag}] Already in {self.mode.name} control mode.")
+            Logger.debug(msg=f"[{self.tag}] Already in {self.mode.name} control mode.")
             return
 
         current_config = self._get_control_mode_config(self.mode)

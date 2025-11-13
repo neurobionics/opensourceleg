@@ -20,8 +20,9 @@ from opensourceleg.actuators.decorators import (
     check_actuator_open,
     check_actuator_stream,
 )
-from opensourceleg.logging.logger import LOGGER
+from opensourceleg.extras.safety import ThermalLimitException
 from opensourceleg.math import ThermalModel
+from opensourceleg.rust import Logger
 
 try:
     import moteus_pi3hat as pihat
@@ -159,7 +160,7 @@ class MoteusInterface:
 
     async def update(self):
         if not self.batch:
-            LOGGER.warning("Batching is disabled. Use the update method of MoteusActuator")
+            Logger.warn("Batching is disabled. Use the update method of MoteusActuator")
 
         commands = []
         for servo_id in self.actuator_map:
@@ -183,7 +184,7 @@ class MoteusInterface:
 
     async def stop(self):
         if not self.batch:
-            LOGGER.warning("Batching is disabled. Use the stop method of MoteusActuator")
+            Logger.warn("Batching is disabled. Use the stop method of MoteusActuator")
 
         if not self._stop_servos:
             return
@@ -265,7 +266,7 @@ class MoteusActuator(ActuatorBase, Controller):
 
         except OSError:
             print("\n")
-            LOGGER.error(
+            Logger.error(
                 msg=f"[{self.__repr__()}] Need admin previleges to open the port. \n\n \
                     Please run the script with 'sudo' command or add the user to the dialout group.\n"
             )
@@ -276,7 +277,7 @@ class MoteusActuator(ActuatorBase, Controller):
             default_mode_config.entry_callback(self)
 
         if (await self._interface.transport.cycle([self.make_stop(query=True)])) == []:
-            LOGGER.error(msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection.")
+            Logger.error(msg=f"[{self.__repr__()}] Could not start the actuator. Please check the connection.")
             self._is_streaming = False
             self._is_open = False
         # Keep the default command as query -- reading sensor data
@@ -286,7 +287,7 @@ class MoteusActuator(ActuatorBase, Controller):
     @check_actuator_open
     async def stop(self) -> None:
         if self._interface.batch:
-            LOGGER.warning("Batching is enabled. Use the stop method of MoteusInterface")
+            Logger.warn("Batching is enabled. Use the stop method of MoteusInterface")
 
         self.set_control_mode(mode=CONTROL_MODES.IDLE)
 
@@ -295,7 +296,7 @@ class MoteusActuator(ActuatorBase, Controller):
 
     async def update(self):
         if self._interface.batch:
-            LOGGER.warning("Batching is enabled. Use the update method of MoteusInterface")
+            Logger.warn("Batching is enabled. Use the update method of MoteusInterface")
 
         self._data = await self._interface.transport.cycle([self._command])
         self.check_thermals()
@@ -325,7 +326,7 @@ class MoteusActuator(ActuatorBase, Controller):
         velocity_threshold: float = 0.001,
     ) -> None:
         # TODO: implement homing
-        LOGGER.info(msg=f"[{self.__repr__()}] Homing not implemented.")
+        Logger.info(msg=f"[{self.__repr__()}] Homing not implemented.")
 
     def set_motor_torque(self, value: float) -> None:
         """
@@ -362,7 +363,7 @@ class MoteusActuator(ActuatorBase, Controller):
         self,
         value: float,
     ) -> None:
-        LOGGER.info("Current Mode Not Implemented")
+        Logger.info("Current Mode Not Implemented")
 
     def set_motor_velocity(self, value: float) -> None:
         self._command = self.make_position(
@@ -382,7 +383,7 @@ class MoteusActuator(ActuatorBase, Controller):
         Args:
             value (float): The voltage to set in mV.
         """
-        LOGGER.info("Voltage Mode Not Implemented")
+        Logger.info("Voltage Mode Not Implemented")
 
     def set_motor_position(self, value: float) -> None:
         """
@@ -472,14 +473,14 @@ class MoteusActuator(ActuatorBase, Controller):
             kd (float): The derivative gain
             ff (float): The feedforward gain
         """
-        LOGGER.info(msg=f"[{self.__repr__()}] Current mode not implemented.")
+        Logger.info(msg=f"[{self.__repr__()}] Current mode not implemented.")
 
     def _set_impedance_gains(
         self,
         k: float = DEFAULT_IMPEDANCE_GAINS.k,
         b: float = DEFAULT_IMPEDANCE_GAINS.b,
     ) -> None:
-        LOGGER.info(msg=f"[{self.__repr__()}] Impedance mode not implemented.")
+        Logger.info(msg=f"[{self.__repr__()}] Impedance mode not implemented.")
 
     @property
     def motor_voltage(self) -> float:
@@ -487,7 +488,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.VOLTAGE])
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -497,7 +498,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.Q_CURRENT])
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -507,7 +508,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self.motor_current * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP) / self.gear_ratio
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -517,7 +518,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.POSITION] * 2 * np.pi) - self.motor_zero_position
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -527,7 +528,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.VELOCITY] * 2 * np.pi)
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -538,7 +539,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.VOLTAGE])
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -549,7 +550,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.Q_CURRENT])
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0
@@ -567,7 +568,7 @@ class MoteusActuator(ActuatorBase, Controller):
         if self._data is not None:
             return float(self._data[0].values[MoteusRegister.TEMPERATURE])
         else:
-            LOGGER.warning(
+            Logger.warn(
                 msg="Actuator data is none, please ensure that the actuator is connected and streaming. Returning 0.0."
             )
             return 0.0

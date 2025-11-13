@@ -1,0 +1,107 @@
+use std::{io::Write, path::{Path, PathBuf}};
+use pyo3::{PyObject, Python};
+use serde_json::{Value};
+use tracing::{error, warn};
+use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
+use fxhash::FxHashMap;
+
+use crate::{logger::downcast, rotator::RotatingFileWriter};
+#[derive(Debug)]
+pub struct Record {
+    variables: FxHashMap::<String, Value>,
+    writer: NonBlocking,
+    _guard: WorkerGuard,
+    functions: FxHashMap<String, PyObject>
+}
+
+impl Record {
+    pub fn new(path: PathBuf) -> Self {
+        let arbitrary_value = 1; //this value repressents backup_count which doesn't matter since max_size is 0, meaning no rotation
+        let file_appender = RotatingFileWriter::new(path, 0, arbitrary_value);
+        let (non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
+
+        Self {
+            variables: FxHashMap::<String, Value>::default(),
+            writer: non_blocking_writer,
+            _guard: guard,
+            functions: FxHashMap::<String, PyObject>::default()
+        }
+    }
+
+    pub fn insert_variable(&mut self, key: String, value: Value) {
+        let prev_value = self.variables.insert(key, value);
+
+        if let Some(old) = prev_value {
+            warn!("{} is being overwritten", old);
+        }
+    }
+
+    pub fn insert_function(&mut self, name: String, function: pyo3::Py<pyo3::PyAny>) {
+        if self.functions.contains_key(&name) {
+            warn!("{} is being overwritten", name);
+        }
+        self.functions.insert(name, function);
+    }
+
+    pub fn remove_function(&mut self, name: String) {
+        if !self.functions.contains_key(&name) {
+            error!("There is no function with the id {}", name);
+            return;
+        }
+        self.functions.remove(&name);
+    }
+
+    pub fn record_variables(&mut self) {
+        if self.variables.is_empty() && self.functions.is_empty() {
+            return;
+        }
+
+        let mut attributes = self.variables.clone();
+
+        if !self.functions.is_empty() {
+            Python::with_gil(|py| {
+                for (name, func) in &self.functions {
+                    match func.call0(py) {
+                        Ok(val) => {
+                            let bound_val = val.bind(py);
+                            let json_val = downcast(bound_val.clone());
+                            attributes.insert(name.clone(), json_val);
+                        }
+                        Err(e) => {
+                            eprintln!("Function '{name}' call failed: {e}");
+                        }
+                    }
+                }
+            });
+        }
+
+        let record = serde_json::json!({
+            "attributes": attributes
+        });
+
+        let json = serde_json::to_string(&record).expect("json serialization failed");
+        if let Err(e) = writeln!(self.writer, "{json}") {
+            eprintln!("Failed to write to file: {e}");
+        }
+        self.variables.clear();
+    }
+
+    pub fn update_writer(&mut self, dir: &str, log_name: &str) {
+        let record_name = Path::new(log_name)
+            .file_stem()
+            .map(|stem| format!("{}.json", stem.to_string_lossy()))
+            .unwrap_or_else(|| "logfile.json".to_string());
+
+        let record_path = Path::new(dir).join(record_name);
+
+        let file_appender = RotatingFileWriter::new(record_path, 0, 1);
+        let (non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
+
+        self.writer = non_blocking_writer;
+        self._guard = guard;
+    }
+
+    pub fn flush_buffer(&mut self) {
+        self.writer.flush().expect("Error flushing writer");
+    }
+}
