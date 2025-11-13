@@ -4,10 +4,6 @@ Module for the RobotBase abstract class.
 This module defines an abstract base class, `RobotBase`, that provides a template for a robot
 system integrating actuators and sensors. The class supports context management and defines
 abstract methods for starting, stopping, and updating the robot's components.
-
-Type Parameters:
-    TActuator: A type that must be a subclass of ActuatorBase.
-    TSensor: A type that must be a subclass of SensorBase.
 """
 
 from abc import ABC, abstractmethod
@@ -28,6 +24,9 @@ class RobotBase(ABC, Generic[TActuator, TSensor]):
     This class provides the basic structure for a robot, including methods to start, stop,
     and update its components. It also supports context management so that the robot
     can be used within a with-statement to automatically start and stop its components.
+
+    This class is generic and can be parameterized with actuator and sensor types that
+    must be subclasses of ActuatorBase and SensorBase respectively.
 
     Attributes:
         actuators (dict[str, TActuator]): A dictionary mapping actuator names to actuator instances.

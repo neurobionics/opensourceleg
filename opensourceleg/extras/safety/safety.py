@@ -5,10 +5,8 @@ from typing import Any, Callable, Optional
 import numpy as np
 
 __all__ = [
-    "I2tLimitException",
     "SafetyDecorators",
     "SafetyManager",
-    "ThermalLimitException",
     "custom_criteria",
     "is_changing",
     "is_greater_than",
@@ -18,18 +16,6 @@ __all__ = [
     "is_within_range",
     "is_zero",
 ]
-
-
-class ThermalLimitException(Exception):
-    def __init__(self, message: str = "Software thermal limit exceeded. Exiting.") -> None:
-        self.message = message
-        super().__init__(self.message)
-
-
-class I2tLimitException(Exception):
-    def __init__(self, message: str = "Dephy Actpack I2t limit exceeded. Exiting.") -> None:
-        self.message = message
-        super().__init__(self.message)
 
 
 def is_changing(

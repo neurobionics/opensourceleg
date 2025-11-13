@@ -26,8 +26,11 @@ from opensourceleg.rust import Logger
 
 try:
     import moteus_pi3hat as pihat
+
+    _PIHAT_AVAILABLE = True
 except ImportError:
-    Logger.info(msg="Moteus PiHat not found. Please install the moteus_pi3hat package.")
+    pihat = None
+    _PIHAT_AVAILABLE = False
 
 DEFAULT_POSITION_GAINS = ControlGains(kp=0.07, ki=0.08, kd=0.012, k=0, b=0, ff=0)
 
@@ -44,8 +47,6 @@ RAD_PER_DEG = np.pi / 180
 MOTEUS_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
-    NM_PER_RAD_TO_K=1e-6,  # Small positive value - TODO: Change this value when impedance control is implemented
-    NM_S_PER_RAD_TO_B=1e-6,  # Small positive value - TODO: Change this value when impedance control is implemented
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )
@@ -152,6 +153,9 @@ class MoteusInterface:
         Initialization of Pi3HatRouter
         """
         if self.transport is None:
+            if not _PIHAT_AVAILABLE:
+                LOGGER.error(msg="Moteus PiHat not found. Please install the moteus_pi3hat package.")
+                raise ImportError("moteus_pi3hat package is required for MoteusRouter")
             self.transport = pihat.Pi3HatRouter(servo_bus_map=self.bus_map)
 
     async def update(self):
@@ -231,10 +235,8 @@ class MoteusActuator(ActuatorBase, Controller):
         self._query = query
 
         self._thermal_model: ThermalModel = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10,
+            motor_constants=self.MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
         self._thermal_scale: float = 1.0
 
@@ -301,23 +303,11 @@ class MoteusActuator(ActuatorBase, Controller):
         self._command = self.make_query()
 
     def check_thermals(self):
-        self._thermal_model.T_c = self.case_temperature
-        self._thermal_scale = self._thermal_model.update_and_get_scale(
+        self._thermal_scale = self._thermal_model.update(
             dt=1 / self.frequency,
             motor_current=self.motor_current,
+            case_temperature=self.case_temperature,
         )
-        if self.case_temperature >= self.max_case_temperature:
-            Logger.error(
-                msg=f"[{str.upper(self.tag)}] Case thermal limit {self.max_case_temperature} reached. Stopping motor."
-            )
-            raise ThermalLimitException()
-
-        if self.winding_temperature >= self.max_winding_temperature:
-            Logger.error(
-                msg=f"[{str.upper(self.tag)}] Winding thermal limit {self.max_winding_temperature} reached. \
-                Stopping motor."
-            )
-            raise ThermalLimitException()
 
     def enqueue_command(self) -> None:
         # Set the command for this cycle
@@ -590,7 +580,7 @@ class MoteusActuator(ActuatorBase, Controller):
         This is calculated based on the thermal model using motor current.
         """
         if self._data is not None:
-            return float(self._thermal_model.T_w)
+            return float(self._thermal_model.winding_temperature)
         else:
             return 0.0
 

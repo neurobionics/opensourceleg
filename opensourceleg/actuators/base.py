@@ -17,6 +17,7 @@ from typing import (
 
 import numpy as np
 
+from opensourceleg.common.offline import OfflineMixin
 from opensourceleg.logging.exceptions import ControlModeException
 from opensourceleg.rust import Logger
 
@@ -42,29 +43,45 @@ class MOTOR_CONSTANTS:
     """
 
     MOTOR_COUNT_PER_REV: float
-    NM_PER_AMP: float
-    NM_PER_RAD_TO_K: float
-    NM_S_PER_RAD_TO_B: float
-    MAX_CASE_TEMPERATURE: float
-    MAX_WINDING_TEMPERATURE: float
+    NM_PER_AMP: float  # Motor torque constant (Nm/A)
+    MAX_CASE_TEMPERATURE: float  # Hard limit for case/housing temperature
+    MAX_WINDING_TEMPERATURE: float  # Hard limit for winding temperature
+
+    # Thermal model parameters from research paper (with defaults from Jake Schuchmann's tests)
+    WINDING_THERMAL_CAPACITANCE: float = 0.20 * 81.46202695970649  # Cw (J/°C)
+    CASE_THERMAL_CAPACITANCE: float = 512.249065845453  # Ch (J/°C)
+    WINDING_TO_CASE_RESISTANCE: float = 1.0702867186480716  # Rw-h (°C/W)
+    CASE_TO_AMBIENT_RESISTANCE: float = 1.9406620046327363  # Rh-a (°C/W)
+    COPPER_TEMPERATURE_COEFFICIENT: float = 0.393 / 100  # alpha (1/°C)
+    REFERENCE_TEMPERATURE: float = 65.0  # Reference temperature for resistance (°C)
+    REFERENCE_RESISTANCE: float = 0.376  # Reference resistance at reference temp (Ohms)
+
+    WINDING_SOFT_LIMIT: float = 70.0  # soft winding limit (°C)
+    CASE_SOFT_LIMIT: float = 60.0  # soft case limit (°C)
 
     def __post_init__(self) -> None:
         """
-        Function to validate the motor constants.
+        Function to validate the motor constants and thermal parameters.
 
         Examples:
             >>> # This will raise a ValueError because a negative value is invalid.
             >>> MOTOR_CONSTANTS(
             ...     MOTOR_COUNT_PER_REV=-2048,
             ...     NM_PER_AMP=0.02,
-            ...     NM_PER_RAD_TO_K=0.001,
-            ...     NM_S_PER_RAD_TO_B=0.0001,
             ...     MAX_CASE_TEMPERATURE=80.0,
             ...     MAX_WINDING_TEMPERATURE=120.0
             ... )
         """
         if any(x <= 0 for x in self.__dict__.values()):
             raise ValueError("All values in MOTOR_CONSTANTS must be non-zero and positive.")
+
+        # Validate thermal safety limits
+        if self.MAX_WINDING_TEMPERATURE <= self.MAX_CASE_TEMPERATURE:
+            raise ValueError("MAX_WINDING_TEMPERATURE must be greater than MAX_CASE_TEMPERATURE")
+        if self.WINDING_SOFT_LIMIT >= self.MAX_WINDING_TEMPERATURE:
+            raise ValueError("WINDING_SOFT_LIMIT must be less than MAX_WINDING_TEMPERATURE")
+        if self.CASE_SOFT_LIMIT >= self.MAX_CASE_TEMPERATURE:
+            raise ValueError("CASE_SOFT_LIMIT must be less than MAX_CASE_TEMPERATURE")
 
     @property
     def RAD_PER_COUNT(self) -> float:
@@ -214,6 +231,37 @@ CONTROL_MODE_METHODS: list[str] = [
 ]
 
 
+HARDWARE_REQUIRED_METHODS: list[str] = [
+    "start",
+    "stop",
+    "update",
+    "home",
+    "set_motor_voltage",
+    "set_motor_current",
+    "set_motor_position",
+    "set_motor_torque",
+    "set_output_torque",
+    "set_current_gains",
+    "set_position_gains",
+    "_set_impedance_gains",
+    "set_motor_impedance",
+    "set_output_impedance",
+    "set_output_position",
+    "set_motor_velocity",
+]
+
+
+HARDWARE_REQUIRED_PROPERTIES: list[str] = [
+    "motor_position",
+    "motor_velocity",
+    "motor_voltage",
+    "motor_current",
+    "motor_torque",
+    "case_temperature",
+    "winding_temperature",
+]
+
+
 T = TypeVar("T", bound=Callable[..., Any])
 
 
@@ -281,7 +329,7 @@ def requires(*modes: CONTROL_MODES) -> Callable[[T], T]:
     return decorator
 
 
-class ActuatorBase(ABC):
+class ActuatorBase(OfflineMixin, ABC):
     """
     Base class defining the structure and interface for an actuator.
 
@@ -362,6 +410,19 @@ class ActuatorBase(ABC):
         "set_position_gains": {CONTROL_MODES.POSITION},
     }
 
+    # Offline mode configuration for OfflineMixin
+    _OFFLINE_METHODS: ClassVar[list[str]] = HARDWARE_REQUIRED_METHODS
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = HARDWARE_REQUIRED_PROPERTIES
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        "motor_position": 0.0,
+        "motor_velocity": 0.0,
+        "motor_voltage": 0.0,
+        "motor_current": 0.0,
+        "motor_torque": 0.0,
+        "case_temperature": 25.0,  # Room temperature
+        "winding_temperature": 25.0,  # Room temperature
+    }
+
     def __init__(
         self,
         tag: str,
@@ -394,7 +455,6 @@ class ActuatorBase(ABC):
         self._tag: str = tag
         self._frequency: int = frequency
         self._data: Any = None
-        self._is_offline: bool = offline
         self._is_homed: bool = False
 
         self._mode: CONTROL_MODES = CONTROL_MODES.IDLE
@@ -405,6 +465,9 @@ class ActuatorBase(ABC):
         self._is_streaming: bool = False
 
         self._original_methods: dict[str, MethodWithRequiredModes] = {}
+
+        # Initialize OfflineMixin first so _is_offline is available
+        super().__init__(offline=offline, **kwargs)
 
         self._set_original_methods()
         self._set_mutated_methods()
@@ -501,7 +564,11 @@ class ActuatorBase(ABC):
             >>> actuator._set_mutated_methods()
         """
         for method_name, method in self._original_methods.items():
-            if self._mode in self._METHOD_REQUIRED_MODES[method_name]:
+            # In offline mode, hardware methods are already stubbed by OfflineMixin
+            if self._is_offline and method_name in HARDWARE_REQUIRED_METHODS:
+                # Skip - method is already patched by OfflineMixin
+                continue
+            elif self._mode in self._METHOD_REQUIRED_MODES[method_name]:
                 setattr(self, method_name, method)
             else:
                 setattr(self, method_name, partial(self._restricted_method, method_name))
@@ -763,6 +830,7 @@ class ActuatorBase(ABC):
         output_position_offset: float = 0.0,
         current_threshold: int = 5000,
         velocity_threshold: float = 0.001,
+        callback: Optional[Callable[[], None]] = None,
     ) -> None:
         """
         Home the actuator.
@@ -777,6 +845,8 @@ class ActuatorBase(ABC):
             output_position_offset (float): Offset to add to the output position.
             current_threshold (int): Current threshold to stop homing.
             velocity_threshold (float): Velocity threshold to stop homing.
+            callback (Optional[Callable[[], None]]): Optional callback function to be
+                        called when homing completes. The function should take no arguments and return None.
 
         Examples:
             >>> actuator.home()
@@ -935,6 +1005,22 @@ class ActuatorBase(ABC):
         """
         return self._MOTOR_CONSTANTS
 
+    @MOTOR_CONSTANTS.setter
+    def MOTOR_CONSTANTS(self, value: MOTOR_CONSTANTS) -> None:
+        """
+        Set the motor constants configuration.
+
+        Args:
+            value (MOTOR_CONSTANTS): The new motor constants to set.
+
+        Examples:
+            >>> new_constants = MOTOR_CONSTANTS(2048, 0.03, 0.001, 0.0001, 85.0, 125.0)
+            >>> actuator.MOTOR_CONSTANTS = new_constants
+            >>> actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
+            85.0
+        """
+        self._MOTOR_CONSTANTS = value
+
     @property
     def mode(self) -> CONTROL_MODES:
         """
@@ -990,20 +1076,6 @@ class ActuatorBase(ABC):
             1000
         """
         return self._frequency
-
-    @property
-    def is_offline(self) -> bool:
-        """
-        Check if the actuator is in offline mode.
-
-        Returns:
-            bool: True if offline; otherwise, False.
-
-        Examples:
-            >>> actuator.is_offline
-            False
-        """
-        return self._is_offline
 
     @property
     def gear_ratio(self) -> float:

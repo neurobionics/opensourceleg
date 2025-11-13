@@ -190,7 +190,7 @@ if __name__ == "__main__":
     actuators = {
         "knee": DephyActuator(
             tag="knee",
-            port="/dev/ttyACM1",
+            port="/dev/ttyACM0",
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             debug_level=0,
@@ -198,7 +198,7 @@ if __name__ == "__main__":
         ),
         "ankle": DephyActuator(
             tag="ankle",
-            port="/dev/ttyACM0",
+            port="/dev/ttyACM1",
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             debug_level=0,
@@ -211,21 +211,25 @@ if __name__ == "__main__":
         #     calibration_matrix=LOADCELL_CALIBRATION_MATRIX,
         # ),
         "loadcell": NBLoadcellDAQ(
-            LOADCELL_CALIBRATION_MATRIX, tag="loadcell", excitation_voltage=5.0, amp_gain=[34] * 3 + [151] * 3
+            LOADCELL_CALIBRATION_MATRIX,
+            tag="loadcell",
+            excitation_voltage=5.0,
+            amp_gain=[34] * 3 + [151] * 3,
+            spi_bus=1,
         ),
         "joint_encoder_knee": AS5048B(
             tag="joint_encoder_knee",
-            bus=3,
-            A1_adr_pin=True,
+            bus="/dev/i2c-2",
+            A1_adr_pin=False,
             A2_adr_pin=False,
             zero_position=0,
             enable_diagnostics=False,
         ),
         "joint_encoder_ankle": AS5048B(
             tag="joint_encoder_ankle",
-            bus=2,
+            bus="/dev/i2c-3",
             A1_adr_pin=False,
-            A2_adr_pin=True,
+            A2_adr_pin=False,
             zero_position=0,
             enable_diagnostics=False,
         ),
@@ -245,10 +249,25 @@ if __name__ == "__main__":
 
     osl_fsm = create_simple_walking_fsm(osl)
 
+    # Zeroing the joint encoders
+    def knee_homing_complete():
+        osl.joint_encoder_knee.update()
+        osl.joint_encoder_knee.zero_position = osl.joint_encoder_knee.counts
+        print("Knee homing complete!")
+
+    def ankle_homing_complete():
+        osl.joint_encoder_ankle.update()
+        # The hard stop for ankle is at 30 deg from the zero position
+        osl.joint_encoder_ankle.zero_position = osl.joint_encoder_ankle.counts - osl.joint_encoder_ankle.deg_to_counts(
+            30
+        )
+        print("Ankle homing complete!")
+
+    callbacks = {"knee": knee_homing_complete, "ankle": ankle_homing_complete}
+
     with osl, osl_fsm:
         osl.update()
-        osl.home()
-
+        osl.home(callbacks=callbacks)
         input("Press Enter to start walking...")
 
         # knee
@@ -261,20 +280,25 @@ if __name__ == "__main__":
         osl.ankle.set_impedance_cc_pidf_gains()
         osl.ankle.set_output_impedance()
 
+        osl.loadcell.reset()
+        osl.loadcell.calibrate()
+
         for t in clock:
             osl.update()
+            print("Ankle position", np.rad2deg(osl.sensors["joint_encoder_ankle"].position))
+            print("Knee position", np.rad2deg(osl.sensors["joint_encoder_knee"].position))
             osl_fsm.update(osl=osl)
-            osl.knee.set_output_impedance(
-                k=osl_fsm.current_state.knee_stiffness,
-                b=osl_fsm.current_state.knee_damping,
-            )
-            osl.ankle.set_output_impedance(
-                k=osl_fsm.current_state.ankle_stiffness,
-                b=osl_fsm.current_state.ankle_damping,
-            )
+            # osl.knee.set_output_impedance(
+            #     k=osl_fsm.current_state.knee_stiffness,
+            #     b=osl_fsm.current_state.knee_damping,
+            # )
+            # osl.ankle.set_output_impedance(
+            #     k=osl_fsm.current_state.ankle_stiffness,
+            #     b=osl_fsm.current_state.ankle_damping,
+            # )
 
-            osl.knee.set_output_position(np.deg2rad(osl_fsm.current_state.knee_theta))
-            osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
+            # osl.knee.set_output_position(np.deg2rad(osl_fsm.current_state.knee_theta))
+            # osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
 
             Logger.info(
                 f"T: {t:.3f}s, "

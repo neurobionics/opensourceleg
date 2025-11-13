@@ -2,8 +2,8 @@ import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.dephy import DephyActuator
+from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
-from opensourceleg.rust import Logger
 from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -13,10 +13,10 @@ DT = 1 / FREQUENCY
 GEAR_RATIO = 9 * (83 / 18)
 
 
-def home_joints():
-    Logger.update_log_file_configuration(
-        log_directory="./logs",
-        log_name="homing_joint",
+def OSL_offline_mode():
+    logger = Logger(
+        log_path="./logs",
+        file_name="OSL_offline_mode",
     )
 
     clock = SoftRealtimeLoop(dt=DT)
@@ -28,6 +28,7 @@ def home_joints():
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             dephy_log=False,
+            offline=True,
         ),
         "ankle": DephyActuator(
             tag="ankle",
@@ -35,42 +36,30 @@ def home_joints():
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             dephy_log=False,
+            offline=True,
         ),
     }
 
     sensors = {
         "joint_encoder_knee": AS5048B(
             tag="joint_encoder_knee",
-            bus="/dev/i2c-2",
+            bus=1,
             A1_adr_pin=True,
             A2_adr_pin=False,
             zero_position=0,
             enable_diagnostics=False,
+            offline=True,
         ),
         "joint_encoder_ankle": AS5048B(
             tag="joint_encoder_ankle",
-            bus="/dev/i2c-3",
+            bus=1,
             A1_adr_pin=False,
             A2_adr_pin=True,
             zero_position=0,
             enable_diagnostics=False,
+            offline=True,
         ),
     }
-
-    # Define callback functions for homing completion
-    def knee_homing_complete():
-        osl.joint_encoder_knee.update()
-        osl.joint_encoder_knee.zero_position = osl.joint_encoder_knee.counts
-        print("Knee homing complete!")
-
-    def ankle_homing_complete():
-        osl.joint_encoder_ankle.update()
-        osl.joint_encoder_ankle.zero_position = osl.joint_encoder_ankle.counts + osl.joint_encoder_ankle.deg_to_counts(
-            30
-        )
-        print("Ankle homing complete!")
-
-    callbacks = {"knee": knee_homing_complete, "ankle": ankle_homing_complete}
 
     osl = OpenSourceLeg(
         tag="osl",
@@ -79,30 +68,16 @@ def home_joints():
     )
 
     with osl:
-        osl.home(
-            homing_voltage=2000,
-            homing_frequency=FREQUENCY,
-            homing_direction={"knee": -1, "ankle": -1},
-            output_position_offset={"knee": 0.0, "ankle": np.deg2rad(30.0)},
-            current_threshold=5000,
-            velocity_threshold=0.001,
-            callbacks=callbacks,
-        )
+        osl.knee.set_control_mode(CONTROL_MODES.POSITION)
+        osl.ankle.set_control_mode(CONTROL_MODES.POSITION)
 
-        osl.knee.set_control_mode(CONTROL_MODES.CURRENT)
-        osl.knee.set_current_gains()
-
-        osl.ankle.set_control_mode(CONTROL_MODES.CURRENT)
-        osl.ankle.set_current_gains()
-
-        osl.knee.set_output_torque(0)
-        osl.ankle.set_output_torque(0)
-
-        # homing_logger.set_stream_terminator("\r")
         for t in clock:
             osl.update()
 
-            Logger.info(
+            osl.knee.set_output_position(2 * np.pi * 0.1 * t + np.pi / 4)
+            osl.ankle.set_output_position(2 * np.pi * 0.1 * t)
+
+            logger.info(
                 f"Time: {t:.2f}; Knee Output Position: {np.rad2deg(osl.knee.output_position):.2f}; "
                 f"Ankle Output Position: {np.rad2deg(osl.ankle.output_position):.2f}; "
                 f"Knee Encoder Position: {np.rad2deg(osl.joint_encoder_knee.position):.2f}; "
@@ -111,4 +86,4 @@ def home_joints():
 
 
 if __name__ == "__main__":
-    home_joints()
+    OSL_offline_mode()

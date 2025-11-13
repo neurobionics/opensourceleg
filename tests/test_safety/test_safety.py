@@ -5,7 +5,6 @@ import pytest
 from opensourceleg.extras.safety import (
     SafetyDecorators,
     SafetyManager,
-    ThermalLimitException,
     custom_criteria,
     is_changing,
     is_greater_than,
@@ -38,17 +37,6 @@ class Sample:
     @test.setter
     def test(self, value):
         self._test = value
-
-
-# Test class ThermalLimitException
-def test_Thermal_Limit_Exception_initialization():
-    thermal_limit_exception = ThermalLimitException("test_ThermalLimitException")
-    assert thermal_limit_exception.message == "test_ThermalLimitException"
-
-
-def test_Thermal_Limit_Exception_initialization_with_default():
-    thermal_limit_exception = ThermalLimitException()
-    assert thermal_limit_exception.message == "Software thermal limit exceeded. Exiting."
 
 
 # Test def is_changing & decorator

@@ -14,7 +14,7 @@ to PYTHONPATH or sys.path if necessary.
 """
 
 import os
-from typing import Any, Union
+from typing import Any, ClassVar, Union
 
 import numpy as np
 
@@ -23,6 +23,39 @@ from opensourceleg.sensors.base import IMUBase, check_sensor_stream
 
 
 class LordMicrostrainIMU(IMUBase):
+    # LordMicrostrain-specific offline configuration
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [
+        *IMUBase._OFFLINE_PROPERTIES,
+        "roll",
+        "pitch",
+        "yaw",
+        "vel_x",
+        "vel_y",
+        "vel_z",
+        "timestamp",
+    ]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **IMUBase._OFFLINE_PROPERTY_DEFAULTS,
+        "data": {
+            "estRoll": 0.0,
+            "estPitch": 0.0,
+            "estYaw": 0.0,
+            "estAngularRateX": 0.0,
+            "estAngularRateY": 0.0,
+            "estAngularRateZ": 0.0,
+            "estLinearAccelX": 0.0,
+            "estLinearAccelY": 0.0,
+            "estLinearAccelZ": 0.0,
+            "estFilterGpsTimeTow": 0.0,
+        },
+        "roll": 0.0,
+        "pitch": 0.0,
+        "yaw": 0.0,
+        "vel_x": 0.0,
+        "vel_y": 0.0,
+        "vel_z": 0.0,
+        "timestamp": 0.0,
+    }
     """
     Sensor class for the Lord Microstrain IMU.
 
@@ -62,11 +95,16 @@ class LordMicrostrainIMU(IMUBase):
         """
         # Attempt to import the MSCL library and add its path.
         try:
-            import sys
+            try:
+                import mscl
+            except (ImportError, ModuleNotFoundError):
+                # Falling back to old method of appending to sys.path for importing older versions of mscl
+                import sys
 
-            sys.path.append("/usr/share/python3-mscl")
-
-            import mscl
+                legacy_path = "/usr/share/python3-mscl"
+                if legacy_path not in sys.path:
+                    sys.path.append(legacy_path)
+                import mscl
 
             self.mscl = mscl
         except ImportError:
@@ -74,8 +112,12 @@ class LordMicrostrainIMU(IMUBase):
                 "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
                 "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
                 "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+                "If you are using a newer version of MSCL, you may need to add /usr/lib/python3.version/dist-packages \
+                to PYTHONPATH"
             )
-            exit(1)
+
+            if not offline:
+                exit(1)
 
         self._init_variables(
             tag=tag,

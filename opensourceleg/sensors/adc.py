@@ -152,9 +152,18 @@ class ADS131M0x(ADCBase):
     def update(self) -> None:
         """
         Update the ADC data by reading the latest voltage values in millivolts.
+        Attempts to read a maximum of 1000 times before throwing an error.
         """
+        MAX_ATTEMPTS = 1000
+        attempts = 0
         while not self._ready_to_read():
             sleep(0.001)
+            attempts += 1
+            if attempts > MAX_ATTEMPTS:
+                raise RuntimeError(
+                    "Couldn't connect to the ADC, please ensure that the device is connected and powered on."
+                )
+
         self._data = self._read_data_millivolts()
 
     def calibrate(self) -> None:
