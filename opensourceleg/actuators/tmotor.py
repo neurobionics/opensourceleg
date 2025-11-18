@@ -78,7 +78,7 @@ TMOTOR_MODELS: dict[str, dict[str, Any]] = {
         "V_max": 32000,  # ERPM
         "Curr_min": -60000,  # -60A (protocol units)
         "Curr_max": 60000,  # 60A (protocol units)
-        "Kt_actual": 0.095,  # Nm/A
+        "Kt_actual": 0.115,  # Nm/A
         "GEAR_RATIO": 9.0,
         "NUM_POLE_PAIRS": 21,
     },
@@ -434,7 +434,7 @@ class TMotorServoActuator(ActuatorBase):
         tag: str = "TMotorServoActuator",
         motor_type: str = "AK80-9",
         motor_id: int = 104,
-        gear_ratio: float = 9.0,
+        gear_ratio: float = 1.0,
         frequency: int = 1000,
         offline: bool = False,
         max_temperature: float = 80.0,
