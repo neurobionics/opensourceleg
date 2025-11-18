@@ -39,6 +39,9 @@ def velocity_control():
 
         motor.update()
 
+        # Initialize command velocity variable before tracking (needed for lambda)
+        command_velocity = 0.0
+
         # Track velocity data
         velocity_logger.track_function(lambda: motor.motor_velocity, "Motor Velocity")
         velocity_logger.track_function(lambda: command_velocity, "Command Velocity")

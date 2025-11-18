@@ -25,6 +25,7 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
+from smbus2 import SMBus
 
 from opensourceleg.logging import LOGGER
 from opensourceleg.math.math import Counter
@@ -178,10 +179,6 @@ class DephyLoadcellAmplifier(LoadcellBase):
         If using I2C Mode, it opens the I2C connection using SMBus, waits briefly for hardware stabilization,
         and sets the streaming flag to True.
         """
-        try:
-            from smbus2 import SMBus  # - runtime import for optional dependency
-        except Exception as exc:  # pragma: no cover - allow import on non-Linux platforms (e.g., Windows)
-            raise ImportError("smbus2 is not available on this platform. I2C mode requires smbus2 (Linux).") from exc
         self._smbus = SMBus(self._bus)
         time.sleep(1)
         self._is_streaming = True

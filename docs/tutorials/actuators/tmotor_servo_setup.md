@@ -35,7 +35,7 @@ candump can0
 ### Supported Motors
 
 - **AK80-9**:
-  - Torque constant (Kt): 0.095 Nm/A
+  - Torque constant (Kt): 0.095 Nm/A (driver-compatible value for Delta winding)
   - Gear ratio: 9:1
   - Pole pairs: 21
 
@@ -43,6 +43,85 @@ candump can0
   - Torque constant (Kt): 0.206 Nm/A
   - Gear ratio: 9:1
   - Pole pairs: 21
+
+### Understanding Torque Constant (Kt) for Delta-Wound Motors
+
+#### Background
+
+The TMotor actuators use **Delta-wound motors** with CubeMars FOC drivers. There is a discrepancy between different torque constant (Kt) values:
+
+- **0.095 Nm/A** - Driver-compatible Kt (what you should use in your code for AK80-9)
+- **0.14 Nm/A** - CubeMars specification (power-invariant transform)
+- **0.163 Nm/A** - Physical Kt from Back-EMF testing (amplitude-invariant transform)
+
+#### The Root Cause: Delta vs Wye Windings
+
+The CubeMars FOC driver defines current as follows:
+
+> "The definition of CubeMars' current: Amplitude of the line currents, which using the amplitude-invariant Clarke-Park transform is equivalent to the q-axis current."
+
+**This definition only holds true for Wye-wound motors**, where line current equals phase current. However, these motors use **Delta winding**, where:
+
+```
+Line Current (I_l) = √3 × Phase Current (I_φ)
+```
+
+The standard amplitude-invariant Clarke-Park transform is built on phase current (I_φ), but CubeMars sets their I_q equal to the line current amplitude. This causes the I_q value in their FOC driver to be inflated by a factor of √3.
+
+#### Mathematical Analysis
+
+For a Delta winding motor:
+
+1. **Physical torque equation** (from Back-EMF testing):
+   ```
+   τ = Kt^φ × I^φ
+   where Kt^φ = 0.163 Nm/A (true physical constant)
+   ```
+
+2. **Driver torque equation** (what CubeMars uses):
+   ```
+   τ = Kt^drv × I_q^drv
+   where I_q^drv = I_l = √3 × I^φ
+   ```
+
+3. **Derivation of the relationship**:
+   ```
+   Kt^drv × (√3 × I^φ) = Kt^φ × I^φ
+   Kt^φ = √3 × Kt^drv
+   √3 × 0.095 ≈ 0.165 Nm/A ≈ 0.163 Nm/A ✓
+   ```
+
+This calculation matches the Back-EMF measurement.
+
+#### Why Use 0.095 Nm/A?
+
+**Use Kt = 0.095 Nm/A** when working with CubeMars drivers and Delta-wound motors because:
+
+1. It matches the driver's current definition (line current amplitude)
+2. The FOC driver settings cannot be easily modified
+3. It provides the correct torque calculation when combined with the driver's current interpretation
+
+#### Practical Implications
+
+Due to the CubeMars FOC driver settings:
+
+- The driver's I_q value is √3 times larger than the true phase current
+- The maximum current limit is also √3 times higher than the physical phase current
+- The motor can be commanded with current values that are √3 times higher than would be expected from the physical Kt (0.163 Nm/A)
+
+#### Summary of Three Kt Values
+
+| Kt Value | Transform Type | Usage |
+|----------|----------------|-------|
+| 0.163 Nm/A | Amplitude-invariant (I_q = phase current) | Physical/theoretical analysis |
+| 0.14 Nm/A | Power-invariant (I_q^pwr = √(3/2) × I^φ) | CubeMars specification |
+| 0.095 Nm/A | Driver-compatible (I_q = line current) | **Use this in your code** |
+
+The three values are related by:
+```
+Kt^φ = √3 × Kt^drv ≈ 1.732 × 0.095 ≈ 0.165 Nm/A
+Kt^pwr = √2 × Kt^drv ≈ 1.414 × 0.095 ≈ 0.134 Nm/A
+```
 
 ### Control Modes
 

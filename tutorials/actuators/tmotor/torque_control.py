@@ -42,6 +42,9 @@ def torque_control():
         # Motor torque constant for AK80-9
         MAX_OUTPUT_TORQUE = 2.0  # Maximum output torque in Nm (safety limit)
 
+        # Initialize command torque variable before tracking (needed for lambda)
+        command_output_torque = 0.0
+
         # Track torque data
         torque_logger.track_function(lambda: motor.motor_torque, "Motor Torque")
         torque_logger.track_function(lambda: motor.output_torque, "Output Torque")
