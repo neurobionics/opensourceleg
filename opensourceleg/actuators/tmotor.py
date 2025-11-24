@@ -92,6 +92,9 @@ TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
     NM_S_PER_RAD_TO_B=1e-9,  # small positive placeholder to satisfy validation
     MAX_CASE_TEMPERATURE=80.0,
     MAX_WINDING_TEMPERATURE=110.0,
+    # Soft limits set 10°C below hard limits for safety margin
+    WINDING_SOFT_LIMIT=100.0,
+    CASE_SOFT_LIMIT=70.0,
 )
 
 
@@ -438,6 +441,7 @@ class TMotorServoActuator(ActuatorBase):
         frequency: int = 1000,
         offline: bool = False,
         max_temperature: float = 80.0,
+        current_mode: str = "driver",
         **kwargs: Any,
     ) -> None:
         """
@@ -451,10 +455,20 @@ class TMotorServoActuator(ActuatorBase):
             frequency: control frequency Hz
             offline: offline mode
             max_temperature: maximum temperature
+            current_mode: current convention ('driver', 'amplitude-invariant', 'power-invariant')
+                - 'driver': use driver's native current (default)
+                - 'amplitude-invariant': true phase current convention
+                - 'power-invariant': power-invariant current convention
         """
         # Validate motor type
         if motor_type not in TMOTOR_MODELS:
             raise ValueError(f"Unsupported motor type: {motor_type}")
+
+        # Validate current mode
+        if current_mode not in ["driver", "amplitude-invariant", "power-invariant"]:
+            raise ValueError(
+                f"Invalid current_mode: {current_mode}. Must be 'driver', 'amplitude-invariant', or 'power-invariant'"
+            )
 
         super().__init__(
             tag=tag,
@@ -470,6 +484,27 @@ class TMotorServoActuator(ActuatorBase):
         self.motor_id = motor_id
         self.max_temperature = max_temperature
         self._motor_params = TMOTOR_MODELS[motor_type]
+        self.current_mode = current_mode
+
+        # Current conversion factors
+        # Physical: I_drv (line current) = K * I_user
+        # Code: driver_current = user_current / self._current_scale
+        # So: I_drv = I_user / scale, which means scale = I_user / I_drv = 1 / K
+        # Kt relationship: τ = Kt_drv * I_drv = Kt_user * I_user
+        # So: Kt_user = Kt_drv * (I_drv / I_user) = Kt_drv * K
+        if current_mode == "amplitude-invariant":
+            # I_drv (line) = √3 * I_phase, so scale = I_phase / I_drv = 1/√3
+            # Kt_amp = Kt_drv * √3
+            self._current_scale = 1.0 / np.sqrt(3.0)
+            self._kt_scale = np.sqrt(3.0)
+        elif current_mode == "power-invariant":
+            # I_drv (line) = √2 * I_pwr, so scale = I_pwr / I_drv = 1/√2
+            # Kt_pwr = Kt_drv * √2
+            self._current_scale = 1.0 / np.sqrt(2.0)
+            self._kt_scale = np.sqrt(2.0)
+        else:  # driver
+            self._current_scale = 1.0
+            self._kt_scale = 1.0
 
         # CAN communication
         self._canman: Optional[CANManagerServo] = None
@@ -493,13 +528,11 @@ class TMotorServoActuator(ActuatorBase):
 
         # Thermal management
         self._thermal_model = ThermalModel(
-            temp_limit_windings=self.max_winding_temperature,
-            soft_border_C_windings=10.0,
-            temp_limit_case=self.max_case_temperature,
-            soft_border_C_case=10.0,
+            motor_constants=self._MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
 
-        LOGGER.info(f"Initialized TMotor servo: {self.motor_type} ID:{self.motor_id}")
+        LOGGER.info(f"Initialized TMotor servo: {self.motor_type} ID:{self.motor_id} (current_mode: {current_mode})")
 
     @property
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
@@ -656,22 +689,26 @@ class TMotorServoActuator(ActuatorBase):
     def set_motor_current(self, value: float) -> None:
         """Set motor current with clamping to motor limits"""
         if not self.is_offline and self._canman:
-            # Get current limits from motor parameters
+            # Convert from desired current convention to driver current
+            driver_current = value / self._current_scale
+
+            # Get current limits from motor parameters (these are in driver convention)
             motor_params = cast(dict[str, Any], self._motor_params)
             max_current = motor_params["Curr_max"] / 1000.0  # Convert from protocol units to amps
             min_current = motor_params["Curr_min"] / 1000.0  # Convert from protocol units to amps
 
             # Clamp current to safe limits
-            clamped_current = np.clip(value, min_current, max_current)
+            clamped_driver_current = np.clip(driver_current, min_current, max_current)
 
-            # Log warning if clamping occurred
-            if value != clamped_current:
+            # Log warning if clamping occurred (show in user's convention)
+            if driver_current != clamped_driver_current:
+                clamped_user_current = clamped_driver_current * self._current_scale
                 LOGGER.warning(
-                    f"Current command {value:.2f}A clamped to {clamped_current:.2f}A "
-                    f"(limits: [{min_current:.1f}, {max_current:.1f}]A)"
+                    f"Current command {value:.2f}A clamped to {clamped_user_current:.2f}A "
+                    f"(limits: [{min_current * self._current_scale:.1f}, {max_current * self._current_scale:.1f}]A)"
                 )
 
-            self._canman.set_current(self.motor_id, clamped_current)
+            self._canman.set_current(self.motor_id, clamped_driver_current)
             self._last_command_time = time.time()
 
     def set_motor_position(self, value: float) -> None:
@@ -700,7 +737,9 @@ class TMotorServoActuator(ActuatorBase):
     def set_motor_torque(self, value: float) -> None:
         """Set motor torque (Nm) - core functionality as requested by user"""
         # Torque to current: T = I * Kt
-        current = value / self._motor_params["Kt_actual"]
+        # Kt_user = Kt_drv * kt_scale
+        kt_user = self._motor_params["Kt_actual"] * self._kt_scale
+        current = value / kt_user
         self.set_motor_current(current)
 
     def set_output_torque(self, value: float) -> None:
@@ -820,14 +859,15 @@ class TMotorServoActuator(ActuatorBase):
 
     @property
     def motor_current(self) -> float:
-        """Motor current (A)"""
-        return self._motor_state.current
+        """Motor current (A) - converted to selected current convention"""
+        return self._motor_state.current * self._current_scale
 
     @property
     def motor_torque(self) -> float:
         """Motor torque (Nm)"""
         motor_params = cast(dict[str, Any], self._motor_params)
-        return self.motor_current * cast(float, motor_params["Kt_actual"])
+        kt_user = cast(float, motor_params["Kt_actual"]) * self._kt_scale
+        return self.motor_current * kt_user
 
     @property
     def output_torque(self) -> float:
