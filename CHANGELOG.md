@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.4.3](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.2...opensourceleg-v3.4.3) (2025-12-03)
+
+
+### Documentation
+
+* fix the display of the example of the home function of dephy.py ([e2380b1](https://github.com/neurobionics/opensourceleg/commit/e2380b10f4fd57d3181201b432abea994ad5a9cf))
+* fix the display of the example of the home function of dephy.py ([221ef2f](https://github.com/neurobionics/opensourceleg/commit/221ef2f1f78b2f013dfc4c75d2cbdab195935806))
+* update MSCL package link and version in IMU docstring ([8894afe](https://github.com/neurobionics/opensourceleg/commit/8894afec7ceeb4a5a0698128955fbf1efbc307a2))
+* update MSCL package link and version in IMU docstring ([c41e4c9](https://github.com/neurobionics/opensourceleg/commit/c41e4c930694192fa2f5b2b46314542e4c9c6b4d))
+
 ## [3.4.2](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.1...opensourceleg-v3.4.2) (2025-10-13)
 
 
