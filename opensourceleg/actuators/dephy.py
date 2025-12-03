@@ -355,6 +355,7 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
                 Default is 0.001 rad/s.
             callback (Optional[Callable[[], None]]): Optional callback function to be called when homing completes.
                                                         The function should take no arguments and return None.
+
         Examples:
             >>> actuator = DephyActuator(port='/dev/ttyACM0')
             >>> actuator.start()
