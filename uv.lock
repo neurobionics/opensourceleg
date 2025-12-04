@@ -917,7 +917,7 @@ wheels = [
 
 [[package]]
 name = "opensourceleg"
-version = "3.4.1"
+version = "3.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
