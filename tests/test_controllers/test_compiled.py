@@ -1,4 +1,5 @@
 import ctypes
+from typing import Any, ClassVar
 from unittest.mock import MagicMock
 
 import numpy.ctypeslib as ctl
@@ -73,6 +74,42 @@ def test___del__(monkeypatch):
 
     # Check if cleanup_func was called
     mock_cleanup_function.assert_called_once()
+
+
+def test_define_inputs_outputs_with_ctypes_classes(monkeypatch):
+    """Test that define_inputs and define_outputs accept ctypes.Structure classes directly."""
+    mock_lib = MagicMock()
+    monkeypatch.setattr(ctl, "load_library", lambda name, path: mock_lib)
+
+    mock_main_function = MagicMock()
+    mock_lib.main_func = mock_main_function
+
+    controller = CompiledController("test_lib", "/path/to/lib", "main_func")
+
+    # Define simple ctypes.Structure classes
+    class Inputs(ctypes.Structure):
+        _fields_: ClassVar[list[tuple[str, Any]]] = [("a", ctypes.c_double)]
+
+    class Outputs(ctypes.Structure):
+        _fields_: ClassVar[list[tuple[str, Any]]] = [("b", ctypes.c_double)]
+
+    # Pass classes directly
+    controller.define_inputs(Inputs)
+    controller.define_outputs(Outputs)
+
+    # Ensure the classes are registered on controller.types
+    assert controller.types.inputs is Inputs
+    assert controller.types.outputs is Outputs
+
+    # Ensure instances are created
+    assert isinstance(controller.inputs, Inputs)
+    assert isinstance(controller.outputs, Outputs)
+
+    # Assign a value and run; ensure main function is called
+    controller.inputs.a = 1.23
+    controller.main_function = mock_main_function
+    controller.run()
+    mock_main_function.assert_called_once()
 
 
 def test___repr__(monkeypatch):
