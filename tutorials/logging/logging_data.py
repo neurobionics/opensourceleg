@@ -1,6 +1,6 @@
 import time
 
-from opensourceleg.logging import Logger
+from opensourceleg.rust import Logger
 
 
 class Sensor:
@@ -20,9 +20,7 @@ class Experiment:
     """Example experiment class demonstrating data collection."""
 
     def __init__(self):
-        self.logger = Logger(
-            log_path="./experiments", file_name=f"trial_{time.strftime('%Y%m%d_%H%M%S')}", buffer_size=5000
-        )
+        Logger.init(log_directory="./experiments", log_name="trial.log")
 
         self.input = 0.0
         self.output = 0.0
@@ -31,9 +29,11 @@ class Experiment:
         self.max_steps = 5  # For demonstration
 
         # Track experimental variables
-        self.logger.track_function(lambda: self.input, "Input")
-        self.logger.track_function(lambda: self.output, "Output")
-        self.logger.track_function(lambda: self.error, "Error")
+        Logger.track_functions({
+            "Input": lambda: self.input,
+            "Output": lambda: self.output,
+            "Error": lambda: self.error,
+        })
 
     def is_complete(self):
         """Check if experiment is complete."""
@@ -50,18 +50,18 @@ class Experiment:
         """Run the experiment."""
         while not self.is_complete():
             self.step()
-            self.logger.update()
+            Logger.record()
 
 
 def basic_variable_tracking():
     """Shows basic variable tracking functionality."""
     print("\n=== Basic Variable Tracking Example ===")
 
-    logger = Logger(log_path="./logs", file_name="basic_variable_tracking")
+    Logger.init(log_directory="./logs", log_name="basic_variable_tracking.log")
 
     # Track a simple variable
     x = 42
-    logger.track_function(lambda: x, "x_value")
+    Logger.track_functions({"x_value": lambda: x})
 
     # Track class attributes
     class Robot:
@@ -70,14 +70,11 @@ def basic_variable_tracking():
             self.velocity = 0.0
 
     robot = Robot()
-    logger.track_attributes(robot, ["position", "velocity"])
+    Logger.trace_variables({"position": robot.position, "velocity": robot.velocity})
 
     # Update logged values
-    logger.update()  # Records current values to buffer
-    logger.info("Basic variables tracked and updated")
-
-    # We reset the logger just to start the next example, you don't need to reset the logger in your code
-    logger.reset()
+    Logger.record()  # Records current values to buffer
+    Logger.info("Basic variables tracked and updated")
 
 
 def sensor_logging():
@@ -85,22 +82,18 @@ def sensor_logging():
     print("\n=== Sensor Logging Example ===")
 
     sensor = Sensor()
-    logger = Logger(log_path="./logs", file_name="sensor_data")
+    Logger.init(log_directory="./logs", log_name="sensor_data.log")
 
     # Track sensor values
-    logger.track_function(lambda: sensor.temperature, "Temperature (C)")
-    logger.track_function(lambda: sensor.humidity, "Humidity (%)")
+    Logger.track_functions({"Temperature": lambda: sensor.temperature, "Humidity": lambda: sensor.humidity})
 
     # Simulate a few updates
     for _ in range(3):
         sensor.update()
-        logger.update()
+        Logger.record()
         time.sleep(0.1)
 
-    logger.info("Sensor data logged")
-
-    # We reset the logger just to start the next example, you don't need to reset the logger in your code
-    logger.reset()
+    Logger.info("Sensor data logged")
 
 
 def experiment():
@@ -112,6 +105,8 @@ def experiment():
 
 
 if __name__ == "__main__":
-    basic_variable_tracking()
-    sensor_logging()
+    # You can run one test per run
+
+    # basic_variable_tracking()
+    # sensor_logging()
     experiment()
