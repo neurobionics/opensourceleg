@@ -9,7 +9,7 @@ This module provides three IMU sensor implementations:
 Dependencies:
   - MSCL (for LordMicrostrainIMU): https://github.com/LORD-MicroStrain/MSCL/tree/master
   - adafruit_bno055, board, busio (for BNO055)
-  - spidev (for BHI260AP)
+  - spidev, firmware (for BHI260AP): https://github.com/boschsensortec/BHI2xy_SensorAPI/tree/master/firmware/bhi260ap
 
 Ensure that the required libraries are installed and that the library paths are added
 to PYTHONPATH or sys.path if necessary.
@@ -700,10 +700,780 @@ class BNO055(IMUBase):
         """
         return self._is_streaming
 
-class BHI260AP(IMUBase):
+class BHI260AP (IMUBase):
+    """
+    Sensor class for BHI250AP IMU. 
 
-    def __init__():
-        pass
+    This class interfaces with a Bosch BHI260AP Inertial Measurement Unit (IMU). It 
+    can return gyroscope (degrees/second), raw accelerometer (in m/s^2), gravity (in m/s^2), 
+    and linear acceleration (in m/s^2). 
+    
+    Requirements:
+        - spidev
+        - struct
+        - time
+
+    Resources: 
+        - Download "BHI250AP.fw" firmware:
+        https://github.com/boschsensortec/BHI2xy_SensorAPI/tree/master/firmware/bhi260ap
+
+    """
+    # Register addresses - DMA Channels
+    REG_CHAN0_CMD = 0x00          # Host Channel 0 - Command Input (write-only)
+    REG_CHAN1_WAKEUP_FIFO = 0x01  # Host Channel 1 - Wake-up FIFO (read-only)
+    REG_CHAN2_NONWAKEUP_FIFO = 0x02  # Host Channel 2 - Non-Wake-up FIFO (read-only)
+    REG_CHAN3_STATUS = 0x03       # Host Channel 3 - Status/Debug FIFO (read-only)
+    
+    # Control registers
+    REG_CHIP_CTRL = 0x05          # Chip Control
+    REG_HOST_INTERFACE_CTRL = 0x06  # Host Interface Control
+    REG_HOST_INT_CTRL = 0x07      # Host Interrupt Control
+    REG_RESET_REQ = 0x14          # Reset Request
+    REG_HOST_CTRL = 0x16          # Host Control (SPI mode, I2C watchdog)
+    REG_HOST_STATUS = 0x17        # Host Status
+    
+    # Identification registers
+    REG_FUSER2_PRODUCT_ID = 0x1C  # Fuser2 Product ID (0x89)
+    REG_FUSER2_REV_ID = 0x1D      # Fuser2 Revision ID (0x02 or 0x03)
+    REG_ROM_VERSION = 0x1E        # ROM Version (2 bytes)
+    REG_KERNEL_VERSION = 0x20     # Kernel Version (2 bytes)
+    REG_USER_VERSION = 0x22       # User Version (2 bytes)
+    REG_CHIP_ID = 0x2B            # Chip ID (0x70 or 0xF0)
+    
+    # Status and error registers
+    REG_FEATURE_STATUS = 0x24     # Feature Status
+    REG_BOOT_STATUS = 0x25        # Boot Status
+    REG_INT_STATUS = 0x2D         # Interrupt Status
+    REG_ERROR_VALUE = 0x2E        # Error Value
+    REG_ERROR_AUX = 0x2F          # Error Auxiliary
+    REG_DEBUG_VALUE = 0x30        # Debug Value
+    REG_DEBUG_STATE = 0x31        # Debug State
+    
+    # Expected chip ID values
+    FUSER2_PRODUCT_ID = 0x89      # Fuser2 core identifier
+    CHIP_ID = [0x70, 0xF0]        # Valid BHI260AP chip IDs
+    
+    # Commands
+    CMD_SOFT_RESET = 0x01
+    CMD_FIFO_FLUSH = 0x0009
+    CMD_CONFIG_SENSOR = 0x000D
+    CMD_CHNG_SENSOR_DYN_RNG = 0x000E
+
+    # Parameters
+    MAX_MESSAGE_LEN = 256 # Max number of message bytes
+    DATA_RATES = (1.5625, 3.125, 6.25, 12.5, 25, 50, 100, 200, 400, 800)
+    SENSOR_RANGES = {
+        1: (2048, 4096, 8192, 16384), # (LSB)
+        4: (2048, 4096, 8192, 16384), # (LSB)
+        10: (250, 500, 1000, 2000), # (dps)
+        13: (250, 500, 1000, 2000), # (dps)
+        28: (2048, 4096, 8192, 16384), # (LSB)
+        31: (2048, 4096, 8192, 16384) # (LSB)
+    }
+    GRAVITY = 9.81  # (m/s^2)
+
+    # Sensor IDs 
+    SENSOR_ID_ACC = 4   # Corrected accelerometer (Non-wakeup)
+    SENSOR_ID_GYR = 13  # Corrected gyroscope (Non-wakeup)
+    SENSOR_ID_GRAVITY = 28 # (Non-wakeup)
+    SENSOR_ID_LIN_ACC = 31 # Linear acceleration (defined as accelerometer - gravity)
+
+    # FIFO Event IDs for timestamps and meta events
+    FIFO_EVENT_SMALL_DELTA_TS = 0xFB   # Small Delta Timestamp (251)
+    FIFO_EVENT_LARGE_DELTA_TS = 0xFC   # Large Delta Timestamp (252)
+    FIFO_EVENT_FULL_TS = 0xFD          # Full Timestamp (253)
+    FIFO_EVENT_META = 0xFE             # Meta Event (254)
+    FIFO_EVENT_FILLER = 0xFF           # Filler byte (255)
+    FIFO_EVENT_PADDING = 0x00          # Padding byte (0)
+
+    # Sensor Dict
+    SENSOR_DICT = {
+        "Gyro": SENSOR_ID_GYR, 
+        "Accel": SENSOR_ID_ACC,
+        "Gravity": SENSOR_ID_GRAVITY,
+        "LinAccel": SENSOR_ID_LIN_ACC
+    } 
+
+    def __init__(
+        self, 
+        tag: str = "BHI260AP",
+        spi_bus: int = 0, 
+        spi_cs: int = 2, 
+        clock_freq: int = 2000000, 
+        data_rate: int = 400,
+        firmware_path: str = "./BHI260AP.fw", 
+        offline: bool = False,
+        ):
+        """
+        Initialize BHI260AP IMU
+        
+        Args:
+            tag (str): Identifier for the IMU instance
+            spi_bus (int): SPI bus number 
+            spi_cs (int): SPI chip select 
+            clock_freq (int): SPI clock speed in Hz 
+            data_rate (int): sensor sample rate in Hz 
+            firmware_path (str): path to firmware file
+        """
+        try:
+            import spidev
+            import struct
+            import time
+
+            self._spi = spidev.SpiDev()
+        except ImportError:
+            LOGGER.warning(
+                    "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
+                    "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
+                    "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
+                    "If you are using a newer version of MSCL, you may need to add /usr/lib/python3.version/dist-packages \
+                    to PYTHONPATH"
+                )
+
+            if not offline:
+                exit(1)
+
+        # Check parameters passed to initializer
+        if data_rate not in self.DATA_RATES:
+            print(f"Requested data rate will be modified to match the nearest value equal to or greater than the requested rate in {self.DATA_RATES}.")
+
+        self._tag = tag
+        self._spi_bus = spi_bus
+        self._spi_cs = spi_cs
+        self._clock_freq = clock_freq
+        self._data_rate = data_rate
+        self._firmware_path = firmware_path
+        self._is_streaming = False
+        
+        self._enabled_sensors = dict()
+        self._sensor_data = []
+
+    # ------ SPI Communication --------
+
+    def start(self) -> None:
+        """
+        Start the IMU by opening the SPI port
+        """
+        print("Starting IMU...")
+        self._spi.open(self._spi_bus, self._spi_cs)
+        self._spi.max_speed_hz = self._clock_freq
+        self._spi.mode = 0b00  # CPOL=0, CPHA=0
+        self._spi.bits_per_word = 8
+
+        # Verify SPI connection 
+        if not self.verify_connection():
+            raise RuntimeError(
+                "Error connecting to IMU."
+            )
+
+        # If kernel version = 0x00, auto-load firmware
+        if self.read_kernel_version() == 0:
+            self._upload_firmware()
+
+        # Clear the first interrupt by flushing the content of the FIFO
+        self.flush_buffer()
+
+        self._is_streaming = True
+        print("IMU started successfully.")
+
+    def stop(self) -> None:
+        """
+        Stop the IMU by closing the SPI port.
+        """
+        print("Stopping IMU...")
+        for sensor_id in list(self._enabled_sensors):
+            try:
+                self._disable_sensor(sensor_id)
+            except Exception as e:
+                print(f"Warning: Could not disable sensor {sensor_id}: {e}")
+        self._spi.close()
+        self._is_streaming = False
+        print("IMU stopped successfully.")
+        
+    def _read_register(self, reg_addr, length=1, return_bit_string = False) -> np.ndarray:
+        """Read from register(s)"""
+        # SPI read: set MSB to 1 for read operation
+        tx_data = [reg_addr | 0x80] + [0x00] * length
+        rx_data = self._spi.xfer2(tx_data)[1:length+1]
+        if return_bit_string:
+            bit_string = np.unpackbits(np.frombuffer(bytes(rx_data), dtype=np.uint8))[::-1]
+            return bit_string # LSB first in each byte
+        else:
+            return rx_data
+    
+    def _write_register(self, reg_addr, data) -> None:
+        """Write to register"""
+        # SPI write: MSB is 0 for write operation
+        if isinstance(data, list):
+            tx_data = [reg_addr & 0x7F] + data
+        else:
+            tx_data = [reg_addr & 0x7F, data]
+        self._spi.xfer2(tx_data)
+        time.sleep(0.001)  # Small delay after write
+
+    def _poll_register_until(self, condition_property, expected_value = True, max_attempts: int = 250, delay: float = 0.0001, error_msg: str = "Error, expected register value not read") -> bool:
+        """
+        Polls a condition function until it returns the expected value or times out
+        Args:
+            condition_property (property): function to call repeatedly
+            expected_value (any): value that indicates success
+            max_attempts (int): maximum number of polling attempts
+            delay (float): delay between polls in seconds
+            error_msg (str): message printed if expected value not read
+
+        Returns:
+            bool: True if condition met, False if timeout
+        """
+        for attempt in range(max_attempts):
+            if condition_property() == expected_value: 
+                return True
+            time.sleep(delay)
+        print(error_msg)
+        return False
+
+
+    # -------- Booting functions -----------
+
+    def _soft_reset(self) -> None:
+        """
+        Perform soft reset 
+        """
+        # Write 0x01 to Reset Request register (bit 0 = 1)
+        # This MUST be a single register write (no burst)
+        self._write_register(self.REG_RESET_REQ, 0x01)
+
+        # Wait T_wait = 4 μs minimum (device may wake from sleep)
+        time.sleep(0.0001)  
+        
+
+    def flush_buffer(self) -> None:
+        """
+        Flushes (discards) all FIFO buffers
+        """
+        cmd = struct.pack('<HHB3x', self.CMD_FIFO_FLUSH, 4, 0xFE)
+        self._write_register(self.REG_CHAN0_CMD, list(cmd))
+
+        time.sleep(0.05)
+
+
+    def _upload_firmware(self) -> None:
+        """
+        Boots firmware to RAM
+        """
+        print("Starting firmware upload...")
+
+        # Perform soft reset to make host interface ready
+        self._soft_reset()
+
+        # Poll Boot Status register until Host Interface Ready bit is set
+        self._poll_register_until(lambda: self.host_interface_ready, error_msg = "Error, host interface ready bit not set after resetting")
+
+        # Load firmware
+        firmware = open(self._firmware_path, "rb").read()
+        firmware_len_words = len(firmware) // 4  # Load firmware in multiple of 4 bytes
+        
+        # Send 'Upload to Program RAM' command
+        cmd = struct.pack("<HH", 0x0002, firmware_len_words)
+        self._write_register(self.REG_CHAN0_CMD, list(cmd))
+
+        # Send firmware data in chunks
+        offset = 0
+        while offset < len(firmware):
+            chunk = firmware[offset:offset + self.MAX_MESSAGE_LEN]
+            self._write_register(self.REG_CHAN0_CMD, list(chunk))
+            offset += self.MAX_MESSAGE_LEN
+
+        # Poll Boot Status register until Firmware Verify Done bit is set
+        self._poll_register_until(lambda: self.firmware_verify_done, error_msg = "Error, firmware not verified")
+
+        # Send 'Boot Program RAM' command to start execution of firmware
+        boot_cmd = struct.pack("<HH", 0x0003, 0)
+        self._write_register(self.REG_CHAN0_CMD, list(boot_cmd))
+
+        # Poll Boot Status register until Host Interface Ready bit is set again
+        self._poll_register_until(lambda: self.host_interface_ready, delay = 0.001, error_msg = "Error, host interface ready bit not set after firmware boot")
+        
+        # Check kernel version is updated after uploading and booting firmware
+        if self.read_kernel_version() != 0: 
+            print("Firmware booted and verified successfully.")
+        else: 
+            raise RuntimeError(
+                "Error, BHI260AP firmware boot not successful. "
+            )
+
+    # ------ Sensor enable functions ---------------
+
+    def _enable_sensor(self, sensor_id: int, dynamic_range: int = None, scale: int = None, rate_hz: float = None, latency: int = 0) -> None:
+        """
+        Enable a virtual sensor
+
+        Args:
+            sensor_id (int): ID for virtual sensor to enable
+            dynamic_range (int): dynamic measurement range
+            rate_hz (float): sample rate in hz
+            latency (int): sensor latency in milliseconds
+        """
+        if rate_hz is None:
+            rate_hz = self._data_rate
+
+        # Pack sample rate as 32-bit float
+        rate_bytes = struct.pack('<f', rate_hz)
+
+        # Pack latency as 24-bit value
+        latency_bytes = struct.pack('<I', latency)[:3]
+
+        # Build command packet
+        cmd = struct.pack('<HH', self.CMD_CONFIG_SENSOR, 8) # Command ID and length (bytes)
+        cmd += struct.pack('<B', sensor_id)
+        cmd += rate_bytes
+        cmd += latency_bytes
+
+        # Send command 
+        self._write_register(self.REG_CHAN0_CMD, list(cmd))
+
+        # Wait for sensor to be configured
+        time.sleep(0.05)
+
+        # Change sensor dynamic range 
+        if dynamic_range is not None:
+            self._change_sensor_dynamic_range(sensor_id, dynamic_range)
+
+        # Modify list of enabled sensors
+        self._enabled_sensors[sensor_id] = scale
+
+        # Add 0 data to sensor data list
+        sample = {
+            'sensor_id': sensor_id,
+            'timestamp': 0.0,  # Convert to seconds
+            'x': 0.0,
+            'y': 0.0,
+            'z': 0.0
+        }
+        self._sensor_data.append(sample)
+
+    # TODO fix this function 
+    def _change_sensor_dynamic_range(self, sensor_id: int, dynamic_range: int) -> None:
+        """
+        Selects a different dynamic range for a virtual sensor
+        Args:
+            sensor_id (int): Sensor ID
+            dynamic_range (int): dynamic measurement range for sensor
+        """
+        dynamic_range = 0 # Patch fix: resets to default
+        range_bytes = struct.pack('<H1x', dynamic_range)
+
+        # Build command packet
+        cmd = struct.pack('<HH', self.CMD_CHNG_SENSOR_DYN_RNG, 4) # Command ID and length (bytes)
+        cmd += struct.pack('<B', sensor_id)
+        cmd += range_bytes
+
+        # Write commnd
+        self._write_register(self.REG_CHAN0_CMD, list(cmd))
+
+        time.sleep(0.01)
+
+    def _disable_sensor(self, sensor_id: int) -> None:
+        """
+        Disables virtual sensor by setting sample rate to 0
+
+        Args:
+            sensor_id (int): Sensor ID to disable
+        """
+        self._enable_sensor(sensor_id, rate_hz = 0.0, latency = 0)
+        del self._enabled_sensors[sensor_id]
+
+    def enable_gyroscope(self, rate_hz: int = None, dynamic_range: int = 2000) -> None:
+        """
+        Enables gyroscope
+        Args:
+            rate_hz (int): Sample frequency (Hz)
+            range (int): Dynamic measurement range (dps)
+        """
+        sensor_id = self.SENSOR_DICT["Gyro"]
+        allowable_ranges = self.SENSOR_RANGES[sensor_id]
+        if dynamic_range not in allowable_ranges:
+            raise RuntimeError(
+                f"Error: Gyroscope measurement range not in {allowable_ranges}."
+            )
+        scale = (2 * np.pi / 360) / (32768.0 / dynamic_range)
+        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz) 
+
+        
+
+    def enable_accelerometer(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
+        """
+        Enables accelerometer
+        Args:
+            rate_hz (int): Sample frequency (Hz)
+            range (int): Dynamic measurement range (LSB)
+        """
+        sensor_id = self.SENSOR_DICT["Accel"]
+        allowable_ranges = self.SENSOR_RANGES[sensor_id]
+        if dynamic_range not in allowable_ranges:
+            raise RuntimeError(
+                f"Error: Accelerometer measurement range not in {allowable_ranges}."
+            )
+        scale = self.GRAVITY / dynamic_range
+        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
+
+    def enable_linear_acceleration(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
+        """
+        Enables linear acceleration sensor
+        Args:
+            rate_hz (int): Sample frequency (Hz)
+            range (int): Dynamic measurement range (LSB)
+        """ 
+        sensor_id = self.SENSOR_DICT["LinAccel"]
+        allowable_ranges = self.SENSOR_RANGES[sensor_id]
+        if dynamic_range not in allowable_ranges:
+            raise RuntimeError(
+                f"Error: Linear acceleration measurement range not in {allowable_ranges}."
+            )
+        scale = self.GRAVITY / dynamic_range
+        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
+
+    def enable_gravity(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
+        """
+        Enables gravity sensor
+        Args:
+            rate_hz (int): Sample frequency (Hz)
+            range (int): Dynamic measurement range (LSB)
+        """
+        sensor_id = self.SENSOR_DICT["Gravity"]
+        allowable_ranges = self.SENSOR_RANGES[sensor_id]
+        if dynamic_range not in allowable_ranges:
+            raise RuntimeError(
+                f"Error: Gravity measurement range not in {allowable_ranges}."
+            )
+        scale = self.GRAVITY / dynamic_range
+        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
+
+    # -------- Read variables ------------
+
+    def update(self) -> None:
+        """
+        Read data in buffer and save to class
+        """
+        raw_data = self._read_fifo()
+        parsed_data = self._parse_fifo(raw_data)
+
+        if not parsed_data:
+            if not self._enabled_sensors:
+                print("BHI260AP Warning: no sensors enabled.")
+            return []
+
+        self._sensor_data = parsed_data
+
+    def _read_fifo(self, address: int = REG_CHAN2_NONWAKEUP_FIFO) -> bytes: 
+        """
+        Read bytes from FIFO channel
+        Args:
+            address: FIFO channel 
+            max_bytes: Maximum number of bytes to read
+        Returns:
+            (bytes): Raw FIFO data
+        """
+        length_bytes = self._read_register(address, 2)
+        transfer_len = struct.unpack('<H', bytes(length_bytes))[0]
+        if transfer_len > 0:
+            fifo_data = self._read_register(address, transfer_len)
+            return bytes(fifo_data)
+        return None
+
+
+
+    def _parse_fifo(self, fifo_data: bytes) -> np.ndarray:
+        """
+        Parse raw data from a FIFO channel
+        Args:
+            fifo_data (bytes): data bytes to parse
+        Returns:
+            (np.ndarray): Parsed sensor data
+        """
+        if fifo_data is None:
+            return []
+
+        samples = []
+        offset = 0 
+        current_timestamp = 0
+        while offset < len(fifo_data):
+            # Read sensor_id
+            sensor_id = fifo_data[offset]
+
+            # Handle padding/filler bytes
+            if sensor_id == self.FIFO_EVENT_PADDING or sensor_id == self.FIFO_EVENT_FILLER:
+                offset += 1
+                continue
+            
+            # Handle timestamp events
+            if sensor_id == self.FIFO_EVENT_SMALL_DELTA_TS:  # Small Delta Timestamp
+                if offset + 1 < len(fifo_data):
+                    delta = struct.unpack('B', fifo_data[offset+1:offset+2])[0]
+                    current_timestamp += delta
+                    offset += 2
+                continue
+                
+            elif sensor_id == self.FIFO_EVENT_LARGE_DELTA_TS:  # Large Delta Timestamp 
+                if offset + 2 < len(fifo_data):
+                    delta = struct.unpack('<H', fifo_data[offset+1:offset+3])[0]
+                    current_timestamp += delta
+                    offset += 3
+                continue
+                
+            elif sensor_id == self.FIFO_EVENT_FULL_TS:  # Full Timestamp
+                if offset + 5 < len(fifo_data):
+                    # 40-bit timestamp (5 bytes)
+                    ts_bytes = fifo_data[offset+1:offset+6]
+                    current_timestamp = int.from_bytes(ts_bytes, byteorder='little')
+                    offset += 6
+                continue
+            
+            # Handle Meta Events (non-wakeup)
+            elif sensor_id == self.FIFO_EVENT_META:
+                if offset + 3 < len(fifo_data):
+                    meta_type = fifo_data[offset + 1]
+                    # (Meta events ignored)
+                    offset += 4
+                else:
+                    break
+                continue
+            
+            # Handle 3D Vector sensors (accelerometer, gyroscope) - Section 15.1.3
+            # Format: 1 byte ID + 6 bytes data (3x 16-bit signed integers)
+            if sensor_id in self._enabled_sensors:  # Various acc/gyro sensor IDs
+                if offset + 6 < len(fifo_data):
+                    sample = self._parse_sensor_data(sensor_id, fifo_data[offset:offset+7], current_timestamp)
+                    samples.append(sample)
+                    offset += 7
+                else:
+                    break
+            else:
+                # Unknown sensor type, skip
+                offset += 1
+        
+        return samples
+
+    def _parse_sensor_data(self, sensor_id: int, data: bytes, current_timestamp: int) -> dict:
+        """ 
+        Parse gyro or accel data 
+        """
+        # Unpack 3D vector
+        x = struct.unpack('<h', data[1:3])[0]
+        y = struct.unpack('<h', data[3:5])[0]
+        z = struct.unpack('<h', data[5:7])[0]
+
+        # Get scale factor
+        scale = self._enabled_sensors[sensor_id]
+
+        sample = {
+            'sensor_id': sensor_id,
+            'timestamp': current_timestamp / 64000.0,  # Convert to seconds
+            'x': x * scale,
+            'y': y * scale,
+            'z': z * scale
+        }
+
+        return sample
+
+    def _get_sensor_data(self, sensor_id: int, most_recent: bool) -> np.ndarray:
+        """
+        Gets data for arg sensor_id
+
+        Args:
+            most_recent (bool): If True, return only the most recent (x,y,z).
+                                If False, return all gyro samples as an (N,3) array.
+
+        Returns:
+            np.ndarray: Most recent (x,y,z) array (shape (3,)) or
+                         all samples (shape (N,3)), or [] if no gyro data.
+        """
+        if not self._sensor_data:
+            return []
+        
+        # collect (x,y,z) tuples for samples matching sensor_id
+        data_samples = [
+            (s['x'], s['y'], s['z'])
+            for s in self._sensor_data
+            if s.get('sensor_id') == sensor_id
+        ]
+        
+        if not data_samples:
+            return []     
+
+        if most_recent:
+            return np.array(data_samples[-1], dtype=float)
+
+        return np.array(data_samples, dtype=float)
+
+    # ---------- SPI Communication --------------
+
+    def verify_connection(self) -> bool:
+        """Verify SPI connection by checking chip ID"""
+        chip_id = self.read_chip_id()
+        if chip_id in self.CHIP_ID:
+            return True
+        else:
+            return False
+
+    def read_chip_id(self) -> int:
+        """Read and return chip ID"""
+        return self._read_register(self.REG_CHIP_ID, 1)[0]
+
+    def read_boot_status_bits(self) -> np.ndarray:
+        """Read and return boot status"""
+        return self._read_register(self.REG_BOOT_STATUS, 1, True)
+
+    def read_host_status_bits(self) -> np.ndarray:
+        """Read and return host status """
+        return self._read_register(self.REG_HOST_STATUS, 1, True)
+
+    def read_interrupt_status_bits(self) -> np.ndarray:
+        """Read and return interrupt status """
+        return self._read_register(self.REG_INT_STATUS, 1, True)
+
+    def read_error_value(self) -> int:
+        """ Read and return error value """
+        return self._read_register(self.REG_ERROR_VALUE, 1)[0]
+
+    def read_rom_version(self) -> int:
+        """ 
+        Read and return ROM version (16-bit register)
+        
+        Returns: 
+            (int) 0x142E for BHI260AP
+        """
+        b = self._read_register(self.REG_ROM_VERSION, 2)
+        return int.from_bytes(bytes(b), byteorder="little")
+
+    def read_kernel_version(self) -> int:
+        """ 
+        Read and return kernel version (16-bit register)
+        
+        Returns: 
+            (int) build number corresponding to kernel portion of firmware, 
+                    if none exists, returns 0 
+        """
+        b = self._read_register(self.REG_KERNEL_VERSION, 2)
+        return int.from_bytes(bytes(b), byteorder="little")
+
+    def read_product_id(self) -> int:
+        """
+        Get product ID (Fuser2 Product ID register)
+        
+        Returns:
+            (int) Product ID (should be 0x89 for BHI260AP)
+        """
+        return self._read_register(self.REG_FUSER2_PRODUCT_ID, 1)[0]
+
+    def read_host_interrupt_bits(self) -> np.ndarray:
+        """
+        Read host interrupt setting
+
+        Returns:
+            np.ndarray: Bit array of host interrupt settings
+        """
+        return self._read_register(self.REG_HOST_INT_CTRL, 1, True)
+
+    @property 
+    def power_state(self) -> bool:
+        """
+        Returns power state
+        Returns:
+            0 - active
+            1 - sleeping
+        """
+        return bool(self.read_host_status_bits()[0])
+    
+    @property
+    def firmware_idle(self) -> bool:
+        """
+        Returns firmware state
+        Returns:
+            0 - Firmware running
+            1 - Firmware halted
+        """
+        return bool(self.read_boot_status_bits()[7])
+
+    @property
+    def host_interface_ready(self) -> bool:
+        """
+        Returns state of host interface
+        Returns:
+            0 - Not ready
+            1 - Ready
+        """
+        return bool(self.read_boot_status_bits()[4])
+
+    @property
+    def firmware_verify_done(self) -> bool:
+        """
+        Returns status bit for firmware verification
+        Returns:
+            0 - Verification not done
+            1 - Verification done
+        """
+        return bool(self.read_boot_status_bits()[5])
+
+    @property
+    def non_wakeup_fifo_status(self) -> int:
+        """
+        Returns state of Non-Wakup FIFO
+        Returns:
+            0 - No data
+            1 - Immediate (sensor with 0 latency now has data)
+            2 - Latency (latency timed out for sensor with non-zero latency)
+            3 - Watermark
+        """
+        value = 0
+        bits = self.read_interrupt_status_bits()[3:5]
+        for i, bit in enumerate(reversed(bits)):
+            value |= bit << i 
+        return value
+    
+    @property
+    def is_streaming(self) -> bool:
+        """
+        Check if the BNO055 sensor is streaming data.
+
+        Returns:
+            bool: True if streaming; otherwise, False.
+        """
+        return self._is_streaming
+
+    # ------------ Read Data -----------------
+
+    @property
+    def gyro(self, most_recent: bool = True) -> np.ndarray:
+        """
+        Returns gyroscope data read in latest update() call
+        """
+        sensor_id = self.SENSOR_DICT.get("Gyro", self.SENSOR_ID_GYR)
+        return self._get_sensor_data(sensor_id, most_recent)
+
+    @property
+    def accel(self, most_recent: bool = True) -> np.ndarray:
+        """
+        Returns acclerometer data read in latest update() call
+        """
+        sensor_id = self.SENSOR_DICT.get("Accel", self.SENSOR_ID_ACC)
+        return self._get_sensor_data(sensor_id, most_recent)
+
+    @property
+    def lin_accel(self, most_recent: bool = True) -> np.ndarray:
+        """
+        Returns linear acceleration data read in latest update() call
+        """
+        sensor_id = self.SENSOR_DICT.get("LinAccel", self.SENSOR_ID_LIN_ACC)
+        return self._get_sensor_data(sensor_id, most_recent)
+
+    @property
+    def gravity(self, most_recent: bool = True) -> np.ndarray:
+        """
+        Returns gravity data read in latest update() call
+        """
+        sensor_id = self.SENSOR_DICT.get("Gravity", self.SENSOR_ID_GRAVITY)
+        return self._get_sensor_data(sensor_id, most_recent)
+    
 
 if __name__ == "__main__":
     # TODO: Add sample code depicting usage.
