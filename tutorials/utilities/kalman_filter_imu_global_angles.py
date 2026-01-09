@@ -1,0 +1,48 @@
+from opensourceleg.logging.logger import Logger
+from opensourceleg.sensors.imu import BHI260AP, AxisTransform
+from opensourceleg.utilities.filters import KalmanFilter2D
+from opensourceleg.utilities import SoftRealtimeLoop
+import time
+
+FREQUENCY = 200
+DT = 1 / FREQUENCY
+
+if __name__ == "__main__":
+    imu_logger = Logger(
+        log_path="./logs",
+        file_name="reading_bhi260ap_data",
+    )
+    clock = SoftRealtimeLoop(dt=DT)
+    imu = BHI260AP(
+        data_rate = FREQUENCY, 
+        firmware_path = "/home/kwalte/firmware/BHI260AP.fw"
+        )    
+    imu.start()
+
+    # Define axis transformation (modify as needed for your IMU mounting)
+    imu_transform = AxisTransform(roll='z', pitch='y', yaw='-x')
+
+    # Kalman filter 
+    kalman_filter = KalmanFilter2D(
+        Q_angle=1e-4,
+        Q_bias=1e-13, 
+        R_var=3e-6, 
+    )
+
+    # Flush buffer before starting "control" loop
+    imu.flush_buffer()
+
+    for t in clock:
+        imu.update()
+
+        # Transform to orientation frame
+        ax_t, ay_t, az_t = imu_transform.transform_accel(imu.gravity)
+        gx_t, gy_t, gz_t = imu_transform.transform_gyro(imu.gyro)
+
+        # Update filter
+        roll, pitch, yaw = kalman_filter.update(ax_t, ay_t, az_t, gx_t, gy_t, gz_t)
+
+        print(f"Kalman - Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Yaw: {yaw:+7.3f}")
+
+    # Stop IMU
+    imu.stop()

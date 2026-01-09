@@ -705,8 +705,8 @@ class BHI260AP (IMUBase):
     Sensor class for BHI250AP IMU. 
 
     This class interfaces with a Bosch BHI260AP Inertial Measurement Unit (IMU). It 
-    can return gyroscope (degrees/second), raw accelerometer (in m/s^2), gravity (in m/s^2), 
-    and linear acceleration (in m/s^2). 
+    can return gyroscope (rad/s), raw accelerometer (m/s^2), gravity (m/s^2), 
+    and linear acceleration (m/s^2). 
     
     Requirements:
         - spidev
@@ -1445,15 +1445,15 @@ class BHI260AP (IMUBase):
     @property
     def gyro(self, most_recent: bool = True) -> np.ndarray:
         """
-        Returns gyroscope data read in latest update() call
+        Returns latest gyroscope data [gx, gy, gz] (rad/s)
         """
         sensor_id = self.SENSOR_DICT.get("Gyro", self.SENSOR_ID_GYR)
-        return self._get_sensor_data(sensor_id, most_recent)
+        return self._get_sensor_data(sensor_id, most_recent) * np.pi / 180.0
 
     @property
     def accel(self, most_recent: bool = True) -> np.ndarray:
         """
-        Returns acclerometer data read in latest update() call
+        Returns latest acclerometer data [ax, ay, az] (m/s^2)
         """
         sensor_id = self.SENSOR_DICT.get("Accel", self.SENSOR_ID_ACC)
         return self._get_sensor_data(sensor_id, most_recent)
@@ -1461,7 +1461,7 @@ class BHI260AP (IMUBase):
     @property
     def lin_accel(self, most_recent: bool = True) -> np.ndarray:
         """
-        Returns linear acceleration data read in latest update() call
+        Returns latest linear acceleration data [ax, ay, az] (m/s^2)
         """
         sensor_id = self.SENSOR_DICT.get("LinAccel", self.SENSOR_ID_LIN_ACC)
         return self._get_sensor_data(sensor_id, most_recent)
@@ -1469,10 +1469,88 @@ class BHI260AP (IMUBase):
     @property
     def gravity(self, most_recent: bool = True) -> np.ndarray:
         """
-        Returns gravity data read in latest update() call
+        Returns latest gravity data [ax, ay, az] (m/s^2)
         """
         sensor_id = self.SENSOR_DICT.get("Gravity", self.SENSOR_ID_GRAVITY)
         return self._get_sensor_data(sensor_id, most_recent)
+    
+
+class AxisTransform:
+    """
+    Transforms IMU raw axes (x, y, z) to orientation axes (roll, pitch, yaw).
+    
+    Supports arbitrary axis mappings with sign inversions.
+    
+    Examples:
+        # Standard mapping
+        transform = IMUAxisTransform(roll='x', pitch='y', yaw='z')
+        
+        # Rotated IMU (90° around z-axis)
+        transform = IMUAxisTransform(roll='y', pitch='-x', yaw='z')
+        
+        # Inverted pitch
+        transform = IMUAxisTransform(roll='x', pitch='-y', yaw='z')
+    """
+    
+    VALID_AXES = {'x', 'y', 'z', '-x', '-y', '-z'}
+    
+    def __init__(self, roll='x', pitch='y', yaw='z'):
+        """
+        Initialize axis transformation.
+        
+        Args:
+            roll: IMU axis for roll ('x', 'y', 'z', '-x', '-y', or '-z')
+            pitch: IMU axis for pitch
+            yaw: IMU axis for yaw
+        """
+        # Validate inputs
+        for name, axis in [('roll', roll), ('pitch', pitch), ('yaw', yaw)]:
+            if axis not in self.VALID_AXES:
+                raise ValueError(f"{name} axis '{axis}' must be one of {self.VALID_AXES}")
+        
+        # Store mapping
+        self.roll_axis = roll
+        self.pitch_axis = pitch
+        self.yaw_axis = yaw
+        
+        # Create axis selection functions
+        self._axis_funcs = {
+            'x':  lambda vec: vec[0],
+            'y':  lambda vec: vec[1],
+            'z':  lambda vec: vec[2],
+            '-x': lambda vec: -vec[0],
+            '-y': lambda vec: -vec[1],
+            '-z': lambda vec: -vec[2],
+        }
+    
+    def transform_vector(self, x, y, z):
+        """
+        Transform a 3D vector from IMU frame to orientation frame.
+        
+        Args:
+            x, y, z: Components in IMU frame
+            
+        Returns:
+            tuple: (roll_component, pitch_component, yaw_component)
+        """
+        vec = np.array([x, y, z])
+        
+        return (
+            self._axis_funcs[self.roll_axis](vec),
+            self._axis_funcs[self.pitch_axis](vec),
+            self._axis_funcs[self.yaw_axis](vec)
+        )
+    
+    def transform_accel(self, ax, ay, az):
+        """Transform acceleration vector to orientation frame."""
+        return self.transform_vector(ax, ay, az)
+    
+    def transform_gyro(self, gx, gy, gz):
+        """Transform angular velocity vector to orientation frame."""
+        return self.transform_vector(gx, gy, gz)
+    
+    def __repr__(self):
+        return f"IMUAxisTransform(roll={self.roll_axis!r}, pitch={self.pitch_axis!r}, yaw={self.yaw_axis!r})"
     
 
 if __name__ == "__main__":
