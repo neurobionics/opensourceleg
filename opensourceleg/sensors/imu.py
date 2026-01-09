@@ -1,13 +1,15 @@
 """
-Module for interfacing with IMU sensors using the MSCL and Adafruit libraries.
+Module for interfacing with IMU sensors using the MSCL, Adafruit, and SPI libraries.
 
-This module provides two IMU sensor implementations:
+This module provides three IMU sensor implementations:
   - LordMicrostrainIMU: Uses the MSCL library to interface with a Lord Microstrain IMU.
   - BNO055: Uses the Adafruit BNO055 library to interface with a Bosch BNO055 IMU.
+  - BHI260AP: Uses the SPI library to interface with a Bosch BHI260AP IMU.
 
 Dependencies:
   - MSCL (for LordMicrostrainIMU): https://github.com/LORD-MicroStrain/MSCL/tree/master
   - adafruit_bno055, board, busio (for BNO055)
+  - spidev (for BHI260AP)
 
 Ensure that the required libraries are installed and that the library paths are added
 to PYTHONPATH or sys.path if necessary.
@@ -698,6 +700,10 @@ class BNO055(IMUBase):
         """
         return self._is_streaming
 
+class BHI260AP(IMUBase):
+
+    def __init__():
+        pass
 
 if __name__ == "__main__":
     # TODO: Add sample code depicting usage.
