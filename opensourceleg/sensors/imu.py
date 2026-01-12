@@ -714,7 +714,7 @@ class BHI260AP (IMUBase):
         - time
 
     Resources: 
-        - Download "BHI250AP.fw" firmware:
+        - Download "BHI260AP.fw" firmware:
         https://github.com/boschsensortec/BHI2xy_SensorAPI/tree/master/firmware/bhi260ap
 
     """
@@ -821,13 +821,9 @@ class BHI260AP (IMUBase):
             import time
 
             self._spi = spidev.SpiDev()
-        except ImportError:
-            LOGGER.warning(
-                    "Failed to import mscl. Please install the MSCL library from Lord Microstrain and append the path "
-                    "to the PYTHONPATH or sys.path. Checkout https://github.com/LORD-MicroStrain/MSCL/tree/master "
-                    "and https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html"
-                    "If you are using a newer version of MSCL, you may need to add /usr/lib/python3.version/dist-packages \
-                    to PYTHONPATH"
+        except ImportError as e:
+            LOGGER.error(
+                    f"Failed to import required libraries. BHI260AP requires spidev, struct, and time. Error: {e}"
                 )
 
             if not offline:
@@ -962,16 +958,21 @@ class BHI260AP (IMUBase):
         """
         print("Starting firmware upload...")
 
+        try:
+            # Load firmware
+            firmware = open(self._firmware_path, "rb").read()
+            firmware_len_words = len(firmware) // 4  # Load firmware in multiple of 4 bytes
+        except ImportError as e:
+            LOGGER.error(f"Failed to open BHI260AP firmware. Download 'BHI260AP.fw' from" 
+                        "https://github.com/boschsensortec/BHI2xy_SensorAPI/tree/master/firmware/bhi260ap and"
+                        "provide filepath in constructor. Error: {e}")
+
         # Perform soft reset to make host interface ready
         self._soft_reset()
 
         # Poll Boot Status register until Host Interface Ready bit is set
         self._poll_register_until(lambda: self.host_interface_ready, error_msg = "Error, host interface ready bit not set after resetting")
 
-        # Load firmware
-        firmware = open(self._firmware_path, "rb").read()
-        firmware_len_words = len(firmware) // 4  # Load firmware in multiple of 4 bytes
-        
         # Send 'Upload to Program RAM' command
         cmd = struct.pack("<HH", 0x0002, firmware_len_words)
         self._write_register(self.REG_CHAN0_CMD, list(cmd))
