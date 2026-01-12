@@ -2,7 +2,6 @@ from opensourceleg.logging.logger import Logger
 from opensourceleg.sensors.imu import BHI260AP, AxisTransform
 from opensourceleg.utilities.filters import KalmanFilter2D
 from opensourceleg.utilities import SoftRealtimeLoop
-import time
 
 FREQUENCY = 200
 DT = 1 / FREQUENCY
