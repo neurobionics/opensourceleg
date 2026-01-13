@@ -9,14 +9,18 @@ DT = 1 / FREQUENCY
 if __name__ == "__main__":
     imu_logger = Logger(
         log_path="./logs",
-        file_name="reading_bhi260ap_data",
+        file_name="kalman_filter",
     )
     clock = SoftRealtimeLoop(dt=DT)
     imu = BHI260AP(
         data_rate = FREQUENCY, 
-        firmware_path = "/home/kwalte/firmware/BHI260AP.fw"
+        firmware_path = "./firmware/BHI260AP.fw"
         )    
     imu.start()
+
+    imu_logger.track_function(lambda: roll, "Roll")
+    imu_logger.track_function(lambda: pitch, "Pitch")
+    imu_logger.track_function(lambda: yaw, "Yaw")
 
     # Define axis transformation (modify as needed for your IMU mounting)
     imu_transform = AxisTransform(roll='z', pitch='y', yaw='-x')
@@ -28,6 +32,10 @@ if __name__ == "__main__":
         R_var=3e-6, 
     )
 
+    # Enable sensors
+    imu.enable_gyroscope()
+    imu.enable_gravity()
+
     # Flush buffer before starting "control" loop
     imu.flush_buffer()
 
@@ -35,13 +43,14 @@ if __name__ == "__main__":
         imu.update()
 
         # Transform to orientation frame
-        ax_t, ay_t, az_t = imu_transform.transform_accel(imu.gravity)
-        gx_t, gy_t, gz_t = imu_transform.transform_gyro(imu.gyro)
+        ax_t, ay_t, az_t = imu_transform.transform_accel(imu.acc_x, imu.acc_y, imu.acc_z)
+        gx_t, gy_t, gz_t = imu_transform.transform_gyro(imu.gyro_x, imu.gyro_y, imu.gyro_z)
 
         # Update filter
         roll, pitch, yaw = kalman_filter.update(ax_t, ay_t, az_t, gx_t, gy_t, gz_t)
 
-        print(f"Kalman - Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Yaw: {yaw:+7.3f}")
+        imu_logger.info(f"Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Yaw: {yaw:+7.3f}")
+        imu_logger.update()
 
     # Stop IMU
     imu.stop()

@@ -13,18 +13,18 @@ if __name__ == "__main__":
     clock = SoftRealtimeLoop(dt=DT)
     imu = BHI260AP(
         data_rate = FREQUENCY, 
-        firmware_path = "/home/kwalte/firmware/BHI260AP.fw"
+        firmware_path = "./firmware/BHI260AP.fw"
         )    
     imu.start()
 
-    imu_logger.track_function(lambda: imu.gyro[0], "GyroX")
-    imu_logger.track_function(lambda: imu.gyro[1], "GyroY")
-    imu_logger.track_function(lambda: imu.gyro[2], "GyroZ")
-    imu_logger.track_function(lambda: imu.gravity[0], "GravityX")
-    imu_logger.track_function(lambda: imu.gravity[1], "GravityY")
-    imu_logger.track_function(lambda: imu.gravity[2], "GravityZ")
+    imu_logger.track_function(lambda: imu.gyro_x, "GyroX")
+    imu_logger.track_function(lambda: imu.gyro_y, "GyroY")
+    imu_logger.track_function(lambda: imu.gyro_z, "GyroZ")
+    imu_logger.track_function(lambda: imu.acc_x, "GravityX")
+    imu_logger.track_function(lambda: imu.acc_y, "GravityY")
+    imu_logger.track_function(lambda: imu.acc_z, "GravityZ")
 
-     # Enable sensors
+    # Enable sensors
     imu.enable_gyroscope()
     imu.enable_gravity()
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     for t in clock:
         imu.update()
-        imu_logger.info(f"Time: {t}; GyroX: {imu.gyro[0]}; GyroY: {imu.gyro[1]}; GyroZ: {imu.gyro[2]};")
+        imu_logger.info(f"Time: {t:.4f}; GyroX: {imu.gyro_x:.4f}; GyroY: {imu.gyro_y:.4f}; GyroZ: {imu.gyro_z:.4f}; GravX: {imu.acc_x:.4f}; GravY: {imu.acc_y:.4f}; GravZ: {imu.acc_z:.4f};")
         imu_logger.update()
 
     # Stop IMU

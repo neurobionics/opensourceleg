@@ -17,6 +17,8 @@ to PYTHONPATH or sys.path if necessary.
 
 import os
 from typing import Any, ClassVar, Union
+import struct 
+import time
 
 import numpy as np
 
@@ -700,7 +702,8 @@ class BNO055(IMUBase):
         """
         return self._is_streaming
 
-class BHI260AP (IMUBase):
+
+class BHI260AP(IMUBase):
     """
     Sensor class for BHI250AP IMU. 
 
@@ -710,13 +713,16 @@ class BHI260AP (IMUBase):
     
     Requirements:
         - spidev
-        - struct
-        - time
 
     Resources: 
         - Download "BHI260AP.fw" firmware:
         https://github.com/boschsensortec/BHI2xy_SensorAPI/tree/master/firmware/bhi260ap
 
+    Author:
+        Katharine Walters
+
+    Date:
+        01/13/2026
     """
     # Register addresses - DMA Channels
     REG_CHAN0_CMD = 0x00          # Host Channel 0 - Command Input (write-only)
@@ -748,6 +754,7 @@ class BHI260AP (IMUBase):
     REG_ERROR_AUX = 0x2F          # Error Auxiliary
     REG_DEBUG_VALUE = 0x30        # Debug Value
     REG_DEBUG_STATE = 0x31        # Debug State
+    REG_PHYS_SENS_INFO = 0x0121   # Physical sensor information
     
     # Expected chip ID values
     FUSER2_PRODUCT_ID = 0x89      # Fuser2 core identifier
@@ -817,13 +824,10 @@ class BHI260AP (IMUBase):
         """
         try:
             import spidev
-            import struct
-            import time
-
             self._spi = spidev.SpiDev()
         except ImportError as e:
             LOGGER.error(
-                    f"Failed to import required libraries. BHI260AP requires spidev, struct, and time. Error: {e}"
+                    f"Failed to import required libraries. BHI260AP requires spidev. Error: {e}"
                 )
 
             if not offline:
@@ -904,8 +908,17 @@ class BHI260AP (IMUBase):
             tx_data = [reg_addr & 0x7F] + data
         else:
             tx_data = [reg_addr & 0x7F, data]
+
         self._spi.xfer2(tx_data)
         time.sleep(0.001)  # Small delay after write
+
+    def _read_parameter(self, param_id: int) -> None:
+        """
+        Initiate a read access. This command needs to be run before 
+        reading status from output channel 3. 
+        """
+        cmd = list(struct.pack('<HH', param_id | 0x1000, 0))
+        self._write_register(self.REG_CHAN0_CMD, cmd)
 
     def _poll_register_until(self, condition_property, expected_value = True, max_attempts: int = 250, delay: float = 0.0001, error_msg: str = "Error, expected register value not read") -> bool:
         """
@@ -1045,14 +1058,14 @@ class BHI260AP (IMUBase):
         # Add 0 data to sensor data list
         sample = {
             'sensor_id': sensor_id,
-            'timestamp': 0.0,  # Convert to seconds
+            'timestamp': 0.0,  
             'x': 0.0,
             'y': 0.0,
             'z': 0.0
         }
         self._sensor_data.append(sample)
 
-    # TODO fix this function 
+    # TODO: Implement this functionality
     def _change_sensor_dynamic_range(self, sensor_id: int, dynamic_range: int) -> None:
         """
         Selects a different dynamic range for a virtual sensor
@@ -1061,7 +1074,7 @@ class BHI260AP (IMUBase):
             dynamic_range (int): dynamic measurement range for sensor
         """
         dynamic_range = 0 # Patch fix: resets to default
-        range_bytes = struct.pack('<H1x', dynamic_range)
+        range_bytes = struct.pack('<H1x', dynamic_range) # Unsigned short (2 bytes), 1 null byte
 
         # Build command packet
         cmd = struct.pack('<HH', self.CMD_CHNG_SENSOR_DYN_RNG, 4) # Command ID and length (bytes)
@@ -1117,6 +1130,9 @@ class BHI260AP (IMUBase):
         scale = self.GRAVITY / dynamic_range
         self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
 
+        LOGGER.warning("Accelerometer signal susceptible to noise due to short-term linear noise."
+                        "Recommended to use 'gravity' signal when trying to estimate global angles.")
+
     def enable_linear_acceleration(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
         """
         Enables linear acceleration sensor
@@ -1170,7 +1186,6 @@ class BHI260AP (IMUBase):
         Read bytes from FIFO channel
         Args:
             address: FIFO channel 
-            max_bytes: Maximum number of bytes to read
         Returns:
             (bytes): Raw FIFO data
         """
@@ -1434,7 +1449,7 @@ class BHI260AP (IMUBase):
     @property
     def is_streaming(self) -> bool:
         """
-        Check if the BNO055 sensor is streaming data.
+        Check if the BHI260AP sensor is streaming data.
 
         Returns:
             bool: True if streaming; otherwise, False.
@@ -1442,6 +1457,102 @@ class BHI260AP (IMUBase):
         return self._is_streaming
 
     # ------------ Read Data -----------------
+
+    @property
+    def data(self) -> list[dict]:
+        """Get the latest parsed sensor data packets."""
+        return self._sensor_data
+
+    @property
+    def acc_x(self) -> float:
+        """
+        Get the estimated gravity acceleration along the x-axis in m/s².
+
+        Returns:
+            float: Gravity acceleration (m/s²) along the x-axis.
+        """
+        try:
+            data = self.gravity
+            return data[0]
+        except:
+            LOGGER.warning("Gravity acceleration along x-axis not available.")
+            return 0.0
+
+
+    @property
+    def acc_y(self) -> float:
+        """
+        Get the estimated gravity acceleration along the y-axis in m/s².
+
+        Returns:
+            float: Gravity acceleration (m/s²) along the y-axis.
+        """
+        try:
+            data = self.gravity
+            return data[1]
+        except:
+            LOGGER.warning("Gravity acceleration along y-axis not available.")
+            return 0.0
+
+    @property
+    def acc_z(self) -> float:
+        """
+        Get the estimated gravity acceleration along the z-axis in m/s².
+
+        Returns:
+            float: Gravity acceleration (m/s²) along the z-axis.
+        """
+        try:
+            data = self.gravity
+            return data[2]
+        except:
+            LOGGER.warning("Gravity acceleration along z-axis not available.")
+            return 0.0
+
+    @property
+    def gyro_x(self) -> float:
+        """
+        Get the measured gyroscopic value for the x-axis.
+
+        Returns:
+            float: Angular velocity (rad/s) along the x-axis.
+        """
+        try:
+            data = self.gyro
+            return data[0]
+        except:
+            LOGGER.warning("Gyroscope value for x-axis not available.")
+            return 0.0
+
+    @property
+    def gyro_y(self) -> float:
+        """
+        Get the measured gyroscopic value for the y-axis.
+
+        Returns:
+            float: Angular velocity (rad/s) along the y-axis.
+        """
+        try:
+            data = self.gyro
+            return data[1]
+        except:
+            LOGGER.warning("Gyroscope value for y-axis not available.")
+            return 0.0
+
+    @property
+    def gyro_z(self) -> float:
+        """
+        Get the measured gyroscopic value for the z-axis.
+
+        Returns:
+            float: Angular velocity (rad/s) along the z-axis.
+        """
+        try:
+            data = self.gyro
+            return data[2]
+        except:
+            LOGGER.warning("Gyroscope value for z-axis not available.")
+            return 0.0
 
     @property
     def gyro(self, most_recent: bool = True) -> np.ndarray:
@@ -1491,6 +1602,13 @@ class AxisTransform:
         
         # Inverted pitch
         transform = IMUAxisTransform(roll='x', pitch='-y', yaw='z')
+
+    Author:
+        Katharine Walters
+
+    Date:
+        01/13/2026
+
     """
     
     VALID_AXES = {'x', 'y', 'z', '-x', '-y', '-z'}
