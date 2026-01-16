@@ -55,9 +55,41 @@ After all necessary types are defined, we need to define the input and output st
 These methods are similar to ``define_type()``, but are special because they tell the wrapper which objects to pass to and from
 the compiled library. We define the inputs as two `Vector3D` objects and the output as one double titled result.
 
+### Option 1: Using Lists (Recommended for Simple Structures)
 ```python
 --8<-- "tutorials/control/compiled_controllers/compiled_control.py:21:22"
 ```
+
+### Option 2: Using ctypes.Structure Classes (Recommended for Complex Structures)
+Alternatively, you can define custom `ctypes.Structure` classes and pass them directly to ``define_inputs()`` and ``define_outputs()``.
+This approach is useful when you have complex nested structures that you want to define once and reuse:
+
+```python
+# Define custom ctypes structures
+class Vector3D(ctypes.Structure):
+    _fields_ = [
+        ("x", ctypes.c_double),
+        ("y", ctypes.c_double),
+        ("z", ctypes.c_double),
+    ]
+
+class InputsType(ctypes.Structure):
+    _fields_ = [
+        ("vector1", Vector3D),
+        ("vector2", Vector3D),
+    ]
+
+class OutputsType(ctypes.Structure):
+    _fields_ = [
+        ("result", ctypes.c_double),
+    ]
+
+# Pass the classes directly to define_inputs and define_outputs
+my_linalg.define_inputs(InputsType)
+my_linalg.define_outputs(OutputsType)
+```
+
+Both approaches are functionally equivalent. Choose the one that best fits your code style and complexity needs.
 
 ## Populate Inputs and Test the Function
 
