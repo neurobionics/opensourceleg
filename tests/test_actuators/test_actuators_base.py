@@ -43,7 +43,7 @@ def non_zero_negative_values(request):
 
 
 def create_motor_constants(values):
-    fieldnames = list(MOTOR_CONSTANTS.__annotations__.keys())
+    fieldnames = list(MOTOR_CONSTANTS.__dataclass_fields__.keys())
     # Ensure motor constants will pass validation
     if values[fieldnames.index("MAX_WINDING_TEMPERATURE")] <= values[fieldnames.index("MAX_CASE_TEMPERATURE")]:
         values[fieldnames.index("MAX_WINDING_TEMPERATURE")] = values[
@@ -73,22 +73,18 @@ def test_motor_constants_init(non_zero_positive_values):
     assert non_zero_positive_values[1] / 1000 == motor_constants.NM_PER_MILLIAMP
 
 
-@pytest.mark.parametrize(
-    "zero_values, non_zero_negative_values",
-    [
-        (
-            len(MOTOR_CONSTANTS.__annotations__),
-            len(MOTOR_CONSTANTS.__annotations__),
+def test_motor_constants_init_values():
+    # Test that zero values raise ValueError
+    with pytest.raises(ValueError, match="non-zero and positive"):
+        MOTOR_CONSTANTS(
+            MOTOR_COUNT_PER_REV=0, NM_PER_AMP=0.02, MAX_CASE_TEMPERATURE=80.0, MAX_WINDING_TEMPERATURE=120.0
         )
-    ],
-    indirect=True,
-)
-def test_motor_constants_init_values(zero_values, non_zero_negative_values):
-    with pytest.raises(ValueError):
-        create_motor_constants(zero_values)
 
-    with pytest.raises(ValueError):
-        create_motor_constants(non_zero_negative_values)
+    # Test that negative values raise ValueError
+    with pytest.raises(ValueError, match="non-zero and positive"):
+        MOTOR_CONSTANTS(
+            MOTOR_COUNT_PER_REV=-2048, NM_PER_AMP=0.02, MAX_CASE_TEMPERATURE=80.0, MAX_WINDING_TEMPERATURE=120.0
+        )
 
 
 def test_motor_constants_init_types():

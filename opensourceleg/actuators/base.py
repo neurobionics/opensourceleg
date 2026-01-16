@@ -59,6 +59,8 @@ class MOTOR_CONSTANTS:
     WINDING_SOFT_LIMIT: float = 70.0  # soft winding limit (°C)
     CASE_SOFT_LIMIT: float = 60.0  # soft case limit (°C)
 
+    on_change: Optional[Callable[[], None]] = None  # Callback when any attribute changes
+
     def __post_init__(self) -> None:
         """
         Function to validate the motor constants and thermal parameters.
@@ -72,8 +74,8 @@ class MOTOR_CONSTANTS:
             ...     MAX_WINDING_TEMPERATURE=120.0
             ... )
         """
-        if any(x <= 0 for x in self.__dict__.values()):
-            raise ValueError("All values in MOTOR_CONSTANTS must be non-zero and positive.")
+        if any(x <= 0 for name, x in self.__dict__.items() if isinstance(x, (int, float)) and name != "on_change"):
+            raise ValueError("All numeric values in MOTOR_CONSTANTS must be non-zero and positive.")
 
         # Validate thermal safety limits
         if self.MAX_WINDING_TEMPERATURE <= self.MAX_CASE_TEMPERATURE:
@@ -82,6 +84,15 @@ class MOTOR_CONSTANTS:
             raise ValueError("WINDING_SOFT_LIMIT must be less than MAX_WINDING_TEMPERATURE")
         if self.CASE_SOFT_LIMIT >= self.MAX_CASE_TEMPERATURE:
             raise ValueError("CASE_SOFT_LIMIT must be less than MAX_CASE_TEMPERATURE")
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """
+        Override setattr to call on_change callback when attributes are modified.
+        """
+        super().__setattr__(name, value)
+        # Call callback if it exists and the attribute is not the callback itself
+        if name != "on_change" and self.on_change is not None:
+            self.on_change()
 
     @property
     def RAD_PER_COUNT(self) -> float:
@@ -450,7 +461,7 @@ class ActuatorBase(OfflineMixin, ABC):
             ...     motor_constants=MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             ... )
         """
-        self._MOTOR_CONSTANTS: MOTOR_CONSTANTS = motor_constants
+        self.MOTOR_CONSTANTS: MOTOR_CONSTANTS = motor_constants
         self._gear_ratio: float = gear_ratio
         self._tag: str = tag
         self._frequency: int = frequency
@@ -1019,7 +1030,19 @@ class ActuatorBase(OfflineMixin, ABC):
             >>> actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
             85.0
         """
+        if not isinstance(value, MOTOR_CONSTANTS):
+            raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
+
+        # Copy callback from old MOTOR_CONSTANTS to new one if it exists
+        old_constants = getattr(self, "_MOTOR_CONSTANTS", None)
+        if old_constants is not None and hasattr(old_constants, "on_change") and old_constants.on_change is not None:
+            value.on_change = old_constants.on_change
+
         self._MOTOR_CONSTANTS = value
+
+        # Call the callback if it exists and is callable (to update derived constants)
+        if hasattr(value, "on_change") and callable(value.on_change):
+            value.on_change()
 
     @property
     def mode(self) -> CONTROL_MODES:
@@ -1103,7 +1126,7 @@ class ActuatorBase(OfflineMixin, ABC):
             >>> actuator.max_case_temperature
             80.0
         """
-        return self._MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
+        return self.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
 
     @property
     @abstractmethod
@@ -1153,7 +1176,7 @@ class ActuatorBase(OfflineMixin, ABC):
             >>> actuator.max_winding_temperature
             120.0
         """
-        return self._MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE
+        return self.MOTOR_CONSTANTS.MAX_WINDING_TEMPERATURE
 
     @property
     def motor_zero_position(self) -> float:
