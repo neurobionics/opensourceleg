@@ -94,8 +94,8 @@ def test_define_inputs_outputs_with_ctypes_classes(monkeypatch):
         _fields_: ClassVar[list[tuple[str, Any]]] = [("b", ctypes.c_double)]
 
     # Pass classes directly
-    controller.define_inputs(Inputs)
-    controller.define_outputs(Outputs)
+    controller.define_inputs(input_type=Inputs)
+    controller.define_outputs(output_type=Outputs)
 
     # Ensure the classes are registered on controller.types
     assert controller.types.inputs is Inputs
@@ -162,28 +162,28 @@ def test_define_inputs(monkeypatch):
 
     # Valid input_list
     input_list = [("field1", ctypes.c_double), ("field2", ctypes.c_int)]
-    controller.define_inputs(input_list)
+    controller.define_inputs(input_list=input_list)
     assert controller._input_type is not None
     assert controller.inputs is not None
     assert hasattr(controller.inputs, "field1")
     assert hasattr(controller.inputs, "field2")
 
     # Empty input_list
-    controller.define_inputs([])
+    controller.define_inputs(input_list=[])
     assert controller._input_type is not None
     assert controller.inputs is not None
 
     # Invalid input_list: not a list
     with pytest.raises(TypeError):
-        controller.define_inputs("invalid_input_list")
+        controller.define_inputs(input_list="invalid_input_list")
 
     # Invalid input_list: elements not tuples
     with pytest.raises(TypeError):
-        controller.define_inputs([123, "abc"])
+        controller.define_inputs(input_list=[123, "abc"])
 
     # Invalid input_list: tuple elements are invalid
     with pytest.raises(TypeError):
-        controller.define_inputs([("field1", "not_a_type")])
+        controller.define_inputs(input_list=[("field1", "not_a_type")])
 
 
 def test_define_outputs(monkeypatch):
@@ -198,27 +198,75 @@ def test_define_outputs(monkeypatch):
 
     # Valid output_list
     output_list = [("result", ctypes.c_double)]
-    controller.define_outputs(output_list)
+    controller.define_outputs(output_list=output_list)
     assert controller._output_type is not None
     assert controller.outputs is not None
     assert hasattr(controller.outputs, "result")
 
     # Empty output_list
-    controller.define_outputs([])
+    controller.define_outputs(output_list=[])
     assert controller._output_type is not None
     assert controller.outputs is not None
 
     # Invalid output_list: not a list
     with pytest.raises(TypeError):
-        controller.define_outputs("invalid_output_list")
+        controller.define_outputs(output_list="invalid_output_list")
 
     # Invalid output_list: elements not tuples
     with pytest.raises(TypeError):
-        controller.define_outputs([123, "abc"])
+        controller.define_outputs(output_list=[123, "abc"])
 
     # Invalid output_list: tuple elements are invalid
     with pytest.raises(TypeError):
-        controller.define_outputs([("result", "not_a_type")])
+        controller.define_outputs(output_list=[("result", "not_a_type")])
+
+
+def test_define_inputs_errors(monkeypatch):
+    """Test error cases for define_inputs method."""
+    mock_lib = MagicMock()
+    monkeypatch.setattr(ctl, "load_library", lambda name, path: mock_lib)
+
+    controller = CompiledController(
+        library_name="test_lib",
+        library_path="/path/to/lib",
+        main_function_name="main_func",
+    )
+
+    # Define a ctypes.Structure class for testing
+    class TestInput(ctypes.Structure):
+        _fields_: ClassVar[list[tuple[str, Any]]] = [("test_field", ctypes.c_double)]
+
+    # Error when both input_list and input_type are provided
+    with pytest.raises(ValueError, match="Only one of input_list or input_type should be provided"):
+        controller.define_inputs(input_list=[("field1", ctypes.c_double)], input_type=TestInput)
+
+    # Error when neither input_list nor input_type is provided
+    with pytest.raises(ValueError, match="Must provide either input_list or input_type"):
+        controller.define_inputs()
+
+
+def test_define_outputs_errors(monkeypatch):
+    """Test error cases for define_outputs method."""
+    mock_lib = MagicMock()
+    monkeypatch.setattr(ctl, "load_library", lambda name, path: mock_lib)
+
+    controller = CompiledController(
+        library_name="test_lib",
+        library_path="/path/to/lib",
+        main_function_name="main_func",
+    )
+
+    # Define a ctypes.Structure class for testing
+    class TestOutput(ctypes.Structure):
+        _fields_: ClassVar[list[tuple[str, Any]]] = [("test_field", ctypes.c_double)]
+
+    # Error when both output_list and output_type are provided
+    with pytest.raises(ValueError, match="Only one of output_list or output_type should be provided"):
+        controller.define_outputs(output_list=[("field1", ctypes.c_double)], output_type=TestOutput)
+
+    # Error when neither output_list nor output_type is provided
+    with pytest.raises(ValueError, match="Must provide either output_list or output_type"):
+        controller.define_outputs()
 
 
 def test_define_type(monkeypatch):
@@ -272,8 +320,8 @@ def test_run(monkeypatch):
     # Define inputs and outputs
     input_list = [("field1", ctypes.c_double)]
     output_list = [("result", ctypes.c_double)]
-    controller.define_inputs(input_list)
-    controller.define_outputs(output_list)
+    controller.define_inputs(input_list=input_list)
+    controller.define_outputs(output_list=output_list)
 
     # Run the controller
     output = controller.run()
@@ -381,7 +429,7 @@ def test_define_inputs_with_custom_type(monkeypatch):
 
     # Define inputs using the custom type
     input_list = [("custom_field", CustomType)]
-    controller.define_inputs(input_list)
+    controller.define_inputs(input_list=input_list)
 
     assert hasattr(controller.inputs, "custom_field")
     assert isinstance(controller.inputs.custom_field, CustomType)
@@ -403,8 +451,8 @@ def test_run_with_exception_in_main_function(monkeypatch):
     # Define inputs and outputs
     input_list = [("field1", ctypes.c_double)]
     output_list = [("result", ctypes.c_double)]
-    controller.define_inputs(input_list)
-    controller.define_outputs(output_list)
+    controller.define_inputs(input_list=input_list)
+    controller.define_outputs(output_list=output_list)
 
     # Run and expect exception
     with pytest.raises(RuntimeError) as exc_info:
@@ -429,8 +477,8 @@ def test_cleanup_function_called_on_exception(monkeypatch):
     controller.main_function = mock_main_function
 
     # Define inputs and outputs
-    controller.define_inputs([("field1", ctypes.c_double)])
-    controller.define_outputs([("result", ctypes.c_double)])
+    controller.define_inputs(input_list=[("field1", ctypes.c_double)])
+    controller.define_outputs(output_list=[("result", ctypes.c_double)])
 
     # Run and expect exception
     with pytest.raises(RuntimeError):

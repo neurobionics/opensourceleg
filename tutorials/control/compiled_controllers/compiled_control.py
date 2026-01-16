@@ -18,8 +18,8 @@ my_linalg.define_type(
         ("z", my_linalg.types.c_double),
     ],
 )
-my_linalg.define_inputs([("vector1", my_linalg.types.Vector3D), ("vector2", my_linalg.types.Vector3D)])
-my_linalg.define_outputs([("result", my_linalg.types.c_double)])
+my_linalg.define_inputs(input_list=[("vector1", my_linalg.types.Vector3D), ("vector2", my_linalg.types.Vector3D)])
+my_linalg.define_outputs(output_list=[("result", my_linalg.types.c_double)])
 
 vector1 = my_linalg.types.Vector3D()
 vector2 = my_linalg.types.Vector3D()

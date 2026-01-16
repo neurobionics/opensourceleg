@@ -92,56 +92,75 @@ class CompiledController:
         """
         setattr(self.types, name, typ)
 
-    def define_inputs(self, input_list: list[Any] | type[ctypes.Structure]) -> None:
+    def define_inputs(
+        self, input_list: list[Any] | None = None, input_type: type[ctypes.Structure] | None = None
+    ) -> None:
         """
         This method defines the input structure to your function.
+        Provide either and input_list or an input_type.
         See example folder and tutorials for help on using this method.
 
         Parameters
         -----------
-        input_list: Either a list of [('field_name', field_type)...] or a ctypes.Structure class reference.
-            If a list:
-                field_name is a string you choose as the title of the field.
-                field_type is a type either given by a native c_types value or
-                    a custom type defined via the define_type() method.
-                    All types can be accessed as CompiledController.types.(type_name)
-            If a ctypes class:
-                The class is registered and used directly as the input type.
+        input_list: A list of [('field_name', field_type)...] defining the input structure.
+            Use this when you want to define a new ctypes type to use as the input.
+            field_name is a string you choose as the title of the field.
+            field_type is a type either given by a native c_types value or
+                a custom type defined via the define_type() method.
+                All types can be accessed as CompiledController.types.(type_name)
+        input_type: A ctypes.Structure class reference to use directly as the input type.
+            Use this if you have a ctype object already defined.
+
+        Raises
+        ------
+        ValueError: If both input_list and input_type are provided, or if neither is provided.
         """
-        # Check if input_list is a ctypes.Structure subclass
-        if isinstance(input_list, type) and issubclass(input_list, ctypes.Structure):
-            self._input_type = input_list
-            self._register_type("inputs", input_list)
-        else:
+        if input_type is not None and input_list is not None:
+            raise ValueError("Only one of input_list or input_type should be provided.")
+        elif input_type is not None:
+            self._input_type = input_type
+            self._register_type("inputs", input_type)
+        elif input_list is not None:
             self._input_type = self.define_type("inputs", input_list)
+        else:
+            raise ValueError("Must provide either input_list or input_type.")
 
         if self._input_type is None:
             raise ValueError("Input type not defined properly. Check define_type() method.")
 
         self.inputs = self._input_type()
 
-    def define_outputs(self, output_list: list[Any] | type[ctypes.Structure]) -> None:
+    def define_outputs(
+        self, output_list: list[Any] | None = None, output_type: type[ctypes.Structure] | None = None
+    ) -> None:
         """
         This method defines the output structure to your function.
+        Provide either an output_list or an output_type.
         See example folder and tutorials for help on using this method.
 
         Parameters
-        ------------
-        output_list: Either a list of [('field_name', field_type)...] or a ctypes.Structure class reference.
-            If a list:
-                field_name is a string you choose as the title of the field.
-                field_type is a type either given by a native c_types value or
-                    a custom type defined via the define_type() method.
-                    All types can be accessed as CompiledController.types.(type_name)
-            If a ctypes class:
-                The class is registered and used directly as the output type.
+        -----------
+        output_list: A list of [('field_name', field_type)...] defining the output structure.
+            field_name is a string you choose as the title of the field.
+            field_type is a type either given by a native c_types value or
+                a custom type defined via the define_type() method.
+                All types can be accessed as CompiledController.types.(type_name)
+        output_type: A ctypes.Structure class reference to use directly as the output type.
+            Use this if you have a ctype object already defined somewhere.
+
+        Raises
+        ------
+        ValueError: If both output_list and output_type are provided, or if neither is provided.
         """
-        # Check if output_list is a ctypes.Structure subclass
-        if isinstance(output_list, type) and issubclass(output_list, ctypes.Structure):
-            self._output_type = output_list
-            self._register_type("outputs", output_list)
-        else:
+        if output_type is not None and output_list is not None:
+            raise ValueError("Only one of output_list or output_type should be provided.")
+        elif output_type is not None:
+            self._output_type = output_type
+            self._register_type("outputs", output_type)
+        elif output_list is not None:
             self._output_type = self.define_type("outputs", output_list)
+        else:
+            raise ValueError("Must provide either output_list or output_type.")
 
         if self._output_type is None:
             raise ValueError("Output type not defined properly. Check define_type() method.")
