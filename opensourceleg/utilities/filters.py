@@ -2,13 +2,21 @@ import math
 import numpy as np
 import time
 
-def normalize_angle(a):
-    """Normalize angle to [-pi, pi]."""
-    return (a + math.pi) % (2 * math.pi) - math.pi
-
 class KalmanFilter2D:
     """
-    2D Kalman filter for roll and pitch.
+    2D Kalman filter to estimate global roll and pitch angles
+    from IMU gyroscope (rad/s) and acceleration (m/s^2) signals.
+
+    Roll, pitch, and yaw are defined about the x,y,z axes, respectively.
+
+    The state tracks 2D angles and gyro bias:
+        x = [roll, pitch, roll_bias, pitch_bias]
+
+    The process model assumes linear kinematics: 
+        x_{t} = x_{t-1} + (gyro_{t} - bias{t-1})*dt
+
+    Important note: When using the BHI260AP IMU, the acceleration 
+    filter input must be the "gravity" IMU output.  
     
     This implementation was tested with the BHI260AP IMU against 
     the LordMicrostrain GX5 IMU, with maximum error <0.02 rad. 
@@ -22,8 +30,7 @@ class KalmanFilter2D:
     
     def __init__(self, Q_bias=1e-13, Q_angle=1e-4, R_var=3e-6):
         """
-        Initialize 2D Kalman filter to estimate global roll and pitch 
-        from IMU gyroscope (rad/s) and gravity (m/s^2) signals
+        Initialize 2D Kalman filter
         
         Params:
             Q_bias: variance in gyroscope drift rate
@@ -45,6 +52,10 @@ class KalmanFilter2D:
 
         # Initialize previous time
         self.prev_time = time.monotonic()
+
+    def _normalize_angle(self, a):
+        """Normalize angle to [-pi, pi]."""
+        return (a + math.pi) % (2 * math.pi) - math.pi
 
     def _predict(self, gx, gy, gz, dt):
         """
@@ -76,8 +87,9 @@ class KalmanFilter2D:
         # Prediction x_new = x + (gyro - bias)*dt
         # x = F*x + B*u
         self.x = F@self.x + B@u
-        self.x[0] = normalize_angle(self.x[0])
-        self.x[1] = normalize_angle(self.x[1])
+        self.x[0] = self._normalize_angle(self.x[0])
+        self.x[1] = self._normalize_angle(self.x[1])
+        self.yaw += gz*dt  # Dead reckoning yaw (simple integration, no fusion)
 
         # Covariance prediction
         self.P = F@self.P@F.T + self.Q*dt
@@ -98,6 +110,9 @@ class KalmanFilter2D:
         curr_time = time.monotonic()
         dt = curr_time - self.prev_time
         self.prev_time = curr_time
+
+        # Guard against invalid dt
+        if dt <= 0: return self.x[0].copy(), self.x[1].copy(), self.yaw
 
         # Predict
         self._predict(gx, gy, gz, dt)
@@ -125,8 +140,8 @@ class KalmanFilter2D:
         K = self.P @ H.T @ np.linalg.inv(S)
 
         y = z - H @ self.x
-        y[0] = normalize_angle(y[0])
-        y[1] = normalize_angle(y[1])
+        y[0] = self._normalize_angle(y[0])
+        y[1] = self._normalize_angle(y[1])
 
         # Update
         self.x = self.x + K @ y
