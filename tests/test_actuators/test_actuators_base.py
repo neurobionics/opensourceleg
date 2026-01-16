@@ -10,11 +10,11 @@ from opensourceleg.actuators.base import (
     CONTROL_MODES,
     HARDWARE_REQUIRED_METHODS,
     HARDWARE_REQUIRED_PROPERTIES,
-    MOTOR_CONSTANTS,
     ActuatorBase,
     ControlGains,
     ControlModeConfig,
     MethodWithRequiredModes,
+    MotorConstants,
     T,
     requires,
 )
@@ -43,7 +43,7 @@ def non_zero_negative_values(request):
 
 
 def create_motor_constants(values):
-    fieldnames = list(MOTOR_CONSTANTS.__dataclass_fields__.keys())
+    fieldnames = list(MotorConstants.__dataclass_fields__.keys())
     # Ensure motor constants will pass validation
     if values[fieldnames.index("MAX_WINDING_TEMPERATURE")] <= values[fieldnames.index("MAX_CASE_TEMPERATURE")]:
         values[fieldnames.index("MAX_WINDING_TEMPERATURE")] = values[
@@ -57,14 +57,14 @@ def create_motor_constants(values):
         values[fieldnames.index("CASE_SOFT_LIMIT")] = max(
             1, values[fieldnames.index("MAX_CASE_TEMPERATURE")] - np.random.randint(1, 50)
         )
-    constants = MOTOR_CONSTANTS(*values)
+    constants = MotorConstants(*values)
 
     return constants
 
 
 @pytest.mark.parametrize(
     "non_zero_positive_values",
-    [(len(MOTOR_CONSTANTS.__annotations__),)],
+    [(len(MotorConstants.__annotations__),)],
     indirect=True,
 )
 def test_motor_constants_init(non_zero_positive_values):
@@ -76,25 +76,23 @@ def test_motor_constants_init(non_zero_positive_values):
 def test_motor_constants_init_values():
     # Test that zero values raise ValueError
     with pytest.raises(ValueError, match="non-zero and positive"):
-        MOTOR_CONSTANTS(
-            MOTOR_COUNT_PER_REV=0, NM_PER_AMP=0.02, MAX_CASE_TEMPERATURE=80.0, MAX_WINDING_TEMPERATURE=120.0
-        )
+        MotorConstants(MOTOR_COUNT_PER_REV=0, NM_PER_AMP=0.02, MAX_CASE_TEMPERATURE=80.0, MAX_WINDING_TEMPERATURE=120.0)
 
     # Test that negative values raise ValueError
     with pytest.raises(ValueError, match="non-zero and positive"):
-        MOTOR_CONSTANTS(
+        MotorConstants(
             MOTOR_COUNT_PER_REV=-2048, NM_PER_AMP=0.02, MAX_CASE_TEMPERATURE=80.0, MAX_WINDING_TEMPERATURE=120.0
         )
 
 
 def test_motor_constants_init_types():
     with pytest.raises(TypeError):
-        MOTOR_CONSTANTS(1, 2)
+        MotorConstants(1, 2)
 
 
 @pytest.mark.parametrize(
     "non_zero_positive_values",
-    [(len(MOTOR_CONSTANTS.__annotations__))],
+    [(len(MotorConstants.__annotations__))],
     indirect=True,
 )
 def test_motor_constants_properties(non_zero_positive_values):
@@ -492,7 +490,7 @@ def mock_actuator():
     return MockActuator(
         "test_actuator",
         10.0,
-        MOTOR_CONSTANTS(
+        MotorConstants(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
             MAX_CASE_TEMPERATURE=100.0,
@@ -545,18 +543,6 @@ def test_method_restriction(mock_actuator: MockActuator):
         mock_method.assert_called_once_with(5.0)
 
 
-# def test_context_manager():
-#     with (
-#         patch("opensourceleg.actuators.base.ActuatorBase.start") as mock_start,
-#         patch("opensourceleg.actuators.base.ActuatorBase.stop") as mock_stop,
-#     ):
-#         with MockActuator("test", 1.0, MOTOR_CONSTANTS(1, 1, 1, 1, 1, 1)):
-#             pass
-
-#         mock_start.assert_called_once()
-#         mock_stop.assert_called_once()
-
-
 def test_set_output_position(mock_actuator: MockActuator):
     mock_actuator.set_control_mode(CONTROL_MODES.POSITION)
     with patch.object(mock_actuator, "set_motor_position") as mock_set_motor_position:
@@ -576,7 +562,7 @@ def mock_actuator_offline():
     return MockActuator(
         "test_actuator_offline",
         10.0,
-        MOTOR_CONSTANTS(
+        MotorConstants(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
             MAX_CASE_TEMPERATURE=100.0,
@@ -655,7 +641,7 @@ def test_offline_mode_control_modes(mock_actuator_offline: MockActuator):
 
 @pytest.mark.parametrize(
     "non_zero_positive_values",
-    [(len(MOTOR_CONSTANTS.__annotations__),)],
+    [(len(MotorConstants.__annotations__),)],
     indirect=True,
 )
 def test_offline_vs_online_mode(non_zero_positive_values):

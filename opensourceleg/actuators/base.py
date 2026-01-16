@@ -25,12 +25,12 @@ from opensourceleg.logging.logger import LOGGER
 
 
 @dataclass
-class MOTOR_CONSTANTS:
+class MotorConstants:
     """
     Class to define the motor constants.
 
     Examples:
-        >>> constants = MOTOR_CONSTANTS(
+        >>> constants = MotorConstants(
         ...     MOTOR_COUNT_PER_REV=2048,
         ...     NM_PER_AMP=0.02,
         ...     NM_PER_RAD_TO_K=0.001,
@@ -67,7 +67,7 @@ class MOTOR_CONSTANTS:
 
         Examples:
             >>> # This will raise a ValueError because a negative value is invalid.
-            >>> MOTOR_CONSTANTS(
+            >>> MotorConstants(
             ...     MOTOR_COUNT_PER_REV=-2048,
             ...     NM_PER_AMP=0.02,
             ...     MAX_CASE_TEMPERATURE=80.0,
@@ -75,7 +75,7 @@ class MOTOR_CONSTANTS:
             ... )
         """
         if any(x <= 0 for name, x in self.__dict__.items() if isinstance(x, (int, float)) and name != "on_change"):
-            raise ValueError("All numeric values in MOTOR_CONSTANTS must be non-zero and positive.")
+            raise ValueError("All numeric values in MotorConstants must be non-zero and positive.")
 
         # Validate thermal safety limits
         if self.MAX_WINDING_TEMPERATURE <= self.MAX_CASE_TEMPERATURE:
@@ -103,7 +103,7 @@ class MOTOR_CONSTANTS:
             float: Radians per count.
 
         Examples:
-            >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
+            >>> constants = MotorConstants(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             >>> constants.RAD_PER_COUNT
             0.0030679615757712823
         """
@@ -118,7 +118,7 @@ class MOTOR_CONSTANTS:
             float: NM per milliamp.
 
         Examples:
-            >>> constants = MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
+            >>> constants = MotorConstants(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             >>> constants.NM_PER_MILLIAMP
             2e-05
         """
@@ -438,7 +438,7 @@ class ActuatorBase(OfflineMixin, ABC):
         self,
         tag: str,
         gear_ratio: float,
-        motor_constants: MOTOR_CONSTANTS,
+        motor_constants: MotorConstants,
         frequency: int = 1000,
         offline: bool = False,
         **kwargs: Any,
@@ -449,7 +449,7 @@ class ActuatorBase(OfflineMixin, ABC):
         Args:
             tag (str): A unique identifier for the actuator.
             gear_ratio (float): The gear ratio of the actuator.
-            motor_constants (MOTOR_CONSTANTS): Motor constant configuration parameters.
+            motor_constants (MotorConstants): Motor constant configuration parameters.
             frequency (int, optional): Control frequency in Hz. Defaults to 1000.
             offline (bool, optional): Flag indicating if the actuator operates in offline mode. Defaults to False.
             **kwargs (Any): Additional keyword arguments.
@@ -458,10 +458,10 @@ class ActuatorBase(OfflineMixin, ABC):
             >>> actuator = DummyActuator(
             ...     tag="act1",
             ...     gear_ratio=100,
-            ...     motor_constants=MOTOR_CONSTANTS(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
+            ...     motor_constants=MotorConstants(2048, 0.02, 0.001, 0.0001, 80.0, 120.0)
             ... )
         """
-        self.MOTOR_CONSTANTS: MOTOR_CONSTANTS = motor_constants
+        self.MOTOR_CONSTANTS: MotorConstants = motor_constants
         self._gear_ratio: float = gear_ratio
         self._tag: str = tag
         self._frequency: int = frequency
@@ -1002,7 +1002,7 @@ class ActuatorBase(OfflineMixin, ABC):
         pass
 
     @property
-    def MOTOR_CONSTANTS(self) -> MOTOR_CONSTANTS:
+    def MOTOR_CONSTANTS(self) -> MotorConstants:
         """
         Get the motor constants configuration.
 
@@ -1017,21 +1017,21 @@ class ActuatorBase(OfflineMixin, ABC):
         return self._MOTOR_CONSTANTS
 
     @MOTOR_CONSTANTS.setter
-    def MOTOR_CONSTANTS(self, value: MOTOR_CONSTANTS) -> None:
+    def MOTOR_CONSTANTS(self, value: MotorConstants) -> None:
         """
         Set the motor constants configuration.
 
         Args:
-            value (MOTOR_CONSTANTS): The new motor constants to set.
+            value (MotorConstants): The new motor constants to set.
 
         Examples:
-            >>> new_constants = MOTOR_CONSTANTS(2048, 0.03, 0.001, 0.0001, 85.0, 125.0)
+            >>> new_constants = MotorConstants(2048, 0.03, 0.001, 0.0001, 85.0, 125.0)
             >>> actuator.MOTOR_CONSTANTS = new_constants
             >>> actuator.MOTOR_CONSTANTS.MAX_CASE_TEMPERATURE
             85.0
         """
-        if not isinstance(value, MOTOR_CONSTANTS):
-            raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
+        if not isinstance(value, MotorConstants):
+            raise TypeError(f"Expected MotorConstants, got {type(value)}")
 
         # Copy callback from old MOTOR_CONSTANTS to new one if it exists
         old_constants = getattr(self, "_MOTOR_CONSTANTS", None)

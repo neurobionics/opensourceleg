@@ -2,7 +2,7 @@ from collections import deque
 
 import pytest
 
-from opensourceleg.actuators.base import MOTOR_CONSTANTS
+from opensourceleg.actuators.base import MotorConstants
 from opensourceleg.math import EdgeDetector, SaturatingRamp, ThermalLimitException, ThermalModel
 from opensourceleg.math.math import (
     MAX_SENSIBLE_CURRENT,
@@ -48,7 +48,7 @@ def test_saturating_ramp_update():
 
 
 # Create test motor constants
-test_motor_constants = MOTOR_CONSTANTS(
+test_motor_constants = MotorConstants(
     MOTOR_COUNT_PER_REV=2048,
     NM_PER_AMP=0.02,
     MAX_CASE_TEMPERATURE=80.0,
@@ -136,7 +136,7 @@ def test_update():
 @pytest.fixture
 def enhanced_thermal_model():
     """Create a thermal model for enhanced testing"""
-    motor_constants = MOTOR_CONSTANTS(
+    motor_constants = MotorConstants(
         MOTOR_COUNT_PER_REV=2048,
         NM_PER_AMP=0.02,
         MAX_CASE_TEMPERATURE=80.0,

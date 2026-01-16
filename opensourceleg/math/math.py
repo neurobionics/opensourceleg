@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from opensourceleg.actuators.base import MOTOR_CONSTANTS
+from opensourceleg.actuators.base import MotorConstants
 
 # Sensor validation constants
 MIN_SENSIBLE_CURRENT = -80000.0  # -80A in mA
@@ -63,20 +63,20 @@ class ThermalModel:
         - Soft-limiting thermal safety controller with formal guarantees
         - Physically sensible value validation with slope-based projection
         - Backward compatible API with enhanced methods
-        - Motor-specific parameter configuration via MOTOR_CONSTANTS
+        - Motor-specific parameter configuration via MotorConstants
 
     Authors:
         - Gray Thomas, Senthur Ayyappan
 
     Args:
-        motor_constants: MOTOR_CONSTANTS instance with thermal parameters
+        motor_constants: MotorConstants instance with thermal parameters
         actuator_tag: Actuator identifier for error messages. Defaults to "actuator"
         ambient_temperature: Ambient temperature in °C. Defaults to 21.0
     """
 
     def __init__(
         self,
-        motor_constants: MOTOR_CONSTANTS,
+        motor_constants: MotorConstants,
         actuator_tag: str = "actuator",
         ambient_temperature: float = 21.0,
     ) -> None:

@@ -10,10 +10,10 @@ from flexsea.device import Device
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
     CONTROL_MODES,
-    MOTOR_CONSTANTS,
     ActuatorBase,
     ControlGains,
     ControlModeConfig,
+    MotorConstants,
 )
 from opensourceleg.actuators.decorators import (
     check_actuator_connection,
@@ -42,7 +42,7 @@ IMPEDANCE_A = 0.00028444
 IMPEDANCE_C = 0.0007812
 
 
-DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
+DEPHY_ACTUATOR_CONSTANTS = MotorConstants(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
     MAX_CASE_TEMPERATURE=80,
