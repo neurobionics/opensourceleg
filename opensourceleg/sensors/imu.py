@@ -16,7 +16,7 @@ to PYTHONPATH or sys.path if necessary.
 """
 
 import os
-from typing import Any, ClassVar, Union, Optional, Callable
+from typing import Any, ClassVar, Union, Callable
 import struct 
 import time
 
@@ -769,7 +769,7 @@ class BHI260AP(IMUBase):
     # Parameters
     MAX_MESSAGE_LEN = 256 # Max number of message bytes
     DATA_RATES = (1.5625, 3.125, 6.25, 12.5, 25, 50, 100, 200, 400, 800)
-    SENSOR_RANGES = {
+    SENSOR_RANGES: dict[int, tuple] = {
         1: (2048, 4096, 8192, 16384), # (LSB)
         4: (2048, 4096, 8192, 16384), # (LSB)
         10: (250, 500, 1000, 2000), # (dps)
@@ -794,7 +794,7 @@ class BHI260AP(IMUBase):
     FIFO_EVENT_PADDING = 0x00          # Padding byte (0)
 
     # Sensor Dict
-    SENSOR_DICT = {
+    SENSOR_DICT: dict[str, int] = {
         "Gyro": SENSOR_ID_GYR, 
         "Accel": SENSOR_ID_ACC,
         "Gravity": SENSOR_ID_GRAVITY,
@@ -845,7 +845,7 @@ class BHI260AP(IMUBase):
         self._firmware_path = firmware_path
         self._is_streaming = False
         
-        self._enabled_sensors: dict[int, Optional[float]] = dict()
+        self._enabled_sensors: dict[int, int] = dict()
         self._sensor_data: list[dict[str, Union[int, float]]] = []
 
     # ------ SPI Communication --------
@@ -890,7 +890,7 @@ class BHI260AP(IMUBase):
         self._is_streaming = False
         LOGGER.info("IMU stopped successfully.")
         
-    def _read_register(self, reg_addr: int, length: int = 1, return_bit_string: bool = False) -> Union[list[int], np.ndarray]:
+    def _read_register(self, reg_addr: int, length: int = 1, return_bit_string: bool = False) -> Union[list[int], np.ndarray, bytes]:
         """Read from register(s)"""
         # SPI read: set MSB to 1 for read operation
         tx_data = [reg_addr | 0x80] + [0x00] * length
@@ -1027,9 +1027,9 @@ class BHI260AP(IMUBase):
     def _enable_sensor(
         self, 
         sensor_id: int, 
-        dynamic_range: int = None, 
-        scale: int = None, 
-        rate_hz: float = None, 
+        dynamic_range: int = -1, 
+        scale: int = -1, 
+        rate_hz: float = -1, 
         latency: int = 0
         ) -> None:
         """
@@ -1041,7 +1041,7 @@ class BHI260AP(IMUBase):
             rate_hz (float): sample rate in hz
             latency (int): sensor latency in milliseconds
         """
-        if rate_hz is None:
+        if rate_hz > 0:
             rate_hz = self._data_rate
 
         # Pack sample rate as 32-bit float
@@ -1063,7 +1063,7 @@ class BHI260AP(IMUBase):
         time.sleep(0.05)
 
         # Change sensor dynamic range 
-        if dynamic_range is not None:
+        if dynamic_range > 0:
             self._change_sensor_dynamic_range(sensor_id, dynamic_range)
 
         # Modify list of enabled sensors
@@ -1111,7 +1111,7 @@ class BHI260AP(IMUBase):
         self._enable_sensor(sensor_id, rate_hz = 0.0, latency = 0)
         del self._enabled_sensors[sensor_id]
 
-    def enable_gyroscope(self, rate_hz: int = None, dynamic_range: int = 2000) -> None:
+    def enable_gyroscope(self, rate_hz: int = -1, dynamic_range: int = 2000) -> None:
         """
         Enables gyroscope
         Args:
@@ -1129,7 +1129,7 @@ class BHI260AP(IMUBase):
 
         
 
-    def enable_accelerometer(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
+    def enable_accelerometer(self, rate_hz: int = -1, dynamic_range: int = 4096) -> None:
         """
         Enables accelerometer
         Args:
@@ -1148,7 +1148,7 @@ class BHI260AP(IMUBase):
         LOGGER.warning("Accelerometer signal susceptible to noise due to short-term linear noise."
                         "Recommended to use 'gravity' signal when trying to estimate global angles.")
 
-    def enable_linear_acceleration(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
+    def enable_linear_acceleration(self, rate_hz: int = -1, dynamic_range: int = 4096) -> None:
         """
         Enables linear acceleration sensor
         Args:
@@ -1164,7 +1164,7 @@ class BHI260AP(IMUBase):
         scale = self.GRAVITY / dynamic_range
         self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
 
-    def enable_gravity(self, rate_hz: int = None, dynamic_range: int = 4096) -> None:
+    def enable_gravity(self, rate_hz: int = -1, dynamic_range: int = 4096) -> None:
         """
         Enables gravity sensor
         Args:
@@ -1209,7 +1209,7 @@ class BHI260AP(IMUBase):
         if transfer_len > 0:
             fifo_data = self._read_register(address, transfer_len)
             return bytes(fifo_data)
-        return None
+        return b""
 
 
 
