@@ -122,10 +122,11 @@ class KalmanFilter2D:
         pitch_a = math.atan2(-ax, math.hypot(ay, az))
 
         # Wrap to smoothly transition across 0 from (-) to (+)
-        if roll_a > 0:
-            roll_a -= np.pi
-        elif roll_a < 0:
-            roll_a += np.pi
+        if az < 0:
+            if roll_a > 0:
+                roll_a -= np.pi
+            elif roll_a < 0:
+                roll_a += np.pi
         
         z = np.array([roll_a, pitch_a])
 
