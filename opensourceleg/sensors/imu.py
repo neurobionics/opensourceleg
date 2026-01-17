@@ -16,7 +16,7 @@ to PYTHONPATH or sys.path if necessary.
 """
 
 import os
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar, Union, Optional, Callable
 import struct 
 import time
 
@@ -810,7 +810,7 @@ class BHI260AP(IMUBase):
         data_rate: int = 400,
         firmware_path: str = "./BHI260AP.fw", 
         offline: bool = False,
-        ):
+        ) -> None:
         """
         Initialize BHI260AP IMU
         
@@ -835,7 +835,7 @@ class BHI260AP(IMUBase):
 
         # Check parameters passed to initializer
         if data_rate not in self.DATA_RATES:
-            print(f"Requested data rate will be modified to match the nearest value equal to or greater than the requested rate in {self.DATA_RATES}.")
+            LOGGER.warning(f"Requested data rate will be modified to match the nearest value equal to or greater than the requested rate in {self.DATA_RATES}.")
 
         self._tag = tag
         self._spi_bus = spi_bus
@@ -845,8 +845,8 @@ class BHI260AP(IMUBase):
         self._firmware_path = firmware_path
         self._is_streaming = False
         
-        self._enabled_sensors = dict()
-        self._sensor_data = []
+        self._enabled_sensors: dict[int, Optional[float]] = dict()
+        self._sensor_data: list[dict[str, Union[int, float]]] = []
 
     # ------ SPI Communication --------
 
@@ -854,7 +854,7 @@ class BHI260AP(IMUBase):
         """
         Start the IMU by opening the SPI port
         """
-        print("Starting IMU...")
+        LOGGER.info("Starting BHI260AP IMU...")
         self._spi.open(self._spi_bus, self._spi_cs)
         self._spi.max_speed_hz = self._clock_freq
         self._spi.mode = 0b00  # CPOL=0, CPHA=0
@@ -874,13 +874,13 @@ class BHI260AP(IMUBase):
         self.flush_buffer()
 
         self._is_streaming = True
-        print("IMU started successfully.")
+        LOGGER.info("IMU started successfully.")
 
     def stop(self) -> None:
         """
         Stop the IMU by closing the SPI port.
         """
-        print("Stopping IMU...")
+        LOGGER.info("Stopping IMU...")
         for sensor_id in list(self._enabled_sensors):
             try:
                 self._disable_sensor(sensor_id)
@@ -888,9 +888,9 @@ class BHI260AP(IMUBase):
                 print(f"Warning: Could not disable sensor {sensor_id}: {e}")
         self._spi.close()
         self._is_streaming = False
-        print("IMU stopped successfully.")
+        LOGGER.info("IMU stopped successfully.")
         
-    def _read_register(self, reg_addr, length=1, return_bit_string = False) -> np.ndarray:
+    def _read_register(self, reg_addr: int, length: int = 1, return_bit_string: bool = False) -> Union[list[int], np.ndarray]:
         """Read from register(s)"""
         # SPI read: set MSB to 1 for read operation
         tx_data = [reg_addr | 0x80] + [0x00] * length
@@ -901,7 +901,7 @@ class BHI260AP(IMUBase):
         else:
             return rx_data
     
-    def _write_register(self, reg_addr, data) -> None:
+    def _write_register(self, reg_addr: int, data: Union[int, list[int]]) -> None:
         """Write to register"""
         # SPI write: MSB is 0 for write operation
         if isinstance(data, list):
@@ -920,7 +920,14 @@ class BHI260AP(IMUBase):
         cmd = list(struct.pack('<HH', param_id | 0x1000, 0))
         self._write_register(self.REG_CHAN0_CMD, cmd)
 
-    def _poll_register_until(self, condition_property, expected_value = True, max_attempts: int = 250, delay: float = 0.0001, error_msg: str = "Error, expected register value not read") -> bool:
+    def _poll_register_until(
+        self, 
+        condition_property: Callable[[], Any],
+        expected_value: bool = True, 
+        max_attempts: int = 250, 
+        delay: float = 0.0001, 
+        error_msg: str = "Error, expected register value not read"
+        ) -> bool:
         """
         Polls a condition function until it returns the expected value or times out
         Args:
@@ -937,7 +944,7 @@ class BHI260AP(IMUBase):
             if condition_property() == expected_value: 
                 return True
             time.sleep(delay)
-        print(error_msg)
+        LOGGER.info(error_msg)
         return False
 
 
@@ -969,7 +976,7 @@ class BHI260AP(IMUBase):
         """
         Boots firmware to RAM
         """
-        print("Starting firmware upload...")
+        LOGGER.info("Starting firmware upload...")
 
         try:
             # Load firmware
@@ -1009,7 +1016,7 @@ class BHI260AP(IMUBase):
         
         # Check kernel version is updated after uploading and booting firmware
         if self.read_kernel_version() != 0: 
-            print("Firmware booted and verified successfully.")
+            LOGGER.info("Firmware booted and verified successfully.")
         else: 
             raise RuntimeError(
                 "Error, BHI260AP firmware boot not successful. "
@@ -1017,7 +1024,14 @@ class BHI260AP(IMUBase):
 
     # ------ Sensor enable functions ---------------
 
-    def _enable_sensor(self, sensor_id: int, dynamic_range: int = None, scale: int = None, rate_hz: float = None, latency: int = 0) -> None:
+    def _enable_sensor(
+        self, 
+        sensor_id: int, 
+        dynamic_range: int = None, 
+        scale: int = None, 
+        rate_hz: float = None, 
+        latency: int = 0
+        ) -> None:
         """
         Enable a virtual sensor
 
@@ -1073,6 +1087,7 @@ class BHI260AP(IMUBase):
             sensor_id (int): Sensor ID
             dynamic_range (int): dynamic measurement range for sensor
         """
+        LOGGER.warning("Changing sensor dynamic range not implemented. Setting IMU to default dynamic range.")
         dynamic_range = 0 # Patch fix: resets to default
         range_bytes = struct.pack('<H1x', dynamic_range) # Unsigned short (2 bytes), 1 null byte
 
@@ -1613,7 +1628,7 @@ class AxisTransform:
     
     VALID_AXES = {'x', 'y', 'z', '-x', '-y', '-z'}
     
-    def __init__(self, roll='x', pitch='y', yaw='z'):
+    def __init__(self, roll: str='x', pitch: str='y', yaw: str='z') -> None:
         """
         Initialize axis transformation.
         
@@ -1642,7 +1657,7 @@ class AxisTransform:
             '-z': lambda vec: -vec[2],
         }
     
-    def transform_vector(self, x, y, z):
+    def transform_vector(self, x: float, y: float, z: float) -> tuple:
         """
         Transform a 3D vector from IMU frame to orientation frame.
         
@@ -1660,15 +1675,15 @@ class AxisTransform:
             self._axis_funcs[self.yaw_axis](vec)
         )
     
-    def transform_accel(self, ax, ay, az):
+    def transform_accel(self, ax: float, ay: float, az: float) -> tuple:
         """Transform acceleration vector to orientation frame."""
         return self.transform_vector(ax, ay, az)
     
-    def transform_gyro(self, gx, gy, gz):
+    def transform_gyro(self, gx: float, gy: float, gz: float) -> tuple:
         """Transform angular velocity vector to orientation frame."""
         return self.transform_vector(gx, gy, gz)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"IMUAxisTransform(roll={self.roll_axis!r}, pitch={self.pitch_axis!r}, yaw={self.yaw_axis!r})"
     
 

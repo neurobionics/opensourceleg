@@ -28,7 +28,7 @@ class KalmanFilter2D:
         01/13/2026
     """
     
-    def __init__(self, Q_bias=1e-13, Q_angle=1e-4, R_var=3e-6):
+    def __init__(self, Q_bias=1e-13, Q_angle=1e-4, R_var=3e-6) -> None:
         """
         Initialize 2D Kalman filter
         
@@ -53,11 +53,11 @@ class KalmanFilter2D:
         # Initialize previous time
         self.prev_time = time.monotonic()
 
-    def _normalize_angle(self, a):
+    def _normalize_angle(self, a: float) -> float:
         """Normalize angle to [-pi, pi]."""
         return (a + math.pi) % (2 * math.pi) - math.pi
 
-    def _predict(self, gx, gy, gz, dt):
+    def _predict(self, gx: float, gy: float, gz: float, dt: float) -> None:
         """
         Prediction step
         
@@ -94,7 +94,7 @@ class KalmanFilter2D:
         # Covariance prediction
         self.P = F@self.P@F.T + self.Q*dt
 
-    def update(self, ax, ay, az, gx, gy, gz):
+    def update(self, ax: float, ay: float, az: float, gx: float, gy: float, gz: float) -> tuple:
         """
         Update global angle estimations
         
@@ -105,6 +105,8 @@ class KalmanFilter2D:
             gx: x-axis gyroscope measurement (rad/s)
             gy: y-axis gyroscope measurement (rad/s)
             gz: z-axis gyroscope measurement (rad/s)
+
+        Returns: (roll, pitch, yaw)
         """
         # Calculate change in time since last update
         curr_time = time.monotonic()
