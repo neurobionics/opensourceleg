@@ -1466,47 +1466,47 @@ class BHI260AP(IMUBase):
     @property
     def acc_x(self) -> float:
         """
-        Get the estimated gravity acceleration along the x-axis in m/s².
+        Get the estimated raw acceleration along the x-axis in m/s².
 
         Returns:
-            float: Gravity acceleration (m/s²) along the x-axis.
+            float: Raw acceleration (m/s²) along the x-axis.
         """
         try:
-            data = self.gravity
+            data = self.accel
             return data[0]
         except:
-            LOGGER.warning("Gravity acceleration along x-axis not available.")
+            LOGGER.warning("Acceleration along x-axis not available.")
             return 0.0
 
 
     @property
     def acc_y(self) -> float:
         """
-        Get the estimated gravity acceleration along the y-axis in m/s².
+        Get the estimated raw acceleration along the y-axis in m/s².
 
         Returns:
-            float: Gravity acceleration (m/s²) along the y-axis.
+            float: Raw acceleration (m/s²) along the y-axis.
         """
         try:
-            data = self.gravity
+            data = self.accel
             return data[1]
         except:
-            LOGGER.warning("Gravity acceleration along y-axis not available.")
+            LOGGER.warning("Acceleration along y-axis not available.")
             return 0.0
 
     @property
     def acc_z(self) -> float:
         """
-        Get the estimated gravity acceleration along the z-axis in m/s².
+        Get the estimated raw acceleration along the z-axis in m/s².
 
         Returns:
-            float: Gravity acceleration (m/s²) along the z-axis.
+            float: Raw acceleration (m/s²) along the z-axis.
         """
         try:
-            data = self.gravity
+            data = self.accel
             return data[2]
         except:
-            LOGGER.warning("Gravity acceleration along z-axis not available.")
+            LOGGER.warning("Acceleration along z-axis not available.")
             return 0.0
 
     @property

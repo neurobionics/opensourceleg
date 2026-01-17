@@ -42,9 +42,12 @@ if __name__ == "__main__":
     for t in clock:
         imu.update()
 
+        acc_x, acc_y, acc_z = imu.gravity
+        gyro_x, gyro_y, gyro_z = imu.gyro
+
         # Transform to orientation frame
-        ax_t, ay_t, az_t = imu_transform.transform_accel(imu.acc_x, imu.acc_y, imu.acc_z)
-        gx_t, gy_t, gz_t = imu_transform.transform_gyro(imu.gyro_x, imu.gyro_y, imu.gyro_z)
+        ax_t, ay_t, az_t = imu_transform.transform_accel(acc_x, acc_y, acc_z)
+        gx_t, gy_t, gz_t = imu_transform.transform_gyro(gyro_x, gyro_y, gyro_z)
 
         # Update filter
         roll, pitch, yaw = kalman_filter.update(ax_t, ay_t, az_t, gx_t, gy_t, gz_t)
