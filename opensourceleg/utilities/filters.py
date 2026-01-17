@@ -28,11 +28,18 @@ class KalmanFilter2D:
         01/13/2026
     """
     
-    def __init__(self, Q_bias=1e-13, Q_angle=1e-4, R_var=3e-6) -> None:
+    def __init__(
+        self, 
+        tag: str = "KalmanFilter2D",
+        Q_bias: float = 1e-13, 
+        Q_angle: float = 1e-4, 
+        R_var: float = 3e-6
+        ) -> None:
         """
         Initialize 2D Kalman filter
         
         Params:
+            tag: identifier of KalmanFilter2D instance
             Q_bias: variance in gyroscope drift rate
             Q_angle: uncertainty in gyroscope angle prediction
             R_var: accelerometer angle measurement noise

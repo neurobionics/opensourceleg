@@ -35,7 +35,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/sensors/reading_imu_data.py:22:31"
+--8<-- "tutorials/sensors/reading_microstrain_imu_data.py:22:31"
 ```
 
 The main loop:

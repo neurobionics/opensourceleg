@@ -807,7 +807,7 @@ class BHI260AP(IMUBase):
         spi_bus: int = 0, 
         spi_cs: int = 2, 
         clock_freq: int = 2000000, 
-        data_rate: int = 400,
+        data_rate: int = 200,
         firmware_path: str = "./BHI260AP.fw", 
         offline: bool = False,
         ) -> None:
@@ -1628,11 +1628,18 @@ class AxisTransform:
     
     VALID_AXES = {'x', 'y', 'z', '-x', '-y', '-z'}
     
-    def __init__(self, roll: str='x', pitch: str='y', yaw: str='z') -> None:
+    def __init__(
+        self, 
+        tag: str="AxisTransform",
+        roll: str='x', 
+        pitch: str='y', 
+        yaw: str='z'
+        ) -> None:
         """
         Initialize axis transformation.
         
         Args:
+            tag: identifier for axis transform instance
             roll: IMU axis for roll ('x', 'y', 'z', '-x', '-y', or '-z')
             pitch: IMU axis for pitch
             yaw: IMU axis for yaw

@@ -52,7 +52,7 @@ if __name__ == "__main__":
         # Update filter
         roll, pitch, yaw = kalman_filter.update(ax_t, ay_t, az_t, gx_t, gy_t, gz_t)
 
-        imu_logger.info(f"Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Yaw: {yaw:+7.3f}")
+        imu_logger.info(f"Time: {t:.4f}; Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Yaw: {yaw:+7.3f}")
         imu_logger.update()
 
     # Stop IMU
