@@ -27,7 +27,6 @@ class KalmanFilter2D:
     Date:
         01/13/2026
     """
-    
     def __init__(
         self, 
         tag: str = "KalmanFilter2D",

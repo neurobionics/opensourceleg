@@ -849,8 +849,6 @@ class BHI260AP(IMUBase):
         self._enabled_sensors: dict[int, float] = dict()
         self._sensor_data: list[dict[str, Union[int, float]]] = []
 
-    # ------ SPI Communication --------
-
     def start(self) -> None:
         """
         Start the IMU by opening the SPI port
@@ -953,9 +951,6 @@ class BHI260AP(IMUBase):
         LOGGER.info(error_msg)
         return False
 
-
-    # -------- Booting functions -----------
-
     def _soft_reset(self) -> None:
         """
         Perform soft reset 
@@ -966,7 +961,6 @@ class BHI260AP(IMUBase):
 
         # Wait T_wait = 4 μs minimum (device may wake from sleep)
         time.sleep(0.0001)  
-        
 
     def flush_buffer(self) -> None:
         """
@@ -976,7 +970,6 @@ class BHI260AP(IMUBase):
         self._write_register(self.REG_CHAN0_CMD, list(cmd))
 
         time.sleep(0.05)
-
 
     def _upload_firmware(self) -> None:
         """
@@ -997,7 +990,9 @@ class BHI260AP(IMUBase):
         self._soft_reset()
 
         # Poll Boot Status register until Host Interface Ready bit is set
-        self._poll_register_until(lambda: self.host_interface_ready, error_msg = "Error, host interface ready bit not set after resetting")
+        self._poll_register_until(
+            lambda: self.host_interface_ready, 
+            error_msg = "Error, host interface ready bit not set after resetting")
 
         # Send 'Upload to Program RAM' command
         cmd = struct.pack("<HH", 0x0002, firmware_len_words)
@@ -1032,8 +1027,6 @@ class BHI260AP(IMUBase):
             raise RuntimeError(
                 "Error, BHI260AP firmware boot not successful. "
             )
-
-    # ------ Sensor enable functions ---------------
 
     def _enable_sensor(
         self, 
@@ -1140,8 +1133,6 @@ class BHI260AP(IMUBase):
         scale = (2 * np.pi / 360) / (32768.0 / dynamic_range)
         self._enable_sensor(sensor_id, scale = scale, dynamic_range= dynamic_range, rate_hz=rate_hz) 
 
-        
-
     def enable_accelerometer(self, rate_hz: int = -1, dynamic_range: int = 4096) -> None:
         """
         Enables accelerometer
@@ -1193,8 +1184,6 @@ class BHI260AP(IMUBase):
         scale = self.GRAVITY / dynamic_range
         self._enable_sensor(sensor_id, scale = scale, dynamic_range= dynamic_range, rate_hz=rate_hz)
 
-    # -------- Read variables ------------
-
     def update(self) -> None:
         """
         Read data in buffer and save to class
@@ -1222,8 +1211,6 @@ class BHI260AP(IMUBase):
             fifo_data = self._read_register(address, transfer_len)
             return bytes(fifo_data)
         return b""
-
-
 
     def _parse_fifo(self, fifo_data: bytes) -> list[dict]:
         """
@@ -1347,8 +1334,6 @@ class BHI260AP(IMUBase):
             return np.array(data_samples[-1], dtype=float)
 
         return np.array(data_samples, dtype=float)
-
-    # ---------- SPI Communication --------------
 
     def verify_connection(self) -> bool:
         """Verify SPI connection by checking chip ID"""
@@ -1483,8 +1468,6 @@ class BHI260AP(IMUBase):
         """
         return self._is_streaming
 
-    # ------------ Read Data -----------------
-
     @property
     def data(self) -> list[dict]:
         """Get the latest parsed sensor data packets."""
@@ -1504,7 +1487,6 @@ class BHI260AP(IMUBase):
         except IndexError:
             LOGGER.warning("Acceleration along x-axis not available.")
             return 0.0
-
 
     @property
     def acc_y(self) -> float:
@@ -1637,7 +1619,6 @@ class AxisTransform:
         01/13/2026
 
     """
-    
     VALID_AXES: ClassVar[set[str]] = {'x', 'y', 'z', '-x', '-y', '-z'}
     
     def __init__(
