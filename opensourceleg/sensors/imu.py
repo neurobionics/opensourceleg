@@ -1194,7 +1194,6 @@ class BHI260AP(IMUBase):
         if not parsed_data:
             if not self._enabled_sensors:
                 print("BHI260AP Warning: no sensors enabled.")
-            return []
 
         self._sensor_data = parsed_data
 
@@ -1211,17 +1210,17 @@ class BHI260AP(IMUBase):
         if transfer_len > 0:
             fifo_data = self._read_register(address, transfer_len)
             return bytes(fifo_data)
-        return None
+        return b""
 
 
 
-    def _parse_fifo(self, fifo_data: bytes) -> np.ndarray:
+    def _parse_fifo(self, fifo_data: bytes) -> list[dict]:
         """
         Parse raw data from a FIFO channel
         Args:
             fifo_data (bytes): data bytes to parse
         Returns:
-            (np.ndarray): Parsed sensor data
+            (list): Parsed sensor data
         """
         if fifo_data is None:
             return []
