@@ -758,7 +758,7 @@ class BHI260AP(IMUBase):
     
     # Expected chip ID values
     FUSER2_PRODUCT_ID = 0x89      # Fuser2 core identifier
-    CHIP_ID = [0x70, 0xF0]        # Valid BHI260AP chip IDs
+    CHIP_ID: ClassVar[list[int]] = [0x70, 0xF0]        # Valid BHI260AP chip IDs
     
     # Commands
     CMD_SOFT_RESET = 0x01
@@ -769,7 +769,7 @@ class BHI260AP(IMUBase):
     # Parameters
     MAX_MESSAGE_LEN = 256 # Max number of message bytes
     DATA_RATES = (1.5625, 3.125, 6.25, 12.5, 25, 50, 100, 200, 400, 800)
-    SENSOR_RANGES: dict[int, tuple] = {
+    SENSOR_RANGES: ClassVar[dict[int, tuple]] = {
         1: (2048, 4096, 8192, 16384), # (LSB)
         4: (2048, 4096, 8192, 16384), # (LSB)
         10: (250, 500, 1000, 2000), # (dps)
@@ -794,7 +794,7 @@ class BHI260AP(IMUBase):
     FIFO_EVENT_PADDING = 0x00          # Padding byte (0)
 
     # Sensor Dict
-    SENSOR_DICT: dict[str, int] = {
+    SENSOR_DICT: ClassVar[dict[str, int]] = {
         "Gyro": SENSOR_ID_GYR, 
         "Accel": SENSOR_ID_ACC,
         "Gravity": SENSOR_ID_GRAVITY,
@@ -835,7 +835,8 @@ class BHI260AP(IMUBase):
 
         # Check parameters passed to initializer
         if data_rate not in self.DATA_RATES:
-            LOGGER.warning(f"Requested data rate will be modified to match the nearest value equal to or greater than the requested rate in {self.DATA_RATES}.")
+            LOGGER.warning(f"Requested data rate will be modified to match the nearest value equal to or greater "
+            f"than the requested rate in {self.DATA_RATES}.")
 
         self._tag = tag
         self._spi_bus = spi_bus
@@ -890,7 +891,12 @@ class BHI260AP(IMUBase):
         self._is_streaming = False
         LOGGER.info("IMU stopped successfully.")
         
-    def _read_register(self, reg_addr: int, length: int = 1, return_bit_string: bool = False) -> Union[list[int], np.ndarray]:
+    def _read_register(
+        self, 
+        reg_addr: int, 
+        length: int = 1, 
+        return_bit_string: bool = False
+        ) -> Union[list[int], np.ndarray]:
         """Read from register(s)"""
         # SPI read: set MSB to 1 for read operation
         tx_data = [reg_addr | 0x80] + [0x00] * length
