@@ -121,7 +121,8 @@ class KalmanFilter2D:
         self.prev_time = curr_time
 
         # Guard against invalid dt
-        if dt <= 0: return self.x[0].copy(), self.x[1].copy(), self.yaw
+        if dt <= 0: 
+            return self.x[0].copy(), self.x[1].copy(), self.yaw
 
         # Predict
         self._predict(gx, gy, gz, dt)

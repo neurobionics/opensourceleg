@@ -1011,14 +1011,19 @@ class BHI260AP(IMUBase):
             offset += self.MAX_MESSAGE_LEN
 
         # Poll Boot Status register until Firmware Verify Done bit is set
-        self._poll_register_until(lambda: self.firmware_verify_done, error_msg = "Error, firmware not verified")
+        self._poll_register_until(
+            lambda: self.firmware_verify_done, 
+            error_msg = "Error, firmware not verified")
 
         # Send 'Boot Program RAM' command to start execution of firmware
         boot_cmd = struct.pack("<HH", 0x0003, 0)
         self._write_register(self.REG_CHAN0_CMD, list(boot_cmd))
 
         # Poll Boot Status register until Host Interface Ready bit is set again
-        self._poll_register_until(lambda: self.host_interface_ready, delay = 0.001, error_msg = "Error, host interface ready bit not set after firmware boot")
+        self._poll_register_until(
+            lambda: self.host_interface_ready, 
+            delay = 0.001, 
+            error_msg = "Error, host interface ready bit not set after firmware boot")
         
         # Check kernel version is updated after uploading and booting firmware
         if self.read_kernel_version() != 0: 
@@ -1496,7 +1501,7 @@ class BHI260AP(IMUBase):
         try:
             data = self.accel
             return float(data[0])
-        except:
+        except IndexError:
             LOGGER.warning("Acceleration along x-axis not available.")
             return 0.0
 
@@ -1512,7 +1517,7 @@ class BHI260AP(IMUBase):
         try:
             data = self.accel
             return float(data[1])
-        except:
+        except IndexError:
             LOGGER.warning("Acceleration along y-axis not available.")
             return 0.0
 
@@ -1527,7 +1532,7 @@ class BHI260AP(IMUBase):
         try:
             data = self.accel
             return float(data[2])
-        except:
+        except IndexError:
             LOGGER.warning("Acceleration along z-axis not available.")
             return 0.0
 
@@ -1542,7 +1547,7 @@ class BHI260AP(IMUBase):
         try:
             data = self.gyro
             return float(data[0])
-        except:
+        except IndexError:
             LOGGER.warning("Gyroscope value for x-axis not available.")
             return 0.0
 
@@ -1557,7 +1562,7 @@ class BHI260AP(IMUBase):
         try:
             data = self.gyro
             return float(data[1])
-        except:
+        except IndexError:
             LOGGER.warning("Gyroscope value for y-axis not available.")
             return 0.0
 
@@ -1572,7 +1577,7 @@ class BHI260AP(IMUBase):
         try:
             data = self.gyro
             return float(data[2])
-        except:
+        except IndexError:
             LOGGER.warning("Gyroscope value for z-axis not available.")
             return 0.0
 
@@ -1633,7 +1638,7 @@ class AxisTransform:
 
     """
     
-    VALID_AXES = {'x', 'y', 'z', '-x', '-y', '-z'}
+    VALID_AXES: ClassVar[set[str]] = {'x', 'y', 'z', '-x', '-y', '-z'}
     
     def __init__(
         self, 
