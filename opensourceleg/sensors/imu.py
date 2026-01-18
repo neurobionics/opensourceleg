@@ -845,7 +845,7 @@ class BHI260AP(IMUBase):
         self._firmware_path = firmware_path
         self._is_streaming = False
         
-        self._enabled_sensors: dict[int, int] = dict()
+        self._enabled_sensors: dict[int, float] = dict()
         self._sensor_data: list[dict[str, Union[int, float]]] = []
 
     # ------ SPI Communication --------
@@ -890,7 +890,7 @@ class BHI260AP(IMUBase):
         self._is_streaming = False
         LOGGER.info("IMU stopped successfully.")
         
-    def _read_register(self, reg_addr: int, length: int = 1, return_bit_string: bool = False) -> Union[list[int], np.ndarray, bytes]:
+    def _read_register(self, reg_addr: int, length: int = 1, return_bit_string: bool = False) -> Union[list[int], np.ndarray]:
         """Read from register(s)"""
         # SPI read: set MSB to 1 for read operation
         tx_data = [reg_addr | 0x80] + [0x00] * length
@@ -1027,8 +1027,8 @@ class BHI260AP(IMUBase):
     def _enable_sensor(
         self, 
         sensor_id: int, 
+        scale: float, 
         dynamic_range: int = -1, 
-        scale: int = -1, 
         rate_hz: float = -1, 
         latency: int = 0
         ) -> None:
@@ -1037,11 +1037,12 @@ class BHI260AP(IMUBase):
 
         Args:
             sensor_id (int): ID for virtual sensor to enable
+            scale (float): convert raw value to correct units based on dynamic range
             dynamic_range (int): dynamic measurement range
             rate_hz (float): sample rate in hz
             latency (int): sensor latency in milliseconds
         """
-        if rate_hz > 0:
+        if rate_hz < 0:
             rate_hz = self._data_rate
 
         # Pack sample rate as 32-bit float
@@ -1108,7 +1109,8 @@ class BHI260AP(IMUBase):
         Args:
             sensor_id (int): Sensor ID to disable
         """
-        self._enable_sensor(sensor_id, rate_hz = 0.0, latency = 0)
+        scale = self._enabled_sensors[sensor_id]
+        self._enable_sensor(sensor_id, scale = scale, rate_hz = 0, latency = 0)
         del self._enabled_sensors[sensor_id]
 
     def enable_gyroscope(self, rate_hz: int = -1, dynamic_range: int = 2000) -> None:
@@ -1125,7 +1127,7 @@ class BHI260AP(IMUBase):
                 f"Error: Gyroscope measurement range not in {allowable_ranges}."
             )
         scale = (2 * np.pi / 360) / (32768.0 / dynamic_range)
-        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz) 
+        self._enable_sensor(sensor_id, scale = scale, dynamic_range= dynamic_range, rate_hz=rate_hz) 
 
         
 
@@ -1143,7 +1145,7 @@ class BHI260AP(IMUBase):
                 f"Error: Accelerometer measurement range not in {allowable_ranges}."
             )
         scale = self.GRAVITY / dynamic_range
-        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
+        self._enable_sensor(sensor_id, scale = scale, dynamic_range= dynamic_range, rate_hz=rate_hz)
 
         LOGGER.warning("Accelerometer signal susceptible to noise due to short-term linear noise."
                         "Recommended to use 'gravity' signal when trying to estimate global angles.")
@@ -1162,7 +1164,7 @@ class BHI260AP(IMUBase):
                 f"Error: Linear acceleration measurement range not in {allowable_ranges}."
             )
         scale = self.GRAVITY / dynamic_range
-        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
+        self._enable_sensor(sensor_id, scale = scale, dynamic_range= dynamic_range, rate_hz=rate_hz)
 
     def enable_gravity(self, rate_hz: int = -1, dynamic_range: int = 4096) -> None:
         """
@@ -1178,7 +1180,7 @@ class BHI260AP(IMUBase):
                 f"Error: Gravity measurement range not in {allowable_ranges}."
             )
         scale = self.GRAVITY / dynamic_range
-        self._enable_sensor(sensor_id, dynamic_range= dynamic_range, scale = scale, rate_hz=rate_hz)
+        self._enable_sensor(sensor_id, scale = scale, dynamic_range= dynamic_range, rate_hz=rate_hz)
 
     # -------- Read variables ------------
 
@@ -1209,7 +1211,7 @@ class BHI260AP(IMUBase):
         if transfer_len > 0:
             fifo_data = self._read_register(address, transfer_len)
             return bytes(fifo_data)
-        return b""
+        return None
 
 
 
