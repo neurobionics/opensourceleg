@@ -1,7 +1,7 @@
 from opensourceleg.logging.logger import Logger
 from opensourceleg.sensors.imu import BHI260AP, AxisTransform
-from opensourceleg.utilities.filters import KalmanFilter2D
 from opensourceleg.utilities import SoftRealtimeLoop
+from opensourceleg.utilities.filters import KalmanFilter2D
 
 FREQUENCY = 200
 DT = 1 / FREQUENCY
@@ -12,10 +12,7 @@ if __name__ == "__main__":
         file_name="kalman_filter",
     )
     clock = SoftRealtimeLoop(dt=DT)
-    imu = BHI260AP(
-        data_rate = FREQUENCY, 
-        firmware_path = "./firmware/BHI260AP.fw"
-        )    
+    imu = BHI260AP(data_rate=FREQUENCY, firmware_path="./firmware/BHI260AP.fw")
     imu.start()
 
     imu_logger.track_function(lambda: roll, "Roll")
@@ -23,13 +20,13 @@ if __name__ == "__main__":
     imu_logger.track_function(lambda: yaw, "Yaw")
 
     # Define axis transformation (modify as needed for your IMU mounting)
-    imu_transform = AxisTransform(roll='z', pitch='y', yaw='-x')
+    imu_transform = AxisTransform(roll="z", pitch="y", yaw="-x")
 
-    # Kalman filter 
+    # Kalman filter
     kalman_filter = KalmanFilter2D(
         Q_angle=1e-4,
-        Q_bias=1e-13, 
-        R_var=3e-6, 
+        Q_bias=1e-13,
+        R_var=3e-6,
     )
 
     # Enable sensors

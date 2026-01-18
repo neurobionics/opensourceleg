@@ -1,6 +1,8 @@
 import math
-import numpy as np
 import time
+
+import numpy as np
+
 
 class KalmanFilter2D:
     """
@@ -12,14 +14,14 @@ class KalmanFilter2D:
     The state tracks 2D angles and gyro bias:
         x = [roll, pitch, roll_bias, pitch_bias]
 
-    The process model assumes linear kinematics: 
+    The process model assumes linear kinematics:
         x_{t} = x_{t-1} + (gyro_{t} - bias{t-1})*dt
 
-    Important note: When using the BHI260AP IMU, the acceleration 
-    filter input must be the "gravity" IMU output.  
-    
-    This implementation was tested with the BHI260AP IMU against 
-    the LordMicrostrain GX5 IMU, with maximum error <0.02 rad. 
+    Important note: When using the BHI260AP IMU, the acceleration
+    filter input must be the "gravity" IMU output.
+
+    This implementation was tested with the BHI260AP IMU against
+    the LordMicrostrain GX5 IMU, with maximum error <0.02 rad.
 
     Author:
         Katharine Walters
@@ -27,16 +29,13 @@ class KalmanFilter2D:
     Date:
         01/13/2026
     """
+
     def __init__(
-        self, 
-        tag: str = "KalmanFilter2D",
-        Q_bias: float = 1e-13, 
-        Q_angle: float = 1e-4, 
-        R_var: float = 3e-6
-        ) -> None:
+        self, tag: str = "KalmanFilter2D", Q_bias: float = 1e-13, Q_angle: float = 1e-4, R_var: float = 3e-6
+    ) -> None:
         """
         Initialize 2D Kalman filter
-        
+
         Params:
             tag: identifier of KalmanFilter2D instance
             Q_bias: variance in gyroscope drift rate
@@ -48,13 +47,13 @@ class KalmanFilter2D:
         self.yaw = 0.0
 
         # Initialize prediction covariance
-        self.P = 0.1*np.eye(4)
+        self.P = 0.1 * np.eye(4)
 
-        # Process noise covariance 
+        # Process noise covariance
         self.Q = np.diag([Q_angle, Q_angle, Q_bias, Q_bias])
 
         # Measurement noise covaraince (accel noise)
-        self.R = R_var* np.eye(2)
+        self.R = R_var * np.eye(2)
 
         # Initialize previous time
         self.prev_time = time.monotonic()
@@ -66,7 +65,7 @@ class KalmanFilter2D:
     def _predict(self, gx: float, gy: float, gz: float, dt: float) -> None:
         """
         Prediction step
-        
+
         Params:
             gx: x-axis gyroscope measurement (rad/s)
             gy: y-axis gyroscope measurement (rad/s)
@@ -74,36 +73,26 @@ class KalmanFilter2D:
             dt: discrete time step (seconds)
         """
         # State-transition matrix
-        F = np.array([
-            [1,0,-dt,0], 
-            [0,1,0,-dt], 
-            [0,0,1,0], 
-            [0,0,0,1]
-        ])
-        
+        F = np.array([[1, 0, -dt, 0], [0, 1, 0, -dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+
         # Control input matrix
-        B = np.array([
-            [dt, 0], 
-            [0, dt], 
-            [0,0], 
-            [0,0]
-        ])
+        B = np.array([[dt, 0], [0, dt], [0, 0], [0, 0]])
         u = np.array([gx, gy])
 
         # Prediction x_new = x + (gyro - bias)*dt
         # x = F*x + B*u
-        self.x = F@self.x + B@u
+        self.x = F @ self.x + B @ u
         self.x[0] = self._normalize_angle(self.x[0])
         self.x[1] = self._normalize_angle(self.x[1])
-        self.yaw += gz*dt  # Dead reckoning yaw (simple integration, no fusion)
+        self.yaw += gz * dt  # Dead reckoning yaw (simple integration, no fusion)
 
         # Covariance prediction
-        self.P = F@self.P@F.T + self.Q*dt
+        self.P = F @ self.P @ F.T + self.Q * dt
 
     def update(self, ax: float, ay: float, az: float, gx: float, gy: float, gz: float) -> tuple:
         """
         Update global angle estimations
-        
+
         Params:
             ax: x-axis gravity measurement (m/s^2)
             ay: y-axis gravity measurement (m/s^2)
@@ -120,12 +109,12 @@ class KalmanFilter2D:
         self.prev_time = curr_time
 
         # Guard against invalid dt
-        if dt <= 0: 
+        if dt <= 0:
             return self.x[0].copy(), self.x[1].copy(), self.yaw
 
         # Predict
         self._predict(gx, gy, gz, dt)
-        
+
         # Accelerometer global angle calculation
         roll_a = math.atan2(ay, az)
         pitch_a = math.atan2(-ax, math.hypot(ay, az))
@@ -136,14 +125,11 @@ class KalmanFilter2D:
                 roll_a -= np.pi
             elif roll_a < 0:
                 roll_a += np.pi
-        
+
         z = np.array([roll_a, pitch_a])
 
         # Measurement model
-        H = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0]
-        ])
+        H = np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
 
         # Innovation step
         S = H @ self.P @ H.T + self.R
@@ -156,6 +142,6 @@ class KalmanFilter2D:
         # Update
         self.x = self.x + K @ y
         I_KH = np.eye(4) - K @ H
-        self.P = I_KH @ self.P @ I_KH.T + K @ self.R @ K.T # Joseph form for numeric stability
+        self.P = I_KH @ self.P @ I_KH.T + K @ self.R @ K.T  # Joseph form for numeric stability
 
         return self.x[0].copy(), self.x[1].copy(), self.yaw

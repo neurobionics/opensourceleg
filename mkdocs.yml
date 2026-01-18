@@ -16,8 +16,8 @@ nav:
           - Reading ADC Data: tutorials/sensors/reading_adc.md
           - Reading Encoder Data: tutorials/sensors/reading_encoder_data.md
           - IMUs:
-            - Reading Microstrain Data: tutorials/sensors/reading_microstrain_imu_data.md
-            - Reading BHI260AP Data: tutorials/sensors/reading_bhi260ap_imu_data.md
+              - Reading Microstrain Data: tutorials/sensors/reading_microstrain_imu_data.md
+              - Reading BHI260AP Data: tutorials/sensors/reading_bhi260ap_imu_data.md
           - Reading Loadcell Data: tutorials/sensors/reading_loadcell_data.md
       - Actuators:
           - Getting Started: tutorials/actuators/getting_started.md

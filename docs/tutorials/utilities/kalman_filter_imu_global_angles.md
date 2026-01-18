@@ -4,7 +4,7 @@ This tutorial demonstrates how to use the 2D Kalman Filter with the BHI260AP IMU
 
 ## Hardware Setup
 
-1. Connect the BHI260AP IMU 
+1. Connect the BHI260AP IMU
 2. Identify which IMU physical axes correspond to the global roll, pitch, and yaw axes for your desired IMU configuration
 
 This example shows how to:
@@ -20,7 +20,7 @@ The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tu
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:1:40"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:1:37"
 ```
 
 This section:
@@ -34,7 +34,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:42:56"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:39:54"
 ```
 
 The main loop:
@@ -50,7 +50,7 @@ The main loop:
 When initializing the 2D Kalman Filter, several important parameters can be configured:
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:28:33"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:25:30"
 ```
 
 ### Parameter Details
@@ -85,10 +85,10 @@ When initializing the 2D Kalman Filter, several important parameters can be conf
 3. Expected behavior:
       - Kalman filter begins estimating global orientation continuously at 200Hz
       - Data is logged to `./logs/kalman_filter.csv`
-      - Roll and pitch values update as you rotate the IMU 
+      - Roll and pitch values update as you rotate the IMU
 
 ## Common Issues
-Let us know if you find any. 
+Let us know if you find any.
 
 
 ## Additional Resources

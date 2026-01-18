@@ -1,8 +1,7 @@
-import pytest
 import numpy as np
+import pytest
 
 from opensourceleg.logging import LOGGER
-from opensourceleg.sensors.base import SensorNotStreamingException
 from opensourceleg.sensors.imu import BHI260AP
 
 
@@ -29,14 +28,14 @@ class MockSPI:
         """Simulate SPI transfer"""
         if not self._is_open:
             raise RuntimeError("SPI device not open")
-        
+
         # Return dummy data for register reads
         # For write operations (MSB=0), return zeros
         # For read operations (MSB=1), return mock register values
         if tx_data[0] & 0x80:  # Read operation
             reg_addr = tx_data[0] & 0x7F
             length = len(tx_data) - 1
-            
+
             # Mock register values
             mock_registers = {
                 BHI260AP.REG_CHIP_ID: [0x70],  # Valid chip ID
@@ -47,7 +46,7 @@ class MockSPI:
                 BHI260AP.REG_ROM_VERSION: [0x2E, 0x14],
                 BHI260AP.REG_FUSER2_PRODUCT_ID: [0x89],
             }
-            
+
             if reg_addr in mock_registers:
                 return [0x00] + mock_registers[reg_addr][:length]
             return [0x00] * (length + 1)
@@ -77,7 +76,7 @@ class MockBHI260AP(BHI260AP):
         self._is_streaming = False
         self._enabled_sensors = {}
         self._sensor_data = []
-        
+
         # Use mock SPI instead of real spidev
         self._spi = MockSPI()
 
@@ -91,10 +90,10 @@ class MockBHI260AP(BHI260AP):
         self._spi.max_speed_hz = self._clock_freq
         self._spi.mode = 0b00
         self._spi.bits_per_word = 8
-        
+
         if not self.verify_connection():
             raise RuntimeError("Error connecting to IMU.")
-        
+
         self.flush_buffer()
         self._is_streaming = True
         LOGGER.info("IMU started successfully.")
@@ -139,23 +138,11 @@ def sample_imu_with_data():
     imu.start()
     imu.enable_gyroscope(rate_hz=200, dynamic_range=2000)
     imu.enable_accelerometer(rate_hz=200, dynamic_range=4096)
-    
+
     # Simulate sensor data
     imu._sensor_data = [
-        {
-            'sensor_id': BHI260AP.SENSOR_ID_GYR,
-            'timestamp': 0.0,
-            'x': 0.1,
-            'y': 0.2,
-            'z': 0.3
-        },
-        {
-            'sensor_id': BHI260AP.SENSOR_ID_ACC,
-            'timestamp': 0.0,
-            'x': 1.0,
-            'y': 2.0,
-            'z': 3.0
-        }
+        {"sensor_id": BHI260AP.SENSOR_ID_GYR, "timestamp": 0.0, "x": 0.1, "y": 0.2, "z": 0.3},
+        {"sensor_id": BHI260AP.SENSOR_ID_ACC, "timestamp": 0.0, "x": 1.0, "y": 2.0, "z": 3.0},
     ]
     return imu
 
@@ -174,13 +161,7 @@ def test_init_default(sample_imu: MockBHI260AP):
 
 
 def test_init_custom():
-    imu = MockBHI260AP(
-        tag="CustomBHI",
-        spi_bus=1,
-        spi_cs=3,
-        clock_freq=1000000,
-        data_rate=100
-    )
+    imu = MockBHI260AP(tag="CustomBHI", spi_bus=1, spi_cs=3, clock_freq=1000000, data_rate=100)
     assert all([
         imu._tag == "CustomBHI",
         imu._spi_bus == 1,
@@ -206,9 +187,9 @@ def test_read_chip_id(sample_imu: MockBHI260AP):
 # Test start/stop
 def test_start(sample_imu: MockBHI260AP):
     assert sample_imu._is_streaming is False
-    
+
     sample_imu.start()
-    
+
     assert all([
         sample_imu._is_streaming is True,
         sample_imu._spi.bus == 0,
@@ -225,64 +206,64 @@ def test_stop_not_started(sample_imu: MockBHI260AP):
 def test_stop(sample_imu: MockBHI260AP):
     sample_imu.start()
     assert sample_imu._is_streaming is True
-    
+
     sample_imu.stop()
-    
+
     assert sample_imu._is_streaming is False
 
 
 # Test sensor enabling
 def test_enable_gyroscope(sample_imu: MockBHI260AP):
     sample_imu.start()
-    
+
     assert len(sample_imu._enabled_sensors) == 0
-    
+
     sample_imu.enable_gyroscope(rate_hz=200, dynamic_range=2000)
-    
+
     assert BHI260AP.SENSOR_ID_GYR in sample_imu._enabled_sensors
 
 
 def test_enable_accelerometer(sample_imu: MockBHI260AP):
     sample_imu.start()
-    
+
     assert len(sample_imu._enabled_sensors) == 0
-    
+
     sample_imu.enable_accelerometer(rate_hz=200, dynamic_range=4096)
-    
+
     assert BHI260AP.SENSOR_ID_ACC in sample_imu._enabled_sensors
 
 
 def test_enable_linear_acceleration(sample_imu: MockBHI260AP):
     sample_imu.start()
-    
+
     assert len(sample_imu._enabled_sensors) == 0
-    
+
     sample_imu.enable_linear_acceleration(rate_hz=200, dynamic_range=4096)
-    
+
     assert BHI260AP.SENSOR_ID_LIN_ACC in sample_imu._enabled_sensors
 
 
 def test_enable_gravity(sample_imu: MockBHI260AP):
     sample_imu.start()
-    
+
     assert len(sample_imu._enabled_sensors) == 0
-    
+
     sample_imu.enable_gravity(rate_hz=200, dynamic_range=4096)
-    
+
     assert BHI260AP.SENSOR_ID_GRAVITY in sample_imu._enabled_sensors
 
 
 # Test invalid dynamic range
 def test_enable_gyroscope_invalid_range(sample_imu: MockBHI260AP):
     sample_imu.start()
-    
+
     with pytest.raises(RuntimeError):
         sample_imu.enable_gyroscope(rate_hz=200, dynamic_range=999)
 
 
 def test_enable_accelerometer_invalid_range(sample_imu: MockBHI260AP):
     sample_imu.start()
-    
+
     with pytest.raises(RuntimeError):
         sample_imu.enable_accelerometer(rate_hz=200, dynamic_range=999)
 
@@ -290,7 +271,7 @@ def test_enable_accelerometer_invalid_range(sample_imu: MockBHI260AP):
 # Test properties
 def test_is_streaming(sample_imu: MockBHI260AP):
     assert sample_imu.is_streaming is False
-    
+
     sample_imu.start()
     assert sample_imu.is_streaming is True
 

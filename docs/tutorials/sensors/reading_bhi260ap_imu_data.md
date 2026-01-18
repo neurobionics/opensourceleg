@@ -20,7 +20,7 @@ The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tu
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:1:33"
+--8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:1:29"
 ```
 
 This section:
@@ -33,7 +33,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:34:38"
+--8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:31:38"
 ```
 
 The main loop:
@@ -81,7 +81,7 @@ When initializing the BHI260AP, several important parameters can be configured:
 
 ## Available Properties
 
-The BHI260AP IMU has several useful properties. Each sensor must first be enabled before accessing property. 
+The BHI260AP IMU has several useful properties. Each sensor must first be enabled before accessing property.
 
 1. **Gyroscope** (x,y,z):
       - Enable gyroscope sensor via `imu.enable_gyroscope()`
@@ -95,7 +95,7 @@ The BHI260AP IMU has several useful properties. Each sensor must first be enable
 
 2. **Raw Acceleration** (x,y,z):
       - Enable raw accelerometer sensor via `imu.enable_accelerometer()`
-      - Current raw accelerations in m/s² 
+      - Current raw accelerations in m/s²
       ```python
       imu.accel    # (x,y,z) accelerations
       imu.acc_x    # Acceleration along X-axis
@@ -105,14 +105,14 @@ The BHI260AP IMU has several useful properties. Each sensor must first be enable
 
 3. **Gravity** (x,y,z):
       - Enable gravity sensor via `imu.enable_gravity()`
-      - Current acceleration due to gravity in m/s² 
+      - Current acceleration due to gravity in m/s²
       ```python
       imu.gravity    # (x,y,z) accelerations
       ```
 
 3. **Linear Accelerations** (x,y,z):
       - Enable linear acceleration sensor via `imu.enable_linear_acceleration()`
-      - Current linear acceleration in m/s² 
+      - Current linear acceleration in m/s²
       ```python
       imu.lin_accel    # (x,y,z) accelerations
       ```
@@ -132,12 +132,12 @@ The BHI260AP IMU has several useful properties. Each sensor must first be enable
 3. Expected behavior:
       - IMU begins reading gyroscope and accelerometer data continuously at 200Hz
       - Data is logged to `./logs/reading_bhi260ap_data.csv`
-      - Gyroscope and accelerometer values update as you rotate the IMU 
+      - Gyroscope and accelerometer values update as you rotate the IMU
 
 ## Common Issues
 
 - **Device Not Found**: Verify connections and run `ls /dev/spi*`
-- **Firmware Not Found**: Download the Bosch BHI260AP.fw firmware file 
+- **Firmware Not Found**: Download the Bosch BHI260AP.fw firmware file
 
 ## Additional Resources
 
