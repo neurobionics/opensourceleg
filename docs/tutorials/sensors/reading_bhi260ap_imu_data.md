@@ -20,7 +20,7 @@ The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tu
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:1:20"
+--8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:1:33"
 ```
 
 This section:
@@ -33,7 +33,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:22:31"
+--8<-- "tutorials/sensors/reading_bhi260ap_imu_data.py:34:38"
 ```
 
 The main loop:

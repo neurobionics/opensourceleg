@@ -20,7 +20,7 @@ The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tu
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:1:20"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:1:40"
 ```
 
 This section:
@@ -34,7 +34,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:22:31"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:42:56"
 ```
 
 The main loop:
@@ -50,7 +50,7 @@ The main loop:
 When initializing the 2D Kalman Filter, several important parameters can be configured:
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:14:23"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:28:33"
 ```
 
 ### Parameter Details
@@ -88,7 +88,7 @@ When initializing the 2D Kalman Filter, several important parameters can be conf
       - Roll and pitch values update as you rotate the IMU 
 
 ## Common Issues
-
+Let us know if you find any. 
 
 
 ## Additional Resources

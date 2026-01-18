@@ -1662,7 +1662,9 @@ class AxisTransform:
         Transform a 3D vector from IMU frame to orientation frame.
         
         Args:
-            x, y, z: Components in IMU frame
+            x: x component in IMU frame
+            y: y component in IMU frame
+            z: z component in IMU frame
             
         Returns:
             tuple: (roll_component, pitch_component, yaw_component)
