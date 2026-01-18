@@ -16,7 +16,7 @@ to PYTHONPATH or sys.path if necessary.
 """
 
 import os
-from typing import Any, ClassVar, Union, Callable
+from typing import Any, ClassVar, Union, Callable, cast
 import struct 
 import time
 
@@ -899,7 +899,7 @@ class BHI260AP(IMUBase):
             bit_string = np.unpackbits(np.frombuffer(bytes(rx_data), dtype=np.uint8))[::-1]
             return bit_string # LSB first in each byte
         else:
-            return rx_data
+            return cast(list[int], rx_data)
     
     def _write_register(self, reg_addr: int, data: Union[int, list[int]]) -> None:
         """Write to register"""
@@ -1320,7 +1320,7 @@ class BHI260AP(IMUBase):
                          all samples (shape (N,3)), or [] if no gyro data.
         """
         if not self._sensor_data:
-            return []
+            return np.array([])
         
         # collect (x,y,z) tuples for samples matching sensor_id
         data_samples = [
@@ -1330,7 +1330,7 @@ class BHI260AP(IMUBase):
         ]
         
         if not data_samples:
-            return []     
+            return np.array([])  
 
         if most_recent:
             return np.array(data_samples[-1], dtype=float)
@@ -1353,15 +1353,15 @@ class BHI260AP(IMUBase):
 
     def read_boot_status_bits(self) -> np.ndarray:
         """Read and return boot status"""
-        return self._read_register(self.REG_BOOT_STATUS, 1, True)
+        return cast(np.ndarray, self._read_register(self.REG_BOOT_STATUS, 1, True))
 
     def read_host_status_bits(self) -> np.ndarray:
         """Read and return host status """
-        return self._read_register(self.REG_HOST_STATUS, 1, True)
+        return cast(np.ndarray, self._read_register(self.REG_HOST_STATUS, 1, True))
 
     def read_interrupt_status_bits(self) -> np.ndarray:
         """Read and return interrupt status """
-        return self._read_register(self.REG_INT_STATUS, 1, True)
+        return cast(np.ndarray, self._read_register(self.REG_INT_STATUS, 1, True))
 
     def read_error_value(self) -> int:
         """ Read and return error value """
@@ -1404,7 +1404,7 @@ class BHI260AP(IMUBase):
         Returns:
             np.ndarray: Bit array of host interrupt settings
         """
-        return self._read_register(self.REG_HOST_INT_CTRL, 1, True)
+        return cast(np.ndarray, self._read_register(self.REG_HOST_INT_CTRL, 1, True))
 
     @property 
     def power_state(self) -> bool:
@@ -1489,7 +1489,7 @@ class BHI260AP(IMUBase):
         """
         try:
             data = self.accel
-            return data[0]
+            return float(data[0])
         except:
             LOGGER.warning("Acceleration along x-axis not available.")
             return 0.0
@@ -1505,7 +1505,7 @@ class BHI260AP(IMUBase):
         """
         try:
             data = self.accel
-            return data[1]
+            return float(data[1])
         except:
             LOGGER.warning("Acceleration along y-axis not available.")
             return 0.0
@@ -1520,7 +1520,7 @@ class BHI260AP(IMUBase):
         """
         try:
             data = self.accel
-            return data[2]
+            return float(data[2])
         except:
             LOGGER.warning("Acceleration along z-axis not available.")
             return 0.0
@@ -1535,7 +1535,7 @@ class BHI260AP(IMUBase):
         """
         try:
             data = self.gyro
-            return data[0]
+            return float(data[0])
         except:
             LOGGER.warning("Gyroscope value for x-axis not available.")
             return 0.0
@@ -1550,7 +1550,7 @@ class BHI260AP(IMUBase):
         """
         try:
             data = self.gyro
-            return data[1]
+            return float(data[1])
         except:
             LOGGER.warning("Gyroscope value for y-axis not available.")
             return 0.0
@@ -1565,7 +1565,7 @@ class BHI260AP(IMUBase):
         """
         try:
             data = self.gyro
-            return data[2]
+            return float(data[2])
         except:
             LOGGER.warning("Gyroscope value for z-axis not available.")
             return 0.0
