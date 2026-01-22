@@ -107,15 +107,6 @@ class ServoMotorState:
     error: int = 0
 
 
-class ServoControlMode(Enum):
-    """TMotor servo control modes"""
-
-    POSITION = 4
-    VELOCITY = 3
-    CURRENT = 1
-    IDLE = 7
-
-
 class CANManagerServo:
     """TMotor servo mode CAN communication manager"""
 
@@ -829,9 +820,8 @@ class TMotorServoActuator(ActuatorBase):
             driver_current = value / self._current_scale
 
             # Get current limits from motor parameters
-            motor_params = cast(dict[str, Any], self._motor_params)
-            max_current = motor_params["Curr_max"]
-            min_current = motor_params["Curr_min"] 
+            max_current = self._motor_params["Curr_max"]
+            min_current = self._motor_params["Curr_min"] 
 
             # Clamp current to safe limits
             clamped_driver_current = np.clip(driver_current, min_current, max_current)
@@ -859,9 +849,8 @@ class TMotorServoActuator(ActuatorBase):
 
         if not self.is_offline and self._canman:
             # Get position limits from motor parameters
-            motor_params = cast(dict[str, Any], self._motor_params)
-            max_position = motor_params["P_max"]   
-            min_position = motor_params["P_min"]   
+            max_position = self._motor_params["P_max"]   
+            min_position = self._motor_params["P_min"]   
 
             # Clamp position to safe limits
             clamped_position = np.clip(position_deg, min_position, max_position)
@@ -906,13 +895,12 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_motor_velocity(self, value: float) -> None:
         """Set motor velocity (rad/s) with clamping to motor limits"""
-        motor_params = cast(dict[str, Any], self._motor_params)
         velocity_erpm = rad_per_sec_to_erpm(value, self.num_pole_pairs)
 
         if not self.is_offline and self._canman:
             # Get velocity limits from motor parameters
-            max_velocity = motor_params["V_max"]  # Already in ERPM
-            min_velocity = motor_params["V_min"]  # Already in ERPM
+            max_velocity = self._motor_params["V_max"]  # Already in ERPM
+            min_velocity = self._motor_params["V_min"]  # Already in ERPM
 
             # Clamp velocity to safe limits
             clamped_velocity = np.clip(velocity_erpm, min_velocity, max_velocity)
@@ -927,22 +915,6 @@ class TMotorServoActuator(ActuatorBase):
             self._canman.set_velocity(self.motor_id, clamped_velocity)
             self._last_command_time = time.time()
 
-    def set_motor_impedance(self, position: float, velocity: float, kp: float, kd: float, torque_ff: float) -> None:
-        """TMotor servo mode does not support impedance control"""
-        LOGGER.error(
-            "TMotor servo mode does not support impedance control. "
-            "Use position, velocity, or current control modes instead."
-        )
-        raise NotImplementedError("TMotor servo mode does not support impedance control.")
-
-    def set_output_impedance(self, position: float, velocity: float, kp: float, kd: float, torque_ff: float) -> None:
-        """TMotor servo mode does not support impedance control"""
-        LOGGER.error(
-            "TMotor servo mode does not support impedance control. "
-            "Use position, velocity, or current control modes instead."
-        )
-        raise NotImplementedError("TMotor servo mode does not support impedance control.")
-
     def set_output_velocity(self, value: float) -> None:
         """Set output velocity (rad/s)"""
         motor_velocity = value * self.gear_ratio
@@ -955,27 +927,18 @@ class TMotorServoActuator(ActuatorBase):
         LOGGER.debug(
             "TMotor servo mode handles current control internally. " "External current PID gains are not used."
         )
-        # Motor handles current control internally, no action needed
 
     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """TMotor servo mode does not support external position PID gains - motor handles position control internally"""
         LOGGER.debug(
             "TMotor servo mode handles position control internally. " "External position PID gains are not used."
         )
-        # Motor handles position control internally, no action needed
-
-    def set_impedance_gains(self, kp: float, ki: float, kd: float, k: float, b: float, ff: float) -> None:
-        """TMotor servo mode does not support impedance control"""
-        LOGGER.debug(
-            "TMotor servo mode does not support impedance control. "
-            "Use position, velocity, or current control modes instead."
-        )
-        # Impedance control not supported in servo mode, no action needed
 
     def _set_impedance_gains(self, k: float, b: float) -> None:
         """Internal method for impedance gains - not supported in TMotor servo mode"""
-        LOGGER.debug("TMotor servo mode handles control internally. " "Impedance gains are not used.")
-        # Motor handles control internally, no action needed
+        LOGGER.debug(
+            "TMotor servo mode handles control internally. " "Impedance gains are not used."
+        )
 
     # ============ State Properties ============
 
@@ -1005,8 +968,7 @@ class TMotorServoActuator(ActuatorBase):
     @property
     def num_pole_pairs(self) -> int:
         """Number of motor pole pairs"""
-        motor_params = cast(dict[str, Any], self._motor_params)
-        return motor_params["NUM_POLE_PAIRS"]
+        return self._motor_params["NUM_POLE_PAIRS"]
 
     @property
     def motor_voltage(self) -> float:
@@ -1032,8 +994,7 @@ class TMotorServoActuator(ActuatorBase):
         Torque at the motor in Nm.
         This is calculated using motor current and k_t.
         """
-        motor_params = cast(dict[str, Any], self._motor_params)
-        kt_user = cast(float, motor_params["Kt_actual"]) * self._kt_scale
+        kt_user = cast(float, self._motor_params["Kt_actual"]) * self._kt_scale
         return self.motor_current * kt_user / 1000 
 
     @property
