@@ -58,6 +58,7 @@ CAN_PACKET_ID = {
     "SET_POS": 4,
     "SET_ORIGIN_HERE": 5,
     "SET_POS_SPD": 6,
+    "SET_MODE": 7,
 }
 
 # TMotor model specifications
@@ -263,10 +264,7 @@ class CANManagerServo:
         Returns:
             None
         """
-        # NOTE(IMPORTANT): TMotor spec uses 1,000,000 scale (0.000001° resolution) per documentation
-        # Current implementation uses 10 scale (0.1° resolution) for simplicity
-        # To enable high-precision position control, change to: int(position * 1000000.0)
-        buffer = self._pack_int32(int(position * 10.0))  # 0.1 degree resolution
+        buffer = self._pack_int32(int(position * 10000.0))  
         message_id = (CAN_PACKET_ID["SET_POS"] << 8) | motor_id
         self.send_message(message_id, buffer, len(buffer))
 
@@ -294,7 +292,7 @@ class CANManagerServo:
             None
         """
         buffer = [mode]
-        message_id = (7 << 8) | motor_id  # Assume packet_id=7 for mode switching
+        message_id = (CAN_PACKET_ID["SET_MODE"] << 8) | motor_id 
         self.send_message(message_id, buffer, len(buffer))
 
     @staticmethod
@@ -699,7 +697,7 @@ class TMotorServoActuator(ActuatorBase):
             try:
                 self._canman.set_current(self.motor_id, 0.0)
                 time.sleep(0.01)
-                self._canman.set_control_mode(self.motor_id, ServoControlMode.IDLE.value)
+                self.set_control_mode(CONTROL_MODES.IDLE)
                 time.sleep(0.05)  # Give motor time to process
             except Exception as e:
                 LOGGER.warning(f"Error setting idle mode during stop: {e}")
@@ -749,7 +747,7 @@ class TMotorServoActuator(ActuatorBase):
             and (now - self._last_command_time) < 0.25
             and (now - self._last_update_time) > 0.1
         ):
-            warnings.warn(f"No data from motor: {self.device_info_string()}", RuntimeWarning, stacklevel=2)
+            warnings.warn(f"No data from motor: {self.__str__()}", RuntimeWarning, stacklevel=2)
 
         self._last_update_time = now
 
@@ -806,7 +804,7 @@ class TMotorServoActuator(ActuatorBase):
         """
         if not self.is_offline and self._canman:
             self._canman.set_origin(self.motor_id, 1)
-            time.sleep(0.1)
+            time.sleep(0.3)
         LOGGER.info(f"Set origin {self.__str__()}")
 
     @property
@@ -873,6 +871,12 @@ class TMotorServoActuator(ActuatorBase):
             self._last_command_time = time.time()
 
     def set_motor_position(self, value: float) -> None:
+        raise NotImplementedError(
+            "Setting motor position not supported"
+            "Recommended to use 'set_output_position' command instead."
+        )
+
+    def set_output_position(self, value: float) -> None:
         """
         Set motor position (radians) with clamping to motor limits
         Args: 
@@ -1113,7 +1117,6 @@ if __name__ == "__main__":
                 motor_torque = actuator.motor_torque  # motor torque (Nm)
                 output_torque = actuator.output_torque  # output torque (Nm)
                 temperature = actuator.case_temperature  # temperature (°C)
-                # motor_voltage = actuator.motor_voltage  # voltage (V) - Not available in servo mode
 
                 # Check for errors
                 error_status = "OK"

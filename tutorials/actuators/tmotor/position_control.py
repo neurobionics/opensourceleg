@@ -34,12 +34,12 @@ def position_control():
 
         print("Setting motor origin...")
         motor.set_origin()
+        print(f"Current motor position {motor.output_position:.3f}")
+
 
         # Set to position control mode (PID parameters are built-in and 
         # can only be modified via R-link)
         motor.set_control_mode(mode=CONTROL_MODES.POSITION)
-
-        print(f"Current motor position {motor.output_position:.3f}")
 
         initial_position = motor.output_position
         command_position = initial_position
@@ -55,7 +55,7 @@ def position_control():
             step_count = int(t)
             
             # Continuously increment position based on step count
-            command_position = initial_position - (step_count * STEP_AMPLITUDE)
+            command_position = initial_position + (step_count * STEP_AMPLITUDE)
 
             # Send command
             motor.set_output_position(value=command_position)
@@ -77,10 +77,10 @@ def position_control():
         print("Position control complete")
 
         # Return to home position
-        # print("Returning to home...")
-        # motor.set_output_position(value=initial_position)
-        # time.sleep(1.0)
-        # motor.update()
+        print("Returning to home...")
+        motor.set_output_position(value=initial_position)
+        time.sleep(1.0)
+        motor.update()
 
 
 if __name__ == "__main__":
