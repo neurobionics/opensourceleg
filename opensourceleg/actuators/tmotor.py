@@ -841,7 +841,7 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_motor_voltage(self, value: float) -> None:
         """Set motor voltage (not directly supported in servo mode)"""
-        LOGGER.warning("Voltage control not supported in servo mode")
+        raise NotImplementedError("Voltage control not supported in servo mode")
 
     def set_motor_current(self, value: float) -> None:
         """
@@ -963,19 +963,19 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """TMotor servo mode does not support external current PID gains - motor handles current control internally"""
-        LOGGER.debug(
+        raise NotImplementedError(
             "TMotor servo mode handles current control internally. " "External current PID gains are not used."
         )
 
     def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
         """TMotor servo mode does not support external position PID gains - motor handles position control internally"""
-        LOGGER.debug(
+        raise NotImplementedError(
             "TMotor servo mode handles position control internally. " "External position PID gains are not used."
         )
 
     def _set_impedance_gains(self, k: float, b: float) -> None:
         """Internal method for impedance gains - not supported in TMotor servo mode"""
-        LOGGER.debug(
+        raise NotImplementedError(
             "TMotor servo mode handles control internally. " "Impedance gains are not used."
         )
 
@@ -1078,88 +1078,4 @@ class TMotorServoActuator(ActuatorBase):
         return self._thermal_scale
 
 if __name__ == "__main__":
-    print("TMotor Current Loop Control Example")
-
-    try:
-        actuator = TMotorServoActuator(motor_type="AK80-9", motor_id=1, offline=True)
-
-        with actuator:
-            print(f"Motor initialized: {actuator.__str__()}")
-
-            # Set origin and set current control mode
-            actuator.set_origin()
-            actuator.set_control_mode(CONTROL_MODES.CURRENT)
-            print("Current loop mode activated")
-
-            # Send 15Nm torque command
-            target_torque = 15.0  # Nm
-            actuator.set_output_torque(target_torque)
-            print(f"Sending {target_torque}Nm torque command to motor")
-            print()
-
-            # Create real-time reading loop
-            loop = SoftRealtimeLoop(dt=0.1, report=False, fade=0)  # 10Hz, slower for observation
-            print("📊 Reading motor parameters...")
-
-            for t in loop:
-                if t > 5.0:  # Run for 5 seconds
-                    break
-
-                # Update motor state
-                actuator.update()
-
-                # Read motor parameters
-                motor_angle = actuator.motor_position  # motor angle (rad)
-                output_angle = actuator.output_position  # output angle (rad)
-                motor_velocity = actuator.motor_velocity  # motor velocity (rad/s)
-                output_velocity = actuator.output_velocity  # output velocity (rad/s)
-                motor_current = actuator.motor_current  # motor current (A)
-                motor_torque = actuator.motor_torque  # motor torque (Nm)
-                output_torque = actuator.output_torque  # output torque (Nm)
-                temperature = actuator.case_temperature  # temperature (°C)
-
-                # Check for errors
-                error_status = "OK"
-                if actuator.error_info:
-                    error_code, error_msg = actuator.error_info
-                    error_status = f"Error{error_code}: {error_msg}"
-
-                # Display complete status - every 0.5 seconds
-                if int(t * 2) % 1 == 0:
-                    print(f"Time: {t:4.1f}s")
-                    print(
-                        f"  Torque: Cmd={target_torque:6.2f}Nm | "
-                        f"Motor={motor_torque:6.2f}Nm | Output={output_torque:6.2f}Nm"
-                    )
-                    print(
-                        f"  Angle:  Motor={motor_angle:8.4f}rad ({np.degrees(motor_angle):7.2f}°) | "
-                        f"Output={output_angle:8.4f}rad ({np.degrees(output_angle):7.2f}°)"
-                    )
-                    print(f"  Speed:  Motor={motor_velocity:8.4f}rad/s | Output={output_velocity:8.4f}rad/s")
-                    print(f"  Current: {motor_current:6.2f}mA | " f"Temp: {temperature:4.1f}°C")
-                    print(f"  Status: {error_status}")
-                    print("-" * 80)
-
-            # Safe stop
-            actuator.set_output_torque(0.0)
-            actuator.update()
-            print("Motor safely stopped")
-            print()
-
-            # Display final state
-            print("   Final Motor State:")
-            print(
-                f"  Final Position: {np.degrees(actuator.output_position):.2f}° "
-                f"({actuator.output_position:.4f} rad)"
-            )
-            print(f"  Final Torque: {actuator.output_torque:.2f} Nm")
-            print(f"  Final Current: {actuator.motor_current:.2f} A")
-            print(f"  Final Temperature: {actuator.case_temperature:.1f}°C")
-
-    except Exception as e:
-        print(f"Error: {e}")
-        import traceback
-
-        traceback.print_exc()
-
-    print("Current loop control example completed!")
+    pass
