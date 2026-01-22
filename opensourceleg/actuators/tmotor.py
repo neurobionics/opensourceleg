@@ -93,8 +93,7 @@ TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
     NM_PER_AMP=0.095,  # Placeholder to satisfy validation
     MAX_CASE_TEMPERATURE=80.0, # Temperature parameters are also set in the driver via R-Link
     MAX_WINDING_TEMPERATURE=110.0, # Temperature parameters are also set in the driver via R-Link
-    # Soft limits set 10°C below hard limits for safety margin
-    WINDING_SOFT_LIMIT=100.0,
+    WINDING_SOFT_LIMIT=100.0,  # Soft limits set 10°C below hard limits for safety margin
     CASE_SOFT_LIMIT=70.0,
 )
 
@@ -524,6 +523,7 @@ class TMotorServoActuator(ActuatorBase):
         frequency: int = 1000,
         offline: bool = False,
         current_mode: str = "driver",
+        thermal_current_scale: float = 1.0, 
         **kwargs: Any,
     ) -> None:
         """
@@ -540,6 +540,7 @@ class TMotorServoActuator(ActuatorBase):
                 - 'driver': use driver's native current (default)
                 - 'amplitude-invariant': true phase current convention
                 - 'power-invariant': power-invariant current convention
+            thermal_current_scale: compensates for discrepancy between firmware k_t and effective k_t
         """
         # Validate motor type
         if motor_type not in TMOTOR_MODELS:
@@ -570,6 +571,7 @@ class TMotorServoActuator(ActuatorBase):
         self.motor_id = motor_id
         self._motor_params = TMOTOR_MODELS[motor_type]
         self.current_mode = current_mode
+        self._thermal_current_scale = thermal_current_scale
 
         # Current conversion factors
         # Physical: I_drv (line current) = K * I_user
@@ -736,7 +738,7 @@ class TMotorServoActuator(ActuatorBase):
         # Temperature check
         self._thermal_scale = self._thermal_model.update(
             dt = 1 / self.frequency, 
-            motor_current = self.motor_current, 
+            motor_current = self.motor_current*self._thermal_current_scale, 
             case_temperature = self.case_temperature,
         )
 
