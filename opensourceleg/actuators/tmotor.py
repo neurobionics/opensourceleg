@@ -90,15 +90,12 @@ TMOTOR_MODELS: dict[str, dict[str, Any]] = {
 TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=65536,  # Encoder counts per revolution (16-bit encoder)
     NM_PER_AMP=0.095,  # Placeholder to satisfy validation
-    # NM_PER_RAD_TO_K=1e-9,  # small positive placeholder to satisfy validation
-    # NM_S_PER_RAD_TO_B=1e-9,  # small positive placeholder to satisfy validation
     MAX_CASE_TEMPERATURE=80.0, # Temperature parameters are also set in the driver via R-Link
     MAX_WINDING_TEMPERATURE=110.0, # Temperature parameters are also set in the driver via R-Link
     # Soft limits set 10°C below hard limits for safety margin
     WINDING_SOFT_LIMIT=100.0,
     CASE_SOFT_LIMIT=70.0,
 )
-
 
 @dataclass
 class ServoMotorState:
@@ -559,7 +556,7 @@ class TMotorServoActuator(ActuatorBase):
                 f"Invalid current_mode: {current_mode}. Must be 'driver', 'amplitude-invariant', or 'power-invariant'"
             )
 
-        super().__init__(
+        ActuatorBase.__init__(
             self,
             tag=tag,
             gear_ratio=gear_ratio,
@@ -847,8 +844,7 @@ class TMotorServoActuator(ActuatorBase):
         if not isinstance(value, MOTOR_CONSTANTS):
             raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
         self._MOTOR_CONSTANTS = value
-        self._update_derived_constants()
-
+        
     # ============ Control Interface ============
 
     def set_motor_voltage(self, value: float) -> None:
@@ -1112,23 +1108,6 @@ class TMotorServoActuator(ActuatorBase):
             float: Thermal scaling factor.
         """
         return self._thermal_scale
-
-    @property
-    def is_streaming(self) -> bool:
-        return self._is_streaming
-
-    @is_streaming.setter
-    def is_streaming(self, value: bool) -> None:
-        self._is_streaming = value
-
-    @property
-    def is_open(self) -> bool:
-        return self._is_open
-
-    @is_open.setter
-    def is_open(self, value: bool) -> None:
-        self._is_open = value
-
 
 if __name__ == "__main__":
     print("TMotor Current Loop Control Example")
