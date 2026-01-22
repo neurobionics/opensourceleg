@@ -1,9 +1,5 @@
 import time
-
 import numpy as np
-
-import sys
-sys.path.append('/home/kwalte/opensourceleg')
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.tmotor import TMotorServoActuator
@@ -25,13 +21,15 @@ def torque_control():
     motor = TMotorServoActuator(
         motor_type="AK80-9",  # Change to your motor model
         motor_id=MOTOR_ID,
+        gear_ratio=9.0,
         offline=False,
     )
 
     clock = SoftRealtimeLoop(dt=DT)
 
     with motor:
-        print(f"Connected to TMotor: {motor.device_info_string()}")
+        
+        motor.update()
 
         # Set the encoder origin first (optional)
         print("Setting encoder origin...")
@@ -39,8 +37,6 @@ def torque_control():
 
         # Set to current control mode for torque control
         motor.set_control_mode(mode=CONTROL_MODES.CURRENT)
-
-        motor.update()
 
         # Motor torque constant for AK80-9
         MAX_OUTPUT_TORQUE = 2.0  # Maximum output torque in Nm (safety limit)
@@ -52,20 +48,19 @@ def torque_control():
         torque_logger.track_function(lambda: motor.motor_current, "Motor Current")
         torque_logger.track_function(lambda: motor.output_position, "Motor Position")
         torque_logger.track_function(lambda: motor.output_velocity, "Motor Velocity")
-        torque_logger.track_function(lambda: time.time(), "Time")
+        torque_logger.track_function(lambda: time.monotonic(), "Time")
 
         print("Starting torque control...")
 
         # Create a torque profile
         for t in clock:
-            # Sinusoidal output torque command (0.2 Hz, amplitude 0.5 Nm at output)
-            # command_output_torque = 0.5 * np.sin(2 * np.pi * 0.2 * t)
-            command_output_torque = 0.0
+            # Sinusoidal output torque command (0.2 Hz, amplitude 2.0 Nm at output)
+            command_output_torque = 2.0 * np.sin(2 * np.pi * 0.2 * t)
 
             # Limit output torque for safety
             command_output_torque = np.clip(command_output_torque, -MAX_OUTPUT_TORQUE, MAX_OUTPUT_TORQUE)
 
-            # Set output torque (automatically handles gear ratio conversion)
+            # Set output torque
             motor.set_output_torque(command_output_torque)
             motor.update()
 

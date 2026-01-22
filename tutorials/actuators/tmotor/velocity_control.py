@@ -1,5 +1,4 @@
 import time
-
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
@@ -22,13 +21,15 @@ def velocity_control():
     motor = TMotorServoActuator(
         motor_type="AK80-9",  # Change to your motor model
         motor_id=MOTOR_ID,
+        gear_ratio=9.0,
         offline=False,
     )
 
     clock = SoftRealtimeLoop(dt=DT)
 
     with motor:
-        print(f"Connected to TMotor: {motor.device_info_string()}")
+
+        motor.update()
 
         # Set the encoder origin first (optional)
         print("Setting encoder origin...")
@@ -37,14 +38,12 @@ def velocity_control():
         # Set to velocity control mode (PID parameters are built-in)
         motor.set_control_mode(mode=CONTROL_MODES.VELOCITY)
 
-        motor.update()
-
         # Track velocity data
         velocity_logger.track_function(lambda: motor.output_velocity, "Output Velocity")
         velocity_logger.track_function(lambda: motor.motor_velocity, "Motor Velocity")
         velocity_logger.track_function(lambda: command_velocity, "Command Velocity")
         velocity_logger.track_function(lambda: motor.output_position, "Motor Position")
-        velocity_logger.track_function(lambda: time.time(), "Time")
+        velocity_logger.track_function(lambda: time.monotonic(), "Time")
 
         print("Starting velocity control...")
 
