@@ -100,7 +100,6 @@ TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
 @dataclass
 class ServoMotorState:
     """Motor state data structure"""
-
     position: float = 0.0  # degrees
     velocity: float = 0.0  # ERPM
     current: float = 0.0  # milliamps
@@ -396,68 +395,51 @@ def _wait_for_mode_switch(actuator: "TMotorServoActuator", timeout: float = 0.2)
     # If we reach here, mode switch may not be confirmed but we continue
     LOGGER.warning(f"Mode switch confirmation timeout after {timeout} seconds")
 
+# ============ Control mode configuration ============
 
-# Control mode configuration
 def _servo_position_mode_entry(actuator: "TMotorServoActuator") -> None:
-    actuator._servo_mode = ServoControlMode.POSITION
-    # Send actual mode switch command to motor
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Position control mode.")
+    mode_id = 4
     if not actuator.is_offline and actuator._canman:
-        actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.POSITION.value)
+        actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
-
 
 def _servo_position_mode_exit(actuator: "TMotorServoActuator") -> None:
-    pass  # servo mode handles automatically
-
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Position control mode.")
 
 def _servo_current_mode_entry(actuator: "TMotorServoActuator") -> None:
-    actuator._servo_mode = ServoControlMode.CURRENT
-    # Send actual mode switch command to motor
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Current control mode.")
+    mode_id = 1
     if not actuator.is_offline and actuator._canman:
-        actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.CURRENT.value)
+        actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
 
-
 def _servo_current_mode_exit(actuator: "TMotorServoActuator") -> None:
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Current control mode.")
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_current(actuator.motor_id, 0.0)
 
-
 def _servo_velocity_mode_entry(actuator: "TMotorServoActuator") -> None:
-    actuator._servo_mode = ServoControlMode.VELOCITY
-    # Send actual mode switch command to motor
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Velocity control mode.")
+    mode_id = 3
     if not actuator.is_offline and actuator._canman:
-        actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.VELOCITY.value)
+        actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
 
-
 def _servo_velocity_mode_exit(actuator: "TMotorServoActuator") -> None:
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Velocity control mode.")
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_velocity(actuator.motor_id, 0.0)
 
-
 def _servo_idle_mode_entry(actuator: "TMotorServoActuator") -> None:
-    actuator._servo_mode = ServoControlMode.IDLE
-    # Send actual mode switch command to motor
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Idle control mode.")
+    mode_id = 7
     if not actuator.is_offline and actuator._canman:
-        actuator._canman.set_control_mode(actuator.motor_id, ServoControlMode.IDLE.value)
+        actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
 
-
 def _servo_idle_mode_exit(actuator: "TMotorServoActuator") -> None:
-    pass
-
-
-def _impedance_not_supported(actuator: "TMotorServoActuator") -> None:
-    """Log that impedance control is not supported"""
-    LOGGER.error(
-        "TMotor servo mode does not support impedance control. "
-        "Use position, velocity, or current control modes instead."
-    )
-    raise NotImplementedError(
-        "TMotor servo mode does not support impedance control. "
-        "Use position, velocity, or current control modes instead."
-    )
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Idle control mode.")
 
 
 TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
@@ -479,26 +461,16 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         has_gains=False,  # servo mode handles internally
         max_gains=None,
     ),
-    VOLTAGE=ControlModeConfig(
-        entry_callback=lambda actuator: setattr(actuator, "_servo_mode", ServoControlMode.IDLE),
-        exit_callback=lambda actuator: None,
-        has_gains=False,
-        max_gains=None,
-    ),
     IDLE=ControlModeConfig(
         entry_callback=_servo_idle_mode_entry,
         exit_callback=_servo_idle_mode_exit,
         has_gains=False,
         max_gains=None,
     ),
-    # Explicitly define IMPEDANCE as not supported
-    IMPEDANCE=ControlModeConfig(
-        entry_callback=_impedance_not_supported,
-        exit_callback=lambda actuator: None,
-        has_gains=False,
-        max_gains=None,
-    ),
+    IMPEDANCE=None, # IMPEDANCE mode not supported
+    VOLTAGE=None, # VOLTAGE mode not supported
 )
+
 
 
 class TMotorServoActuator(ActuatorBase):
@@ -603,7 +575,6 @@ class TMotorServoActuator(ActuatorBase):
         # State management
         self._motor_state = ServoMotorState()
         self._motor_state_async = ServoMotorState()
-        self._servo_mode = ServoControlMode.IDLE
 
         # Error handling
         self._error_code: Optional[int] = None
@@ -630,9 +601,6 @@ class TMotorServoActuator(ActuatorBase):
     def _CONTROL_MODE_CONFIGS(self) -> CONTROL_MODE_CONFIGS:
         return TMOTOR_SERVO_CONTROL_MODE_CONFIGS
 
-    def device_info_string(self) -> str:
-        return f"{self.motor_type} ID:{self.motor_id}"
-
     @check_actuator_connection
     def start(self) -> None:
         """
@@ -642,7 +610,7 @@ class TMotorServoActuator(ActuatorBase):
         Returns:
             None
         """
-        LOGGER.info(f"Starting {self.motor_type} ID:{self.motor_id}")
+        LOGGER.info(f"Starting {self.__str__()}")
 
         if not self.is_offline and self._canman:
             self._canman.power_on(self.motor_id)
@@ -674,7 +642,7 @@ class TMotorServoActuator(ActuatorBase):
                 time.sleep(0.1)  # Minimum wait time
 
             # Set initial control mode to IDLE
-            self._canman.set_control_mode(self.motor_id, ServoControlMode.IDLE.value)
+            self.set_control_mode(CONTROL_MODES.IDLE)
 
             # Poll for mode switch confirmation (max 200ms timeout)
             mode_start_time = time.time()
@@ -698,7 +666,7 @@ class TMotorServoActuator(ActuatorBase):
     @check_actuator_open
     def stop(self) -> None:
         """Stop motor and clean up CAN communication"""
-        LOGGER.info(f"Stopping {self.motor_type} ID:{self.motor_id}")
+        LOGGER.info(f"Stopping {self.__str__()}")
 
         if not self.is_offline and self._canman:
             # Set motor to idle mode first
@@ -761,7 +729,7 @@ class TMotorServoActuator(ActuatorBase):
 
     def _update_state_async(self, servo_state: ServoMotorState) -> None:
         """
-        Asynchronously update state and handle errors.
+        Asynchronously update state and interprets errors.
         
         Returns:
             None
@@ -803,17 +771,17 @@ class TMotorServoActuator(ActuatorBase):
         Returns: 
             None
         """
-        self._is_homed = False
         raise NotImplementedError("Homing not implemented.")
 
     def set_origin(self) -> None:
         """
-        Set encoder origin - automatically applies a "zero position" offset.
+        Set encoder origin.
+        This function automatically applies a "zero position" offset.
         """
         if not self.is_offline and self._canman:
             self._canman.set_origin(self.motor_id, 1)
             time.sleep(0.1)
-        LOGGER.info(f"Set origin {self.device_info_string()}")
+        LOGGER.info(f"Set origin {self.__str__()}")
 
     @property
     def MOTOR_CONSTANTS(self) -> MOTOR_CONSTANTS:
@@ -844,7 +812,7 @@ class TMotorServoActuator(ActuatorBase):
         if not isinstance(value, MOTOR_CONSTANTS):
             raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
         self._MOTOR_CONSTANTS = value
-        
+
     # ============ Control Interface ============
 
     def set_motor_voltage(self, value: float) -> None:
