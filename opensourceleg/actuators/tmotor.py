@@ -108,7 +108,32 @@ class ServoMotorState:
 
 
 class CANManagerServo:
-    """TMotor servo mode CAN communication manager"""
+    """
+    Manages CAN bus communication for T-Motor actuators operating in Servo Mode.
+
+    This class implements the Singleton pattern to ensure a single point of control
+    for the CAN interface. It handles the initialization of the socketcan bus, dispatches
+    incoming messages to registered motor listeners, and provides
+    utilities for packing and sending control commands (current, velocity, and position).
+
+    Requirements:
+        The CAN interface ('can0') must be configured in the OS before initializing
+        this class. Typical configuration commands for Linux systems:
+
+        $ sudo /sbin/ip link set can0 down
+        $ sudo /sbin/ip link set can0 up type can bitrate 1000000
+        $ sudo ifconfig can0 txqueuelen 1000
+
+    Attributes: 
+        debug (bool): If true, logs detailed information about sent and received messages.
+        bus (can.interface.Bus): The underlying python-can bus interface
+        notifier (can.Notifier): Manages message listeners for asynchronous updates
+
+    Examples:
+        with CANManagerServo() as manager:
+            manager.power_on(motor_id=1)
+            manager.set_position(motor_id=1, position=90.0)
+    """
 
     _instance: Optional["CANManagerServo"] = None
     debug: bool = False
@@ -126,12 +151,6 @@ class CANManagerServo:
 
         LOGGER.info("Initializing CAN Manager for TMotor Servo Mode")
         try:
-            # NOTE: CAN interface must be configured before running this code.
-            # Please run the following commands before using TMotor servo mode:
-            # sudo /sbin/ip link set can0 down
-            # sudo /sbin/ip link set can0 up type can bitrate 1000000
-            # sudo ifconfig can0 txqueuelen 1000
-
             self.bus = can.interface.Bus(channel="can0", bustype="socketcan")
             self.notifier = can.Notifier(bus=self.bus, listeners=[])
             self._listeners = []  # Track active listeners
@@ -139,11 +158,11 @@ class CANManagerServo:
             self._initialized = True
 
         except Exception as e:
-            LOGGER.error(f"CAN bus initialization failed: {e}")
-            LOGGER.error("Please ensure CAN interface is configured. Run:")
-            LOGGER.error("sudo /sbin/ip link set can0 down")
-            LOGGER.error("sudo /sbin/ip link set can0 up type can bitrate 1000000")
-            LOGGER.error("sudo ifconfig can0 txqueuelen 1000")
+            LOGGER.error(f"CAN bus initialization failed: {e}"
+                        "Please ensure CAN interface is configured. Run:"
+                        "sudo /sbin/ip link set can0 down"
+                        "sudo /sbin/ip link set can0 up type can bitrate 1000000"
+                        "sudo ifconfig can0 txqueuelen 1000")
             raise RuntimeError("CAN bus initialization failed. Please configure CAN interface first.") from e
 
     def __enter__(self) -> None:
@@ -152,9 +171,6 @@ class CANManagerServo:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """ Context manager exit"""
-        self.close()
-
-    def __del__(self) -> None:
         self.close()
 
     def close(self) -> None:
@@ -335,14 +351,34 @@ class CANManagerServo:
 
 
 class MotorListener(can.Listener):
-    """CAN message listener"""
+    """
+    CAN message listener.
+
+    This class monitors the CAN bus for messages addressed to a specific motor ID.
+    When a relevant message is received, it parses the data using the CAN manager
+    and updates the state of the associated motor instance asynchronously.
+
+    Args:
+        canman (CANManagerServo): The CAN manager instance responsible for parsing
+            raw message data into servo states.
+        motor (TMotorServoActuator): The specific motor instance that this 
+            listener monitors and updates.
+    """
 
     def __init__(self, canman: CANManagerServo, motor: "TMotorServoActuator") -> None:
         self.canman = canman
         self.motor = motor
 
     def on_message_received(self, msg: can.Message) -> None:
-        """Handle received CAN message"""
+        """
+        Callback triggered when a CAN message is received.
+        
+        Checks if the message's arbitration ID matches the assigned motor's ID. 
+        If it matches, the message data is parsed and the motor's state is updated.
+
+        Args:
+            msg (can.Message): The received CAN message
+        """
         data = bytes(msg.data)
         motor_id = msg.arbitration_id & 0x00000FF
         if motor_id == self.motor.motor_id:
@@ -585,7 +621,6 @@ class TMotorServoActuator(ActuatorBase):
         LOGGER.info(f"Initialized TMotor servo: {self.motor_type} ID:{self.motor_id}")
 
     def __str__(self) -> str:
-        """State string"""
         return f"{self.motor_type} ID:{self.motor_id}"
 
     @property
