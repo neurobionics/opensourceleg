@@ -34,7 +34,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:44:61"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:44:62"
 ```
 
 The main loop:
