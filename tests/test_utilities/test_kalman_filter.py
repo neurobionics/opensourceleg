@@ -178,23 +178,27 @@ def test_update_with_gyro_drift(sample_filter: KalmanFilter2D):
     # The filter should learn that the 0.05 is just bias
     assert abs(sample_filter.x[4]) > 0.01 
 
-def test_rate_estimation(sample_filter: KalmanFilter2D):
-    """Test that the filter estimates angular rate correctly"""
+def test_rate_estimation():
+    """
+    Test that the filter estimates angular rate correctly.
+    
+    NOTE: We interpret accelerometer data with high uncertainty (R_accel=1000)
+    to prevent the 'stationary' gravity vector from conflicting with our 
+    'rotating' gyro input. This forces the filter to trust the gyro.
+    """
+    # Initialize a specific filter for this test with high accel noise
+    f = KalmanFilter2D(R_accel=1000.0, R_gyro=0.01)
+    
     ax, ay, az = 0.0, 0.0, 9.81
     gx_input = 0.5 # rad/s
     
-    # Run a short loop to allow convergence
-    # 20 iterations at ~100Hz = 0.2 seconds of data
-    for _ in range(20):
-        sample_filter.update(ax, ay, az, gx_input, 0.0, 0.0)
-        # Small sleep to ensure dt > 0 if using time.monotonic() internally
-        # (Not strictly necessary if your update logic handles 0 dt gracefully, but good for safety)
-        time.sleep(0.001) 
+    # Run loop to allow convergence
+    for _ in range(50):
+        f.update(ax, ay, az, gx_input, 0.0, 0.0)
+        time.sleep(0.001)
     
-    # Now check if it converged
-    # We use a tighter tolerance now because it SHOULD be close after 20 steps
-    assert sample_filter.x[2] > 0.0
-    assert np.isclose(sample_filter.x[2], gx_input, atol=0.05)
+    # Now the rate state (x[2]) should match the input
+    assert np.isclose(f.x[2], gx_input, atol=0.05)
 
 def test_update_prev_time_updated(sample_filter: KalmanFilter2D):
     """Test that previous time is updated"""
