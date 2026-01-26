@@ -1,6 +1,6 @@
 # Using the 2D Kalman Filter
 
-This tutorial demonstrates how to use the 2D Kalman Filter with the BHI260AP IMU to estimate global roll and pitch angles with the Open Source Leg platform.
+This tutorial demonstrates how to use the 2D Kalman Filter with the BHI260AP IMU to estimate global roll and pitch angles and angular rates with the Open Source Leg platform.
 
 ## Hardware Setup
 
@@ -10,7 +10,7 @@ This tutorial demonstrates how to use the 2D Kalman Filter with the BHI260AP IMU
 This example shows how to:
 
 - Initialize and configure the 2D Kalman Filter
-- Estimate global 2D orientation
+- Estimate global 2D orientations and angular rates
 - Log orientation measurements
 
 ## Code Structure
@@ -20,7 +20,7 @@ The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tu
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:1:37"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:1:42"
 ```
 
 This section:
@@ -28,21 +28,21 @@ This section:
 - Creates a data logger for recording measurements
 - Sets up a real-time loop for consistent timing
 - Initializes the BHI260AP with gyroscope and gravity sensors enabled
-- Configures variable tracking for global angles
+- Configures variable tracking for global angles and angular rates
 - Configures axis transformation for physical IMU axes that correspond to global roll, pitch, and yaw axes
 
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:39:54"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:44:61"
 ```
 
 The main loop:
 
 1. Updates the IMU to get the latest reading
 2. Transforms IMU gyroscope and gravity readings into global roll, pitch, yaw axis convention
-3. Updates Kalman filter to estimate global roll and pitch orientation
-2. Logs the time and current global orientation data
+3. Updates Kalman filter to estimate global roll and pitch orientation and angular rates
+2. Logs the time and current global orientation and angular rate data
 3. Updates the logger
 
 ## IMU Parameters
@@ -50,7 +50,7 @@ The main loop:
 When initializing the 2D Kalman Filter, several important parameters can be configured:
 
 ```python
---8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:25:30"
+--8<-- "tutorials/utilities/kalman_filter_imu_global_angles.py:28:35"
 ```
 
 ### Parameter Details
@@ -64,10 +64,16 @@ When initializing the 2D Kalman Filter, several important parameters can be conf
       - Specifies variance in gyroscope drift rate
 
 3. **Q_angle** (float):
-      - Specifies uncertainty in gyroscope angle prediction
+      - Specifies uncertainty in angle prediction
 
-4. **R_var** (float):
+4. **Q_rate** (float):
+      - Specifies uncertainty in angular velocity prediction
+
+5. **R_accel** (float):
       - Specifies accelerometer angle measurement noise
+
+6. **R_gyro** (float):
+      - Specifies gyroscope measurement noise
 
 
 ## Running the Example
@@ -85,7 +91,7 @@ When initializing the 2D Kalman Filter, several important parameters can be conf
 3. Expected behavior:
       - Kalman filter begins estimating global orientation continuously at 200Hz
       - Data is logged to `./logs/kalman_filter.csv`
-      - Roll and pitch values update as you rotate the IMU
+      - Roll and pitch angles and angular rates update as you rotate the IMU
 
 ## Common Issues
 Let us know if you find any.

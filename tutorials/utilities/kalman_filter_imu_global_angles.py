@@ -17,6 +17,8 @@ if __name__ == "__main__":
 
     imu_logger.track_function(lambda: roll, "Roll")
     imu_logger.track_function(lambda: pitch, "Pitch")
+    imu_logger.track_function(lambda: roll_rate, "Roll Rate")
+    imu_logger.track_function(lambda: pitch_rate, "Pitch Rate")
     imu_logger.track_function(lambda: yaw, "Yaw")
 
     # Define axis transformation (modify as needed for your IMU mounting)
@@ -24,9 +26,12 @@ if __name__ == "__main__":
 
     # Kalman filter
     kalman_filter = KalmanFilter2D(
-        Q_angle=1e-4,
-        Q_bias=1e-13,
-        R_var=3e-6,
+        tag = "KalmanFilter2D", 
+        Q_bias = 1e-13,  
+        Q_angle = 1e-4,  
+        Q_rate = 1e-2,   
+        R_accel = 3e-6,  
+        R_gyro = 1e-3   
     )
 
     # Enable sensors
@@ -47,9 +52,9 @@ if __name__ == "__main__":
         gx_t, gy_t, gz_t = imu_transform.transform_gyro(gyro_x, gyro_y, gyro_z)
 
         # Update filter
-        roll, pitch, yaw = kalman_filter.update(ax_t, ay_t, az_t, gx_t, gy_t, gz_t)
+        roll, pitch, roll_rate, pitch_rate, yaw = kalman_filter.update(ax_t, ay_t, az_t, gx_t, gy_t, gz_t)
 
-        imu_logger.info(f"Time: {t:.4f}; Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Yaw: {yaw:+7.3f}")
+        imu_logger.info(f"Time: {t:.4f}; Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, Roll Rate: {roll_rate:+7.3f}, Pitch Rate: {pitch_rate:+7.3f}, Yaw: {yaw:+7.3f}")
         imu_logger.update()
 
     # Stop IMU
