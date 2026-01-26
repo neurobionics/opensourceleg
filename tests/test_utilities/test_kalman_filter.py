@@ -182,22 +182,30 @@ def test_rate_estimation():
     """
     Test that the filter estimates angular rate correctly.
     
-    NOTE: We interpret accelerometer data with high uncertainty (R_accel=1000)
-    to prevent the 'stationary' gravity vector from conflicting with our 
-    'rotating' gyro input. This forces the filter to trust the gyro.
+    NOTE: We effectively disable the accelerometer (High R_accel) to prevent 
+    gravity conflicts. We also lock the Bias variance to zero to prevent 
+    the filter from splitting the signal between 'Rate' and 'Bias'.
     """
-    # Initialize a specific filter for this test with high accel noise
-    f = KalmanFilter2D(R_accel=1000.0, R_gyro=0.01)
+    f = KalmanFilter2D(
+        R_accel=1000.0, 
+        R_gyro=0.01,
+        Q_bias=0.0 # Tell filter bias never changes
+    )
+    
+    # Manually lock the Bias Uncertainty (P matrix) to zero
+    # Indices 4 and 5 are roll_bias and pitch_bias
+    f.P[4, 4] = 0.0
+    f.P[5, 5] = 0.0
     
     ax, ay, az = 0.0, 0.0, 9.81
     gx_input = 0.5 # rad/s
     
-    # Run loop to allow convergence
+    # Run loop
     for _ in range(50):
         f.update(ax, ay, az, gx_input, 0.0, 0.0)
         time.sleep(0.001)
     
-    # Now the rate state (x[2]) should match the input
+    # Now it should be exactly 0.5 (or very close)
     assert np.isclose(f.x[2], gx_input, atol=0.05)
 
 def test_update_prev_time_updated(sample_filter: KalmanFilter2D):
