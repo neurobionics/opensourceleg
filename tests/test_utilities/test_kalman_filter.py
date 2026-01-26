@@ -180,21 +180,21 @@ def test_update_with_gyro_drift(sample_filter: KalmanFilter2D):
 
 def test_rate_estimation(sample_filter: KalmanFilter2D):
     """Test that the filter estimates angular rate correctly"""
-    # Moving Accel and Moving Gyro
-    # We can't easily simulate moving accel without physics, 
-    # but we can check if the Rate State converges to the Gyro Input
     ax, ay, az = 0.0, 0.0, 9.81
     gx_input = 0.5 # rad/s
     
-    # We must be careful: if accel says 0 tilt, and gyro says moving, 
-    # eventually the filter conflicts. 
-    # But for short duration, Rate State (x[2]) should track Gyro Input (gx)
+    # Run a short loop to allow convergence
+    # 20 iterations at ~100Hz = 0.2 seconds of data
+    for _ in range(20):
+        sample_filter.update(ax, ay, az, gx_input, 0.0, 0.0)
+        # Small sleep to ensure dt > 0 if using time.monotonic() internally
+        # (Not strictly necessary if your update logic handles 0 dt gracefully, but good for safety)
+        time.sleep(0.001) 
     
-    sample_filter.update(ax, ay, az, gx_input, 0.0, 0.0)
-    
-    # The Kalman gain for rate should pull x[2] towards gx
+    # Now check if it converged
+    # We use a tighter tolerance now because it SHOULD be close after 20 steps
     assert sample_filter.x[2] > 0.0
-    assert np.isclose(sample_filter.x[2], gx_input, atol=0.2) 
+    assert np.isclose(sample_filter.x[2], gx_input, atol=0.05)
 
 def test_update_prev_time_updated(sample_filter: KalmanFilter2D):
     """Test that previous time is updated"""
