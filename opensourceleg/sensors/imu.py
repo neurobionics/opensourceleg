@@ -1537,7 +1537,7 @@ class BHI260AP(IMUBase):
         Returns latest gyroscope data [gx, gy, gz] (rad/s)
         """
         sensor_id = self.SENSOR_DICT.get("Gyro", self.SENSOR_ID_GYR)
-        return self._get_sensor_data(sensor_id, most_recent) * np.pi / 180.0
+        return self._get_sensor_data(sensor_id, most_recent)
 
     @property
     def accel(self, most_recent: bool = True) -> np.ndarray:
