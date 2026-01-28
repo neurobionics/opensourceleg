@@ -412,6 +412,7 @@ class ActuatorBase(OfflineMixin, ABC):
         "set_output_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_current_gains": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_position_gains": {CONTROL_MODES.POSITION},
+        "set_impedance_gains": {CONTROL_MODES.IMPEDANCE},
     }
 
     # Offline mode configuration for OfflineMixin
