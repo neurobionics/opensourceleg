@@ -3,9 +3,10 @@ from unittest.mock import Mock
 
 import pytest
 
+from opensourceleg.actuators.base import MotorConstants
 from opensourceleg.logging import Logger
 from opensourceleg.robots.base import RobotBase
-from tests.test_actuators.test_actuators_base import MOTOR_CONSTANTS, MockActuator
+from tests.test_actuators.test_actuators_base import MockActuator
 from tests.test_sensors.test_sensors_base import MockSensor
 
 CURR_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -29,7 +30,7 @@ def mock_robot():
     test_tactuator = MockActuator(
         "MockActuator",
         10,
-        MOTOR_CONSTANTS(
+        MotorConstants(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
             MAX_CASE_TEMPERATURE=100.0,
@@ -58,7 +59,7 @@ def test_robot_base_init():
     test_tactuator = MockActuator(
         "test",
         10,
-        MOTOR_CONSTANTS(
+        MotorConstants(
             MOTOR_COUNT_PER_REV=1000,
             NM_PER_AMP=0.1,
             MAX_CASE_TEMPERATURE=100.0,

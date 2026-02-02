@@ -10,10 +10,10 @@ from moteus import multiplex as mp
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
     CONTROL_MODES,
-    MOTOR_CONSTANTS,
     ActuatorBase,
     ControlGains,
     ControlModeConfig,
+    MotorConstants,
 )
 from opensourceleg.actuators.decorators import (
     check_actuator_connection,
@@ -43,7 +43,7 @@ DEFAULT_IMPEDANCE_GAINS = ControlGains(kp=0, ki=0, kd=0, k=0, b=0, ff=0)
 
 RAD_PER_DEG = np.pi / 180
 
-MOTEUS_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
+MOTEUS_ACTUATOR_CONSTANTS = MotorConstants(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
     MAX_CASE_TEMPERATURE=80,

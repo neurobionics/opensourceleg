@@ -10,10 +10,10 @@ from flexsea.device import Device
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
     CONTROL_MODES,
-    MOTOR_CONSTANTS,
     ActuatorBase,
     ControlGains,
     ControlModeConfig,
+    MotorConstants,
 )
 from opensourceleg.actuators.decorators import (
     check_actuator_connection,
@@ -42,7 +42,7 @@ IMPEDANCE_A = 0.00028444
 IMPEDANCE_C = 0.0007812
 
 
-DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
+DEPHY_ACTUATOR_CONSTANTS = MotorConstants(
     MOTOR_COUNT_PER_REV=16384,
     NM_PER_AMP=0.1133,
     MAX_CASE_TEMPERATURE=80,
@@ -151,8 +151,8 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             offline=offline,
         )
 
-        # Override motor constants to ensure setter is called
-        self.MOTOR_CONSTANTS = DEPHY_ACTUATOR_CONSTANTS
+        self.MOTOR_CONSTANTS.on_change = self._update_derived_constants
+        self._update_derived_constants()
 
         self._debug_level: int = debug_level if dephy_log else 6
         self._dephy_log: bool = dephy_log
@@ -694,37 +694,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             k=int(k * self.NM_PER_RAD_TO_MOTOR_UNITS),
             b=int(b * self.NM_S_PER_RAD_TO_MOTOR_UNITS),
         )
-
-    @property
-    def MOTOR_CONSTANTS(self) -> MOTOR_CONSTANTS:
-        """
-        Get the motor constants configuration.
-        Redefines the property from the ABC so we can set a setter.
-
-        Returns:
-            MOTOR_CONSTANTS: The motor constants.
-
-        Examples:
-            >>> constants = actuator.MOTOR_CONSTANTS
-            >>> constants.MAX_CASE_TEMPERATURE
-            80.0
-        """
-        return self._MOTOR_CONSTANTS
-
-    @MOTOR_CONSTANTS.setter
-    def MOTOR_CONSTANTS(self, value: MOTOR_CONSTANTS) -> None:
-        """
-        Setter for MOTOR_CONSTANTS property.
-        Updates the motor constants and recalculates derived conversion factors.
-
-        Args:
-            value (MOTOR_CONSTANTS): New motor constants to set.
-        """
-
-        if not isinstance(value, MOTOR_CONSTANTS):
-            raise TypeError(f"Expected MOTOR_CONSTANTS, got {type(value)}")
-        self._MOTOR_CONSTANTS = value
-        self._update_derived_constants()
 
     def _update_derived_constants(self) -> None:
         """

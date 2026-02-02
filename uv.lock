@@ -828,10 +828,7 @@ dependencies = [
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/6b/4799a63c964704fb22566226d1b09f674c6fe18599d6914616cbe33e7ef3/moteus_pi3hat-0.3.31-cp311-cp311-manylinux_2_17_aarch64.whl", hash = "sha256:c981dc978b42a375238b46d1221cdb038c4837b56de3c12ebe4c20ddad89ec87", size = 396734, upload-time = "2025-08-22T18:50:52.117Z" },
-    { url = "https://files.pythonhosted.org/packages/7f/a1/e4950244fbd1f60ba6a158db93ac3065c72a4254ad69467612b8150018c0/moteus_pi3hat-0.3.31-cp311-cp311-manylinux_2_17_armv7l.whl", hash = "sha256:63b1f515d069751efde613742f7b2ff4589e9cb447def6b47724cf4a35aa9a21", size = 397508, upload-time = "2025-08-22T18:50:53.526Z" },
     { url = "https://files.pythonhosted.org/packages/df/dc/f1b5fbb1fd5037902f09126e03b884ec918111a338749613a1ba5bd04730/moteus_pi3hat-0.3.31-cp312-cp312-manylinux_2_17_aarch64.whl", hash = "sha256:e76c19662d94eee29c5f4bdec473403256f73e6dbc5d431b805d59ec9c1582d7", size = 394609, upload-time = "2025-08-22T18:50:54.507Z" },
-    { url = "https://files.pythonhosted.org/packages/45/02/9a5adfcfca985e6ed4f836f45adfdef46515d0376270eff5cfb2aead8716/moteus_pi3hat-0.3.31-cp312-cp312-manylinux_2_17_armv7l.whl", hash = "sha256:12137dbbf3d9ad454fe6dd3ddc7950647876548439c693316f304e7d3cc8af66", size = 398907, upload-time = "2025-08-22T18:50:55.497Z" },
-    { url = "https://files.pythonhosted.org/packages/78/99/d59814f54d661820aa41f7570a1c2eceb31f6c6b98351cd3f114fd557036/moteus_pi3hat-0.3.31-cp37-abi3-linux_armv7l.whl", hash = "sha256:53a1eea748d15ab5b786992bb3748beda1b4c5348922f2a91bd76b26672e18da", size = 394009, upload-time = "2025-08-22T18:50:56.921Z" },
     { url = "https://files.pythonhosted.org/packages/9a/95/515c4116c2df218856f9308ff12fc5f36ab8cdaf52b97be8b9d805107bab/moteus_pi3hat-0.3.31-cp37-abi3-manylinux_2_17_aarch64.whl", hash = "sha256:a795ab83dc078bfb152976caae22eac262948fe4ed855e493d154f7f0e70b4be", size = 393858, upload-time = "2025-08-22T18:50:57.908Z" },
 ]
 
