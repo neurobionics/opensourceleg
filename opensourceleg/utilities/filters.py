@@ -1,6 +1,8 @@
 import math
 import time
+
 import numpy as np
+
 
 class KalmanFilter2D:
     """
@@ -25,7 +27,7 @@ class KalmanFilter2D:
 
     Author:
         Katharine Walters
-    
+
     Date:
         01/26/2026
     """
@@ -142,7 +144,7 @@ class KalmanFilter2D:
         y[0] = self._normalize_angle(y[0])
         y[1] = self._normalize_angle(y[1])
 
-        # Update 
+        # Update
         self.x = self.x + K @ y
         I_KH = np.eye(6) - K @ H
         self.P = I_KH @ self.P @ I_KH.T + K @ self.R @ K.T

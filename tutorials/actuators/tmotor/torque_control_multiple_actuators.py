@@ -1,5 +1,5 @@
 import time
-import matplotlib.pyplot as plt
+
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
@@ -117,6 +117,7 @@ def torque_control():
         motor1.update()
         motor2.update()
         time.sleep(1.0)
+
 
 if __name__ == "__main__":
     torque_control()
