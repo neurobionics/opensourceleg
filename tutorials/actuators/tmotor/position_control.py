@@ -1,12 +1,11 @@
 import time
-import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
 from opensourceleg.actuators.tmotor import TMotorServoActuator
 from opensourceleg.logging.logger import Logger
 from opensourceleg.utilities import SoftRealtimeLoop
 
-STEP_AMPLITUDE = 0.3 # Radians
+STEP_AMPLITUDE = 0.3  # Radians
 FREQUENCY = 200
 DT = 1 / FREQUENCY
 MOTOR_ID = 104  # Change this to match your motor's CAN ID
@@ -29,15 +28,13 @@ def position_control():
     clock = SoftRealtimeLoop(dt=DT)
 
     with motor:
-
         motor.update()
 
         print("Setting motor origin...")
         motor.set_origin()
         print(f"Current motor position {motor.output_position:.3f}")
 
-
-        # Set to position control mode (PID parameters are built-in and 
+        # Set to position control mode (PID parameters are built-in and
         # can only be modified via R-link)
         motor.set_control_mode(mode=CONTROL_MODES.POSITION)
 
@@ -49,11 +46,11 @@ def position_control():
         position_logger.track_function(lambda: time.monotonic(), "Time")
 
         print(f"Starting staircase step response (Step: {STEP_AMPLITUDE})...")
-        
+
         for t in clock:
             # Calculate how many steps have passed
             step_count = int(t)
-            
+
             # Continuously increment position based on step count
             command_position = initial_position + (step_count * STEP_AMPLITUDE)
 

@@ -107,17 +107,21 @@ controller.define_type(
 )
 controller.define_type("sensors", controller.DEFAULT_SENSOR_LIST)
 
-controller.define_inputs([
-    ("parameters", controller.types.UserParameters),
-    ("sensors", controller.types.sensors),
-    ("time", controller.types.c_double),
-])
-controller.define_outputs([
-    ("current_state", controller.types.c_int),
-    ("time_in_current_state", controller.types.c_double),
-    ("knee_impedance", controller.types.impedance_param_type),
-    ("ankle_impedance", controller.types.impedance_param_type),
-])
+controller.define_inputs(
+    input_list=[
+        ("parameters", controller.types.UserParameters),
+        ("sensors", controller.types.sensors),
+        ("time", controller.types.c_double),
+    ]
+)
+controller.define_outputs(
+    output_list=[
+        ("current_state", controller.types.c_int),
+        ("time_in_current_state", controller.types.c_double),
+        ("knee_impedance", controller.types.impedance_param_type),
+        ("ankle_impedance", controller.types.impedance_param_type),
+    ]
+)
 
 # Populate Controller inputs as needed
 controller.inputs.parameters.knee_impedance.early_stance.stiffness = 99.372

@@ -1,4 +1,5 @@
 import time
+
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
@@ -28,7 +29,6 @@ def torque_control():
     clock = SoftRealtimeLoop(dt=DT)
 
     with motor:
-        
         motor.update()
 
         # Set the encoder origin first (optional)
@@ -77,7 +77,7 @@ def torque_control():
             # Run for 10 seconds
             if t > 10.0:
                 break
- 
+
         print("Torque control complete")
 
         # Stop the motor

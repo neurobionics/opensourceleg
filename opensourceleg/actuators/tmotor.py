@@ -1,14 +1,10 @@
 import time
-import traceback
 import warnings
 from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Optional, cast, Callable
+from typing import Any, Optional, cast
 
 import can
 import numpy as np
-import subprocess
-
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
@@ -24,7 +20,6 @@ from opensourceleg.actuators.decorators import (
 )
 from opensourceleg.logging import LOGGER
 from opensourceleg.math import ThermalModel
-from opensourceleg.utilities import SoftRealtimeLoop
 
 # TMotor servo mode error codes
 TMOTOR_ERROR_CODES: dict[int, str] = {
@@ -68,8 +63,8 @@ TMOTOR_MODELS: dict[str, dict[str, Any]] = {
         "P_max": 3200,  # 3200 deg
         "V_min": -100000,  # ERPM
         "V_max": 100000,  # ERPM
-        "Curr_min": -60000,  # -60A 
-        "Curr_max": 60000,  # 60A 
+        "Curr_min": -60000,  # -60A
+        "Curr_max": 60000,  # 60A
         "Kt_actual": 0.206,  # Nm/A
         "GEAR_RATIO": 9.0,
         "NUM_POLE_PAIRS": 21,
@@ -91,15 +86,17 @@ TMOTOR_MODELS: dict[str, dict[str, Any]] = {
 TMOTOR_SERVO_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=65536,  # Encoder counts per revolution (16-bit encoder)
     NM_PER_AMP=0.095,  # Placeholder to satisfy validation
-    MAX_CASE_TEMPERATURE=80.0, # Temperature parameters are also set in the driver via R-Link
-    MAX_WINDING_TEMPERATURE=110.0, # Temperature parameters are also set in the driver via R-Link
+    MAX_CASE_TEMPERATURE=80.0,  # Temperature parameters are also set in the driver via R-Link
+    MAX_WINDING_TEMPERATURE=110.0,  # Temperature parameters are also set in the driver via R-Link
     WINDING_SOFT_LIMIT=100.0,  # Soft limits set 10°C below hard limits for safety margin
     CASE_SOFT_LIMIT=70.0,
 )
 
+
 @dataclass
 class ServoMotorState:
     """Motor state data structure"""
+
     position: float = 0.0  # degrees
     velocity: float = 0.0  # ERPM
     current: float = 0.0  # milliamps
@@ -124,7 +121,7 @@ class CANManagerServo:
         $ sudo /sbin/ip link set can0 up type can bitrate 1000000
         $ sudo ifconfig can0 txqueuelen 1000
 
-    Attributes: 
+    Attributes:
         debug (bool): If true, logs detailed information about sent and received messages.
         bus (can.interface.Bus): The underlying python-can bus interface
         notifier (can.Notifier): Manages message listeners for asynchronous updates
@@ -158,11 +155,13 @@ class CANManagerServo:
             self._initialized = True
 
         except Exception as e:
-            LOGGER.error(f"CAN bus initialization failed: {e}"
-                        "Please ensure CAN interface is configured. Run:"
-                        "sudo /sbin/ip link set can0 down"
-                        "sudo /sbin/ip link set can0 up type can bitrate 1000000"
-                        "sudo ifconfig can0 txqueuelen 1000")
+            LOGGER.error(
+                f"CAN bus initialization failed: {e}"
+                "Please ensure CAN interface is configured. Run:"
+                "sudo /sbin/ip link set can0 down"
+                "sudo /sbin/ip link set can0 up type can bitrate 1000000"
+                "sudo ifconfig can0 txqueuelen 1000"
+            )
             raise RuntimeError("CAN bus initialization failed. Please configure CAN interface first.") from e
 
     def __enter__(self) -> None:
@@ -170,7 +169,7 @@ class CANManagerServo:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """ Context manager exit"""
+        """Context manager exit"""
         self.close()
 
     def close(self) -> None:
@@ -179,7 +178,7 @@ class CANManagerServo:
         """
         try:
             LOGGER.info("Closing CAN Manager...")
-            
+
             # Stop and remove all listeners first
             if hasattr(self, "_listeners"):
                 for listener in self._listeners:
@@ -188,7 +187,7 @@ class CANManagerServo:
                     except Exception as e:
                         LOGGER.warning(f"Error removing listener: {e}")
                 self._listeners.clear()
-            
+
             # Stop the notifier
             if hasattr(self, "notifier"):
                 self.notifier.stop()
@@ -197,13 +196,12 @@ class CANManagerServo:
 
             # Shutdown the bus
             if hasattr(self, "bus"):
-                self.bus.shutdown() 
-                
+                self.bus.shutdown()
+
             LOGGER.info("CAN Manager closed successfully")
 
         except Exception as e:
             LOGGER.warning(f"Error closing CAN manager: {e}")
-
 
     def send_message(self, motor_id: int, data: list, data_len: int) -> None:
         """Send CAN message"""
@@ -232,9 +230,9 @@ class CANManagerServo:
         """
         Send current control command
         Args:
-            motor_id (int): CAN motor ID 
+            motor_id (int): CAN motor ID
             current (float): motor current in mA
-        Returns: 
+        Returns:
             None
         """
         buffer = self._pack_int32(int(current))
@@ -263,7 +261,7 @@ class CANManagerServo:
         Returns:
             None
         """
-        buffer = self._pack_int32(int(position * 10000.0))  
+        buffer = self._pack_int32(int(position * 10000.0))
         message_id = (CAN_PACKET_ID["SET_POS"] << 8) | motor_id
         self.send_message(message_id, buffer, len(buffer))
 
@@ -291,7 +289,7 @@ class CANManagerServo:
             None
         """
         buffer = [mode]
-        message_id = (CAN_PACKET_ID["SET_MODE"] << 8) | motor_id 
+        message_id = (CAN_PACKET_ID["SET_MODE"] << 8) | motor_id
         self.send_message(message_id, buffer, len(buffer))
 
     @staticmethod
@@ -315,7 +313,7 @@ class CANManagerServo:
         motor_pos = float(pos_int * 0.1)  # position (degrees)
         motor_spd = float(spd_int * 10.0)  # velocity (ERPM)
         motor_cur = float(cur_int * 10)  # current (mA)
-        motor_temp = float(int.from_bytes(data[6:7], byteorder='big', signed=True))  # temperature (celsius)
+        motor_temp = float(int.from_bytes(data[6:7], byteorder="big", signed=True))  # temperature (celsius)
         motor_error = int(data[7])  # error code
 
         return ServoMotorState(motor_pos, motor_spd, motor_cur, motor_temp, motor_error)
@@ -327,7 +325,6 @@ class CANManagerServo:
         self._listeners.append(listener)
         LOGGER.debug(f"Added listener for motor ID {motor.motor_id}")
 
-
     def remove_motor_listener(self, motor: "TMotorServoActuator") -> None:
         """Remove motor listener"""
         for listener in self._listeners[:]:  # Create a copy to iterate
@@ -338,7 +335,6 @@ class CANManagerServo:
                     LOGGER.debug(f"Removed listener for motor ID {motor.motor_id}")
                 except Exception as e:
                     LOGGER.warning(f"Error removing listener for motor {motor.motor_id}: {e}")
-
 
     def enable_debug(self, enable: bool = True) -> None:
         """Enable/disable debug mode"""
@@ -358,7 +354,7 @@ class MotorListener(can.Listener):
     Args:
         canman (CANManagerServo): The CAN manager instance responsible for parsing
             raw message data into servo states.
-        motor (TMotorServoActuator): The specific motor instance that this 
+        motor (TMotorServoActuator): The specific motor instance that this
             listener monitors and updates.
     """
 
@@ -369,8 +365,8 @@ class MotorListener(can.Listener):
     def on_message_received(self, msg: can.Message) -> None:
         """
         Callback triggered when a CAN message is received.
-        
-        Checks if the message's arbitration ID matches the assigned motor's ID. 
+
+        Checks if the message's arbitration ID matches the assigned motor's ID.
         If it matches, the message data is parsed and the motor's state is updated.
 
         Args:
@@ -380,7 +376,6 @@ class MotorListener(can.Listener):
         motor_id = msg.arbitration_id & 0x00000FF
         if motor_id == self.motor.motor_id:
             self.motor._update_state_async(self.canman.parse_servo_message(data))
-
 
 
 # Simplified unit conversion functions
@@ -419,7 +414,9 @@ def _wait_for_mode_switch(actuator: "TMotorServoActuator", timeout: float = 0.2)
     # If we reach here, mode switch may not be confirmed but we continue
     LOGGER.warning(f"Mode switch confirmation timeout after {timeout} seconds")
 
+
 # ============ Control mode configuration ============
+
 
 def _servo_position_mode_entry(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Position control mode.")
@@ -428,8 +425,10 @@ def _servo_position_mode_entry(actuator: "TMotorServoActuator") -> None:
         actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
 
+
 def _servo_position_mode_exit(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Position control mode.")
+
 
 def _servo_current_mode_entry(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Current control mode.")
@@ -438,10 +437,12 @@ def _servo_current_mode_entry(actuator: "TMotorServoActuator") -> None:
         actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
 
+
 def _servo_current_mode_exit(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Current control mode.")
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_current(actuator.motor_id, 0.0)
+
 
 def _servo_velocity_mode_entry(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Velocity control mode.")
@@ -450,10 +451,12 @@ def _servo_velocity_mode_entry(actuator: "TMotorServoActuator") -> None:
         actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
 
+
 def _servo_velocity_mode_exit(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Velocity control mode.")
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_velocity(actuator.motor_id, 0.0)
+
 
 def _servo_idle_mode_entry(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Idle control mode.")
@@ -461,6 +464,7 @@ def _servo_idle_mode_entry(actuator: "TMotorServoActuator") -> None:
     if not actuator.is_offline and actuator._canman:
         actuator._canman.set_control_mode(actuator.motor_id, mode_id)
         _wait_for_mode_switch(actuator)
+
 
 def _servo_idle_mode_exit(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Idle control mode.")
@@ -491,10 +495,9 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         has_gains=False,
         max_gains=None,
     ),
-    IMPEDANCE=None, # IMPEDANCE mode not supported
-    VOLTAGE=None, # VOLTAGE mode not supported
+    IMPEDANCE=None,  # IMPEDANCE mode not supported
+    VOLTAGE=None,  # VOLTAGE mode not supported
 )
-
 
 
 class TMotorServoActuator(ActuatorBase):
@@ -523,7 +526,7 @@ class TMotorServoActuator(ActuatorBase):
         frequency: int = 1000,
         offline: bool = False,
         current_mode: str = "driver",
-        thermal_current_scale: float = 1.0, 
+        thermal_current_scale: float = 1.0,
         **kwargs: Any,
     ) -> None:
         """
@@ -545,7 +548,7 @@ class TMotorServoActuator(ActuatorBase):
         # Validate motor type
         if motor_type not in TMOTOR_MODELS:
             raise ValueError(f"Unsupported motor type: {motor_type}")
-        # Validate gear ratio matches tmotor model 
+        # Validate gear ratio matches tmotor model
         if TMOTOR_MODELS[motor_type]["GEAR_RATIO"] != gear_ratio:
             raise ValueError(f"Gear ratio {gear_ratio} does not match {motor_type}")
         # Validate current mode
@@ -562,7 +565,7 @@ class TMotorServoActuator(ActuatorBase):
             frequency=frequency,
             offline=offline,
         )
-        
+
         # Override motor constants to ensure setter is called
         self.MOTOR_CONSTANTS = TMOTOR_SERVO_CONSTANTS
 
@@ -614,8 +617,8 @@ class TMotorServoActuator(ActuatorBase):
 
         # Thermal management
         self._thermal_model = ThermalModel(
-            motor_constants = self._MOTOR_CONSTANTS, 
-            actuator_tag = self.tag,
+            motor_constants=self._MOTOR_CONSTANTS,
+            actuator_tag=self.tag,
         )
 
         LOGGER.info(f"Initialized TMotor servo: {self.motor_type} ID:{self.motor_id}")
@@ -703,17 +706,17 @@ class TMotorServoActuator(ActuatorBase):
                 time.sleep(0.05)  # Give motor time to process
             except Exception as e:
                 LOGGER.warning(f"Error setting idle mode during stop: {e}")
-            
+
             # Send power off command
             try:
                 self._canman.power_off(self.motor_id)
                 time.sleep(0.05)  # Give motor time to power off
             except Exception as e:
                 LOGGER.warning(f"Error powering off motor: {e}")
-            
+
             # Remove this motor's listener
             self._canman.remove_motor_listener(self)
-            
+
             # Close CAN manager (will only actually close if this is the last motor)
             self._canman.close()
 
@@ -733,13 +736,13 @@ class TMotorServoActuator(ActuatorBase):
         self._motor_state.velocity = self._motor_state_async.velocity
         self._motor_state.current = self._motor_state_async.current
         self._motor_state.temperature = self._motor_state_async.temperature
-        self._motor_state.error = self._motor_state_async.error 
+        self._motor_state.error = self._motor_state_async.error
 
         # Temperature check
         self._thermal_scale = self._thermal_model.update(
-            dt = 1 / self.frequency, 
-            motor_current = self.motor_current*self._thermal_current_scale, 
-            case_temperature = self.case_temperature,
+            dt=1 / self.frequency,
+            motor_current=self.motor_current * self._thermal_current_scale,
+            case_temperature=self.case_temperature,
         )
 
         # Communication timeout check
@@ -756,7 +759,7 @@ class TMotorServoActuator(ActuatorBase):
     def _update_state_async(self, servo_state: ServoMotorState) -> None:
         """
         Asynchronously update state and interprets errors.
-        
+
         Returns:
             None
         """
@@ -794,7 +797,7 @@ class TMotorServoActuator(ActuatorBase):
         """
         This method homes the actuator and the corresponding joint by moving it to the zero position.
         The zero position is defined as the position where the joint is fully extended.
-        Returns: 
+        Returns:
             None
         """
         raise NotImplementedError("Homing not implemented.")
@@ -848,7 +851,7 @@ class TMotorServoActuator(ActuatorBase):
     def set_motor_current(self, value: float) -> None:
         """
         Set motor current with clamping to motor limits
-        Args: 
+        Args:
             value (float): desired motor current in mA
         """
         if not self.is_offline and self._canman:
@@ -856,7 +859,7 @@ class TMotorServoActuator(ActuatorBase):
 
             # Get current limits from motor parameters
             max_current = self._motor_params["Curr_max"]
-            min_current = self._motor_params["Curr_min"] 
+            min_current = self._motor_params["Curr_min"]
 
             # Clamp current to safe limits
             clamped_driver_current = np.clip(driver_current, min_current, max_current)
@@ -866,7 +869,7 @@ class TMotorServoActuator(ActuatorBase):
                 clamped_user_current = clamped_driver_current * self._current_scale
                 LOGGER.warning(
                     f"Current command {value}mA clamped to {clamped_user_current}mA "
-                    f"(limits: [{min_current*self._current_scale:.1f}, {max_current*self._current_scale:.1f}]mA)"
+                    f"(limits: [{min_current * self._current_scale:.1f}, {max_current * self._current_scale:.1f}]mA)"
                 )
 
             self._canman.set_current(self.motor_id, clamped_driver_current)
@@ -874,24 +877,23 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_motor_position(self, value: float) -> None:
         raise NotImplementedError(
-            "Setting motor position not supported"
-            "Recommended to use 'set_output_position' command instead."
+            "Setting motor position not supported" "Recommended to use 'set_output_position' command instead."
         )
 
     def set_output_position(self, value: float) -> None:
         """
         Set motor position (radians) with clamping to motor limits
-        Args: 
-            value (float): desired motor position 
-        Return: 
+        Args:
+            value (float): desired motor position
+        Return:
             None
         """
         position_deg = radians_to_degrees(value)
 
         if not self.is_offline and self._canman:
             # Get position limits from motor parameters
-            max_position = self._motor_params["P_max"]   
-            min_position = self._motor_params["P_min"]   
+            max_position = self._motor_params["P_max"]
+            min_position = self._motor_params["P_min"]
 
             # Clamp position to safe limits
             clamped_position = np.clip(position_deg, min_position, max_position)
@@ -908,18 +910,18 @@ class TMotorServoActuator(ActuatorBase):
 
     def set_motor_torque(self, value: float) -> None:
         """
-        Sets the motor torque in Nm. 
+        Sets the motor torque in Nm.
         This is the torque that is applied to the motor rotor, not the joint or output.
         Args:
-            value (float): The torque to set in Nm. 
-        Returns: 
+            value (float): The torque to set in Nm.
+        Returns:
             None
         """
         # Torque to current: T = I * Kt
         # Kt_user = Kt_drv * kt_scale
         kt_user = self._motor_params["Kt_actual"] * self._kt_scale
         current = value / kt_user * 1000
-        self.set_motor_current(current) # Send current command mA
+        self.set_motor_current(current)  # Send current command mA
 
     def set_output_torque(self, value: float) -> None:
         """
@@ -1029,7 +1031,7 @@ class TMotorServoActuator(ActuatorBase):
         Returns:
             float: Motor current in mA
         """
-        return self._motor_state.current * self._current_scale 
+        return self._motor_state.current * self._current_scale
 
     @property
     def motor_torque(self) -> float:
@@ -1038,7 +1040,7 @@ class TMotorServoActuator(ActuatorBase):
         This is calculated using motor current and k_t.
         """
         kt_user = cast(float, self._motor_params["Kt_actual"]) * self._kt_scale
-        return self.motor_current * kt_user / 1000 
+        return self.motor_current * kt_user / 1000
 
     @property
     def output_torque(self) -> float:
@@ -1080,6 +1082,7 @@ class TMotorServoActuator(ActuatorBase):
             float: Thermal scaling factor.
         """
         return self._thermal_scale
+
 
 if __name__ == "__main__":
     pass

@@ -1,4 +1,5 @@
 import time
+
 import numpy as np
 
 from opensourceleg.actuators.base import CONTROL_MODES
@@ -28,7 +29,6 @@ def velocity_control():
     clock = SoftRealtimeLoop(dt=DT)
 
     with motor:
-
         motor.update()
 
         # Set the encoder origin first (optional)
