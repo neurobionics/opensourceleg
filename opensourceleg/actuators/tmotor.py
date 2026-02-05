@@ -81,7 +81,7 @@ TMOTOR_MODELS: dict[str, dict[str, Any]] = {
         "V_max": 32000,  # ERPM
         "Curr_min": -60000,  # -60A 
         "Curr_max": 60000,  # 60A 
-        "Kt_actual": 0.095,  # Nm/A
+        "Kt_actual": 0.0952,  # Nm/A
         "GEAR_RATIO": 9.0,
         "NUM_POLE_PAIRS": 21,
     },
@@ -579,12 +579,12 @@ class TMotorServoActuator(ActuatorBase):
         # So: I_drv = I_user / scale, which means scale = I_user / I_drv = 1 / K
         # Kt relationship: τ = Kt_drv * I_drv = Kt_user * I_user
         # So: Kt_user = Kt_drv * (I_drv / I_user) = Kt_drv * K
-        if current_mode == "amplitude-invariant":
+        if self.current_mode == "amplitude-invariant":
             # I_drv (line) = √3 * I_phase, so scale = I_phase / I_drv = 1/√3
             # Kt_amp = Kt_drv * √3
             self._current_scale = 1.0 / np.sqrt(3.0)
             self._kt_scale = np.sqrt(3.0)
-        elif current_mode == "power-invariant":
+        elif self.current_mode == "power-invariant":
             # I_drv (line) = √2 * I_pwr, so scale = I_pwr / I_drv = 1/√2
             # Kt_pwr = Kt_drv * √2
             self._current_scale = 1.0 / np.sqrt(2.0)
@@ -852,7 +852,7 @@ class TMotorServoActuator(ActuatorBase):
             value (float): desired motor current in mA
         """
         if not self.is_offline and self._canman:
-            driver_current = value / self._current_scale
+            driver_current = value 
 
             # Get current limits from motor parameters
             max_current = self._motor_params["Curr_max"]
@@ -963,21 +963,21 @@ class TMotorServoActuator(ActuatorBase):
 
     # ============ Unsupported PID Functions - TMotor Servo Mode Handles All Control Loops Internally ============
 
-    def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
+    def set_current_gains(self, kp: float = 0.0, ki: float = 0.0, kd: float = 0.0, ff: float = 0.0) -> None:
         """TMotor servo mode does not support external current PID gains - motor handles current control internally"""
-        raise NotImplementedError(
+        LOGGER.warning(
             "TMotor servo mode handles current control internally. " "External current PID gains are not used."
         )
 
-    def set_position_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
+    def set_position_gains(self, kp: float = 0.0, ki: float = 0.0, kd: float = 0.0, ff: float = 0.0) -> None:
         """TMotor servo mode does not support external position PID gains - motor handles position control internally"""
-        raise NotImplementedError(
+        LOGGER.warning(
             "TMotor servo mode handles position control internally. " "External position PID gains are not used."
         )
 
-    def _set_impedance_gains(self, k: float, b: float) -> None:
+    def _set_impedance_gains(self, k: float = 0.0, b: float = 0.0) -> None:
         """Internal method for impedance gains - not supported in TMotor servo mode"""
-        raise NotImplementedError(
+        LOGGER.warning(
             "TMotor servo mode handles control internally. " "Impedance gains are not used."
         )
 
@@ -986,10 +986,11 @@ class TMotorServoActuator(ActuatorBase):
     @property
     def motor_position(self) -> float:
         """Motor position (radians) - not supported"""
-        raise NotImplementedError(
+        LOGGER.warning(
             "Motor position reading is not available. "
             "The position returned in the motor state corresponds to the output position."
         )
+        return 0.0
 
     @property
     def output_position(self) -> float:
@@ -1014,10 +1015,11 @@ class TMotorServoActuator(ActuatorBase):
     @property
     def motor_voltage(self) -> float:
         """Motor voltage - not available in servo mode"""
-        raise NotImplementedError(
+        LOGGER.warning(
             "Motor voltage reading is not available in TMotor servo mode. "
             "The motor does not provide voltage feedback through the CAN protocol."
         )
+        return 0.0
 
     @property
     def motor_current(self) -> float:
