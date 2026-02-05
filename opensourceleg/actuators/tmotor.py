@@ -855,7 +855,7 @@ class TMotorServoActuator(ActuatorBase):
             value (float): desired motor current in mA
         """
         if not self.is_offline and self._canman:
-            driver_current = value 
+            driver_current = value
 
             # Get current limits from motor parameters
             max_current = self._motor_params["Curr_max"]
@@ -979,9 +979,7 @@ class TMotorServoActuator(ActuatorBase):
 
     def _set_impedance_gains(self, k: float = 0.0, b: float = 0.0) -> None:
         """Internal method for impedance gains - not supported in TMotor servo mode"""
-        LOGGER.warning(
-            "TMotor servo mode handles control internally. " "Impedance gains are not used."
-        )
+        LOGGER.warning("TMotor servo mode handles control internally. " "Impedance gains are not used.")
 
     # ============ State Properties ============
 
@@ -1086,4 +1084,3 @@ class TMotorServoActuator(ActuatorBase):
 
 if __name__ == "__main__":
     pass
-
