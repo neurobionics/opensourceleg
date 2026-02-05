@@ -17,19 +17,19 @@ if __name__ == "__main__":
     motor = TMotorServoActuator(
         motor_type="AK80-9",  # Change to your motor model
         motor_id=MOTOR_ID,
+        gear_ratio=9.0,
         offline=False,
     )
 
     # Track sensor data
-    sensor_logger.track_function(lambda: motor.motor_position, "Motor Position")
-    sensor_logger.track_function(lambda: motor.motor_velocity, "Motor Velocity")
+    sensor_logger.track_function(lambda: motor.output_position, "Output Position")
+    sensor_logger.track_function(lambda: motor.output_velocity, "Output Velocity")
     sensor_logger.track_function(lambda: motor.motor_current, "Motor Current")
-    sensor_logger.track_function(lambda: motor.motor_torque, "Motor Torque")
+    sensor_logger.track_function(lambda: motor.output_torque, "Output Torque")
     sensor_logger.track_function(lambda: motor.case_temperature, "Case Temperature")
     sensor_logger.track_function(lambda: motor.winding_temperature, "Winding Temperature")
 
     with motor:
-        print(f"Connected to TMotor: {motor.device_info_string()}")
         print("Reading sensor data...")
 
         for t in clock:
@@ -37,10 +37,10 @@ if __name__ == "__main__":
 
             sensor_logger.info(
                 f"Time: {t:.3f}; "
-                f"Position: {motor.motor_position:.3f} rad; "
-                f"Velocity: {motor.motor_velocity:.2f} rad/s; "
+                f"Position: {motor.output_position:.3f} rad; "
+                f"Velocity: {motor.output_velocity:.2f} rad/s; "
                 f"Current: {motor.motor_current:.2f} A; "
-                f"Torque: {motor.motor_torque:.3f} Nm"
+                f"Torque: {motor.output_torque:.3f} Nm"
             )
             sensor_logger.update()
 
