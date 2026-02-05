@@ -74,8 +74,8 @@ TMOTOR_MODELS: dict[str, dict[str, Any]] = {
         "P_max": 3200,  # 3200 deg
         "V_min": -32000,  # ERPM
         "V_max": 32000,  # ERPM
-        "Curr_min": -60000,  # -60A 
-        "Curr_max": 60000,  # 60A 
+        "Curr_min": -60000,  # -60A
+        "Curr_max": 60000,  # 60A
         "Kt_actual": 0.0952,  # Nm/A
         "GEAR_RATIO": 9.0,
         "NUM_POLE_PAIRS": 21,
@@ -1086,3 +1086,4 @@ class TMotorServoActuator(ActuatorBase):
 
 if __name__ == "__main__":
     pass
+
