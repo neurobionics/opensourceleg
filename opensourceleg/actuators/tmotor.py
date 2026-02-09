@@ -401,13 +401,13 @@ def rad_per_sec_to_erpm(rad_per_sec: float, num_pole_pairs: int) -> float:
 
 def _wait_for_mode_switch(actuator: "TMotorServoActuator", timeout: float = 0.2) -> None:
     """Wait for control mode switch confirmation with timeout"""
-    start_time = time.time()
+    start_time = time.monotonic()
     poll_interval = 0.01  # 10ms polling
 
-    while time.time() - start_time < timeout:
+    while time.monotonic() - start_time < timeout:
         actuator.update()  # Read status
         if actuator._motor_state.error == 0:
-            LOGGER.debug(f"Mode switch confirmed after {time.time() - start_time:.3f} seconds")
+            LOGGER.debug(f"Mode switch confirmed after {time.monotonic() - start_time:.3f} seconds")
             return
         time.sleep(poll_interval)
 
@@ -611,7 +611,7 @@ class TMotorServoActuator(ActuatorBase):
         self._error_message: Optional[str] = None
 
         # Time management
-        self._start_time = time.time()
+        self._start_time = time.monotonic()
         self._last_update_time = self._start_time
         self._last_command_time: Optional[float] = None
 
@@ -645,12 +645,12 @@ class TMotorServoActuator(ActuatorBase):
             self._canman.power_on(self.motor_id)
 
             # Poll for motor readiness (max 1 second timeout)
-            start_time = time.time()
+            start_time = time.monotonic()
             timeout = 1.0
             poll_interval = 0.01  # 10ms polling interval
             motor_ready = False
 
-            while time.time() - start_time < timeout:
+            while time.monotonic() - start_time < timeout:
                 # The motor should start sending status messages after power on
                 # Check if we've received valid data by checking if position/velocity/current are non-zero
                 # or if the motor_state has been updated (timestamp check could be added)
@@ -661,7 +661,7 @@ class TMotorServoActuator(ActuatorBase):
                     or self._motor_state_async.temperature > 0.0
                 ):
                     motor_ready = True
-                    LOGGER.debug(f"Motor ready after {time.time() - start_time:.3f} seconds")
+                    LOGGER.debug(f"Motor ready after {time.monotonic() - start_time:.3f} seconds")
                     break
                 time.sleep(poll_interval)
 
@@ -674,13 +674,13 @@ class TMotorServoActuator(ActuatorBase):
             self.set_control_mode(CONTROL_MODES.IDLE)
 
             # Poll for mode switch confirmation (max 200ms timeout)
-            mode_start_time = time.time()
+            mode_start_time = time.monotonic()
             mode_timeout = 0.2
 
-            while time.time() - mode_start_time < mode_timeout:
+            while time.monotonic() - mode_start_time < mode_timeout:
                 self.update()  # Read status
                 if self._motor_state.error == 0:
-                    LOGGER.debug(f"Mode switch confirmed after {time.time() - mode_start_time:.3f} seconds")
+                    LOGGER.debug(f"Mode switch confirmed after {time.monotonic() - mode_start_time:.3f} seconds")
                     break
                 time.sleep(poll_interval)
 
@@ -746,7 +746,7 @@ class TMotorServoActuator(ActuatorBase):
         )
 
         # Communication timeout check
-        now = time.time()
+        now = time.monotonic()
         if (
             self._last_command_time is not None
             and (now - self._last_command_time) < 0.25
@@ -873,7 +873,7 @@ class TMotorServoActuator(ActuatorBase):
                 )
 
             self._canman.set_current(self.motor_id, clamped_driver_current)
-            self._last_command_time = time.time()
+            self._last_command_time = time.monotonic()
 
     def set_motor_position(self, value: float) -> None:
         raise NotImplementedError(
@@ -906,7 +906,7 @@ class TMotorServoActuator(ActuatorBase):
                 )
 
             self._canman.set_position(self.motor_id, clamped_position)
-            self._last_command_time = time.time()
+            self._last_command_time = time.monotonic()
 
     def set_motor_torque(self, value: float) -> None:
         """
@@ -956,7 +956,7 @@ class TMotorServoActuator(ActuatorBase):
                 )
 
             self._canman.set_velocity(self.motor_id, clamped_velocity)
-            self._last_command_time = time.time()
+            self._last_command_time = time.monotonic()
 
     def set_output_velocity(self, value: float) -> None:
         """Set output velocity (rad/s)"""
