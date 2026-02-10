@@ -15,6 +15,7 @@ class MockSPI:
         self.bits_per_word = None
         self._is_open = False
         self._data = {}
+        self._stale_data_tracker = {}
 
     def open(self, bus: int, cs: int):
         self.bus = bus

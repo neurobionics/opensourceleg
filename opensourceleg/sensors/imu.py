@@ -850,7 +850,7 @@ class BHI260AP(IMUBase):
         self._is_streaming = False
 
         self._enabled_sensors: dict[int, float] = {}
-        self._sensor_data: dict[int, dict[Union[int, float]]] = {}
+        self._sensor_data: dict[int, list[dict[Union[int, float]]]] = {}
 
         # Tracker for stale data
         self._stale_data_tracker: dict[int, int] = {}
@@ -1458,7 +1458,7 @@ class BHI260AP(IMUBase):
         return self._is_streaming
 
     @property
-    def data(self) -> list[dict]:
+    def data(self) -> dict:
         """Get the latest parsed sensor data packets."""
         return self._sensor_data
 
