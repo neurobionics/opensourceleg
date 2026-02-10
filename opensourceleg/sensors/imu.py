@@ -1066,7 +1066,7 @@ class BHI260AP(IMUBase):
 
         # Modify list of enabled sensors
         self._enabled_sensors[sensor_id] = scale
-        self._stale_data_tracker[sensor_id] = 0 # Initialize stale data tracker
+        self._stale_data_tracker[sensor_id] = 0  # Initialize stale data tracker
 
         # Add 0 data to sensor data list
         sample = [{"timestamp": 0.0, "x": 0.0, "y": 0.0, "z": 0.0}]
@@ -1169,7 +1169,7 @@ class BHI260AP(IMUBase):
     def update(self) -> None:
         """
         Read data in buffer and save to class
-        """        
+        """
         # Read and parse FIFO
         raw_data = self._read_fifo()
         parsed_data = self._parse_fifo(raw_data)
@@ -1178,13 +1178,15 @@ class BHI260AP(IMUBase):
             LOGGER.warning("BHI260AP: No sensors enabled.")
 
         for sensor_id in self._enabled_sensors:
-            data_samples = [{"x": s["x"], "y": s["y"], "z": s["z"]} for s in parsed_data if s.get("sensor_id")==sensor_id]
+            data_samples = [
+                {"x": s["x"], "y": s["y"], "z": s["z"]} for s in parsed_data if s.get("sensor_id") == sensor_id
+            ]
             if not data_samples:
                 self._stale_data_tracker[sensor_id] = self._stale_data_tracker[sensor_id] + 1
             else:
                 self._sensor_data[sensor_id] = data_samples
                 self._stale_data_tracker[sensor_id] = 0
-            
+
         # Check for stale data
         for sensor_id, stale_count in self._stale_data_tracker.items():
             if stale_count > self._stale_threshold:
