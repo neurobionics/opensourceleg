@@ -15,7 +15,6 @@ class MockSPI:
         self.bits_per_word = None
         self._is_open = False
         self._data = {}
-        self._stale_data_tracker = {}
 
     def open(self, bus: int, cs: int):
         self.bus = bus
@@ -76,7 +75,8 @@ class MockBHI260AP(BHI260AP):
         self._firmware_path = firmware_path
         self._is_streaming = False
         self._enabled_sensors = {}
-        self._sensor_data = []
+        self._sensor_data = {}
+        self._stale_data_tracker = {}
 
         # Use mock SPI instead of real spidev
         self._spi = MockSPI()
