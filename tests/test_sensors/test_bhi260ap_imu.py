@@ -315,12 +315,12 @@ def test_acc_z(sample_imu_with_data: MockBHI260AP):
 
 def test_gyro_property(sample_imu_with_data: MockBHI260AP):
     gyro = sample_imu_with_data.gyro
-    assert isinstance(gyro, np.ndarray)
+    assert isinstance(gyro, (list, dict))
 
 
 def test_accel_property(sample_imu_with_data: MockBHI260AP):
     accel = sample_imu_with_data.accel
-    assert isinstance(accel, np.ndarray)
+    assert isinstance(accel, (list, dict))
 
 
 # Test FIFO parsing

@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         imu_logger.info(
             f"Time: {t:.4f}; Roll: {roll:+7.3f}, Pitch: {pitch:+7.3f}, "
-            "Roll Rate: {roll_rate:+7.3f}, Pitch Rate: {pitch_rate:+7.3f}, Yaw: {yaw:+7.3f}"
+            f"Roll Rate: {roll_rate:+7.3f}, Pitch Rate: {pitch_rate:+7.3f}, Yaw: {yaw:+7.3f}"
         )
         imu_logger.update()
 
