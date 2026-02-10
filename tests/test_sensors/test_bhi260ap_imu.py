@@ -280,7 +280,7 @@ def test_is_streaming(sample_imu: MockBHI260AP):
 
 def test_data_property(sample_imu_with_data: MockBHI260AP):
     data = sample_imu_with_data.data
-    assert isinstance(data, list)
+    assert isinstance(data, dict)
     assert len(data) == 2
 
 
@@ -316,12 +316,12 @@ def test_acc_z(sample_imu_with_data: MockBHI260AP):
 
 def test_gyro_property(sample_imu_with_data: MockBHI260AP):
     gyro = sample_imu_with_data.gyro
-    assert isinstance(gyro, (list, dict))
+    assert isinstance(gyro, np.ndarray)
 
 
 def test_accel_property(sample_imu_with_data: MockBHI260AP):
     accel = sample_imu_with_data.accel
-    assert isinstance(accel, (list, dict))
+    assert isinstance(accel, np.ndarray)
 
 
 # Test FIFO parsing
