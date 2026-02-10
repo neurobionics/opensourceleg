@@ -143,9 +143,9 @@ def sample_imu_with_data():
     # Simulate sensor data
     imu._sensor_data = {
         BHI260AP.SENSOR_ID_GYR: [{"timestamp": 0.0, "x": 0.1, "y": 0.2, "z": 0.3}], 
-        BHI260AP.SENSOR_ID_ACC: [{"sensor_id": , "timestamp": 0.0, "x": 1.0, "y": 2.0, "z": 3.0}],
+        BHI260AP.SENSOR_ID_ACC: [{"timestamp": 0.0, "x": 1.0, "y": 2.0, "z": 3.0}],
     }
-    
+
     return imu
 
 
