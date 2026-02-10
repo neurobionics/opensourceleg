@@ -594,7 +594,7 @@ class BNO055(IMUBase):
         try:
             self._adafruit_imu = self.adafruit_bno055.BNO055_I2C(i2c, address=self._address)
         except ValueError:
-            print("BNO055 IMU Not Found on i2c bus! Check wiring!")
+            LOGGER.error("BNO055 IMU Not Found on i2c bus! Check wiring!")
         self.configure_IMU_settings()
         self._is_streaming = True
 
@@ -801,6 +801,7 @@ class BHI260AP(IMUBase):
         "Gravity": SENSOR_ID_GRAVITY,
         "LinAccel": SENSOR_ID_LIN_ACC,
     }
+    _SENSOR_ID_TO_NAME: ClassVar[dict[int, str]] = {v: k for k, v in SENSOR_DICT.items()}
 
     def __init__(
         self,
@@ -849,7 +850,11 @@ class BHI260AP(IMUBase):
         self._is_streaming = False
 
         self._enabled_sensors: dict[int, float] = {}
-        self._sensor_data: list[dict[str, Union[int, float]]] = []
+        self._sensor_data: dict[int, list[dict[str, Union[int, float]]]] = {}
+
+        # Tracker for stale data
+        self._stale_data_tracker: dict[int, int] = {}
+        self._stale_threshold = 2
 
     def start(self) -> None:
         """
@@ -884,7 +889,7 @@ class BHI260AP(IMUBase):
             try:
                 self._disable_sensor(sensor_id)
             except Exception as e:
-                print(f"Warning: Could not disable sensor {sensor_id}: {e}")
+                LOGGER.error(f"Warning: Could not disable sensor {sensor_id}: {e}")
         self._spi.close()
         self._is_streaming = False
         LOGGER.info("IMU stopped successfully.")
@@ -1061,10 +1066,11 @@ class BHI260AP(IMUBase):
 
         # Modify list of enabled sensors
         self._enabled_sensors[sensor_id] = scale
+        self._stale_data_tracker[sensor_id] = 0  # Initialize stale data tracker
 
         # Add 0 data to sensor data list
-        sample = {"sensor_id": sensor_id, "timestamp": 0.0, "x": 0.0, "y": 0.0, "z": 0.0}
-        self._sensor_data.append(sample)
+        sample = [{"timestamp": 0.0, "x": 0.0, "y": 0.0, "z": 0.0}]
+        self._sensor_data[sensor_id] = sample
 
     # TODO: Implement this functionality
     def _change_sensor_dynamic_range(self, sensor_id: int, dynamic_range: int) -> None:
@@ -1164,13 +1170,28 @@ class BHI260AP(IMUBase):
         """
         Read data in buffer and save to class
         """
+        # Read and parse FIFO
         raw_data = self._read_fifo()
         parsed_data = self._parse_fifo(raw_data)
 
         if not parsed_data and not self._enabled_sensors:
-            print("BHI260AP Warning: no sensors enabled.")
+            LOGGER.warning("BHI260AP: No sensors enabled.")
 
-        self._sensor_data = parsed_data
+        for sensor_id in self._enabled_sensors:
+            data_samples = [
+                {"x": s["x"], "y": s["y"], "z": s["z"]} for s in parsed_data if s.get("sensor_id") == sensor_id
+            ]
+            if not data_samples:
+                self._stale_data_tracker[sensor_id] = self._stale_data_tracker[sensor_id] + 1
+            else:
+                self._sensor_data[sensor_id] = data_samples
+                self._stale_data_tracker[sensor_id] = 0
+
+        # Check for stale data
+        for sensor_id, stale_count in self._stale_data_tracker.items():
+            if stale_count > self._stale_threshold:
+                sensor_name = self._SENSOR_ID_TO_NAME.get(sensor_id)
+                LOGGER.warning(f"{sensor_name} data is stale! No new data for {stale_count} updates.")
 
     def _read_fifo(self, address: int = REG_CHAN2_NONWAKEUP_FIFO) -> bytes:
         """
@@ -1296,7 +1317,7 @@ class BHI260AP(IMUBase):
             return np.array([])
 
         # collect (x,y,z) tuples for samples matching sensor_id
-        data_samples = [(s["x"], s["y"], s["z"]) for s in self._sensor_data if s.get("sensor_id") == sensor_id]
+        data_samples = [(s["x"], s["y"], s["z"]) for s in self._sensor_data[sensor_id]]
 
         if not data_samples:
             return np.array([])
@@ -1437,7 +1458,7 @@ class BHI260AP(IMUBase):
         return self._is_streaming
 
     @property
-    def data(self) -> list[dict]:
+    def data(self) -> dict:
         """Get the latest parsed sensor data packets."""
         return self._sensor_data
 

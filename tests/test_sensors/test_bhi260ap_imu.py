@@ -75,7 +75,8 @@ class MockBHI260AP(BHI260AP):
         self._firmware_path = firmware_path
         self._is_streaming = False
         self._enabled_sensors = {}
-        self._sensor_data = []
+        self._sensor_data = {}
+        self._stale_data_tracker = {}
 
         # Use mock SPI instead of real spidev
         self._spi = MockSPI()
@@ -140,10 +141,11 @@ def sample_imu_with_data():
     imu.enable_accelerometer(rate_hz=200, dynamic_range=4096)
 
     # Simulate sensor data
-    imu._sensor_data = [
-        {"sensor_id": BHI260AP.SENSOR_ID_GYR, "timestamp": 0.0, "x": 0.1, "y": 0.2, "z": 0.3},
-        {"sensor_id": BHI260AP.SENSOR_ID_ACC, "timestamp": 0.0, "x": 1.0, "y": 2.0, "z": 3.0},
-    ]
+    imu._sensor_data = {
+        BHI260AP.SENSOR_ID_GYR: [{"timestamp": 0.0, "x": 0.1, "y": 0.2, "z": 0.3}],
+        BHI260AP.SENSOR_ID_ACC: [{"timestamp": 0.0, "x": 1.0, "y": 2.0, "z": 3.0}],
+    }
+
     return imu
 
 
@@ -156,7 +158,7 @@ def test_init_default(sample_imu: MockBHI260AP):
         sample_imu._data_rate == 200,
         sample_imu._is_streaming is False,
         isinstance(sample_imu._enabled_sensors, dict),
-        isinstance(sample_imu._sensor_data, list),
+        isinstance(sample_imu._sensor_data, dict),
     ])
 
 
@@ -278,7 +280,7 @@ def test_is_streaming(sample_imu: MockBHI260AP):
 
 def test_data_property(sample_imu_with_data: MockBHI260AP):
     data = sample_imu_with_data.data
-    assert isinstance(data, list)
+    assert isinstance(data, dict)
     assert len(data) == 2
 
 
