@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/neurobionics/opensourceleg/refs/heads/main/assets/images/banner.gif" width="100%">
 </p>
 
-**opensourceleg**: An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://www.opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
+**opensourceleg**: An open-source SDK for developing and testing algorithms on commonly used robotic hardware. Originally developed for the [Open-Source Leg](https://opensourceleg.org/) project, this library provides a comprehensive framework for interfacing with various actuators and sensors in robotic systems. While initially designed for prosthetic leg applications, the `opensourceleg` library's modular architecture makes it versatile for use with any robotic platform utilizing similar components.
 
 > **Note:** Starting from version `opensourceleg 3.3.0`, only Python 3.11 and above are supported.
 > If you need compatibility with Python 3.9, please install `opensourceleg 3.2.1`:
