@@ -294,6 +294,6 @@ Everyone was a beginner once! Don't hesitate to ask questions if you get stuck. 
 ## Next Steps
 
 1. **Read the Documentation**: [Full Documentation](https://neurobionics.github.io/opensourceleg/)
-2. **Try Tutorials**: Start with our [getting started guide](https://neurobionics.github.io/opensourceleg/tutorials/getting_started)
-3. **Join the Community**: Connect with other users on our [community forum](https://www.opensourceleg.org/)
+2. **Try Tutorials**: Start with our [getting started guide](https://neurobionics.github.io/opensourceleg/tutorials/sensors/getting_started)
+3. **Join the Community**: Connect with other users on our [community forum](https://opensourceleg.org/)
 4. **Contribute**: Check our [contribution guidelines](https://github.com/neurobionics/opensourceleg/blob/main/CONTRIBUTING.md)
