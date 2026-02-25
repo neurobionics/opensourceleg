@@ -239,6 +239,19 @@ class CANManagerServo:
         message_id = (CAN_PACKET_ID["SET_CURRENT"] << 8) | motor_id
         self.send_message(message_id, buffer, len(buffer))
 
+    def set_brake_current(self, motor_id: int, current: float) -> None:
+        """
+        Send current brake control command
+        Args:
+            motor_id (int): CAN motor ID
+            current (float): motor braking current in mA
+        Returns:
+            None
+        """
+        buffer = self._pack_int32(int(current))
+        message_id = (CAN_PACKET_ID["SET_CURRENT_BRAKE"] << 8) | motor_id
+        self.send_message(message_id, buffer, len(buffer))
+
     def set_velocity(self, motor_id: int, velocity: float) -> None:
         """
         Send velocity control command
@@ -444,6 +457,20 @@ def _servo_current_mode_exit(actuator: "TMotorServoActuator") -> None:
         actuator._canman.set_current(actuator.motor_id, 0.0)
 
 
+def _servo_current_brake_mode_entry(actuator: "TMotorServoActuator") -> None:
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Current control mode.")
+    mode_id = 2
+    if not actuator.is_offline and actuator._canman:
+        actuator._canman.set_control_mode(actuator.motor_id, mode_id)
+        _wait_for_mode_switch(actuator)
+
+
+def _servo_current_brake_mode_exit(actuator: "TMotorServoActuator") -> None:
+    LOGGER.debug(msg=f"[{actuator.__str__()}] Exiting Current control mode.")
+    if not actuator.is_offline and actuator._canman:
+        actuator._canman.set_current(actuator.motor_id, 0.0)
+
+
 def _servo_velocity_mode_entry(actuator: "TMotorServoActuator") -> None:
     LOGGER.debug(msg=f"[{actuator.__str__()}] Entering Velocity control mode.")
     mode_id = 3
@@ -483,6 +510,12 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         has_gains=False,  # servo mode handles internally
         max_gains=None,
     ),
+    CURRENT_BRAKE=ControlModeConfig(
+        entry_callback=_servo_current_brake_mode_entry,
+        exit_callback=_servo_current_brake_mode_exit,
+        has_gains=False,  # servo mode handles internally
+        max_gains=None,
+    ),
     VELOCITY=ControlModeConfig(
         entry_callback=_servo_velocity_mode_entry,
         exit_callback=_servo_velocity_mode_exit,
@@ -494,15 +527,12 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         exit_callback=_servo_idle_mode_exit,
         has_gains=False,
         max_gains=None,
-    ),
-    IMPEDANCE=None,  # IMPEDANCE mode not supported
-    VOLTAGE=None,  # VOLTAGE mode not supported
+    )
 )
 
 
 class TMotorServoActuator(ActuatorBase):
-    """
-    TMotor servo mode actuator for AK series motors.
+    """    TMotor servo mode actuator for AK series motors.
 
     Important: Before using this actuator, the CAN interface must be configured:
         sudo /sbin/ip link set can0 down
@@ -875,6 +905,33 @@ class TMotorServoActuator(ActuatorBase):
             self._canman.set_current(self.motor_id, clamped_driver_current)
             self._last_command_time = time.monotonic()
 
+    def set_motor_brake_current(self, value: float) -> None:
+        """
+        Set motor current with clamping to motor limits
+        Args:
+            value (float): desired motor current in mA
+        """
+        if not self.is_offline and self._canman:
+            driver_current = value
+
+            # Get current limits from motor parameters
+            max_current = self._motor_params["Curr_max"]
+            min_current = 0.0
+
+            # Clamp current to safe limits
+            clamped_driver_current = np.clip(driver_current, min_current, max_current)
+
+            # Log warning if clamping occurred
+            if driver_current != clamped_driver_current:
+                clamped_user_current = clamped_driver_current * self._current_scale
+                LOGGER.warning(
+                    f"Current command {value}mA clamped to {clamped_user_current}mA "
+                    f"(limits: [{min_current * self._current_scale:.1f}, {max_current * self._current_scale:.1f}]mA)"
+                )
+
+            self._canman.set_brake_current(self.motor_id, clamped_driver_current)
+            self._last_command_time = time.monotonic()
+
     def set_motor_position(self, value: float) -> None:
         raise NotImplementedError(
             "Setting motor position not supported" "Recommended to use 'set_output_position' command instead."
@@ -923,6 +980,19 @@ class TMotorServoActuator(ActuatorBase):
         current = value / kt_user * 1000
         self.set_motor_current(current)  # Send current command mA
 
+    def set_motor_brake_torque(self, value: float) -> None:
+        """
+        Sets the motor braking torque in Nm.
+        This is the torque that is applied to the motor rotor, not the joint or output.
+        Args:
+            value (float): The torque to set in Nm.
+        Returns:
+            None
+        """
+        kt_user = self._motor_params["Kt_actual"] * self._kt_scale
+        current = value / kt_user * 1000
+        self.set_motor_brake_current(current)  # Send current command mA
+
     def set_output_torque(self, value: float) -> None:
         """
         Set the output torque of the joint.
@@ -935,6 +1005,18 @@ class TMotorServoActuator(ActuatorBase):
         # Output torque to motor torque: T_motor = T_output / gear_ratio
         motor_torque = value / self.gear_ratio
         self.set_motor_torque(motor_torque)
+
+    def set_output_brake_torque(self, value: float) -> None:
+        """
+        Set the output braking torque of the joint.
+        This is the torque that is applied to the joint, not the motor.
+        Args:
+            value (float): torque in Nm
+        Returns:
+            None
+        """
+        motor_torque = value / self.gear_ratio
+        self.set_motor_brake_torque(motor_torque)
 
     def set_motor_velocity(self, value: float) -> None:
         """Set motor velocity (rad/s) with clamping to motor limits"""
