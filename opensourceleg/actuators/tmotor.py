@@ -527,12 +527,12 @@ TMOTOR_SERVO_CONTROL_MODE_CONFIGS = CONTROL_MODE_CONFIGS(
         exit_callback=_servo_idle_mode_exit,
         has_gains=False,
         max_gains=None,
-    )
+    ),
 )
 
 
 class TMotorServoActuator(ActuatorBase):
-    """    TMotor servo mode actuator for AK series motors.
+    """TMotor servo mode actuator for AK series motors.
 
     Important: Before using this actuator, the CAN interface must be configured:
         sudo /sbin/ip link set can0 down
