@@ -41,11 +41,12 @@ M_PER_SEC_SQUARED_ACCLSB = 9.80665 / 8192
 IMPEDANCE_A = 0.00028444
 IMPEDANCE_C = 0.0007812
 
-DEFAULT_MIN_TORQUE_CONSTANT = 0.07
+DEFAULT_MIN_TORQUE_CONSTANT = 0.08
+DEFAULT_MAX_TORQUE_CONSTANT = 0.25
 
 DEPHY_ACTUATOR_CONSTANTS = MOTOR_CONSTANTS(
     MOTOR_COUNT_PER_REV=16384,
-    NM_PER_AMP=0.145,
+    NM_PER_AMP=0.1133,
     MAX_CASE_TEMPERATURE=80,
     MAX_WINDING_TEMPERATURE=110,
 )
@@ -139,19 +140,19 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
         baud_rate: int = 230400,
         frequency: int = 500,
         debug_level: int = 4,
-        torque_constant: float = 0.145,  # old motor constant 0.1133 Nm/A
+        torque_constant: float = 0.1133,  # new motor constant 0.145 Nm/A
         dephy_log: bool = False,
         offline: bool = False,
         stop_motor_on_disconnect: bool = True,
     ) -> None:
-        if torque_constant <= DEFAULT_MIN_TORQUE_CONSTANT:
+        if torque_constant < DEFAULT_MIN_TORQUE_CONSTANT or torque_constant > DEFAULT_MAX_TORQUE_CONSTANT:
             LOGGER.error(
-                f"[{str.upper(tag)}] torque_constant={torque_constant} Nm/A is unusually low. "
+                f"[{str.upper(tag)}] torque_constant={torque_constant} Nm/A is outside the valid range. "
                 "Low torque constant will cause the motor to draw more current for the same torque. "
-                "Verify your value: typical Dephy defaults are 0.1133 Nm/A (older motors)"
+                "Verify your value: typical Dephy torque constants are 0.1133 Nm/A (older motors)"
                 " and 0.145 Nm/A (newer motors)."
             )
-            raise ValueError("Torque constant is too low")
+            raise ValueError("Torque constant is outside the valid range")
         motor_constants = dataclasses.replace(DEPHY_ACTUATOR_CONSTANTS, NM_PER_AMP=torque_constant)
         ActuatorBase.__init__(
             self,
@@ -802,7 +803,6 @@ class DephyActuator(Device, ActuatorBase):  # type: ignore[no-any-unimported]
             >>> actuator.start()
             >>> print(f"Motor torque: {actuator.motor_torque} Nm")
         """
-        print(self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         if self._data is not None:
             return float(self._data["mot_cur"] * self.MOTOR_CONSTANTS.NM_PER_MILLIAMP)
         else:
@@ -1236,18 +1236,18 @@ class DephyLegacyActuator(DephyActuator):
         baud_rate: int = 230400,
         frequency: int = 500,
         debug_level: int = 4,
-        torque_constant: float = 0.145,  # old motor constant 0.1133 Nm/A
+        torque_constant: float = 0.1133,  # new motor constant 0.145 Nm/A
         dephy_log: bool = False,
         offline: bool = False,
     ) -> None:
-        if torque_constant <= DEFAULT_MIN_TORQUE_CONSTANT:
+        if torque_constant < DEFAULT_MIN_TORQUE_CONSTANT or torque_constant > DEFAULT_MAX_TORQUE_CONSTANT:
             LOGGER.error(
-                f"[{str.upper(tag)}] torque_constant={torque_constant} Nm/A is unusually low. "
+                f"[{str.upper(tag)}] torque_constant={torque_constant} Nm/A is outside the valid range. "
                 "Low torque constant will cause the motor to draw more current for the same torque. "
-                "Verify your value: typical Dephy defaults are 0.1133 Nm/A (older motors)"
+                "Verify your value: typical Dephy torque constants are 0.1133 Nm/A (older motors)"
                 " and 0.145 Nm/A (newer motors)."
             )
-            raise ValueError("Torque constant is too low")
+            raise ValueError("Torque constant is outside the valid range")
         motor_constants = dataclasses.replace(DEPHY_ACTUATOR_CONSTANTS, NM_PER_AMP=torque_constant)
         ActuatorBase.__init__(
             self,
