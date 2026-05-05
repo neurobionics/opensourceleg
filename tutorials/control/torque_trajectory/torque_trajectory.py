@@ -99,10 +99,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Torque trajectory control for Open Source Leg")
     parser.add_argument("--mass", type=float, default=1.0, help="User mass in kg (default: 1.0)", required=False)
     parser.add_argument(
-        "--stride-time", type=float, default=1, help="Stride time in seconds (default: 1)", required=False
+        "--stride-time", type=float, default=1.0, help="Stride time in seconds (default: 1)", required=False
     )
     parser.add_argument(
-        "--frequency", type=float, default=200.0, help="Control loop frequency in Hz (default: 200.0)", required=False
+        "--frequency", type=int, default=200, help="Control loop frequency in Hz (default: 200.0)", required=False
     )
 
     # Parse arguments
@@ -140,17 +140,17 @@ if __name__ == "__main__":
     sensors = {
         "joint_encoder_knee": AS5048B(
             tag="joint_encoder_knee",
-            bus=1,
-            A1_adr_pin=True,
+            bus="/dev/i2c-2",
+            A1_adr_pin=False,
             A2_adr_pin=False,
             zero_position=0,
             enable_diagnostics=False,
         ),
         "joint_encoder_ankle": AS5048B(
             tag="joint_encoder_ankle",
-            bus=1,
+            bus="/dev/i2c-3",
             A1_adr_pin=False,
-            A2_adr_pin=True,
+            A2_adr_pin=False,
             zero_position=0,
             enable_diagnostics=False,
         ),
