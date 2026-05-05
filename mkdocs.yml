@@ -15,7 +15,9 @@ nav:
           - Getting Started: tutorials/sensors/getting_started.md
           - Reading ADC Data: tutorials/sensors/reading_adc.md
           - Reading Encoder Data: tutorials/sensors/reading_encoder_data.md
-          - Reading IMU Data: tutorials/sensors/reading_imu_data.md
+          - IMUs:
+              - Reading Microstrain Data: tutorials/sensors/reading_microstrain_imu_data.md
+              - Reading BHI260AP Data: tutorials/sensors/reading_bhi260ap_imu_data.md
           - Reading Loadcell Data: tutorials/sensors/reading_loadcell_data.md
       - Actuators:
           - Getting Started: tutorials/actuators/getting_started.md
@@ -42,6 +44,8 @@ nav:
               - Using Iterators: tutorials/utilities/softrealtimeloop/using_iterators.md
               - Real-time Control: tutorials/utilities/softrealtimeloop/realtime_control.md
           - Profiler: tutorials/utilities/profiler/profiling_code.md
+          - Filters:
+              - 2D Gravity Kalman Filter: tutorials/utilities/kalman_filter_imu_global_angles.md
       - Other Best Practices: tutorials/other_best_practices.md
   - Examples:
       - Basic Motion: examples/basic_motion.md

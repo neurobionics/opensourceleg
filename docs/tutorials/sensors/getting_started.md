@@ -94,7 +94,7 @@ If you encounter any issues:
 Choose a sensor tutorial to get started:
 
 - [Reading Encoder Data](reading_encoder_data.md)
-- [Reading IMU Data](reading_imu_data.md)
+- [Reading IMU Data](reading_microstrain_imu_data.md)
 - [Reading Loadcell Data](reading_loadcell_data.md)
 
 Each tutorial includes specific setup instructions and code samples.

@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.5.0](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.2...opensourceleg-v3.5.0) (2026-02-02)
+
+
+### Features
+
+* Add TMotor servo mode actuator with native CAN protocol support ([806e323](https://github.com/neurobionics/opensourceleg/commit/806e323228c465a925ca56508b36839f86817f35))
+* allow compiled controller to accept pre-defined input and output types ([cf02d45](https://github.com/neurobionics/opensourceleg/commit/cf02d45c060ca11467447b7440c67706a3b97e5e))
+
+
+### Bug Fixes
+
+* update compiled controller interface to accept either type or list with separate args ([2d33108](https://github.com/neurobionics/opensourceleg/commit/2d3310833050371672c444c6724bb7848ff6b706))
+
+
+### Documentation
+
+* analyze Kt conversion issue caused by CubeMars FOC configuration ([711083a](https://github.com/neurobionics/opensourceleg/commit/711083a8adeae1b4b4366307f8a5b706fded9e66))
+* analyze Kt conversion issue caused by CubeMars FOC configuration ([3d75bb8](https://github.com/neurobionics/opensourceleg/commit/3d75bb80607afbcf92d80209d67ee0f508d977c3))
+* fix the display of the example of the home function of dephy.py ([e2380b1](https://github.com/neurobionics/opensourceleg/commit/e2380b10f4fd57d3181201b432abea994ad5a9cf))
+* fix the display of the example of the home function of dephy.py ([221ef2f](https://github.com/neurobionics/opensourceleg/commit/221ef2f1f78b2f013dfc4c75d2cbdab195935806))
+* update line numbers in compiled example ([175835e](https://github.com/neurobionics/opensourceleg/commit/175835e6be6e30dd849a3b8eec5dcf36a8bb3729))
+* update MSCL package link and version in IMU docstring ([8894afe](https://github.com/neurobionics/opensourceleg/commit/8894afec7ceeb4a5a0698128955fbf1efbc307a2))
+* update MSCL package link and version in IMU docstring ([c41e4c9](https://github.com/neurobionics/opensourceleg/commit/c41e4c930694192fa2f5b2b46314542e4c9c6b4d))
+
 ## [3.4.2](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.1...opensourceleg-v3.4.2) (2025-10-13)
 
 

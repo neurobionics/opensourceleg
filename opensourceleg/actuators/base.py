@@ -47,6 +47,10 @@ class MOTOR_CONSTANTS:
     MAX_CASE_TEMPERATURE: float  # Hard limit for case/housing temperature
     MAX_WINDING_TEMPERATURE: float  # Hard limit for winding temperature
 
+    # TMotor Servo Mode specific parameters (Servo Mode does not support PID)
+    NM_PER_RAD_TO_K: float = 0.001  # Default value for non-servo mode actuators
+    NM_S_PER_RAD_TO_B: float = 0.0001  # Default value for non-servo mode actuators
+
     # Thermal model parameters from research paper (with defaults from Jake Schuchmann's tests)
     WINDING_THERMAL_CAPACITANCE: float = 0.20 * 81.46202695970649  # Cw (J/°C)
     CASE_THERMAL_CAPACITANCE: float = 512.249065845453  # Ch (J/°C)
@@ -408,6 +412,7 @@ class ActuatorBase(OfflineMixin, ABC):
         "set_output_torque": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_current_gains": {CONTROL_MODES.CURRENT, CONTROL_MODES.TORQUE},
         "set_position_gains": {CONTROL_MODES.POSITION},
+        "set_impedance_gains": {CONTROL_MODES.IMPEDANCE},
     }
 
     # Offline mode configuration for OfflineMixin

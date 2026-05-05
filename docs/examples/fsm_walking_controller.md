@@ -97,7 +97,7 @@ Next, instantiate a `CompiledController` wrapper object:
 Define the data structures used in the controller. These must match the size and order of the structures used to create the library.
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:69:120"
+--8<-- "examples/fsm_walking_compiled_controller.py:69:124"
 ```
 
 ---
@@ -107,7 +107,7 @@ Define the data structures used in the controller. These must match the size and
 Configure the impedance and transition parameters based on predefined tuning. Adjust these values to achieve the desired behavior:
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:123:158"
+--8<-- "examples/fsm_walking_compiled_controller.py:126:162"
 ```
 
 ---
@@ -117,7 +117,7 @@ Configure the impedance and transition parameters based on predefined tuning. Ad
 After configuration, home the OSL joints, calibrate the loadcell, set the joints to impedance mode, and begin running the controller. During each loop iteration, update the inputs, call the `run()` method, and write outputs to the hardware:
 
 ```python
---8<-- "examples/fsm_walking_compiled_controller.py:160:210"
+--8<-- "examples/fsm_walking_compiled_controller.py:164:216"
 ```
 
 > **Note**:

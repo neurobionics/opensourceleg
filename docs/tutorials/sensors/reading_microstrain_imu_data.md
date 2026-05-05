@@ -17,12 +17,12 @@ This example shows how to:
 
 ## Code Structure
 
-The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_imu_data.py) is organized into several main sections:
+The [tutorial script](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/reading_microstrain_imu_data.py) is organized into several main sections:
 
 ### 1. Initialization
 
 ```python
---8<-- "tutorials/sensors/reading_imu_data.py:1:20"
+--8<-- "tutorials/sensors/reading_microstrain_imu_data.py:1:26"
 ```
 
 This section:
@@ -35,7 +35,7 @@ This section:
 ### 2. Main Loop
 
 ```python
---8<-- "tutorials/sensors/reading_imu_data.py:22:31"
+--8<-- "tutorials/sensors/reading_microstrain_imu_data.py:28:32"
 ```
 
 The main loop:
@@ -49,7 +49,7 @@ The main loop:
 When initializing the LordMicrostrainIMU, several important parameters can be configured:
 
 ```python
---8<-- "tutorials/sensors/reading_imu_data.py:14:23"
+--8<-- "tutorials/sensors/reading_microstrain_imu_data.py:14:23"
 ```
 
 ### Parameter Details
