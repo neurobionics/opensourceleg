@@ -717,6 +717,7 @@ class BHI260AP(IMUBase):
     Resources:
         - Download "BHI260AP.fw" firmware:
         https://github.com/boschsensortec/BHI2xy_SensorAPI/tree/master/firmware/bhi260ap
+        - If you want to sample at >400Hz, download the "BHI260AP_turbo.fw" file.
 
     Author:
         Katharine Walters
@@ -854,7 +855,7 @@ class BHI260AP(IMUBase):
 
         # Tracker for stale data
         self._stale_data_tracker: dict[int, int] = {}
-        self._stale_threshold = 2
+        self._stale_threshold = 1
 
     def start(self) -> None:
         """
