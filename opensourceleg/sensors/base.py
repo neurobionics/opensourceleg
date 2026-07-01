@@ -214,6 +214,53 @@ class ADCBase(SensorBase, ABC):
         pass
 
 
+class EncoderCounterBase(SensorBase, ABC):
+    """
+    Abstract base class for encoder counter LS7366R.
+
+    Encoder counters interface with incremental encoders.
+    """
+
+    # Encoder Counter-specific offline configuration
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [*SensorBase._OFFLINE_PROPERTIES, "position", "velocity"]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **SensorBase._OFFLINE_PROPERTY_DEFAULTS,
+        "position": 0.0,
+        "velocity": 0.0,
+    }
+
+    def __init__(
+        self,
+        tag: str,
+        offline: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize the encoder counter.
+        """
+        super().__init__(tag=tag, offline=offline, **kwargs)
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the encoder sensor.
+
+        Returns:
+            str: "EncoderCounterBase"
+        """
+        return "EncoderCounterBase"
+
+    @property
+    @abstractmethod
+    def count(self) -> float:
+        """
+        Get the current encoder count.
+
+        Returns:
+            float: The current encoder count.
+        """
+        pass
+
+
 class EncoderBase(SensorBase, ABC):
     """
     Abstract base class for encoder sensors.
@@ -509,6 +556,41 @@ class IMUBase(SensorBase, ABC):
 
         Returns:
             float: Angular velocity in rad/s along the z-axis.
+        """
+        pass
+
+
+class HallBase(SensorBase, ABC):
+    """
+    Abstract base class for Hall effect sensors.
+
+    Hall effect sensors measure magnetic fields.
+    """
+
+    # hall-specific offline configuration
+    _OFFLINE_PROPERTIES: ClassVar[list[str]] = [
+        *SensorBase._OFFLINE_PROPERTIES,
+        "field_mT",
+    ]
+    _OFFLINE_PROPERTY_DEFAULTS: ClassVar[dict[str, Any]] = {
+        **SensorBase._OFFLINE_PROPERTY_DEFAULTS,
+        "field_mT": 0.0,
+    }
+
+    def __init__(self, tag: str, offline: bool = False, **kwargs: Any) -> None:
+        """
+        Initialize the Hall effect sensor.
+        """
+        super().__init__(tag=tag, offline=offline, **kwargs)
+
+    @property
+    @abstractmethod
+    def field_mT(self) -> float:
+        """
+        Get the estimated magnetic response
+
+        Returns:
+            float: Magnetic field in mT.
         """
         pass
 
