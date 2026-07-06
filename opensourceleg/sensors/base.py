@@ -238,7 +238,7 @@ class EncoderCounterBase(SensorBase, ABC):
         """
         Initialize the encoder counter.
         """
-        super().__init__(tag=tag, offline=offline, **kwargs)
+        super().__init__(tag=tag, offline=offline, **kwargs)  # pragma: no cover
 
     def __repr__(self) -> str:
         """
@@ -247,7 +247,7 @@ class EncoderCounterBase(SensorBase, ABC):
         Returns:
             str: "EncoderCounterBase"
         """
-        return "EncoderCounterBase"
+        return "EncoderCounterBase"  # pragma: no cover
 
     @property
     @abstractmethod
@@ -258,7 +258,7 @@ class EncoderCounterBase(SensorBase, ABC):
         Returns:
             float: The current encoder count.
         """
-        pass
+        pass  # pragma: no cover
 
 
 class EncoderBase(SensorBase, ABC):
@@ -581,7 +581,7 @@ class HallBase(SensorBase, ABC):
         """
         Initialize the Hall effect sensor.
         """
-        super().__init__(tag=tag, offline=offline, **kwargs)
+        super().__init__(tag=tag, offline=offline, **kwargs)  # pragma: no cover
 
     @property
     @abstractmethod
@@ -592,7 +592,7 @@ class HallBase(SensorBase, ABC):
         Returns:
             float: Magnetic field in mT.
         """
-        pass
+        pass  # pragma: no cover
 
 
 if __name__ == "__main__":
