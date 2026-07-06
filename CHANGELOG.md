@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.1](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.5.0...opensourceleg-v3.5.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* imu fifo overflow error ([f55e528](https://github.com/neurobionics/opensourceleg/commit/f55e528a211d947f24ede703851584d03d3758e5))
+
 ## [3.5.0](https://github.com/neurobionics/opensourceleg/compare/opensourceleg-v3.4.2...opensourceleg-v3.5.0) (2026-02-02)
 
 
