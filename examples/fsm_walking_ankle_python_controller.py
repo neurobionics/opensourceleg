@@ -22,18 +22,17 @@ from opensourceleg.utilities import SoftRealtimeLoop
 GEAR_RATIO = 9 * (83 / 18)
 FREQUENCY = 200
 
-
-LOADCELL_CALIBRATION_MATRIX_M3554E = np.array([
-    (-943.401, 4.143, 8.825, -16.57, 952.216, 10.892),
-    (539.853, 14.985, -1111.656, -0.812, 546.9, -18.949),
-    (13.155, 533.082, -4.582, 534.843, 10.827, 536.327),
-    (0.138, -10.419, 0.202, 0.14, 0.063, 10.518),
-    (-0.075, 6.213, -0.239, -12.094, 0.181, 6.156),
-    (-19.912, 0.082, -20.347, 0.022, -19.486, 0.013),
+LOADCELL_MATRIX = np.array([
+    (-9.817417, -1895.974287, 14.899174, -4.333117, -40.684438, 1900.65478),
+    (-32.435533, 1129.587599, -5.693634, -2206.916117, 14.346322, 1086.297672),
+    (-963.721193, -4.911412, -965.891326, -1.404768, -981.000498, 8.693936),
+    (19.854122, -0.21849, 0.25324, 0.734436, -20.471398, -0.232788),
+    (-11.530613, -0.964467, 22.849398, -0.011803, -11.785854, 1.015088),
+    (-0.296284, -26.299567, -0.138142, -26.753995, 0.385682, -25.052914),
 ])
 
 # ------------- TUNABLE FSM PARAMETERS ---------------- #
-BODY_WEIGHT = 10 * 9.8
+BODY_WEIGHT = 20 * 9.8
 
 # STATE 1: EARLY STANCE
 ANKLE_K_ESTANCE = 19.874
@@ -189,18 +188,27 @@ if __name__ == "__main__":
             gear_ratio=GEAR_RATIO,
             frequency=FREQUENCY,
             debug_level=0,
+            torque_constant=0.145,
             dephy_log=False,
         ),
     }
 
     sensors = {
         "loadcell": NBLoadcellDAQ(
-            LOADCELL_CALIBRATION_MATRIX_M3554E,
+            LOADCELL_MATRIX,
             tag="loadcell",
             excitation_voltage=5.0,
             amp_gain=[34] * 3 + [151] * 3,
             spi_bus=1,
         ),
+        # "joint_encoder_ankle": AS5048B(
+        #     tag="joint_encoder_ankle",
+        #     bus="/dev/i2c-2",
+        #     A1_adr_pin=False,
+        #     A2_adr_pin=False,
+        #     zero_position=0,
+        #     enable_diagnostics=False,
+        # ),
     }
 
     clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
@@ -217,6 +225,22 @@ if __name__ == "__main__":
 
     osl_fsm = create_simple_walking_fsm(osl)
 
+    # Zeroing the joint encoders
+    def knee_homing_complete():
+        osl.joint_encoder_knee.update()
+        osl.joint_encoder_knee.zero_position = osl.joint_encoder_knee.counts
+        print("Knee homing complete!")
+
+    def ankle_homing_complete():
+        osl.joint_encoder_ankle.update()
+        # The hard stop for ankle is at 30 deg from the zero position
+        osl.joint_encoder_ankle.zero_position = osl.joint_encoder_ankle.counts - osl.joint_encoder_ankle.deg_to_counts(
+            30
+        )
+        print("Ankle homing complete!")
+
+    callbacks = {"knee": knee_homing_complete, "ankle": ankle_homing_complete}
+
     with fsm_logger, osl, osl_fsm:
         osl.update()
         osl.home()
@@ -225,7 +249,8 @@ if __name__ == "__main__":
 
         # ankle
         osl.ankle.set_control_mode(mode=CONTROL_MODES.IMPEDANCE)
-        osl.ankle.set_impedance_gains()
+        osl.ankle.set_impedance_cc_pidf_gains()
+        osl.ankle.set_output_impedance()
 
         for t in clock:
             osl.update()
