@@ -12,8 +12,8 @@ This guide introduces the `opensourceleg.robots` module and provides essential s
 ## Hardware Setup
 The hardware setup will be unique to each robot platform. If you are having trouble with your setup, please refer to the specific documentation regarding actuators and sensors below.
 
-- [Actuator Setup Guide](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/actuators/getting_started.md)
-- [Sensor Setup Guide](https://github.com/neurobionics/opensourceleg/blob/main/tutorials/sensors/getting_started.md)
+- [Actuator Setup Guide](https://github.com/neurobionics/opensourceleg/blob/main/docs/tutorials/actuators/getting_started.md)
+- [Sensor Setup Guide](https://github.com/neurobionics/opensourceleg/blob/main/docs/tutorials/sensors/getting_started.md)
 
 ## Safety Guidelines
 
