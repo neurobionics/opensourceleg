@@ -477,7 +477,7 @@ class MaxonActuator(PositionControlActuatorBase):
         self.d_term_filtered_last = d_term_filtered
 
         # only integrate when not saturated (prevent windup)
-        if -(self.pwm_maximum_command - 5) < self.last_pwm < (self.pwm_maximum_command - 5):
+        if -(self.pwm_maximum_command - 0.05) < self.last_pwm < (self.pwm_maximum_command - 0.05):
             self.i_term = self.i_term + (self.k_i * error_encoder * dt)
 
         pwm_feedback = int(p_term + self.i_term + d_term_filtered) / 100

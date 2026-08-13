@@ -244,12 +244,30 @@ def test_maxon_pid_returns_float_and_updates_last_pwm(maxon: MaxonActuator):
     assert maxon.last_pwm == pwm
 
 
-def test_maxon_pid_i_term_never_integrates(maxon: MaxonActuator):
-    # Documents the anti-windup guard bug: with pwm_maximum_command == 0.3 the window
-    # (0.3 - 5) is negative, so the integrator condition can never be true.
+def test_maxon_pid_i_term_integrates_when_not_saturated(maxon: MaxonActuator):
+    # With the corrected anti-windup guard (0.05 margin instead of 5),
+    # the integrator now updates when last_pwm sits inside the unsaturated window.
     maxon.set_control_mode(CONTROL_MODES.POSITION)
     maxon.position_control_init()
+
+    # Sanity check on the precondition: last_pwm starts at 0.0, which should
+    # fall inside the window for any reasonable pwm_maximum_command.
+    assert -(maxon.pwm_maximum_command - 0.05) < maxon.last_pwm < (maxon.pwm_maximum_command - 0.05)
+
     maxon.pid_ctrl_position(error_encoder=1000.0, dt=0.01)
+
+    expected_i_term = maxon.k_i * 1000.0 * 0.01
+    assert maxon.i_term == pytest.approx(expected_i_term)
+
+
+def test_maxon_pid_i_term_holds_when_saturated(maxon: MaxonActuator):
+    # When last_pwm is outside the guard window, the integrator must not update.
+    maxon.set_control_mode(CONTROL_MODES.POSITION)
+    maxon.position_control_init()
+
+    maxon.last_pwm = maxon.pwm_maximum_command  # force saturation
+    maxon.pid_ctrl_position(error_encoder=1000.0, dt=0.01)
+
     assert maxon.i_term == 0.0
 
 
