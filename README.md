@@ -58,14 +58,14 @@ The library currently supports the following hardware components:
 | AS5048B Encoder         | ✅         | ✅             | ❌         | ✅            |
 | Lord Microstrain IMU    | ✅         | ✅             | ❌         | ✅            |
 | SRI Loadcell            | ✅         | ✅             | ❌         | ✅            |
-| DRV5056 Hall Effect     | ❌         | ❌             | ❌         | ❌            |
-| LS7366R Encoder Counter | ❌         | ❌             | ❌         | ❌            |
+| DRV5056 Hall Effect     | ✅         | ❌             | ❌         | ❌            |
+| LS7366R Encoder Counter | ✅         | ❌             | ❌         | ❌            |
 
 | Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
 | ------------- | ---------- | -------------- | ---------- | ------------- |
-| Dephy Actpack | ⚠️         | ✅             | ⚠️         | ✅            |
-| Moteus        | ⚠️         | ⚠️             | ⚠️         | ✅            |
-| TMotor        | ❌         | ⚠️             | ❌         | ❌            |
+| Dephy Actpack | ⚠️         | ✅             | ⚠️         | ✅           |
+| Moteus        | ⚠️         | ⚠️             | ⚠️         | ✅           |
+| TMotor        | ❌         | ⚠️             | ❌         | ❌           |
 
 > Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available;
 
