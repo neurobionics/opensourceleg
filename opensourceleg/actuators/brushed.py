@@ -197,7 +197,18 @@ class MaxonActuator(PositionControlActuatorBase):
         raise NotImplementedError("Set impedance gains not implemented. Motor should be controlled by position or pwm.")
 
     def set_position_gains(self, k_p: float = 0.015, k_i: float = 2, k_d: float = 0.0001, ff: float = 0.0) -> None:
-        """Set position control gains."""
+        """
+        Set PID gains for position control.
+
+        Default values are tuned for the VSO configuration. Other actuator
+        or mechanism configurations will likely need retuning.
+
+        Args:
+            k_p: Proportional gain.
+            k_i: Integral gain.
+            k_d: Derivative gain.
+            ff: Feedforward gain.
+        """
         self.k_p = k_p  # Proportional gain
         self.k_i = k_i  # Integral gain
         self.k_d = k_d  # Derivative gain

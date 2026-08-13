@@ -66,6 +66,7 @@ The library currently supports the following hardware components:
 | Dephy Actpack | ⚠️         | ✅             | ⚠️         | ✅           |
 | Moteus        | ⚠️         | ⚠️             | ⚠️         | ✅           |
 | TMotor        | ❌         | ⚠️             | ❌         | ❌           |
+| Brushed Maxon | ✅         | ⚠️             | ❌         | ❌           |
 
 > Legend: ✅ Complete/Available; ⚠️ Partial/In Progress; ❌ Not Yet Available;
 
