@@ -6,6 +6,7 @@ authors = [{ name = "Open-Source Leg", email = "opensourceleg@gmail.com" }]
 requires-python = ">=3.11,<4.0"
 readme = "README.md"
 dependencies = [
+    "gpiozero>=2.0.1.post3",
     "numpy>=1.24.3,<2",
     "pandas>=2.2.3,<3",
 ]
