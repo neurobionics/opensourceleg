@@ -449,6 +449,85 @@ def test_read_converted_data_crc_error_raises(adc, mock_spi):
         adc.read_converted_data()
 
 
+def test_read_converted_data_crc_only_success(adc, mock_spi):
+    # byte_options == 1: CRC enabled, status disabled
+    adc._register_map[ADS114S0x._REG_ADDR_SYS] = ADS114S0x._ADS_CRC_MASK
+    mock_spi.xfer2.return_value = [0x12, 0x34, 0x00, 0xAB]  # msb, mid, lsb, crc
+
+    with patch.object(adc, "get_crc", return_value=0) as get_crc:
+        code16, status = adc.read_converted_data()
+
+    assert code16 == 0x1234
+    assert status is None
+    get_crc.assert_called_once_with([0x12, 0x34, 0x00, 0xAB], 4)
+    mock_spi.xfer2.assert_called_once_with([0, 0, 0, 0])
+
+
+def test_read_converted_data_status_and_crc_success(adc, mock_spi):
+    # byte_options == 3: both status and CRC enabled
+    adc._register_map[ADS114S0x._REG_ADDR_SYS] = ADS114S0x._ADS_SENDSTATUS_MASK | ADS114S0x._ADS_CRC_MASK
+    mock_spi.xfer2.return_value = [0x80, 0x12, 0x34, 0x00, 0xAB]  # status, msb, mid, lsb, crc
+
+    with patch.object(adc, "get_crc", return_value=0) as get_crc:
+        code16, status = adc.read_converted_data()
+
+    assert status == 0x80
+    assert code16 == 0x1234
+    get_crc.assert_called_once_with([0x80, 0x12, 0x34, 0x00, 0xAB], 5)
+
+
+def test_read_converted_data_status_and_crc_error_raises(adc, mock_spi):
+    adc._register_map[ADS114S0x._REG_ADDR_SYS] = ADS114S0x._ADS_SENDSTATUS_MASK | ADS114S0x._ADS_CRC_MASK
+    mock_spi.xfer2.return_value = [0x80, 0x12, 0x34, 0x00, 0xFF]
+
+    with patch.object(adc, "get_crc", return_value=1), pytest.raises(ValueError):
+        adc.read_converted_data()
+
+
+def test_read_converted_data_command_mode_with_status_byte(adc, mock_spi):
+    adc._register_map[ADS114S0x._REG_ADDR_SYS] = ADS114S0x._ADS_SENDSTATUS_MASK
+    # index 0 is the dummy byte clocked out alongside the RDATA opcode
+    mock_spi.xfer2.return_value = [0x00, 0x80, 0x12, 0x34, 0x00]
+
+    code16, status = adc.read_converted_data(mode=ADS114S0x.ReadMode.COMMAND)
+
+    assert mock_spi.xfer2.call_args[0][0][0] == ADS114S0x._OPCODE_RDATA
+    assert status == 0x80
+    assert code16 == 0x1234
+
+
+def test_read_converted_data_command_mode_with_status_and_crc(adc, mock_spi):
+    adc._register_map[ADS114S0x._REG_ADDR_SYS] = ADS114S0x._ADS_SENDSTATUS_MASK | ADS114S0x._ADS_CRC_MASK
+    mock_spi.xfer2.return_value = [0x00, 0x80, 0x12, 0x34, 0x00, 0xAB]
+
+    with patch.object(adc, "get_crc", return_value=0) as get_crc:
+        code16, status = adc.read_converted_data(mode=ADS114S0x.ReadMode.COMMAND)
+
+    assert status == 0x80
+    assert code16 == 0x1234
+    get_crc.assert_called_once_with([0x80, 0x12, 0x34, 0x00, 0xAB], 5)
+
+
+def test_read_converted_data_negative_with_status_byte(adc, mock_spi):
+    adc._register_map[ADS114S0x._REG_ADDR_SYS] = ADS114S0x._ADS_SENDSTATUS_MASK
+    mock_spi.xfer2.return_value = [0x40, 0xFF, 0xFF, 0x00]  # status, msb, mid, lsb
+
+    code16, status = adc.read_converted_data()
+
+    assert status == 0x40
+    assert code16 == -1
+
+
+def test_read_converted_data_lsb_byte_is_discarded(adc, mock_spi):
+    # 3 bytes returned, but result is truncated to 16 bits (msb, mid only)
+    _configure_plain_read(adc)
+    mock_spi.xfer2.return_value = [0x12, 0x34, 0xFF]  # lsb varies
+
+    code16, _ = adc.read_converted_data()
+
+    assert code16 == 0x1234  # lsb has no effect on the returned value
+
+
 def test_wait_and_read_code16_success(adc):
     with (
         patch.object(adc, "wait_for_drdy_htol", return_value=True),
@@ -551,6 +630,80 @@ def test_get_crc_initializes_table_lazily(adc):
     ADS114S0x._crc_lookup_table[:] = [0] * 256
     result = adc.get_crc([0x12, 0x34], 2)
     assert result == adc._calculate_crc([0x12, 0x34], 2)
+
+
+def test_init_crc_noop_when_lookup_disabled(adc):
+    with patch.object(adc, "_CRC_LOOKUP", False), patch.object(adc, "_init_table") as init_table:
+        adc._initialized = False
+        adc.init_crc()
+
+    init_table.assert_not_called()
+    assert adc._initialized is False
+
+
+def test_init_crc_builds_table_when_lookup_enabled(adc):
+    with patch.object(adc, "_CRC_LOOKUP", True), patch.object(adc, "_init_table") as init_table:
+        adc.init_crc()
+
+    init_table.assert_called_once()
+    assert adc._initialized is True
+
+
+def test_get_crc_uses_calculate_when_lookup_disabled(adc):
+    with (
+        patch.object(adc, "_CRC_LOOKUP", False),
+        patch.object(adc, "_calculate_crc", return_value=0x99) as calc,
+        patch.object(adc, "_lookup_crc") as lookup,
+        patch.object(adc, "_init_table") as init_table,
+    ):
+        result = adc.get_crc([0x01, 0x02], 2)
+
+    assert result == 0x99
+    calc.assert_called_once_with([0x01, 0x02], 2)
+    lookup.assert_not_called()
+    init_table.assert_not_called()
+
+
+def test_get_crc_ignores_initialized_flag_when_lookup_disabled(adc):
+    # Non-lookup mode must never consult _initialized or touch the table.
+    adc._initialized = False
+    with (
+        patch.object(adc, "_CRC_LOOKUP", False),
+        patch.object(adc, "_calculate_crc", return_value=0x00) as calc,
+        patch.object(adc, "_init_table") as init_table,
+    ):
+        adc.get_crc([0x01], 1)
+
+    init_table.assert_not_called()
+    calc.assert_called_once()
+
+
+def test_get_crc_skips_reinit_when_already_initialized(adc):
+    adc._initialized = True
+    with (
+        patch.object(adc, "_CRC_LOOKUP", True),
+        patch.object(adc, "_init_table") as init_table,
+        patch.object(adc, "_lookup_crc", return_value=0x55) as lookup,
+    ):
+        result = adc.get_crc([0x01, 0x02], 2)
+
+    init_table.assert_not_called()
+    lookup.assert_called_once_with([0x01, 0x02], 2)
+    assert result == 0x55
+
+
+def test_get_crc_dispatches_to_lookup_not_calculate(adc):
+    with (
+        patch.object(adc, "_CRC_LOOKUP", True),
+        patch.object(adc, "_lookup_crc", return_value=0x77) as lookup,
+        patch.object(adc, "_calculate_crc") as calc,
+    ):
+        adc._initialized = True
+        result = adc.get_crc([0xAB], 1)
+
+    lookup.assert_called_once_with([0xAB], 1)
+    calc.assert_not_called()
+    assert result == 0x77
 
 
 # adc_configure_common
