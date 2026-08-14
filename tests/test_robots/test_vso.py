@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
 import pytest
@@ -334,3 +334,44 @@ def test_mapping_ends_with_unsupported_voltage_command(monkeypatch, tmp_path):
 
     assert ("set_position_gains", 0.015, 2, 0.001, 0.0) in actuator.calls
     assert not any(call[0] == "set_motor_voltage" for call in actuator.calls)
+
+
+@pytest.fixture
+def vso_with_mocks():
+    actuator = MagicMock()
+    actuator.tag = "ankle"
+    actuator.is_homed = True
+    actuator.frequency = 200
+    actuator.update.side_effect = KeyboardInterrupt
+
+    encoder = MagicMock()
+    encoder.tag = "joint_encoder_ankle"
+
+    vso = VSO(
+        tag="VariableStiffnessOrthosis",
+        actuators={"ankle": actuator},
+        sensors={"joint_encoder_ankle": encoder},
+    )
+    return vso, actuator, encoder
+
+
+def test_create_linear_joint_mapping_keyboard_interrupt(vso_with_mocks):
+    vso, actuator, encoder = vso_with_mocks
+    with (
+        patch("opensourceleg.robots.vso.os.path.exists", return_value=False),
+        patch("opensourceleg.robots.vso.time.sleep"),
+        patch("builtins.input", return_value=""),
+        patch("opensourceleg.robots.vso.LOGGER") as mock_logger,
+        patch("opensourceleg.robots.vso.np.save") as mock_save,
+    ):
+        result = vso._create_linear_joint_mapping(
+            actuator_key="ankle",
+            encoder_key="joint_encoder_ankle",
+        )
+
+    assert result is None
+    mock_logger.warning.assert_called_once_with(msg="Encoder map interrupted.")
+    actuator.update.assert_called_once()
+    encoder.update.assert_not_called()  # interrupt fires before this line is reached
+    mock_save.assert_not_called()
+    encoder.set_encoder_map.assert_not_called()
