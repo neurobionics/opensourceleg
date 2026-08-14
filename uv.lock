@@ -967,6 +967,9 @@ bno055 = [
     { name = "adafruit-circuitpython-lis3dh", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
     { name = "board" },
 ]
+brushed = [
+    { name = "lgpio", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+]
 communication = [
     { name = "smbus2" },
     { name = "spidev", marker = "sys_platform == 'linux'" },
@@ -1024,6 +1027,7 @@ requires-dist = [
     { name = "grpcio", marker = "extra == 'messaging'", specifier = ">=1.65.5,<2" },
     { name = "grpcio-tools", marker = "extra == 'messaging'", specifier = ">=1.65.5,<2" },
     { name = "lgpio", specifier = ">=0.2.2.0" },
+    { name = "lgpio", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'brushed'", specifier = ">=0.2.2.0" },
     { name = "moteus", marker = "extra == 'moteus'", specifier = ">=0.3.72,<0.4" },
     { name = "moteus-pi3hat", marker = "platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'moteus'", specifier = ">=0.3.29,<0.4" },
     { name = "numpy", specifier = ">=1.24.3,<2" },
@@ -1032,7 +1036,7 @@ requires-dist = [
     { name = "spidev", marker = "sys_platform == 'linux' and extra == 'communication'", specifier = ">=3.7" },
     { name = "types-protobuf", marker = "extra == 'messaging'", specifier = ">=4.21.0,<5" },
 ]
-provides-extras = ["dephy", "bno055", "moteus", "communication", "messaging"]
+provides-extras = ["dephy", "bno055", "moteus", "communication", "messaging", "brushed"]
 
 [package.metadata.requires-dev]
 all = [

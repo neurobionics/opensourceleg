@@ -4,7 +4,11 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 from gpiozero import OutputDevice, PWMOutputDevice
-from gpiozero.pins.lgpio import LGPIOFactory
+
+try:
+    from gpiozero.pins.lgpio import LGPIOFactory
+except ImportError:
+    LGPIOFactory = None
 
 from opensourceleg.actuators.base import (
     CONTROL_MODE_CONFIGS,
@@ -150,6 +154,13 @@ class MaxonActuator(PositionControlActuatorBase):
         self.pwm_lower_limit = pwm_lower_limit
 
         if not self._is_offline:
+            if LGPIOFactory is None:
+                LOGGER.error(
+                    "lgpio is not installed. Please install the 'brushed' extra "
+                    "(e.g. `pip install opensourceleg[brushed]`) to use this module on hardware."
+                )
+                exit(1)
+
             self._factory = LGPIOFactory()
 
             self.speed_control = PWMOutputDevice(self.enable_pin, frequency=8000, initial_value=0)
@@ -531,7 +542,3 @@ class MaxonActuator(PositionControlActuatorBase):
             encoder_counter: Encoder counter instance providing its attribute.
         """
         self.encoder_counter = encoder_counter
-
-
-if __name__ == "__main__":
-    pass

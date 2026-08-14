@@ -32,6 +32,9 @@ messaging = [
     "grpcio-tools>=1.65.5,<2",
     "types-protobuf>=4.21.0,<5",
 ]
+brushed = [
+    "lgpio>=0.2.2.0 ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
 
 [project.urls]
 Repository = "https://github.com/neurobionics/opensourceleg"
