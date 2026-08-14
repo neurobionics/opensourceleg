@@ -66,8 +66,8 @@ def test_degrees_radians_roundtrip():
 
 
 # Construction / configuration
-def test_default_constants_no_raise():
-    actuator = MaxonActuator()
+def test_default_constants_no_raise(mock_gpio):
+    actuator = MaxonActuator(motor_constants=VALID_MOTOR_CONSTANTS)
     assert actuator is not None
 
 
