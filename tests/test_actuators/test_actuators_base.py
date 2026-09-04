@@ -15,7 +15,9 @@ from opensourceleg.actuators.base import (
     ControlGains,
     ControlModeConfig,
     MethodWithRequiredModes,
+    PositionControlActuatorBase,
     T,
+    UnsupportedControlModeError,
     requires,
 )
 from opensourceleg.logging.exceptions import ControlModeException
@@ -699,3 +701,130 @@ def test_offline_mode_with_context_manager(mock_actuator_offline: MockActuator):
         actuator.update()
         pos = actuator.motor_position  # Should return 0.0
         assert pos == 0.0
+
+
+# Test PositionControlActuatorBase
+class MockPositionActuator(PositionControlActuatorBase):
+    """Fills in only the still-abstract members so the position-only base can be built."""
+
+    @property
+    def _CONTROL_MODE_CONFIGS(self):
+        return CONTROL_MODE_CONFIGS()  # all-None configs; mode switching still works
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def update(self):
+        pass
+
+    def set_motor_position(self, value):
+        pass
+
+    def set_position_gains(self, kp, ki, kd, ff):
+        pass
+
+    def home(self):
+        pass
+
+    @property
+    def motor_position(self):
+        return 0.0
+
+    @property
+    def motor_velocity(self):
+        return 0.0
+
+    @property
+    def case_temperature(self):
+        return 0.0
+
+    @property
+    def winding_temperature(self):
+        return 0.0
+
+
+@pytest.fixture
+def mock_position_actuator():
+    # Online (offline=False) so the UnsupportedControlModeError bodies actually run;
+    # offline mode would stub the hardware methods and mask them.
+    return MockPositionActuator(
+        "test_position_actuator",
+        10.0,
+        MOTOR_CONSTANTS(
+            MOTOR_COUNT_PER_REV=1000,
+            NM_PER_AMP=0.1,
+            MAX_CASE_TEMPERATURE=100.0,
+            MAX_WINDING_TEMPERATURE=150.0,
+        ),
+    )
+
+
+def test_unsupported_control_mode_error_is_notimplemented():
+    assert issubclass(UnsupportedControlModeError, NotImplementedError)
+
+
+def test_position_only_actuator_init(mock_position_actuator: MockPositionActuator):
+    assert mock_position_actuator.tag == "test_position_actuator"
+    assert mock_position_actuator.gear_ratio == 10.0
+    assert mock_position_actuator.mode == CONTROL_MODES.IDLE
+
+
+# The unsupported *properties* aren't mode-gated, so they raise in any mode.
+def test_position_only_unsupported_properties(mock_position_actuator: MockPositionActuator):
+    with pytest.raises(UnsupportedControlModeError):
+        _ = mock_position_actuator.motor_voltage
+    with pytest.raises(UnsupportedControlModeError):
+        _ = mock_position_actuator.motor_current
+    with pytest.raises(UnsupportedControlModeError):
+        _ = mock_position_actuator.motor_torque
+
+
+# The unsupported *methods* are mode-gated by ActuatorBase, so we must first enter a
+# mode where they're allowed — otherwise we'd get ControlModeException, not the
+# UnsupportedControlModeError we're actually testing for.
+def test_position_only_unsupported_voltage(mock_position_actuator: MockPositionActuator):
+    mock_position_actuator.set_control_mode(CONTROL_MODES.VOLTAGE)
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator.set_motor_voltage(1.0)
+
+
+def test_position_only_unsupported_current(mock_position_actuator: MockPositionActuator):
+    mock_position_actuator.set_control_mode(CONTROL_MODES.CURRENT)
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator.set_motor_current(1.0)
+
+
+def test_position_only_unsupported_torque(mock_position_actuator: MockPositionActuator):
+    mock_position_actuator.set_control_mode(CONTROL_MODES.TORQUE)
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator.set_motor_torque(1.0)
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator.set_output_torque(1.0)
+
+
+def test_position_only_unsupported_current_gains(mock_position_actuator: MockPositionActuator):
+    mock_position_actuator.set_control_mode(CONTROL_MODES.CURRENT)
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator.set_current_gains(1.0, 0.1, 0.01, 0.0)
+
+
+def test_position_only_unsupported_impedance(mock_position_actuator: MockPositionActuator):
+    mock_position_actuator.set_control_mode(CONTROL_MODES.IMPEDANCE)
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator.set_motor_impedance(1.0)
+
+
+def test_position_only_unsupported_impedance_gains(mock_position_actuator: MockPositionActuator):
+    # _set_impedance_gains is not in _METHOD_REQUIRED_MODES, so it's never gated.
+    with pytest.raises(UnsupportedControlModeError):
+        mock_position_actuator._set_impedance_gains(1.0, 1.0)
+
+
+def test_position_only_supported_position(mock_position_actuator: MockPositionActuator):
+    mock_position_actuator.set_control_mode(CONTROL_MODES.POSITION)
+    mock_position_actuator.set_motor_position(1.0)  # should NOT raise
+    assert mock_position_actuator.motor_position == 0.0
+    assert mock_position_actuator.motor_velocity == 0.0
