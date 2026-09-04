@@ -104,7 +104,7 @@ def read_sensors(data_logger: Logger) -> None:
         loop_count = 0
         t_start = time.monotonic()
 
-        for loop_count in enumerate(loop):
+        for loop_count, _ in enumerate(loop):
             vso.update()
 
             # Ankle angle: raw reading, referenced to calib_offset, then EMA-smoothed.
