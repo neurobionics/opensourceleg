@@ -71,7 +71,7 @@ class LordMicrostrainIMU(IMUBase):
         - Download v0.65 MSCL pre-built package for Raspbian:
           https://github.com/LORD-MicroStrain/MSCL/releases/download/v65.0.0/python3-mscl_65.0.0_arm64.deb
         - Read the MSCL installation instructions:
-          https://github.com/LORD-MicroStrain/MSCL/blob/master/HowToUseMSCL.md
+          https://github.com/LORD-MicroStrain/MSCL/blob/v65.0.0/HowToUseMSCL.md
         - We assume that the MSCL library is installed in /usr/share/python3-mscl
 
     Note: MSCL v65 may encounter page alignment errors on some Raspberry Pi 5 kernels.
