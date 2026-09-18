@@ -5,7 +5,6 @@ from opensourceleg.actuators.dephy import DephyActuator
 from opensourceleg.control.fsm import State, StateMachine
 from opensourceleg.logging.logger import Logger
 from opensourceleg.robots.osl import OpenSourceLeg
-from opensourceleg.sensors.encoder import AS5048B
 from opensourceleg.sensors.loadcell import NBLoadcellDAQ
 from opensourceleg.utilities import SoftRealtimeLoop
 
@@ -21,7 +20,7 @@ LOADCELL_CALIBRATION_MATRIX = np.array([
 ])
 
 # ------------- TUNABLE FSM PARAMETERS ---------------- #
-BODY_WEIGHT = 10 * 9.8  # 30 * 9.8
+BODY_WEIGHT = 30 * 9.8
 
 # STATE 1: EARLY STANCE
 KNEE_K_ESTANCE = 99.372
@@ -217,22 +216,22 @@ if __name__ == "__main__":
             amp_gain=[34] * 3 + [151] * 3,
             spi_bus=1,
         ),
-        "joint_encoder_knee": AS5048B(
-            tag="joint_encoder_knee",
-            bus="/dev/i2c-2",
-            A1_adr_pin=False,
-            A2_adr_pin=False,
-            zero_position=0,
-            enable_diagnostics=False,
-        ),
-        "joint_encoder_ankle": AS5048B(
-            tag="joint_encoder_ankle",
-            bus="/dev/i2c-3",
-            A1_adr_pin=False,
-            A2_adr_pin=False,
-            zero_position=0,
-            enable_diagnostics=False,
-        ),
+        # "joint_encoder_knee": AS5048B(
+        #    tag="joint_encoder_knee",
+        #    bus="/dev/i2c-2",
+        #    A1_adr_pin=False,
+        #    A2_adr_pin=False,
+        #    zero_position=0,
+        #    enable_diagnostics=False,
+        # ),
+        # "joint_encoder_ankle": AS5048B(
+        #    tag="joint_encoder_ankle",
+        #    bus="/dev/i2c-3",
+        #    A1_adr_pin=False,
+        #    A2_adr_pin=False,
+        #    zero_position=0,
+        #    enable_diagnostics=False,
+        # ),
     }
 
     clock = SoftRealtimeLoop(dt=1 / FREQUENCY)
@@ -267,7 +266,7 @@ if __name__ == "__main__":
 
     with osl, osl_fsm:
         osl.update()
-        osl.home(callbacks=callbacks)
+        osl.home()
         input("Press Enter to start walking...")
 
         # knee
@@ -280,25 +279,24 @@ if __name__ == "__main__":
         osl.ankle.set_impedance_cc_pidf_gains()
         osl.ankle.set_output_impedance()
 
+        # The FSM is expecting the loadcell values to be positive
         osl.loadcell.reset()
         osl.loadcell.calibrate()
 
         for t in clock:
             osl.update()
-            print("Ankle position", np.rad2deg(osl.sensors["joint_encoder_ankle"].position))
-            print("Knee position", np.rad2deg(osl.sensors["joint_encoder_knee"].position))
             osl_fsm.update(osl=osl)
-            # osl.knee.set_output_impedance(
-            #     k=osl_fsm.current_state.knee_stiffness,
-            #     b=osl_fsm.current_state.knee_damping,
-            # )
-            # osl.ankle.set_output_impedance(
-            #     k=osl_fsm.current_state.ankle_stiffness,
-            #     b=osl_fsm.current_state.ankle_damping,
-            # )
+            osl.knee.set_output_impedance(
+                k=osl_fsm.current_state.knee_stiffness,
+                b=osl_fsm.current_state.knee_damping,
+            )
+            osl.ankle.set_output_impedance(
+                k=osl_fsm.current_state.ankle_stiffness,
+                b=osl_fsm.current_state.ankle_damping,
+            )
 
-            # osl.knee.set_output_position(np.deg2rad(osl_fsm.current_state.knee_theta))
-            # osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
+            osl.knee.set_output_position(np.deg2rad(osl_fsm.current_state.knee_theta))
+            osl.ankle.set_output_position(np.deg2rad(osl_fsm.current_state.ankle_theta))
 
             fsm_logger.info(
                 f"T: {t:.3f}s, "
