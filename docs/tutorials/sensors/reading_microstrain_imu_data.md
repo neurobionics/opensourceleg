@@ -151,6 +151,6 @@ The LordMicrostrainIMU provides several useful properties:
 
 ## Additional Resources
 
-- [MSCL Documentation](https://lord-microstrain.github.io/MSCL/Documentation/MSCL%20API%20Documentation/index.html)
+- [MSCL Documentation](https://github.com/LORD-MicroStrain/MSCL_documentation/blob/main/latest/MSCL_API_Docs/index.html)
 
 If you have any questions or need further assistance, please post on the [Open Source Leg community forum](https://opensourceleg.discourse.group).
