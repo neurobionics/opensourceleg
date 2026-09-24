@@ -134,6 +134,7 @@ class CONTROL_MODES(Enum):
     IMPEDANCE = 3
     VELOCITY = 4
     TORQUE = 5
+    CURRENT_BRAKE = 6
 
 
 # TODO: This can be ordered and requires validation
@@ -200,6 +201,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
         IMPEDANCE (Optional[ControlModeConfig]): Configuration for IMPEDANCE mode.
         VELOCITY (Optional[ControlModeConfig]): Configuration for VELOCITY mode.
         TORQUE (Optional[ControlModeConfig]): Configuration for TORQUE mode.
+        CURRENT_BRAKE (Optional[ControlModeConfig]): Configuration for CURRENT_BRAKE mode.
 
     Examples:
         >>> idle_config = ControlModeConfig(
@@ -218,6 +220,7 @@ class CONTROL_MODE_CONFIGS(NamedTuple):
     IMPEDANCE: Optional[ControlModeConfig] = None
     VELOCITY: Optional[ControlModeConfig] = None
     TORQUE: Optional[ControlModeConfig] = None
+    CURRENT_BRAKE: Optional[ControlModeConfig] = None
 
 
 CONTROL_MODE_METHODS: list[str] = [
