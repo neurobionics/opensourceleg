@@ -1204,3 +1204,51 @@ class ActuatorBase(OfflineMixin, ABC):
             True
         """
         return self._is_streaming
+
+
+class UnsupportedControlModeError(NotImplementedError):
+    """Raised when a control capability the actuator lacks is invoked."""
+
+
+class PositionControlActuatorBase(ActuatorBase):
+    """ActuatorBase specialized to position control only.
+
+    Voltage, current, torque, and impedance methods are satisfied here once so
+    subclasses don't have to. They raise UnsupportedControlModeError if ever
+    called, and the corresponding telemetry properties do the same. Everything
+    else (position control, lifecycle, telemetry, mode machinery) is inherited
+    unchanged from ActuatorBase.
+    """
+
+    def set_motor_voltage(self, value: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support voltage control.")
+
+    def set_motor_current(self, value: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support current control.")
+
+    def set_motor_impedance(self, value: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support impedance control.")
+
+    def set_motor_torque(self, value: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support torque control.")
+
+    def set_output_torque(self, value: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support torque control.")
+
+    def set_current_gains(self, kp: float, ki: float, kd: float, ff: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support current control.")
+
+    def _set_impedance_gains(self, k: float, b: float) -> None:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not support impedance control.")
+
+    @property
+    def motor_voltage(self) -> float:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not measure motor voltage.")
+
+    @property
+    def motor_current(self) -> float:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not measure motor current.")
+
+    @property
+    def motor_torque(self) -> float:
+        raise UnsupportedControlModeError(f"{type(self).__name__} does not measure motor torque.")
