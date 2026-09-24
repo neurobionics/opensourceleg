@@ -543,7 +543,9 @@ class TMotorServoActuator(ActuatorBase):
                 - 'driver': use driver's native current (default)
                 - 'amplitude-invariant': true phase current convention
                 - 'power-invariant': power-invariant current convention
-            thermal_current_scale: compensates for discrepancy between firmware k_t and effective k_t
+            thermal_current_scale: defined as Kt_actual / Kt_effective
+                - compensates for discrepancy between Kt_actual defined in tmotor firmware and the effective Kt
+                for custom actuators by scaling the current input to the thermal model
         """
         # Validate motor type
         if motor_type not in TMOTOR_MODELS:
