@@ -869,7 +869,9 @@ class BHI260AP(IMUBase):
 
         # Verify SPI connection
         if not self.verify_connection():
-            raise RuntimeError("Error connecting to IMU.")
+            raise RuntimeError(
+                f"Error connecting to IMU. Check that /dev/spidev{self._spi_bus}.{self._spi_cs} is available."
+            )
 
         # If kernel version = 0x00, auto-load firmware
         if self.read_kernel_version() == 0:
