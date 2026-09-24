@@ -53,11 +53,13 @@ This library solves common challenges in developing, testing, and deploying robo
 
 The library currently supports the following hardware components:
 
-| Sensors              | Unit Tests | Hardware Tests | Benchmarks | Documentation |
-| -------------------- | ---------- | -------------- | ---------- | ------------- |
-| AS5048B Encoder      | ✅         | ✅             | ❌         | ✅            |
-| Lord Microstrain IMU | ✅         | ✅             | ❌         | ✅            |
-| SRI Loadcell         | ✅         | ✅             | ❌         | ✅            |
+| Sensors                 | Unit Tests  | Hardware Tests | Benchmarks | Documentation |
+| ----------------------- | ----------- | -------------- | ---------- | ------------- |
+| AS5048B Encoder         | ✅         | ✅             | ❌         | ✅            |
+| Lord Microstrain IMU    | ✅         | ✅             | ❌         | ✅            |
+| SRI Loadcell            | ✅         | ✅             | ❌         | ✅            |
+| DRV5056 Hall Effect     | ❌         | ❌             | ❌         | ❌            |
+| LS7366R Encoder Counter | ❌         | ❌             | ❌         | ❌            |
 
 | Actuators     | Unit Tests | Hardware Tests | Benchmarks | Documentation |
 | ------------- | ---------- | -------------- | ---------- | ------------- |

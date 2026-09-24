@@ -7,3 +7,6 @@ coverage:
       default:
         target: 90%
         threshold: 0.5%
+ignore:
+  - "opensourceleg/sensors/encoderCounter.py"
+  - "opensourceleg/sensors/hall.py"
