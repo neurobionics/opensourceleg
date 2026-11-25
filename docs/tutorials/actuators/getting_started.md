@@ -85,6 +85,24 @@ Please follow these guidelines when following the `opensourceleg.actuators` tuto
 - Confirm power LED indicators
 - Monitor current draw
 
+### Dephy FlexSEA version
+
+A traceback in `flexsea/device.py` can come from an outdated `flexsea` Python package.
+
+For a pip installation, use the Python environment that runs the tutorial to check the installed version and update it when needed.
+
+```bash
+python -m pip show flexsea
+python -m pip install --upgrade flexsea
+```
+
+For a development checkout managed with uv, run the commands from the repository root. The upgrade syncs the environment and updates `uv.lock` when it resolves a newer release.
+
+```bash
+uv pip show flexsea
+uv sync --upgrade-package flexsea
+```
+
 ## Getting Help
 
 If you encounter any issues or need assistance:
