@@ -191,6 +191,8 @@ class CompiledController:
         """
         slots = []
         for param in parameter_list:
+            if not isinstance(param, tuple) or len(param) not in (2, 3):
+                raise TypeError("Expected a (name, C type) pair or (name, C type, bit size) triple.")
             slots.append(param[0])
 
         class CustomStructure(ctypes.Structure):

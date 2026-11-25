@@ -225,7 +225,7 @@ class DephyLoadcellAmplifier(LoadcellBase):
         coupled_data = signed_data * 1000 / (self._exc * self._amp_gain)
 
         # Process the data using the calibration matrix and subtract the offset.
-        self._data = np.transpose(a=self._calibration_matrix.dot(b=np.transpose(a=coupled_data))) - calibration_offset
+        self._data = np.transpose(a=self._calibration_matrix.dot(np.transpose(a=coupled_data))) - calibration_offset
 
     def check_data(self, data: npt.NDArray[np.uint16]) -> None:
         """
