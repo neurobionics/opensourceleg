@@ -199,3 +199,37 @@ def test_softrealtimeloop_n():
     expected_n = demo.x
     srtl.run(demo.update)
     assert expected_n == srtl.n
+
+
+def test_softrealtimeloop_sleep_percentage_never_exceeds_100(monkeypatch, capsys):
+    now = [0.0]
+
+    def fake_monotonic() -> float:
+        now[0] += 1e-6
+        return now[0]
+
+    def fake_sleep(duration: float) -> None:
+        now[0] += duration * 0.5
+
+    monkeypatch.setattr(time, "monotonic", fake_monotonic)
+    monkeypatch.setattr(time, "sleep", fake_sleep)
+
+    loop = SoftRealtimeLoop(dt=0.01, report=True, maintain_original_phase=False)
+    for i, _t in enumerate(loop):
+        now[0] += 0.001
+        if i >= 4:
+            loop.stop()
+
+    capsys.readouterr()
+    loop.print_report()
+    captured = capsys.readouterr().out
+    loop.report = False
+
+    assert loop.sleep_t_agg <= loop.time_since_start
+    for line in captured.splitlines():
+        if "percent of time sleeping:" in line:
+            pct = float(line.split(":")[1].strip().rstrip(" %"))
+            assert pct <= 100.0
+            break
+    else:
+        pytest.fail("Expected sleep percentage line in report")

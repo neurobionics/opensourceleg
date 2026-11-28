@@ -398,9 +398,10 @@ class SoftRealtimeLoop:
         time_since_last_loop = time.monotonic() - self.iteration_start_time
         sleep_time = max(self.dt - time_since_last_loop - 2 * PRECISION_OF_SLEEP, 0)
         actual_time_to_sleep = max(PRECISION_OF_SLEEP, sleep_time)
+        t_pre_sleep = time.monotonic()
         time.sleep(actual_time_to_sleep)
         # Update the time slept
-        self.sleep_t_agg += actual_time_to_sleep
+        self.sleep_t_agg += time.monotonic() - t_pre_sleep
 
         # Busy wait to compensate for sleep durations precision
         time_to_busy_wait = time.monotonic() + PRECISION_OF_SLEEP
